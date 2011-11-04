@@ -108,14 +108,15 @@ def fit1d_dat(filepath, *arg, **kw):
     ycol = kw.pop('ycol', 1)
     kw['do_save_plot'] = kw.pop('do_save_plot', True)
     kw['save_plot_path'] = kw.pop('save_plot_path', filepath[:-4])
+    ignore_start = kw.pop('ignore_start', 0)
 
-    print kw
+    # print kw
 
     d = loadtxt(filepath)
-    x = d[:,xcol]
-    y = d[:,ycol]
+    x = d[ignore_start:,xcol]
+    y = d[ignore_start:,ycol]
 
-    return fit1d(x, y, *arg, **kw)
+    return fit1d(x, y, comment=filepath, *arg, **kw)
 
     
 
