@@ -115,9 +115,10 @@ def save_npz_data(name, **kw):
     
     
     # save txt comments
-    txt_meta = open(path + '_meta.txt', 'w')
-    txt_meta.write(meta)
-    txt_meta.close()
+    if meta != '':
+        txt_meta = open(path + '_meta.txt', 'w')
+        txt_meta.write(meta)
+        txt_meta.close()
     for txtfile in txt:
         t = open(path + '_%s.txt' % txtfile, 'w')
         t.write(txt[txtfile])
