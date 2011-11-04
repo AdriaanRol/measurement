@@ -108,6 +108,9 @@ class PicoHarp_PH300(Instrument): #1
             logging.warning(__name__ + ' : T2 mode could not be started')
         self._init_continue()
 
+    def get_DeviceType(self):
+        return('PH_300')
+
     def start_T3_mode(self):
         if self._PH300_win32.PH_Initialize(self.DevIdx, 3) != 0:
             logging.warning(__name__ + ' : T3 mode could not be started')
