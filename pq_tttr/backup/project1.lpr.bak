@@ -1,0 +1,17 @@
+library project1;
+
+uses
+  SysUtils, pq_tttr_functions;
+
+exports start;
+exports set_dev;
+exports set_debuglevel;
+exports set_abort_condition;
+exports add_section;
+exports clear_sections;
+exports TTTR2_universal_measurement;
+exports TTTR2_universal_measurement_speedmode_unconditional;
+
+begin
+end.
+
