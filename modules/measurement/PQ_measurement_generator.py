@@ -10,11 +10,14 @@
 ## todo: set_Binning for HH_400???
 
 from numpy import *
+from matplotlib import pyplot as plt
+
 from ctypes import *
 from time import sleep
 import qt, os
 import time
-import matplotlib.pyplot as plt
+
+ADwin = qt.instruments['ADwin']
 
 # save just implemented for 1D and 2D data
 # ROI just implemented for 2D data
@@ -36,7 +39,7 @@ EV_auto                =  0b10000000
 time_axis              =  0b00000001
 sweep_axis             =  0b00000010
 repetition_axis        =  0b00000100
-e#####################################
+#####################################
 #       threshold modes:
 thres_dont_use         =  0
 thres_use_min          =  1
@@ -51,11 +54,20 @@ loop_sweep_repetitions =  0b00000001
 default_valid          =  1
 default_invalid        =  0
 
-class PQ_measurement: 
-    def __init__(self, name):
-        self.name = name
+import measurement
+
+class PQ_measurement(measurement.Measurement): 
+    
+    def __init__(self, name, mclass='PQ_measurement', *arg, **kw):
+        measurement.Measurement.__init__(self, name, mclass, *arg, **kw)
+
+        self.counter_instr = windll.LoadLibrary(qt.config['pq_dll'])
+        self.reset()
+
+    def reset(self):
         self.sections = []
         self.data = []
+        self.savdat = {}
         self.MW = []
         self.ADwin_codes = []
         self.ADwin_save_parameters = []
@@ -73,11 +85,8 @@ class PQ_measurement:
         self.loop_order    = loop_repeat_sweeps
         self.sec_incr_ev   = EV_start
         self.seq_res_ev    = EV_auto
-
-        self.path = qt.config['datadir'] + '\\'+time.strftime('%Y%m%d') + '\\' + time.strftime('%H%M%S', time.localtime()) + '_sequence\\'
-#        self.path = save_path
-
         self.conditional_mode = True
+
 
     def set_conditional_mode(self, conditional_mode):
         self.conditional_mode = conditional_mode
@@ -106,7 +115,9 @@ class PQ_measurement:
     def set_sequence(self, sequence):
         self.sequence = sequence
 
-    def set_sweep(self, name = 'none', count = 1, incr_mode = EV_auto, reset_mode = EV_none, incr = 1, start = 0):
+    def set_sweep(self, name = 'none', count = 1, incr_mode = EV_auto,
+            reset_mode = EV_none, incr = 1, start = 0):
+
         self.sweep = {'name': name, 
                 'count': count,
                 'start': start,
@@ -114,14 +125,15 @@ class PQ_measurement:
                 'incr_mode': incr_mode,
                 'reset_mode': reset_mode}
 
-    def set_repetitions(self, count =1, incr_mode = EV_auto, reset_mode = EV_none):
+    def set_repetitions(self, count =1, incr_mode = EV_auto, 
+            reset_mode = EV_none):
         self.repetitions = {'count': count,
                 'incr_mode': incr_mode,
                 'reset_mode': reset_mode}
 
-    def add_section(self, name = 'default', event_type = EV_stop, duration = 1, \
-            offset = 0, binsize = 11, mode = time_axis, threshold_min = 0, \
-            threshold_max = 999, threshold_mode = thres_dont_use, \
+    def add_section(self, name = 'default', event_type = EV_stop, duration = 1,
+            offset = 0, binsize = 11, mode = time_axis, threshold_min = 0,
+            threshold_max = 999, threshold_mode = thres_dont_use,
             reset_mode = EV_none):
 
         section = {'name': name,
@@ -135,6 +147,7 @@ class PQ_measurement:
                 'threshold_mode': threshold_mode,
                 'reset_mode': reset_mode,
                 'ROI_list': []}
+        
         self.sections.append(section)
 
     def add_ROI(self,ROI_name = 'default', section_name = 'default', start_index = 0, 
@@ -189,6 +202,7 @@ class PQ_measurement:
         self.ADwin_save_parameters.append(save_par)
 
     def initialize(self):
+        
         self.sequence_instr.start()
         while (self.sequence_instr.get_state() != 'Running') and (self.sequence_instr.get_state() != 'Waiting for trigger'):
             sleep(0.01)
@@ -253,6 +267,25 @@ class PQ_measurement:
         self.statistics = zeros(14 + len(self.sections),dtype = uint32)
 #        self.statistics = zeros(100,dtype = uint32)
 
+        self.statistics_desc = {
+                0 : 'start events',
+                1 : 'stop events',
+                2 : 'sync events',
+                3 : 'MA1 events',
+                4 : 'MA2 events',
+                5 : 'MA3 events', 
+                6 : 'MA4 events',
+                7 : 'OFL events',
+                8 : 'Measurement time [ms]', 
+                9 : 'sweep counter',
+                10 : 'repetition counter',
+                11 : 'detected events',
+                12 : 'valid events',
+                13 : 'invalid events',
+                }
+        
+        for i,s in enumerate(self.sections):
+            self.statistics_desc[14 + i] = 'valid %s sections' % s['name']
 
     def start(self,max_time = 30000000):
         for a in arange(0,len(self.MW)):
@@ -297,333 +330,190 @@ class PQ_measurement:
             for b in arange(0,len(self.ADwin_codes[a]['start_processes_after_measurement'])):
                 ADwin.Start_Process(self.ADwin_codes[a]['start_processes_after_measurement'][b])
 
-    def save_data(self, section, saveplot = True):
-        path = self.path
-        if not os.path.isdir(path):
-            os.makedirs(path)
+    def analyze(self, **kw):
+        measurement.Measurement.analyze(self)
+
+    
+    def save(self, **kw):
+        measurement.Measurement.save(self)
+
+        i = len(self.sections)
+        for j, s in enumerate(self.sections):
+            if j == i:
+                kw['idx_increment'] = True
+            else:
+                kw['idx_increment'] = False
+
+            self.save_section(s['name'], **kw)
+    
+    def save_section(self, section, do_plot=True, **kw):
+
+        figs = {}
         
-        filename = path+self.name+'_statistics'
-        result=open(filename+'.dat', 'w')
-        result.write('# start events: %s\n'%self.statistics[0])
-        result.write('# stop events: %s\n'%self.statistics[1])
-        result.write('# sync events: %s\n'%self.statistics[2])
-        result.write('# MA1 events: %s\n'%self.statistics[3])
-        result.write('# MA2 events: %s\n'%self.statistics[4])
-        result.write('# MA3 events: %s\n'%self.statistics[5])
-        result.write('# MA4 events: %s\n'%self.statistics[6])
-        result.write('# OFL events: %s\n'%self.statistics[7])
-        result.write('# measurement time: %s ms\n'%self.statistics[8])
-        result.write('# sweep counter: %s\n'%self.statistics[9])
-        result.write('# repetition counter: %s\n'%self.statistics[10])
-        result.write('# detected events: %s\n'%self.statistics[11])
-        result.write('# valid events: %s\n'%self.statistics[12])
-        result.write('# invalid events: %s\n'%self.statistics[13])
-        for k in arange(0,len(self.sections)):
-            result.write('# valid %s sections: %s\n'%(self.sections[k]['name'],self.statistics[14+k]))
+        stat_str = ''
+        for i,s in enumerate(self.statistics):
+            stat_str += '# %s: %s\n' % (self.statistics_desc[i], s)
+      
         for k in arange(0,len(self.ADwin_save_parameters)):
             if self.ADwin_save_parameters[k]['par'] == -1:
-                result.write('# %s: %s\n'%(self.ADwin_save_parameters[k]['name'],ADwin.Get_FPar(self.ADwin_save_parameters[k]['fpar'])))
+                stat_str += '# %s: %s\n'%(self.ADwin_save_parameters[k]['name'],ADwin.Get_FPar(self.ADwin_save_parameters[k]['fpar']))
             else:
-                result.write('# %s: %s\n'%(self.ADwin_save_parameters[k]['name'],ADwin.Get_Par(self.ADwin_save_parameters[k]['par'])))
+                stat_str += ('# %s: %s\n'%(self.ADwin_save_parameters[k]['name'],ADwin.Get_Par(self.ADwin_save_parameters[k]['par'])))
+        
         for k in arange(0,len(self.special_save_parameters)):
             if self.special_save_parameters[k]['name'] == 'avg. counts per repump':
-                result.write('# %s: %.3f\n'%(self.special_save_parameters[k]['name'], float(ADwin.Get_Par(77))/ADwin.Get_Par(70)))
+                stat_str += ('# %s: %.3f\n'%(self.special_save_parameters[k]['name'], float(ADwin.Get_Par(77))/ADwin.Get_Par(70)))
             if self.special_save_parameters[k]['name'] == 'avg. sequences before ADwin CR fails':
-                result.write('# %s: %.3f\n'%(self.special_save_parameters[k]['name'], float(ADwin.Get_Par(72))/ADwin.Get_Par(71)))
+                stat_str += ('# %s: %.3f\n'%(self.special_save_parameters[k]['name'], float(ADwin.Get_Par(72))/ADwin.Get_Par(71)))
             if self.special_save_parameters[k]['name'] == 'avg. repump attempts per failed ADwin CR':
-                result.write('# %s: %.3f\n'%(self.special_save_parameters[k]['name'], float(ADwin.Get_Par(70))/ADwin.Get_Par(71)))
-        result.close()
+               stat_str += ('# %s: %.3f\n'%(self.special_save_parameters[k]['name'], float(ADwin.Get_Par(70))/ADwin.Get_Par(71)))
 
-        for k in arange(0,len(self.sections)):
-            if self.sections[k]['name'] == section:
-                if self.sections[k]['mode'] == sweep_axis:
-                    filename = path+self.name+'_'+self.sections[k]['name']+'_vs_'+self.sweep['name']
-                    result=open(filename+'.dat', 'w')
-                    result.write('# measurement name: %s\n'%self.name)
-                    result.write('# section name: %s\n'%section)
-                    result.write('# section type: sweep-axis\n')
-                    result.write('# sweep name: %s\n'%self.sweep['name'])
-                    result.write('# 1st column: sweep parameter\n')
-                    result.write('# 2st column: counts\n')
-                    result.write('#\n')
+        sec = None
+        sec_name = ''
+        sw_name = self.sweep['name']
+        swname = sw_name
+        for i,s in enumerate(self.sections):
+            if s['name'] == section:
+                sec = s
+                sec_name = s['name']
+                k = i
+        if sec == None:
+            print 'invalid section given for saving'
+            return False
 
-                    for i in arange(0,self.sweep['count']):
-                        result.write('%s\t%s\n'%(self.sweep['start']+i*self.sweep['incr'], self.data[k][i]))
-                    result.close()
+        self.savdat[section] = {}
+        bin2time = (0.004*2**sec['binsize'])
+        
+        if bool(sec['mode'] == sweep_axis):
+            self.savdat[section][swname] = (arange(0,self.sweep['count'])*self.sweep['incr']+self.sweep['start'])
+            self.savdat[section]['counts'] = self.data[k]
+        
+        if bool(sec['mode'] == time_axis):
+            self.savdat[section]['time'] = arange(sec['offset'], sec['duration']+sec['offset']) * bin2time
+            self.savdat[section]['counts'] = self.data[k]
+        
+        if bool(sec['mode'] == repetition_axis):
+            self.savdat[section]['repetitions'] = arange(self.repetitions['count'])
+            self.savdat[section]['counts'] = self.data[k]
+        
+        if bool(sec['mode'] == sweep_axis+time_axis):
+            self.savdat[section][swname] = (arange(0,self.sweep['count'])*self.sweep['incr']+self.sweep['start'])
+            self.savdat[section]['time'] = (arange(sec['offset'], sec['duration']+sec['offset']) * bin2time)
+            self.savdat[section]['counts'] = zeros((self.sweep['count'], sec['duration']), dtype = int)
 
-                    if saveplot == True:
+            for i in arange(self.sweep['count']):
+                for j in arange(sec['duration']):
+                    self.savdat[section]['counts'][i,j] = self.data[k][sec['duration']*i+j]
+
+            for i,roi in enumerate(sec['ROI_list']):
+                roiname = roi['name']
+                
+                if roi['axis'] == time_axis:
+                    self.savdat[section][roiname] = zeros(self.sweep['count'], dtype = int)
+                    
+                    for j in arange(self.sweep['count']):
+                        counts = 0
+                        for l in arange(roi['start_index'],roi['start_index']+roi['length']):
+                            counts += self.data[k][sec['duration']*j+l]
+                        self.savdat[section][roiname][j] = counts
+
+                    if do_plot:
                         fig = plt.figure()
-                        dat = fig.add_subplot(111)
-                        x = arange(0,self.sweep['count'])*self.sweep['incr']+self.sweep['start']
-                        y = self.data[k]
-                        dat = dat.plot(x,y,'r.')
-                        plt.xlabel(self.sweep['name'])
+                        ax = plt.subplot(111)
+                        ax.plot(self.savdat[section][swname], 
+                                self.savdat[section][roiname], 'o')
+                        plt.xlabel(swname)
                         plt.ylabel('counts')
-                        plt.title(section)
-                        fig.savefig(filename+'.png')
+                        figs['%s_vs_%s' % (roiname, swname)] = fig                    
 
-                if self.sections[k]['mode'] == time_axis:
-                    filename = path+self.name+'_'+self.sections[k]['name']+'_vs_time'
-                    result=open(filename + '.dat', 'w')
-                    result.write('# measurement name: %s\n'%self.name)
-                    result.write('# section name: %s\n'%section)
-                    result.write('# section type: time-axis\n')
-                    result.write('# 1st column: time (ns)\n')
-                    result.write('# 2st column: counts\n')
-                    result.write('#\n')
-                    for i in arange(0,self.sections[k]['duration']):
-                        result.write('%.1f\t%s\n'%(0.004*2**self.sections[k]['binsize']*(self.sections[k]['offset']+i), self.data[k][i]))
-                    result.close()
+                elif roi['axis'] == sweep_axis:
+                    self.savdat[section][roiname] = zeros(sec['duration'], dtype = int)
 
-                    if saveplot == True:
+                    for j in arange(sec['duration']):
+                        counts = 0
+                        for l in arange(roi['start_index'],roi['start_index']+roi['length']):
+                            counts += self.data[k][sec['duration']*l+j]
+                        self.savdat[section][roiname][j] = counts
+
+                    if do_plot:
                         fig = plt.figure()
-                        dat = fig.add_subplot(111)
-                        x = (arange(0,self.sections[k]['duration'])+self.sections[k]['offset'])*0.004*2**self.sections[k]['binsize']
-                        y = self.data[k]
-                        dat = dat.plot(x,y,'r.')
-                        plt.xlabel('time (ns)')
+                        ax = plt.subplot(111)
+                        ax.plot(self.savdat[section]['time'], 
+                                self.savdat[section][roiname], 'o')
+                        plt.xlabel(swname)
                         plt.ylabel('counts')
-                        plt.title(section)
-                        fig.savefig(filename+'.png')
+                        figs['%s_vs_%s' % (roiname, 'time')] = fig
 
-                if self.sections[k]['mode'] == repetition_axis:
-                    filename = path+self.name+'_'+self.sections[k]['name']+'_vs_repetition'
-                    result=open(filename + '.dat', 'w')
-                    result.write('# measurement name: %s\n'%self.name)
-                    result.write('# section name: %s\n'%section)
-                    result.write('# section type: repetition-axis\n')
-                    result.write('# 1st column: repetition\n')
-                    result.write('# 2st column: counts\n')
-                    result.write('#\n')
-                    for i in arange(0,self.repetitions['count']):
-                        result.write('%s\t%s\n'%(i, self.data[k][i]))
-                    result.close()
+        if bool(sec['mode'] == sweep_axis+repetition_axis):
+            self.savdat[section][swname] = (arange(0,self.sweep['count'])*self.sweep['incr']+self.sweep['start'])
+            self.savdat[section]['repetitions'] = arange(self.repetitions['count'])
+            self.savdat[section]['counts'] = zeros((self.sweep['count'],self.repetitions['count']), dtype = int)
+            for i in arange(0,self.sweep['count']):
+                for j in arange(0,self.repetitions['count']):
+                    self.savdat[section]['counts'][i,j] = self.data[k][self.sweep['count']*j+i]
 
-                    if saveplot == True:
-                        fig = plt.figure()
-                        dat = fig.add_subplot(111)
-                        x = (arange(0,self.repetitions['count'])+1)
-                        y = self.data[k]
-                        dat = dat.plot(x,y,'r.')
-                        plt.xlabel('repetiton')
-                        plt.ylabel('counts')
-                        plt.title(section)
-                        fig.savefig(filename+'.png')
+            for i,roi in enumerate(sec['ROI_list']):
+                roiname = roi['name']
 
-                if self.sections[k]['mode'] == sweep_axis+time_axis:
-                    filename = path+self.name+'_'+self.sections[k]['name']+'_vs_'+self.sweep['name']+'_vs_time'
-                    result=open(filename + '.dat', 'w')
-                    result.write('# measurement name: %s\n'%self.name)
-                    result.write('# section name: %s\n'%section)
-                    result.write('# section type: sweep vs time\n')
-                    result.write('# sweep name: %s\n'%self.sweep['name'])
-                    result.write('#\n')
-                    result.write('# columns: %s\n'%self.sections[k]['duration'])
-                    result.write('# bin size: %s\n'%(0.004*2**self.sections[k]['binsize']))
-                    result.write('# 1st column: %s ns\n'%(0.004*2**self.sections[k]['binsize']*(self.sections[k]['offset'])))
-                    result.write('# last column: %s ns\n'%(0.004*2**self.sections[k]['binsize']*(self.sections[k]['offset']\
-                            +self.sections[k]['duration']-1)))
-                    result.write('#\n')
-                    result.write('# rows: %s \n'%self.sweep['count'])
-                    result.write('# sweep step size: %s\n'%self.sweep['incr'])
-                    result.write('# 1st row: %s\n'%self.sweep['start'])
-                    result.write('# last row: %s\n'%(self.sweep['start']+self.sweep['incr']*(self.sweep['count']-1)))
-                    result.write('#\n')
+                if roi['axis'] == repetition_axis:
+                    self.savdat[section][roiname] = zeros(self.sweep['count'], dtype = int)
+
                     for i in arange(0,self.sweep['count']):
-                        result.write('%s'%(self.data[k][self.sections[k]['duration']*i]))
-                        for j in arange(1,self.sections[k]['duration']):
-                            result.write('\t%s'%(self.data[k][self.sections[k]['duration']*i+j]))
-                        result.write('\n')
-                    result.close()
-                            
-                    data2D = zeros((self.sweep['count'],self.sections[k]['duration']), dtype = int)
-                    for i in arange(0,self.sweep['count']):
-                        for j in arange(0,self.sections[k]['duration']):
-                            data2D[i,j] = self.data[k][self.sections[k]['duration']*i+j]
-                    x = (arange(0,self.sections[k]['duration']+1)+self.sections[k]['offset'])*0.004*2**self.sections[k]['binsize']
-                    y = arange(0,self.sweep['count']+1)*self.sweep['incr']+self.sweep['start']
-                    if saveplot == True:
-                        fig = plt.figure()
-                        dat = fig.add_subplot(111)
-                        dat = dat.pcolor(x,y,data2D,cmap = 'hot')
-                        plt.xlabel('time (ns)')
-                        plt.ylabel(self.sweep['name'])
-                        plt.title(self.name+' - '+section)
-                        fig.savefig(filename+'.png')
-                    for l in arange(0,len(self.sections[k]['ROI_list'])):
-                        ROI = self.sections[k]['ROI_list'][l]
-                        if ROI['axis'] == time_axis:
-                            data1D =  zeros(self.sweep['count'], dtype = int)
-                            filename = path+self.name+'_'+self.sections[k]['name']+'_vs_'+self.sweep['name']+'_ROI_'+ROI['name']
-                            result=open(filename+'.dat', 'w')
-                            result.write('# measurement name: %s\n'%self.name)
-                            result.write('# section name: %s\n'%section)
-                            result.write('# section type: sweep vs time\n')
-                            result.write('# sweep name: %s\n'%self.sweep['name'])
-                            result.write('#\n')
-                            result.write('# ROI name: %s\n'%ROI['name'])
-                            result.write('# ROI type: time-axis\n')
-                            result.write('# ROI start: %s ns\n'%(0.004*2**self.sections[k]['binsize']*(self.sections[k]['offset']\
-                                    +ROI['start_index'])))
-                            result.write('# ROI end: %s ns\n'%(0.004*2**self.sections[k]['binsize']*(self.sections[k]['offset']\
-                                    +ROI['start_index']+ROI['length']-1)))
-                            result.write('#\n')
-                            result.write('# rows: %s \n'%self.sweep['count'])
-                            result.write('# sweep step size: %s\n'%self.sweep['incr'])
-                            result.write('# 1st row: %s\n'%self.sweep['start'])
-                            result.write('# last row: %s\n'%(self.sweep['start']+self.sweep['incr']*(self.sweep['count']-1)))
-                            result.write('#\n')
-                            for i in arange(0,self.sweep['count']):
-                                counts = 0
-                                for j in arange(ROI['start_index'],ROI['start_index']+ROI['length']):
-                                    counts += self.data[k][self.sections[k]['duration']*i+j]
-                                data1D[i] = counts
-                                result.write('%s\t%s\n'%(i*self.sweep['incr']+self.sweep['start'],counts))
-                            result.close()
-                            if saveplot == True:
-                                plt.clf()
-                                fig = plt.figure()
-                                dat = fig.add_subplot(111)
-                                x = arange(0,self.sweep['count'])*self.sweep['incr']+self.sweep['start']
-                                dat = dat.plot(x,data1D,'r.')
-                                plt.xlabel(self.sweep['name'])
-                                plt.ylabel('counts')
-                                plt.title(section)
-                                fig.savefig(filename+'.png')
-                        if ROI['axis'] == sweep_axis:
-                            data1D =  zeros(self.sections[k]['duration'], dtype = int)
-                            filename = path+self.name+'_'+self.sections[k]['name']+'_vs_time_ROI_'+ROI['name']
-                            result=open(filename+'.dat', 'w')
-                            for j in arange(0,self.sections[k]['duration']):
-                                counts = 0
-                                for i in arange(ROI['start_index'],ROI['start_index']+ROI['length']):
-                                    counts += self.data[k][self.sections[k]['duration']*i+j]
-                                data1D[j] = counts
-                                result.write('%s\n'%counts)
-                            result.close()
-                            if saveplot == True:
-                                plt.clf()
-                                fig = plt.figure()
-                                dat = fig.add_subplot(111)
-                                x = (arange(0,self.sections[k]['duration'])+self.sections[k]['offset'])*0.004*2**self.sections[k]['binsize']
-                                dat = dat.plot(x,data1D,'r.')
-                                plt.xlabel('time (ns)')
-                                plt.ylabel('counts')
-                                plt.title(section)
-                                fig.savefig(filename+'.png')
+                        counts = 0
+                        for j in arange(roi['start_index'],roi['start_index']+roi['length']):
+                            counts += self.data[k][self.sweep['count']*j+i]
+                        self.savdat[section][roiname][i] = counts
 
-                if self.sections[k]['mode'] == sweep_axis+repetition_axis:
-                    filename = path+self.name+'_'+self.sections[k]['name']+'_vs_'+self.sweep['name']+'_vs_repetition'
-                    result=open(filename+'.dat', 'w')
-                    result.write('# measurement name: %s\n'%self.name)
-                    result.write('# section name: %s\n'%section)
-                    result.write('# section type: sweep vs repetitions\n')
-                    result.write('# sweep name: %s\n'%self.sweep['name'])
-                    result.write('#\n')
-                    result.write('# columns: %s\n'%self.repetitions['count'])
-                    result.write('#\n')
-                    result.write('# rows: %s \n'%self.sweep['count'])
-                    result.write('# sweep step size: %s\n'%self.sweep['incr'])
-                    result.write('# 1st row: %s\n'%self.sweep['start'])
-                    result.write('# last row: %s\n'%(self.sweep['start']+self.sweep['incr']*(self.sweep['count']-1)))
-                    result.write('#\n')
-                    for i in arange(0,self.sweep['count']):
-                        result.write('%s'%(self.data[k][i]))
-                        for j in arange(1,self.repetitions['count']):
-                            result.write('\t%s'%(self.data[k][self.sweep['count']*j+i]))
-                        result.write('\n')
-                    result.close()
-                    data2D = zeros((self.sweep['count'],self.repetitions['count']), dtype = int)
-                    for i in arange(0,self.sweep['count']):
-                        for j in arange(0,self.repetitions['count']):
-                            data2D[i,j] = self.data[k][self.sweep['count']*j+i]
-                    x = arange(0,self.repetitions['count']+1)
-                    y = arange(0,self.sweep['count']+1)*self.sweep['incr']+self.sweep['start']
-                    if saveplot == True:
-                        fig = plt.figure()
-                        dat = fig.add_subplot(111)
-                        dat = dat.pcolor(x,y,data2D,cmap = 'hot')
-                        plt.xlabel('repetition')
-                        plt.ylabel(self.sweep['name'])
-                        plt.title(self.name+' - '+section)
-                        fig.savefig(filename+'.png')
+                if roi['axis'] == sweep_axis:
+                    self.savdat[section][roiname] = zeros(self.repetitions['count'], dtype = int)
 
-                    for l in arange(0,len(self.sections[k]['ROI_list'])):
-                        ROI = self.sections[k]['ROI_list'][l]
-                        if ROI['axis'] == repetition_axis:
-                            filename = path+self.name+'_'+self.sections[k]['name']+'_vs_'+self.sweep['name']+'_ROI_'+ROI['name']
-                            result=open(filename+'.dat', 'w')
-                            for i in arange(0,self.sweep['count']):
-                                counts = 0
-                                for j in arange(ROI['start_index'],ROI['start_index']+ROI['length']):
-                                    counts += self.data[k][self.sweep['count']*j+i]
-                                result.write('%s\n'%counts)
-                            result.close()
-                        if ROI['axis'] == sweep_axis:
-                            filename = path+self.name+'_'+self.sections[k]['name']+'_vs_repetitions_ROI_'+ROI['name']
-                            result=open(filename+'.dat', 'w')
-                            for j in arange(0,self.repetitions['count']):
-                                counts = 0
-                                for i in arange(0,ROI['start_index'],ROI['start_index']+ROI['length']):
-                                    counts += self.data[k][self.sweep['count']*j+i]
-                                result.write('%s\n'%counts)
-                            result.close()
+                    for j in arange(0,self.repetitions['count']):
+                        counts = 0
+                        for i in arange(0,roi['start_index'],roi['start_index']+roi['length']):
+                            counts += self.data[k][self.sweep['count']*j+i]
+                        self.savdat[section][roiname][j] = counts
 
-                if self.sections[k]['mode'] == time_axis+repetition_axis:
-                    filename = path+self.name+'_'+self.sections[k]['name']+'_vs_time_vs_repetition'
-                    result=open(filename+'.dat', 'w')
-                    result.write('# measurement name: %s\n'%self.name)
-                    result.write('# section name: %s\n'%section)
-                    result.write('# section type: time vs repetition\n')
-                    result.write('#\n')
-                    result.write('# columns: %s\n'%self.repetitions['count'])
-                    result.write('#\n')
-                    result.write('# rows: %s\n'%self.sections[k]['duration'])
-                    result.write('# bin size: %s\n'%(0.004*2**self.sections[k]['binsize']))
-                    result.write('# 1st row: %s ns\n'%(0.004*2**self.sections[k]['binsize']*(self.sections[k]['offset'])))
-                    result.write('# last row: %s ns\n'%(0.004*2**self.sections[k]['binsize']*(self.sections[k]['offset']\
-                            +self.sections[k]['duration']-1)))
-                    result.write('#\n')
-                    for i in arange(0,self.sections[k]['duration']):
-                        result.write('%s'%(self.data[k][i]))
-                        for j in arange(1,self.repetitions['count']):
-                            result.write('\t%s'%(self.data[k][self.sections[k]['duration']*j+i]))
-                        result.write('\n')
-                    result.close()
+        
+        if bool(sec['mode'] == time_axis+repetition_axis):
+            self.savdat[section]['repetitions'] = arange(self.repetitions['count'])
+            self.savdat[section]['time'] = arange(sec['offset'], sec['duration']+sec['offset']) * bin2time
+            self.savdat[section]['counts'] = zeros((self.sections[k]['duration'],self.repetitions['count']), dtype = int)
+            for i in arange(0,self.sections[k]['duration']):
+                for j in arange(0,self.repetitions['count']):
+                    self.savdat[section]['counts'][i,j] = self.data[k][sec['duration']*j+i]
 
-                    data2D = zeros((self.sections[k]['duration'],self.repetitions['count']), dtype = int)
-                    for i in arange(0,self.sections[k]['duration']):
-                        for j in arange(0,self.repetitions['count']):
-                            data2D[i,j] = self.data[k][self.sections[k]['duration']*j+i]
-                    x = arange(0,self.repetitions['count']+1)
-                    y = (arange(0,self.sections[k]['duration']+1)+self.sections[k]['offset'])*0.004*2**self.sections[k]['binsize']
-                    if saveplot == True:
-                        fig = plt.figure()
-                        dat = fig.add_subplot(111)
-                        dat = dat.pcolor(x,y,data2D,cmap = 'hot')
-                        plt.xlabel('repetition')
-                        plt.ylabel('time (ns)')
-                        plt.title(self.name+' - '+section)
-                        fig.savefig(filename+'.png')
+            
+            # FIXME check how we walk through the data; guess there's a bug...
+            for i,roi in enumerate(sec['ROI_list']):
+                roiname = roi['name']
 
-                    for l in arange(0,len(self.sections[k]['ROI_list'])):
-                        ROI = self.sections[k]['ROI_list'][l]
-                        if ROI['axis'] == repetition_axis:
-                            filename + path+self.name+'_'+self.sections[k]['name']+'_vs_time_ROI_'+ROI['name']
-                            result=open(filename+'.dat', 'w')
-                            for j in arange(0,self.repetitions['count']):
-                                counts = 0
-                                for i in arange(ROI['start_index'],ROI['start_index']+ROI['length']):
-                                    counts += self.data[k][self.sections[k]['duration']*j+i]
-                                result.write('%s\n'%counts)
-                            result.close()
-                        if ROI['axis'] == time_axis:
-                            filename = path+self.name+'_'+self.sections[k]['name']+'_vs_repetitions_ROI_'+ROI['name']
-                            result=open(filename+'.dat', 'w')
-                            for i in arange(0,self.sections[k]['duration']):
-                                counts = 0
-                                for j in arange(0,ROI['start_index'],ROI['start_index']+ROI['length']):
-                                    counts += self.data[k][self.sweep['count']*j+i]
-                                result.write('%s\n'%counts)
-                            result.close()
+                if roi['axis'] == repetition_axis:
+                    self.savdat[section][roiname] = zeros(self.sec['duration'], dtype = int)
+
+                    for i in arange(0,sec['duration']):
+                        counts = 0
+                        for j in arange(0,roi['start_index'],roi['start_index']+roi['length']):
+                            counts += self.data[k][self.sweep['count']*j+i]
+                        self.savdat[section][roiname][i] = counts
+
+                if roi['axis'] == time_axis:
+                    self.savdat[section][roiname] = zeros(self.repetitions['count'], dtype = int)
+
+                    for j in arange(0,self.repetitions['count']):
+                        counts = 0
+                        for i in arange(roi['start_index'],roi['start_index']+roi['length']):
+                            counts += self.data[k][sec['duration']*j+i]
+                        self.savdat[section][roiname][j] = counts
+        
+        sectiondat = self.savdat[section]
+        if 'idx_increment' not in kw:
+            kw['idx_increment'] = False
+
+        self.save_dataset(name=section, do_plot=False, 
+                txt={'statistics': stat_str }, data=sectiondat, **kw)
+
+        for fn in figs:
+            figs[fn].savefig(self.data_basepath + '_%s.png' % fn)
+
+        return True
 
