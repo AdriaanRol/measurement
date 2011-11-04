@@ -1,0 +1,205 @@
+<?xml version="1.0"?>
+<CONFIG>
+  <ProjectOptions>
+    <PathDelim Value="\"/>
+    <Version Value="7"/>
+    <General>
+      <Flags>
+        <MainUnitHasCreateFormStatements Value="False"/>
+        <MainUnitHasTitleStatement Value="False"/>
+      </Flags>
+      <MainUnit Value="0"/>
+      <TargetFileExt Value=".exe"/>
+      <Title Value="pq_tttr"/>
+      <Icon Value="0"/>
+      <UseXPManifest Value="True"/>
+      <ActiveEditorIndexAtStart Value="0"/>
+    </General>
+    <PublishOptions>
+      <Version Value="2"/>
+      <IncludeFileFilter Value="*.(pas|pp|inc|lfm|lpr|lrs|lpi|lpk|sh|xml)"/>
+      <ExcludeFileFilter Value="*.(bak|ppu|o|so);*~;backup"/>
+    </PublishOptions>
+    <RunParams>
+      <local>
+        <FormatVersion Value="1"/>
+        <LaunchingApplication PathPlusParams="/usr/X11R6/bin/xterm -T 'Lazarus Run Output' -e $(LazarusDir)/tools/runwait.sh $(TargetCmdLine)"/>
+      </local>
+    </RunParams>
+    <Units Count="2">
+      <Unit0>
+        <Filename Value="pq_tttr.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="pq_tttr"/>
+        <CursorPos X="1" Y="75"/>
+        <TopLine Value="32"/>
+        <EditorIndex Value="0"/>
+        <UsageCount Value="20"/>
+        <Loaded Value="True"/>
+      </Unit0>
+      <Unit1>
+        <Filename Value="pq_tttr_functions.pas"/>
+        <UnitName Value="pq_tttr_functions"/>
+        <CursorPos X="38" Y="1229"/>
+        <TopLine Value="1204"/>
+        <EditorIndex Value="1"/>
+        <UsageCount Value="10"/>
+        <Loaded Value="True"/>
+      </Unit1>
+    </Units>
+    <JumpHistory Count="30" HistoryIndex="29">
+      <Position1>
+        <Filename Value="pq_tttr_functions.pas"/>
+        <Caret Line="1204" Column="50" TopLine="1184"/>
+      </Position1>
+      <Position2>
+        <Filename Value="pq_tttr_functions.pas"/>
+        <Caret Line="1209" Column="34" TopLine="1189"/>
+      </Position2>
+      <Position3>
+        <Filename Value="pq_tttr_functions.pas"/>
+        <Caret Line="1204" Column="65" TopLine="1190"/>
+      </Position3>
+      <Position4>
+        <Filename Value="pq_tttr_functions.pas"/>
+        <Caret Line="337" Column="37" TopLine="299"/>
+      </Position4>
+      <Position5>
+        <Filename Value="pq_tttr_functions.pas"/>
+        <Caret Line="338" Column="15" TopLine="319"/>
+      </Position5>
+      <Position6>
+        <Filename Value="pq_tttr_functions.pas"/>
+        <Caret Line="811" Column="15" TopLine="779"/>
+      </Position6>
+      <Position7>
+        <Filename Value="pq_tttr_functions.pas"/>
+        <Caret Line="1030" Column="15" TopLine="998"/>
+      </Position7>
+      <Position8>
+        <Filename Value="pq_tttr_functions.pas"/>
+        <Caret Line="1135" Column="27" TopLine="1103"/>
+      </Position8>
+      <Position9>
+        <Filename Value="pq_tttr_functions.pas"/>
+        <Caret Line="1142" Column="37" TopLine="1110"/>
+      </Position9>
+      <Position10>
+        <Filename Value="pq_tttr_functions.pas"/>
+        <Caret Line="1384" Column="15" TopLine="1352"/>
+      </Position10>
+      <Position11>
+        <Filename Value="pq_tttr_functions.pas"/>
+        <Caret Line="1608" Column="32" TopLine="1569"/>
+      </Position11>
+      <Position12>
+        <Filename Value="pq_tttr_functions.pas"/>
+        <Caret Line="1089" Column="43" TopLine="1059"/>
+      </Position12>
+      <Position13>
+        <Filename Value="pq_tttr_functions.pas"/>
+        <Caret Line="376" Column="3" TopLine="341"/>
+      </Position13>
+      <Position14>
+        <Filename Value="pq_tttr_functions.pas"/>
+        <Caret Line="993" Column="35" TopLine="873"/>
+      </Position14>
+      <Position15>
+        <Filename Value="pq_tttr_functions.pas"/>
+        <Caret Line="1068" Column="18" TopLine="1036"/>
+      </Position15>
+      <Position16>
+        <Filename Value="pq_tttr_functions.pas"/>
+        <Caret Line="1229" Column="38" TopLine="1197"/>
+      </Position16>
+      <Position17>
+        <Filename Value="pq_tttr_functions.pas"/>
+        <Caret Line="1235" Column="38" TopLine="1203"/>
+      </Position17>
+      <Position18>
+        <Filename Value="pq_tttr_functions.pas"/>
+        <Caret Line="61" Column="1" TopLine="61"/>
+      </Position18>
+      <Position19>
+        <Filename Value="pq_tttr_functions.pas"/>
+        <Caret Line="993" Column="18" TopLine="961"/>
+      </Position19>
+      <Position20>
+        <Filename Value="pq_tttr_functions.pas"/>
+        <Caret Line="1068" Column="18" TopLine="1036"/>
+      </Position20>
+      <Position21>
+        <Filename Value="pq_tttr_functions.pas"/>
+        <Caret Line="1229" Column="38" TopLine="1197"/>
+      </Position21>
+      <Position22>
+        <Filename Value="pq_tttr_functions.pas"/>
+        <Caret Line="1" Column="5" TopLine="1"/>
+      </Position22>
+      <Position23>
+        <Filename Value="pq_tttr_functions.pas"/>
+        <Caret Line="1622" Column="79" TopLine="1583"/>
+      </Position23>
+      <Position24>
+        <Filename Value="pq_tttr_functions.pas"/>
+        <Caret Line="1302" Column="1" TopLine="1276"/>
+      </Position24>
+      <Position25>
+        <Filename Value="pq_tttr_functions.pas"/>
+        <Caret Line="1314" Column="36" TopLine="1280"/>
+      </Position25>
+      <Position26>
+        <Filename Value="pq_tttr_functions.pas"/>
+        <Caret Line="1" Column="1" TopLine="1"/>
+      </Position26>
+      <Position27>
+        <Filename Value="pq_tttr_functions.pas"/>
+        <Caret Line="993" Column="18" TopLine="971"/>
+      </Position27>
+      <Position28>
+        <Filename Value="pq_tttr_functions.pas"/>
+        <Caret Line="1068" Column="18" TopLine="1046"/>
+      </Position28>
+      <Position29>
+        <Filename Value="pq_tttr.pas"/>
+        <Caret Line="32" Column="34" TopLine="16"/>
+      </Position29>
+      <Position30>
+        <Filename Value="pq_tttr.pas"/>
+        <Caret Line="75" Column="1" TopLine="32"/>
+      </Position30>
+    </JumpHistory>
+  </ProjectOptions>
+  <CompilerOptions>
+    <Version Value="8"/>
+    <PathDelim Value="\"/>
+    <Target>
+      <Filename Value="pq_tttr"/>
+    </Target>
+    <SearchPaths>
+      <IncludeFiles Value="$(ProjOutDir)\"/>
+      <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
+    </SearchPaths>
+    <Linking>
+      <Options>
+        <ExecutableType Value="Library"/>
+      </Options>
+    </Linking>
+    <Other>
+      <CompilerPath Value="$(CompPath)"/>
+    </Other>
+  </CompilerOptions>
+  <Debugging>
+    <Exceptions Count="3">
+      <Item1>
+        <Name Value="EAbort"/>
+      </Item1>
+      <Item2>
+        <Name Value="ECodetoolError"/>
+      </Item2>
+      <Item3>
+        <Name Value="EFOpenError"/>
+      </Item3>
+    </Exceptions>
+  </Debugging>
+</CONFIG>
