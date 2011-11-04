@@ -21,6 +21,7 @@ import visa
 import types
 import logging
 import numpy
+from time import sleep
 
 class RS_SMB100(Instrument):
     '''
@@ -49,7 +50,8 @@ class RS_SMB100(Instrument):
         Instrument.__init__(self, name, tags=['physical'])
 
         self._address = address
-        self._visainstrument = visa.instrument(self._address)
+        self._visainstrument = visa.instrument(self._address, timeout=300)
+        print ' SMB timeout set to: %s s'%self._visainstrument.timeout
 
         self.add_parameter('frequency', type=types.FloatType,
             flags=Instrument.FLAG_GETSET | Instrument.FLAG_GET_AFTER_SET,
@@ -177,7 +179,35 @@ class RS_SMB100(Instrument):
         
         #self._visainstrument.write('')
 
+    def perform_internal_adjustments(self,all_f = False,cal_IQ_mod=True):
+        tmp_pulm = self.get_pulm()
+        try:
+            tmp_iq = self.get_iq()
+        except:
+            tmp_iq = False
+
+        status=self.get_status()
+        self.off()
+        if all_f:
+            s=self._visainstrument.ask('CAL:ALL:MEAS?')
+        else:
+            s=self._visainstrument.ask('CAL:FREQ:MEAS?')
+            print 'Frequency calibrated'
+            s=self._visainstrument.ask('CAL:LEV:MEAS?')
+            print 'Level calibrated'
+            if cal_IQ_mod:
+                s=self._visainstrument.ask('CAL:IQM:LOC?')
+                print 'IQ modulator calibrated'
         
+        self.set_status('off')
+        self.set_pulm('off')
+        sleep(0.1)
+        # self.set_pulm(tmp_pulm) 
+
+        if tmp_iq:
+            self.set_iq('off')
+            sleep(0.1)
+            # self.set_iq(tmp_iq)
         
         
         
