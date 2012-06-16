@@ -50,7 +50,7 @@ class ADwin_Pro_II(Instrument): #1
 
 
     def _load_dll(self): #3
-        #print __name__ +' : Loading adwin32.dll'
+        print __name__ +' : Loading adwin32.dll'
         WINDIR=os.environ['WINDIR']
         self._adwin32 = windll.LoadLibrary(WINDIR+'\\adwin32')
         ErrorMsg=c_int32(0)
@@ -119,9 +119,12 @@ class ADwin_Pro_II(Instrument): #1
             logging.warning(__name__ + ' : error in ADwin.Get_Data_Long: %s'%ErrorMsg.value)
         return data
 
-    def Set_Data_Long(self, data = numpy.array, index = numpy.int32, start = numpy.int32, count = numpy.int32):
+    def Set_Data_Long(self, data=numpy.array, index=numpy.int32, 
+            start=numpy.int32, count=numpy.int32):
+        
         ErrorMsg=c_int32(0)
-  	success = self._adwin32.e_Set_Data(data.ctypes.data,2,index,start,count, self._address,ctypes.byref(ErrorMsg))
+        success = self._adwin32.e_Set_Data(data.ctypes.data,2,index,start,
+                count, self._address,ctypes.byref(ErrorMsg))
         if ErrorMsg.value != 0:
             logging.warning(__name__ + ' : error in ADwin.Set_Data_Long: %s'%ErrorMsg.value)
 
@@ -133,16 +136,16 @@ class ADwin_Pro_II(Instrument): #1
             logging.warning(__name__ + ' : error in ADwin.Get_Data_Float: %s'%ErrorMsg.value)
         return data
 
-    def Set_Data_Float(self, data = numpy.array, index = numpy.int32, start = numpy.int32, count = numpy.int32):
-        ErrorMsg=c_int32(0)
-
-	# Auto type conversion
-	
-	d=numpy.array(data,numpy.single)
-        
-	success = self._adwin32.e_Set_Data(d.ctypes.data,5,index,start,count, self._address,ctypes.byref(ErrorMsg))
+    def Set_Data_Float(self, data=numpy.array, index=numpy.int32, 
+            start=numpy.int32, count=numpy.int32):
+        ErrorMsg=c_int32(0)        
+        # Auto type conversion
+        d=numpy.array(data,numpy.single)
+        success = self._adwin32.e_Set_Data(d.ctypes.data,5,index,start,count,
+                self._address,ctypes.byref(ErrorMsg))
         if ErrorMsg.value != 0:
-            logging.warning(__name__ + ' : error in ADwin.Set_Data_Float: %s'%ErrorMsg.value)
+            logging.warning(__name__ + \
+                    ' : error in ADwin.Set_Data_Float: %s'%ErrorMsg.value)
 
     def Get_Par(self,index):
         ErrorMsg=c_int32(0)
@@ -210,12 +213,12 @@ class ADwin_Pro_II(Instrument): #1
 #            sleep(0.01)
 #
 #
-#    def Get_Error_Text(self, ErrorCode):
-#        text = ctypes.create_string_buffer(256)
-#        Text = ctypes.byref(text)
-#        self._adwin32.ADGetErrorText(ErrorCode,pText,256)
-#        print(text.value)
-#	return text.value
+    def Get_Error_Text(self, ErrorCode):
+        text = ctypes.create_string_buffer(256)
+        Text = ctypes.byref(text)
+        self._adwin32.ADGetErrorText(ErrorCode,Text,256)
+        print(text.value)
+        return text.value
 #
 #    def Pulse_DAC_Voltage(self, DAC, Voltage_pulse, Voltage_off, duration):   # duration in microseconds
 #        while self.Process_Status(6) > 0:

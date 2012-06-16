@@ -35,13 +35,15 @@ import qt
 
         
 class optimize1d_counts(CyclopeanInstrument):
-    def __init__(self, name):
+    def __init__(self, name, linescan, mos, counters):
         CyclopeanInstrument.__init__(self, name, tags=[])
 
-        self._linescan = qt.instruments['linescan_counts']
-        self._mos = qt.instruments['master_of_space']
-        self._counters = qt.instruments['counters']
+        self._linescan = qt.instruments[linescan]
+        self._mos = qt.instruments[mos]
+        self._counters = qt.instruments[counters]
+        print counters
         self._counter_was_running = False
+        
         self.add_parameter('dimension',
                 type=types.StringType,
                 flags=Instrument.FLAG_GETSET)
@@ -100,7 +102,11 @@ class optimize1d_counts(CyclopeanInstrument):
         self._fitdata = []
         self._points = []
         self._busy = False
-        self._dimension = 'stage_x'
+        self._dimension = 'x'
+    
+    def get_all(self):
+        for n in self.get_parameter_names():
+            self.get(n)
         
     # get and set functions
     def do_get_dimension(self):
@@ -154,24 +160,35 @@ class optimize1d_counts(CyclopeanInstrument):
 
     # blocking, for usage in scripts, etc.
     def run(self, **kw):
-	print('begin of run')    
+	    
+        # print('begin of run')    
+        
         self._dimension = kw.pop('dimension', self._dimension)
         self._scan_length = kw.pop('scan_length', self._scan_length)
         self._nr_of_points = kw.pop('nr_of_points', self._nr_of_points)
         self._gaussian_fit = kw.pop('gaussian_fit', self._gaussian_fit)
         self._counter = kw.pop('counter', self._counter)
         self._pixel_time = kw.pop('pixel_time', self._pixel_time)
-        print 'begin prepare'
+        self.get_dimension()
+        self.get_scan_length()
+        self.get_nr_of_points()
+        self.get_gaussian_fit()
+        self.get_counter()
+        self.get_pixel_time()
+        
         self._prepare()
-        print 'end prepare'
-	print 'setting si running true'
-        self._linescan.set_is_running(True)
-        qt.msleep(0.1)
+       
         while self._linescan.get_is_running():
             qt.msleep(0.1)
-	print 'end of run'
+        
+        self._linescan.set_is_running(True)
+        qt.msleep(0.1)
+        
+        while self._linescan.get_is_running():
+            qt.msleep(0.1)
+        
         return self._process_fit()
-    	#return 'run finished'	
+    
     ### internal functions
     def _start_running(self):
         CyclopeanInstrument._start_running(self)
@@ -189,8 +206,8 @@ class optimize1d_counts(CyclopeanInstrument):
         if self._counter_was_running:
             self._counters.set_is_running(True)
             self._counter_was_running = False
-	self._process_fit()
-	self._save()
+	    self._process_fit()
+	    self._save()
 
     def _sampling_event(self):
         if not self._is_running:
@@ -207,26 +224,32 @@ class optimize1d_counts(CyclopeanInstrument):
     
     def _prepare(self):
         print '(%s) run optimize...' % self._dimension
-	dimname=self._dimension
+	    
+        dimname=self._dimension
 
         self._opt_pos = getattr(self._mos, 'get_'+self._dimension)()
 
         l = self._scan_length
         self._x0, self._x1 = self._opt_pos - l/2, self._opt_pos + l/2
         self._linescan.set_dimensions([self._dimension])
-	self._linescan.set_starts([self._x0])
+        self._linescan.set_starts([self._x0])
         self._linescan.set_stops([self._x1])
         self._linescan.set_steps(self._nr_of_points)
         self._linescan.set_px_time(self._pixel_time)
-	
+        # self._mos.set(self._dimension, value=self._x0)
+        # self._mos.move_to_xyz_pos([self._dimension],[self._x0])
+
+        # print self._dimension
+
+    
     def _process_fit(self):
-        # get the data
-	print('Get the data')
+        print('Get the data')
+        
         self.set_data('points', self._linescan.get_points()[0])
-	qt.msleep(0.1)
+        qt.msleep(0.1)
         self.set_data('countrates', self._linescan.get_data('countrates')\
                 [self._counter-1])
-	qt.msleep(0.1)
+        qt.msleep(0.1)
 
 
         self.reset_data('fit', (self._nr_of_points))
@@ -239,8 +262,7 @@ class optimize1d_counts(CyclopeanInstrument):
         i = cr.tolist().index(max(cr))
         self._opt_pos = p[i]
         ret = True
-	#print('Gaussian fit')
- 	#print self._gaussian_fit
+        
         if self._gaussian_fit:
             gaussian_fit = fit.fit_gaussian_with_offset(p, cr, p[i], 
                     array(cr).max(), .5, array(cr).min())
@@ -254,24 +276,23 @@ class optimize1d_counts(CyclopeanInstrument):
                 print '(%s) optimize succeeded!' % self.get_name()
             else:
                 self.set_data('fit',zeros(len(p)))
-		self._fit_result = False
+                self._fit_result = False
                 self._fit_error = False
                 ret = False
                 print '(%s) optimize failed!' % self.get_name()
-
+                self._opt_pos = p[cr.tolist().index(max(cr))]
             self.get_fit_result()
 
         #f = getattr(self._mos, 'set_'+self._dimension)
-	print self._opt_pos
-
-	if array(p).min() < self._opt_pos < array(p).max():
-		#f(self._opt_pos)
-		self._mos.move_xyz([self._dimension],[self._opt_pos])
-	else:
-		#f(p[cr.tolist().index(max(cr))])
-		self._mos.move_xyz([self._dimension],[p[cr.tolist().index(max(cr))]])
-		print'Optimum outside scan range: Position is set to local maximum'
-	
-
+        #print self._opt_pos
+        if array(p).min() < self._opt_pos < array(p).max():
+    	#f(self._opt_pos)
+            self._mos.set(self._dimension, value=self._opt_pos)
+            #self._mos.move_to_xyz_pos([self._dimension],[self._opt_pos])
+        else:
+        #f(p[cr.tolist().index(max(cr))])
+            self._mos.set(self._dimension, value=p[cr.tolist().index(max(cr))])
+            # self._mos.move_to_xyz_pos([self._dimension],[p[cr.tolist().index(max(cr))]])
+            print'Optimum outside scan range: Position is set to local maximum'
         return ret
 

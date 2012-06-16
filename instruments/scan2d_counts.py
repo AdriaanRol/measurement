@@ -12,13 +12,13 @@ from numpy import *
 import qt
 
 class scan2d_counts(scan):
-    def __init__(self, name, xdim='stage_x', ydim='stage_y'):
-        scan.__init__(self, name, linescan='linescan_counts')
+    def __init__(self, name, linescan, mos, xdim='x', ydim='y', counters=None):
+        scan.__init__(self, name, linescan, mos)
 
         self._linescan_dimensions = (xdim, ydim)
 
         # also get the counter, need to disable when linescanning
-        self._counters = qt.instruments['counters']
+        self._counters = qt.instruments[counters]
         self._counter_was_running = False
 
 
@@ -64,6 +64,11 @@ class scan2d_counts(scan):
                            type=types.IntType,
                            flags=Instrument.FLAG_GETSET,
                            )
+        #BH30-03-2012 we now need value paramater to distinguish between simple and resonant counting
+        self.add_parameter('scan_value',
+                           type=types.StringType,
+                           flags=Instrument.FLAG_GETSET,
+                           )
 
         # parameters to access the member instruments
         self.add_parameter('position', 
@@ -79,21 +84,23 @@ class scan2d_counts(scan):
         self.add_function('set_xy')
 
         # default params
-        self.set_pixel_time(500.0)
-        self.set_xstart(1.0)
-	self.set_xstop(5.0)
-        self.set_ystart(1.0)
+        self.set_pixel_time(10.0)
+        self.set_xstart(0.0)
+        self.set_xstop(5.0)
+        self.set_ystart(0.0)
         self.set_ystop(5.0)
-        self.set_xsteps(5)
-        self.set_ysteps(5)
+        self.set_xsteps(6)
+        self.set_ysteps(6)
         self.set_counter(1)
+        self.set_scan_value('counts')
+
         self._position = { 
                 'x': getattr(self._mos, 'get_'+xdim)(),
                 'y': getattr(self._mos, 'get_'+ydim)(), 
                 }
 
-        self._x = linspace(-10,10,11)
-        self._y = linspace(-10,10,11)
+        self._x = linspace(0,5,6)
+        self._y = linspace(0,5,6)
 
         # connect instruments
         def _mos_changed(unused, changes, *arg, **kw):
@@ -152,6 +159,12 @@ class scan2d_counts(scan):
     def do_get_counter(self):
         return self._counter
 
+    def do_get_scan_value(self):
+        return self.get_linescan_value()
+
+    def do_set_scan_value(self, val):
+        self.set_linescan_value(val)
+
     # get and set for instruments
     def do_get_position(self, channel):
         return self._position[channel]
@@ -185,10 +198,11 @@ class scan2d_counts(scan):
 	# internal functions
     def _start_running(self):
 
-        # make sure the counter is off.
+        # make sure the counter is off, when not in resonant counting mode
         if self._counters.get_is_running():
             self._counter_was_running = True
-            self._counters.set_is_running(False)
+            if self.get_linescan_value() != 'resonant':
+                self._counters.set_is_running(False)
 
         # first prepare params such that the underlying scan instruments
         # can understand
@@ -226,9 +240,10 @@ class scan2d_counts(scan):
 
     def _scan_finished(self):
         if self._counter_was_running:
+            self._counters.set_is_running(False)
             self._counters.set_is_running(True)
             self._counter_was_running = False
 
-	self.save()
+        self.save()
 
 

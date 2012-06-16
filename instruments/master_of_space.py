@@ -13,39 +13,73 @@ import numpy as np
 LINESCAN_CHECK_INTERVAL = 50 # [ms]
 
 class master_of_space(CyclopeanInstrument):
-    def __init__(self, name):
+    def __init__(self, name, adwin):
+        """
+        Parameters:
+            adwin : string
+                qtlab-name of the adwin instrument to be used
+        """
         CyclopeanInstrument.__init__(self, name, tags=['positioner'])
-
-        import qt
-        self._adwin = qt.instruments['adwin']
+        self._adwin = qt.instruments[adwin]
 	
+        #print 'init'
         # should not change often, hardcode is fine for now
-        self.dimensions = {
-                'stage_x' : {
-                    'dac' : 1,
+        self.rt_dimensions = {
+                'x' : {
+                    'dac' : 'atto_x',
                     'micron_per_volt' : 9.324,
                     'max_v' : 4.29,
                     'min_v' : 0.,
-                    'default' : 20.,
+                    'default' : 0.,
                     'origin' : 0.,
                     }, 
-                'stage_y' : {
-                    'dac' : 2,
+                'y' : {
+                    'dac' : 'atto_y',
                     'micron_per_volt' : 5.59,
                     'min_v' : 0.,
                     'max_v' : 4.29,
-                    'default' : 12.,
+                    'default' : 0.,
                     'origin' : 0.,
                     },
-                'front_z' : {
-                    'dac' : 3,
+                'z' : {
+                    'dac' : 'atto_z',
                     'micron_per_volt' : 9.324,
                     'max_v' : 4.29,
                     'min_v' : 0.,
-                    'default' : 20.,
+                    'default' : 0.,
                     'origin' : 0.,
                     },
                 }
+         
+        self.lt_dimensions = {
+                'x' : {
+                    'dac' : 'atto_x',
+                    'micron_per_volt' : 2.8,
+                    'max_v' : 10,
+                    'min_v' : 0.,
+                    'default' : 0.,
+                    'origin' : 0.,
+                    }, 
+                'y' : {
+                    'dac' : 'atto_y',
+                    'micron_per_volt' : 1.40,
+                    'min_v' : 0.,
+                    'max_v' : 10,
+                    'default' : 0.,
+                    'origin' : 0.,
+                    },
+                'z' : {
+                    'dac' : 'atto_z',
+                    'micron_per_volt' : 2.8,
+                    'max_v' : 10,
+                    'min_v' : 0.,
+                    'default' : 0.,
+                    'origin' : 0.,
+                    },
+                }
+        
+        self.dimensions = self.rt_dimensions
+
 
         # auto generate parameters incl set and get for all dimensions
         for d in self.dimensions:
@@ -86,6 +120,12 @@ class master_of_space(CyclopeanInstrument):
 
         self.add_function('linescan_start')
 
+        # for positioning with attocubes
+        self.add_parameter('lt_settings',
+                type=types.BooleanType,
+                flags=Instrument.FLAG_GETSET)
+        self._lt_settings = False
+        
         # managing the coordinate system
         self.add_function('set_origin')
         self.add_function('get_origin')
@@ -93,7 +133,7 @@ class master_of_space(CyclopeanInstrument):
         self.add_function('to_relative')
         self.add_function('set_relative_position')
         self.add_function('get_relative_position')
-	self.add_function('move_xyz')
+        self.add_function('move_to_xyz_pos')
 
         # markers
         self._markers = {}
@@ -108,12 +148,14 @@ class master_of_space(CyclopeanInstrument):
     # Line scan control
     def linescan_start(self, dimensions, starts, stops, steps, px_time, 
             relative=False, value='counts'):
+        #print 'linescan_start'
         
         # for now, user has to wait until scan is finished
-        if self._linescan_running or self._adwin.is_linescan_running():
+        if self.get_linescan_running() or self._adwin.is_linescan_running():
             return False
         
         self._linescan_running = True
+        self.get_linescan_running()
 
         # if we get relative coordinates, convert to absolutes first
         if relative:
@@ -122,30 +164,28 @@ class master_of_space(CyclopeanInstrument):
                 stops[i] = from_relative(dimname, stops[i])
         
         # calculate the stepping in voltages and move to the start position
+        # (Only move if v start and v stop are within allowed values)
         dacs = []
         starts_v = []
         stops_v = []
         for i, dimname in enumerate(dimensions):
             dim = self.dimensions[dimname]
             dacs.append(dim['dac'])
-            if self.dimensions[dimname]['min_v'] < starts[i] / dim['micron_per_volt'] < self.dimensions[dimname]['max_v']:
+            if self.dimensions[dimname]['min_v'] <= (starts[i]/dim['micron_per_volt']) <= self.dimensions[dimname]['max_v']:
                 starts_v.append(starts[i] / dim['micron_per_volt'])
             else:
                 starts_v.append(self.dimensions[dimname]['min_v'])
                 print "Error in master_of_space.linescan_start: Exceeding max/min voltage "
                 print starts[i] / dim['micron_per_volt']
-            if self.dimensions[dimname]['min_v'] < stops[i] / dim['micron_per_volt'] < self.dimensions[dimname]['max_v']:
+            if self.dimensions[dimname]['min_v'] <= (stops[i]/dim['micron_per_volt']) <= self.dimensions[dimname]['max_v']:
                 stops_v.append(stops[i] / dim['micron_per_volt'])
             else:
                 stops_v.append(self.dimensions[dimname]['max_v'])
                 print "Error in master_of_space.linescan_start: Exceeding max.min voltage"
                 print stops[i] / dim['micron_per_volt']            
-	    #getattr(self, 'set_'+dimname)(starts[i])
-        # wait a bit to stabilize, then start the linescan
-        time.sleep(0.05)
-	print'mos calls adwin start linescan'
-        self._adwin.start_linescan(np.array(dacs), np.array(starts_v), np.array(stops_v),
-                steps, px_time, value=value)
+
+        self._adwin.start_linescan(dacs, np.array(starts_v), np.array(stops_v),
+                steps, px_time, value=value, scan_to_start=True)
 
         # start monitoring the status
         gobject.timeout_add(LINESCAN_CHECK_INTERVAL, self._linescan_check)
@@ -158,9 +198,24 @@ class master_of_space(CyclopeanInstrument):
     def do_get_linescan_px_clock(self):
         return self._linescan_px_clock
 
+    def do_get_lt_settings(self):
+        return self._lt_settings
+
+    # FIXME should first move to save location if necessary!
+    def do_set_lt_settings(self, val):
+        if val:
+            # self._adwin.set_LT(1)
+            self.dimensions = self.lt_dimensions
+            self._lt_settings = True
+        else:
+            # self._adwin.set_LT(0)
+            self.dimensions = self.rt_dimensions
+            self._lt_settings = False
+
     # monitor the status of the linescan
     def _linescan_check(self):
-
+        #print 'linescan_check'
+        
         # first update the px clock, call get to make connects easy
         if self._adwin.get_linescan_px_clock() > self._linescan_px_clock:
             self._linescan_px_clock = self._adwin.get_linescan_px_clock()
@@ -282,26 +337,74 @@ class master_of_space(CyclopeanInstrument):
         setattr(self, 'step_'+dimname, stepfunc)
 
     # functions that do the actual work :)
+    # FIXME This might be a little specific.
     def _set_dim(self, dimname, val):
         dim = self.dimensions[dimname]
-        v = val / dim['micron_per_volt']
-        self._adwin.set_dac_voltage((dim['dac'], v))
+        self.move_to_xyz_pos([dimname], [val])
 
     def _step_dim(self, dimname, delta):
         current = getattr(self, 'get_'+dimname)()
         getattr(self, 'set_'+dimname)(current+delta)
  
+    def U_to_pos(self,dimname,val):
+        pos=[]
+        for dim in dimname:
+            pos.append(self.dimensions[dim]['micron_per_volt']*val[dimname.index(dim)])
+        return pos
+
+    def pos_to_U(self,dimname,val):
+        U = []
+        for dim in dimname:
+            U.append(val[dimname.index(dim)]/self.dimensions[dim]['micron_per_volt'])
+        return U    
+
     #Convenient extra functions
-    # FIXME this already exists; check where this is used and correct
-    def move_xyz(self, dimname, val):
-	pos=self._adwin.get_xyz_pos()
-	xyz_names=['stage_x','stage_y','front_z']
-	print dimname
-	for i in xyz_names:
-		if i in dimname:
-			print xyz_names.index(i)
-			print dimname.index(i)
-			print val
-			print pos
-			pos[xyz_names.index(i)]=val[dimname.index(i)]
-	self._adwin.move_abs_xyz(pos[0],pos[1],pos[2])
+    def move_to_pos(self, dim_name, val, speed=5000, blocking=False):
+        # print dim_name, val
+        #print 'move_to_pos'
+
+        dim = self.dimensions[dim_name]
+        dac_name = dim['dac']
+        target_voltage = val/dim['micron_per_volt']
+        if not dim['min_v'] <= target_voltage <= dim['max_v']:
+            print 'Error in mos: exceeding max/min voltage'
+            return
+
+        self._adwin.move_to_dac_voltage(dac_name, target_voltage, speed=speed,
+                blocking=blocking)
+        setattr(self, '_'+dim_name, val)
+        self.get(dim_name)
+
+    def move_to_xyz_pos(self, dim_names, vals, speed=5000, blocking=False):
+        
+        #print 'move_to_xyz_pos'
+        target_voltages = []
+        for d in ['x','y','z']:
+            dim = self.dimensions[d]     
+            try:
+                tvalt = self.get(d)/dim['micron_per_volt']
+            except:
+                tvalt = 0.
+            
+            tv = vals[dim_names.index(d)]/dim['micron_per_volt'] if d in dim_names else \
+                        tvalt
+
+            if not dim['min_v'] <= tv <= dim['max_v']:
+                print 'Error in mos: exceeding max/min voltage'
+                return
+            
+            target_voltages.append(tv)
+        
+        #print '*'
+        self._adwin.move_to_xyz_U(target_voltages, speed=speed,
+                blocking=blocking)
+        #print '**'
+        
+        for i,d in enumerate(dim_names):
+            setattr(self, '_'+d, vals[i])
+            try:
+                self.get(d)
+            except:
+                pass
+
+

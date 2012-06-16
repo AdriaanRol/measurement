@@ -4,19 +4,26 @@
 
 from instrument import Instrument
 from cyclopean_instrument import CyclopeanInstrument
+import qt
 from qt import msleep
 import types
 import time
 from numpy import *
 
 class linescan(CyclopeanInstrument):
-    def __init__(self, name):
+    def __init__(self, name, adwin, mos, *arg, **kw):
+        """
+        Parameters:
+            adwin : string
+                qtlab-name of the adwin instrument to be used
+            mos : string
+                qtlab-name of the master of space to be used
+        """
         CyclopeanInstrument.__init__(self, name, tags=['measure'])
 
         # adwin and positioner
-        import qt
-        self._adwin = qt.instruments['adwin']
-        self._mos = qt.instruments['master_of_space']
+        self._adwin = qt.instruments[adwin]
+        self._mos = qt.instruments[mos]
         self._scan_value = 'counts'
 
         # connect the mos to monitor methods
@@ -46,6 +53,11 @@ class linescan(CyclopeanInstrument):
                 flags=Instrument.FLAG_GETSET,
                 units='ms')
 
+        #BH30-03-2012 we now need value paramater to distinguish between simple and resonant counting
+        self.add_parameter('scan_value',
+                type=types.StringType,
+                flags=Instrument.FLAG_GETSET)
+
         self.add_function('get_points')
 
         self._points = ()
@@ -55,6 +67,7 @@ class linescan(CyclopeanInstrument):
         self.set_dimensions(())
         self.set_starts(())
         self.set_stops(())
+        self.set_scan_value('counts')
 
         # other vars
         self._px_clock = 0
@@ -96,6 +109,12 @@ class linescan(CyclopeanInstrument):
 
     def do_set_px_time(self, val):
         self._px_time = val
+
+    def do_get_scan_value(self):
+        return self._scan_value
+
+    def do_set_scan_value(self, val):
+        self._scan_value = val
 
     # public functions
     def get_points(self):

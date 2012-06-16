@@ -65,6 +65,8 @@ class Scan2dPanel(Panel):
         self._ins.set_ystop(self.ui.ystop.value())
         self._ins.set_ysteps(self.ui.ysteps.value())
         self._ins.set_pixel_time(self.ui.pxtime.value())
+        #self._ins.set_counter(self.ui.counter.value())
+        self._ins.set_counter(self.ui.counter.currentIndex()+1)
         self._ins.set_is_running(True)
 
     def zoom(self):
@@ -93,9 +95,11 @@ class Scan2dPanel(Panel):
 
                 # don't update the cursor while dragging it, results in
                 # weird 'back-action'
-                if self.ui.plot.crosshair.drag_state != 'dragging':
-                    self.ui.plot.set_crosshair_position(
-                        (self.position['x_position'], self.position['y_position']))
+                
+                # wolfgang, jan 30 2012: remove for now, is annoying 
+                #if self.ui.plot.crosshair.drag_state != 'dragging':
+                #    self.ui.plot.set_crosshair_position(
+                #        (self.position['x_position'], self.position['y_position']))
 
     def _replot(self):
         self._xvals = self._ins.get_x()

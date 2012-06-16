@@ -10,10 +10,10 @@ import numpy
 import qt
 
 class scan(CyclopeanInstrument):
-    def __init__(self, name, linescan=''):
+    def __init__(self, name, linescan, mos):
         CyclopeanInstrument.__init__(self, name, tags=['measure'])
 
-        self._mos = qt.instruments['master_of_space']
+        self._mos = qt.instruments[mos]
         self._linescan = qt.instruments[linescan]
 
 
@@ -38,10 +38,17 @@ class scan(CyclopeanInstrument):
         self.add_parameter('linescan_stops',
                 type=types.ListType,
                 flags=Instrument.FLAG_GETSET)
+         
+        self.add_parameter('linescan_value',
+                type=types.StringType,
+                flags=Instrument.FLAG_GETSET)
 
         self.add_parameter('current_line',
                 type=types.TupleType,
                 flags=Instrument.FLAG_GET)
+
+        #BH30-03-2012 we now need value paramater to distinguish between simple and resonant counting
+       
 
         self._supported = {
             'get_running': True,
@@ -84,11 +91,17 @@ class scan(CyclopeanInstrument):
 
     def do_get_linescan_px_time(self):
         return self._linescan_px_time
+    
+    def do_get_linescan_value(self):
+        return self._linescan_value
 
+    def do_set_linescan_value(self, val):
+        self._linescan_value = val
+       
     def do_get_current_line(self):
         return self._current_line
-
-        
+ 
+ 
     # internal functions
     def _start_running(self):
         CyclopeanInstrument._start_running(self)
@@ -174,6 +187,7 @@ class scan(CyclopeanInstrument):
         pass
 
     def _next_line(self):
+
         self._linescan.set_dimensions(self._linescan_dimensions)
         self._linescan.set_starts(tuple(self._linescan_starts\
                 [self._current_line]))
@@ -181,6 +195,7 @@ class scan(CyclopeanInstrument):
                 [self._current_line]))
         self._linescan.set_px_time(self._linescan_px_time)
         self._linescan.set_steps(self._linescan_steps)
+        self._linescan.set_scan_value(self._linescan_value)
         self._linescan.set_is_running(True)
         return True
 

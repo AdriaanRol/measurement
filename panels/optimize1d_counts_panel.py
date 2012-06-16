@@ -37,6 +37,10 @@ class Optimize1dCountsPanel(Panel):
 
     def _start(self):
         self._ins.set_dimension(self._dimension)
+        self._ins.set_counter(self.ui.counter.value())
+        self._ins.set_pixel_time(self.ui.pixel_time.value())
+        self._ins.set_nr_of_points(self.ui.nr_of_points.value())
+        self._ins.set_gaussian_fit(self.ui.gaussian_fit.isChecked())
         self._ins.set_is_running(True)
         return
 
@@ -63,11 +67,9 @@ class Optimize1dCountsPanel(Panel):
         return
 
     def _instrument_changed(self, changes): 
-        #print 'instrument changed'
-	if 'dimension' in changes:
+
+        if 'dimension' in changes:
             self._ins_dimension = changes['dimension']
-            #print('trying to print dimensions')
-	    #print self._ins_dimension
 
         if self._ins_dimension == self._dimension:
             Panel._instrument_changed(self, changes)
@@ -88,14 +90,11 @@ class Optimize1dCountsPanel(Panel):
                 self.ui.counter.setValue(int(changes['counter']))
 
             if 'data_update' in changes:
-                #print 'replot'
-		#print 'starting data update'
-                
+               
                 d = changes['data_update']
-		#print d
+
                 if 'points' in d:
-		    #print self._data['points']
-		    #print 'points are changed'
+
                     self.ui.plot.set_x(self._data['points'])
                     try:
                         self.ui.plot.plot.delplot('countrates')
@@ -103,12 +102,11 @@ class Optimize1dCountsPanel(Panel):
                     except:
                         pass
                 if 'countrates' in d:
-		    #print self._data['countrates']
-		    #print 'countrate changed'
+
                     self.ui.plot.add_y(self._data['countrates'], 'countrates',
                             type='scatter', marker='circle', color='green')
                 if 'fit' in d:
-		    #print 'fit changed'	
+	
                     self.ui.plot.add_y(self._data['fit'], 'fit', 
                             type='line', line_width=2, color='red')
 
@@ -116,8 +114,7 @@ class Optimize1dCountsPanel(Panel):
             if changes.has_key('fit_result'):
                 self._got_fit_result(changes['fit_result'])
 
-    def _got_fit_result(self, result):
-	#print('Got fit results')    
+    def _got_fit_result(self, result): 
         labels = [self.ui.mu, self.ui.amplitude, self.ui.sigma,
                   self.ui.offset, ]
         if type(result) == bool:

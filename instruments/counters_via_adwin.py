@@ -4,9 +4,15 @@ from instrument import Instrument
 from cyclopean_instrument import CyclopeanInstrument
 import types
 import gobject
+import qt
 
 class counters_via_adwin(CyclopeanInstrument):
-    def __init__(self, name, channel='1'):
+    def __init__(self, name, adwin):
+        """
+        Parameters:
+            adwin : string
+                qtlab-name of the adwin instrument to be used
+        """
         CyclopeanInstrument.__init__(self, name, tags=['measure'])
         
         # relevant parameters
@@ -27,8 +33,7 @@ class counters_via_adwin(CyclopeanInstrument):
         self._countrate = {'cntr1': 0.0, 'cntr2': 0.0, }
         
         # instruments we need to access
-        import qt
-        self._ins_adwin = qt.instruments['adwin']
+        self._ins_adwin = qt.instruments[adwin]
 
         # cyclopean features
         self._supported = {
@@ -66,7 +71,7 @@ class counters_via_adwin(CyclopeanInstrument):
     # if this function returns False, the sampling timer gets stopped.
     # it gets re-started once set_is_running(True) gets called again.
     def _sampling_event(self): 
-        if not self._is_running:
+        if not self._is_running or not self._ins_adwin.is_counter_running():
             return False
         if self._busy:
             return True
