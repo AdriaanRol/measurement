@@ -4,8 +4,36 @@ from numpy import *
 import analysis.fit as fit
 import tools.plot as plot
 
+
 ### fit a rabi osc. that gets damped exponentially
-def fit_rabi_damped_exp(g_f, g_A, g_a, g_phi, g_tau, *arg):
+def fit_rabi_simple(g_f, g_A, g_a, g_phi, *arg):
+    """
+    fits a cosine thats damped exponentially,
+        y(x) = a + A * cos(2pi*f*x)
+
+    Initial guesses, in this order:
+        g_f : frequency
+        g_A : initial amplitude of the oscillation
+        g_a : offset
+
+
+    """
+    fitfunc_str = "a + A * cos(f*x + phi)"
+
+    f = fit.Parameter(g_f, 'f')
+    A = fit.Parameter(g_A, 'A')
+    a = fit.Parameter(g_a, 'a')
+    phi = fit.Parameter(g_phi, 'phi')
+    # tau = fit.Parameter(g_tau, 'tau')
+    p0 = [f, A, a, phi]
+
+    def fitfunc(x) : return a() + A() * cos(2*pi*(f()*x +phi()/360.))
+    return p0, fitfunc, fitfunc_str
+# end damped rabi
+
+
+### fit a rabi osc. that gets damped exponentially
+def fit_rabi_damped_exp(g_f, g_A, g_a, g_tau, *arg):
     """
     fits a cosine thats damped exponentially,
         y(x) = a + A * exp(-x/tau) * cos(f*x + phi)
@@ -14,7 +42,7 @@ def fit_rabi_damped_exp(g_f, g_A, g_a, g_phi, g_tau, *arg):
         g_f : frequency
         g_A : initial amplitude of the oscillation
         g_a : offset
-        g_phi : phase
+        ### g_phi : phase
         g_tau : decay constant
 
     """
@@ -23,11 +51,12 @@ def fit_rabi_damped_exp(g_f, g_A, g_a, g_phi, g_tau, *arg):
     f = fit.Parameter(g_f, 'f')
     A = fit.Parameter(g_A, 'A')
     a = fit.Parameter(g_a, 'a')
-    phi = fit.Parameter(g_phi, 'phi')
+    phi = fit.Parameter(0., 'phi')
     tau = fit.Parameter(g_tau, 'tau')
-    p0 = [f, A, a, phi, tau]
+    p0 = [f, A, a, tau, phi]
 
-    def fitfunc(x) : return a() + A() * exp(-x/tau()) * cos(2*pi*f()*x + phi())
+    #print tau
+    def fitfunc(x) : return a() + A() * exp(-x/tau()) * cos(2*pi*( f()*x + phi()/360.))
     return p0, fitfunc, fitfunc_str
 # end damped rabi
 
@@ -115,25 +144,26 @@ def fit_rabi_damped_exp_on_linslope(g_f, g_A, g_a, g_b, g_phi, g_tau, *arg):
     a = fit.Parameter(g_a, 'offset')
     b = fit.Parameter(g_b, 'slope')
     phi = fit.Parameter(g_phi, 'phase')
-    tau = fit.Parameter(g_tau, 'phase')
+    tau = fit.Parameter(g_tau, 'tau')
     p0 = [f, A, a, b, phi, tau]
     def fitfunc(x): return a() + b()*x + A()*cos(2*pi*f()*x+phi())*exp(-x/tau())
     return p0, fitfunc, fitfunc_str
 # end rabi on a slope
 
 ### driving of several transitions
-def fit_rabi_multiple_detunings(g_A, g_a, g_F, *arg):
+def fit_rabi_multiple_detunings(g_A, g_a, g_F, g_tau, *arg):
     """
     fitfunction for an oscillation that drives several transitions
     (several nuclear lines, for instance)
 
         y(x) = a + A * sum_I[ F**2/(F**2 + delta_i**2) * 
-            (cos(sqrt(F**2 + delta_i**2 + phi_i)) - 1)
+            (cos(sqrt(F**2 + delta_i**2 + phi_i)) - 1) * exp(-x/tau)
 
     Initial guesses:
         g_A : full Rabi amplitude
         g_a : offset
         g_F : Rabi frequency
+        g_tau : exp decay constant
 
 
     For the driven levels:
@@ -143,32 +173,45 @@ def fit_rabi_multiple_detunings(g_A, g_a, g_F, *arg):
 
     """
 
-    fitfunc_str = "a + A * sum_I[ F**2/(F**2 + delta_i**2) * (cos(sqrt(F**2 + delta_i**2 + phi_i)) - 1)"
+    fitfunc_str = "a + A * sum_I[ F**2/(F**2 + delta_i**2) * (cos(sqrt(F**2 + delta_i**2 + phi_i)) - 1) * exp(-x/tau)"
     
     no_detunings = len(arg)
 
     A = fit.Parameter(g_A, 'A')
     a = fit.Parameter(g_a, 'a')
     F = fit.Parameter(g_F, 'F')
-    p0 = [A, a, F]
+    # tau = fit.Parameter(g_tau, 'tau')
+    p0 = [A, a, F] # , tau]
 
     detunings =  []
     phases = []
     for i,d in enumerate(arg):
         fitfunc_str += '\ndetuning d%d := %f' % (i,d[0])
         detunings.append(d[0])
-        phases.append(fit.Parameter(d[1], 'phi%d'%i))
-        p0.append(phases[i])
+        #phases.append(fit.Parameter(d[1], 'phi%d'%i))
+        #p0.append(phases[i])
 
     def fitfunc(x):
         val = a()
         for i,d in enumerate(detunings):
             f2 = F()**2 + d**2
-            val += A() * (F()**2/f2) * (cos(2*pi*sqrt(f2)*x + phases[i]()) - 1)
+            val += A() * (F()**2/f2) * (cos(2*pi*sqrt(f2)*x + 0.) - 1)
 
-        return val
+        return val # * exp(-x/tau())
 
     return p0, fitfunc, fitfunc_str
 
+def fit_population_vs_detuning(g_a, g_A, g_F, g_x0, *arg):
+    fitfunc_str = 'a + A * F**2/(F**2+(x-x0)**2) * sin(pi/(2F) * sqrt(F**2+(x-x0)**2))**2'
 
+    A = fit.Parameter(g_A, 'A')
+    a = fit.Parameter(g_a, 'a')
+    F = fit.Parameter(g_F, 'F')
+    x0 = fit.Parameter(g_x0, 'x0')
+    p0 = [a, A, F, x0]
+
+    def fitfunc(x):
+        return a() + A() * F()**2/(F()**2+(x-x0())**2) * sin(pi/F()/2. * sqrt(F()**2 + (x-x0())**2))**2
+
+    return p0, fitfunc, fitfunc_str
 

@@ -67,9 +67,9 @@ class WS600_WaveMeter(Instrument): #1
     def Get_Frequency(self,channel):
         Frequency = self._wlmData.GetFrequencyNum(channel,c_double(0))
         if Frequency != 0:
-            self._last_valid[channel] = Frequency
+            self._last_valid[channel-1] = Frequency
         else:
-            Frequency = self._last_valid[channel]
+            Frequency = self._last_valid[channel-1]
         return Frequency
 
     def do_get_frequency(self):

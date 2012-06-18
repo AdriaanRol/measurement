@@ -1,0 +1,360 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>Panel</class>
+ <widget class="QWidget" name="Panel">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>518</width>
+    <height>528</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Form</string>
+  </property>
+  <layout class="QGridLayout" name="gridLayout">
+   <item row="0" column="0">
+    <widget class="QLabel" name="label_9">
+     <property name="text">
+      <string>Counter</string>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="1" colspan="2">
+    <widget class="QComboBox" name="counter">
+     <item>
+      <property name="text">
+       <string>1</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>2</string>
+      </property>
+     </item>
+    </widget>
+   </item>
+   <item row="0" column="3" colspan="8">
+    <spacer name="horizontalSpacer_3">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>390</width>
+       <height>20</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+   <item row="2" column="0" colspan="2">
+    <widget class="QLabel" name="label">
+     <property name="text">
+      <string>x start [um]</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+     </property>
+     <property name="buddy">
+      <cstring>xstart</cstring>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="2" colspan="2">
+    <widget class="QDoubleSpinBox" name="xstart">
+     <property name="minimum">
+      <double>-100.000000000000000</double>
+     </property>
+     <property name="maximum">
+      <double>100.000000000000000</double>
+     </property>
+     <property name="value">
+      <double>-10.000000000000000</double>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="4">
+    <widget class="QLabel" name="label_3">
+     <property name="text">
+      <string>x stop [um]</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+     </property>
+     <property name="buddy">
+      <cstring>xstop</cstring>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="5">
+    <widget class="QDoubleSpinBox" name="xstop">
+     <property name="minimum">
+      <double>-100.000000000000000</double>
+     </property>
+     <property name="maximum">
+      <double>100.000000000000000</double>
+     </property>
+     <property name="value">
+      <double>10.000000000000000</double>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="6">
+    <widget class="QLabel" name="label_6">
+     <property name="text">
+      <string>px</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+     </property>
+     <property name="buddy">
+      <cstring>xsteps</cstring>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="7">
+    <widget class="QSpinBox" name="xsteps">
+     <property name="minimum">
+      <number>11</number>
+     </property>
+     <property name="maximum">
+      <number>1001</number>
+     </property>
+     <property name="value">
+      <number>101</number>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="8" colspan="2">
+    <widget class="QLabel" name="label_7">
+     <property name="text">
+      <string>px time[ms]</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+     </property>
+     <property name="buddy">
+      <cstring>pxtime</cstring>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="10">
+    <widget class="QSpinBox" name="pxtime">
+     <property name="minimum">
+      <number>1</number>
+     </property>
+    </widget>
+   </item>
+   <item row="3" column="0" colspan="2">
+    <widget class="QLabel" name="label_2">
+     <property name="text">
+      <string>y start [um]</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+     </property>
+     <property name="buddy">
+      <cstring>ystart</cstring>
+     </property>
+    </widget>
+   </item>
+   <item row="3" column="2" colspan="2">
+    <widget class="QDoubleSpinBox" name="ystart">
+     <property name="minimum">
+      <double>-100.000000000000000</double>
+     </property>
+     <property name="maximum">
+      <double>100.000000000000000</double>
+     </property>
+     <property name="value">
+      <double>-10.000000000000000</double>
+     </property>
+    </widget>
+   </item>
+   <item row="3" column="4">
+    <widget class="QLabel" name="label_4">
+     <property name="text">
+      <string>y stop [um]</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+     </property>
+     <property name="buddy">
+      <cstring>ystop</cstring>
+     </property>
+    </widget>
+   </item>
+   <item row="3" column="5">
+    <widget class="QDoubleSpinBox" name="ystop">
+     <property name="minimum">
+      <double>-100.000000000000000</double>
+     </property>
+     <property name="maximum">
+      <double>100.000000000000000</double>
+     </property>
+     <property name="value">
+      <double>10.000000000000000</double>
+     </property>
+    </widget>
+   </item>
+   <item row="3" column="6">
+    <widget class="QLabel" name="label_5">
+     <property name="text">
+      <string>px</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+     </property>
+     <property name="buddy">
+      <cstring>ysteps</cstring>
+     </property>
+    </widget>
+   </item>
+   <item row="3" column="7">
+    <widget class="QSpinBox" name="ysteps">
+     <property name="minimum">
+      <number>11</number>
+     </property>
+     <property name="maximum">
+      <number>1001</number>
+     </property>
+     <property name="value">
+      <number>101</number>
+     </property>
+    </widget>
+   </item>
+   <item row="3" column="8" colspan="2">
+    <widget class="QPushButton" name="do_scan">
+     <property name="text">
+      <string>Scan</string>
+     </property>
+    </widget>
+   </item>
+   <item row="3" column="10">
+    <widget class="QPushButton" name="do_stop">
+     <property name="text">
+      <string>Stop</string>
+     </property>
+    </widget>
+   </item>
+   <item row="4" column="0" colspan="7">
+    <spacer name="horizontalSpacer">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>120</width>
+       <height>20</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+   <item row="4" column="7" colspan="2">
+    <widget class="QLabel" name="label_8">
+     <property name="text">
+      <string>zoom size [um]</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+     </property>
+     <property name="buddy">
+      <cstring>zoomsize</cstring>
+     </property>
+    </widget>
+   </item>
+   <item row="4" column="9">
+    <widget class="QDoubleSpinBox" name="zoomsize">
+     <property name="minimum">
+      <double>1.000000000000000</double>
+     </property>
+     <property name="value">
+      <double>20.000000000000000</double>
+     </property>
+    </widget>
+   </item>
+   <item row="4" column="10">
+    <widget class="QPushButton" name="do_zoom">
+     <property name="text">
+      <string>Zoom</string>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="0" colspan="11">
+    <widget class="ColorPlot" name="plot" native="true">
+     <property name="minimumSize">
+      <size>
+       <width>500</width>
+       <height>400</height>
+      </size>
+     </property>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>ColorPlot</class>
+   <extends>QWidget</extends>
+   <header>plot/chaco_plot.h</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
+ <resources/>
+ <connections>
+  <connection>
+   <sender>do_scan</sender>
+   <signal>clicked()</signal>
+   <receiver>Panel</receiver>
+   <slot>start_scan()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>427</x>
+     <y>489</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>507</x>
+     <y>535</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>do_zoom</sender>
+   <signal>clicked()</signal>
+   <receiver>Panel</receiver>
+   <slot>zoom()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>508</x>
+     <y>518</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>167</x>
+     <y>14</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>do_stop</sender>
+   <signal>clicked()</signal>
+   <receiver>Panel</receiver>
+   <slot>stop_scan()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>508</x>
+     <y>489</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>253</x>
+     <y>267</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+ <slots>
+  <slot>start_scan()</slot>
+  <slot>zoom()</slot>
+  <slot>stop_scan()</slot>
+ </slots>
+</ui>

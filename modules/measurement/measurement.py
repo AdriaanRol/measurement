@@ -51,6 +51,15 @@ class Measurement:
                                          # data
         self.dataset_idx = 0
     
+    def add_measurement_element(self, element_instance):
+        """
+        After creating a measurement element object and adapting it to the 
+        specific needs, it can be added to the measurement object via this
+        method.
+        """
+        return element_instance.make()
+    
+    
     def measure(self):
         pass
     
@@ -103,6 +112,8 @@ class Measurement:
                     self.save_folder = os.path.abspath(folder)
                 except:
                     print 'invalid save directory! will autodetermine one.'
+            else:
+                self.save_folder = os.path.abspath(folder)
         
         if self.save_folder == '':
             _bp = dh.dummy_qtlab_measurement(self.mclass+'_'+self.name)
@@ -158,10 +169,46 @@ class Measurement:
             f.write('%s\t' % str(getattr(self, p)))
         f.write('\n')        
         f.close()
-        
+
+        # also prepare the lists
+        param_lists = [l for l in self.__dict__ if p[:4] == 'lst_']
+
+        # save parameters as pickle, exclude the 'par_' and 'lst_' prefices 
+        # in the key
+        params_dict = {}
+        for p in params:
+            params_dict[p[4:]] = getattr(self, p)
+        for p in param_lists:
+            params_dict[p[4:]] = getattr(self,p)
+        params_pickle = open(self.basepath+'_%s.pkl' % PARAMS_FNAME, 'wb')
+        pickle.dump(params_dict, params_pickle)
+        params_pickle.close()
+  
         if idx_increment:
             self.dataset_idx += 1
         return
+
+
+class MeasurementElement:
+
+    def __init__(self, parent):
+        """
+        Constructor.
+        Requires the parent measurement class instance as first argument.
+        All other args depend on the specific implementation.
+        Any members of the measurement class that are to be modified in the
+        element (sequences, etc.) should be passed as keyword here.
+        """
+        self.parent = parent
+
+    def make(self):
+        """
+        This function generates the element, and should be executed by
+        the add_measurement_element function of the measurement.
+        Does nothing in the prototype implementation.
+        """
+        pass
+
 
 
 def main():

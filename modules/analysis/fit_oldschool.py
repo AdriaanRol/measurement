@@ -493,6 +493,7 @@ def fit_cos(xdata, ydata, p0):
         phi
         y0
     '''
+    print p0
     plsq= leastsq(_residuals_cos, p0, args=(xdata,ydata))
 
     return plsq

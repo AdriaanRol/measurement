@@ -28,7 +28,6 @@ def fit_ESR_gauss(g_a, g_A, g_sigma, g_x0, *arg):
         because of the equal splitting in the two cases, on top
         of each other, yielding 2 low, and two deep dips.
     """
-
     fitfunc_str = 'a - A*sum_i(exp(-((x-x0_i)/sigma)**2))'
     
     no_splits = len(arg)
@@ -46,6 +45,14 @@ def fit_ESR_gauss(g_a, g_A, g_sigma, g_x0, *arg):
         fitfunc_str += '\nsplitting s%d with multiplicity %d' % (i, s[0])
         splits.append(fit.Parameter(s[1], 's%d'%i))
         p0.append(splits[i])
+
+    # remove the fixed params from the p0 array
+    # fixedp = []
+    # for i,p in enumerate(p0):
+    #     if i in fixedsplits:
+    #         fixedp.append(p)
+    # for p in fixedp:
+    #     p0.remove(p)
     
   
     def fitfunc(x):
@@ -60,7 +67,8 @@ def fit_ESR_gauss(g_a, g_A, g_sigma, g_x0, *arg):
             for pt in pts:
                 j = 0
                 while j < m:
-                    pts_next.append(pt-splits[i]()*(m-1.)/2. + j*splits[i]())
+                    split = splits[i]()
+                    pts_next.append(pt-split*(m-1.)/2. + j*split)
                     j+=1
 
             pts = pts_next

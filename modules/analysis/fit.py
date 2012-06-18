@@ -31,10 +31,12 @@ def fit1d(x, y, fitmethod, *arg, **kw):
     do_plot = kw.pop('do_plot', False)
     do_save_plot = kw.pop('do_save_plot', False)
     do_close_plot = kw.pop('do_close_plot', False)
-
     save_plot_path = kw.pop('save_plot_path', 'fit.pdf')
     save_plot_format = kw.pop('save_plot_format', 'pdf')
-    
+    newfig = kw.pop('newfig', True)
+    plot_fitonly = kw.pop('plot_fitonly', False)
+    plot_fitresult = kw.pop('plot_fitresult', True)
+
     fit_curve_points = kw.pop('fit_curve_points', 501)
     
     ylog = kw.pop('ylog', False)
@@ -43,9 +45,24 @@ def fit1d(x, y, fitmethod, *arg, **kw):
     do_print = kw.pop('do_print', False)
     ret = kw.pop('ret', False)
 
+    fixed = kw.pop('fixed', [])
+
     # use the standardized fitmethod: any arg is treated as initial guess
-    p0, fitfunc, fitfunc_str = fitmethod(*arg)
+    if fitmethod != None:
+        p0, fitfunc, fitfunc_str = fitmethod(*arg)
+    else:
+        p0 = kw.pop('p0')
+        fitfunc = kw.pop('fitfunc')
+        fitfunc_str = kw.pop('fitfunc_str', '')        
     
+    # general ability to fix parameters
+    fixedp = []
+    for i,p in enumerate(p0):
+        if i in fixed:
+            fixedp.append(p)
+    for p in fixedp:
+        p0.remove(p)
+   
     # convenient fitting method with parameters; see scipy cookbook for details
     def f(params):
         i = 0
@@ -69,30 +86,36 @@ def fit1d(x, y, fitmethod, *arg, **kw):
         print_fit_result(result)
 
     if do_plot:
-        p = plot.Figure()
-        ax = pyplot.subplot(111)
-        if ylog:
-            ax.set_yscale('log')
+        if newfig:
+            p = plot.Figure()
+            ax = pyplot.subplot(111)
+            if ylog:
+                ax.set_yscale('log')
+        else:
+            pass # pyplot.figure(figno)
 
-        pyplot.plot(x, y, 'o', mfc='None', mec='r', label='data')
+        if not plot_fitonly:
+            pyplot.plot(x, y, 'o', mfc='None', mec='r', label='data')
         
         fitx = linspace(x.min(), x.max(), fit_curve_points)
         pyplot.plot(fitx, fitfunc(fitx), 'b-', label='fit')
 
         # include the fit params in the plot, user can specify the figure coords 
-        params_xy = kw.pop('plot_fitparams_xy', (0.5, 0.15))
-        
-        params_str = comment + '\n' + fitfunc_str + '\n' + str_fit_params(result)
-        pyplot.figtext(params_xy[0], params_xy[1], params_str, size='x-small')
+        if plot_fitresult:
+            params_xy = kw.pop('plot_fitparams_xy', (0.5, 0.15))
+            
+            params_str = comment + '\n' + fitfunc_str + '\n' + str_fit_params(result)
+            pyplot.figtext(params_xy[0], params_xy[1], params_str, size='x-small')
 
-        # save, if requested
-        if do_save_plot:
-            p().savefig(save_plot_path+'_'+fitmethod.__name__+'.'+save_plot_format, 
-                    format=save_plot_format)
+        # save, if requested, but only for own created plots
+        if newfig:
+            if do_save_plot:
+                p().savefig(save_plot_path+'_'+fitmethod.__name__+'.'+save_plot_format, 
+                        format=save_plot_format)
 
-        if do_close_plot:
-            p().clf()
-            pyplot.close('all')
+            if do_close_plot:
+                p().clf()
+                pyplot.close('all')
 
     if ret:
         if do_plot: 

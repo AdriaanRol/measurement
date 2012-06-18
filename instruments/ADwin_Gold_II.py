@@ -46,6 +46,7 @@ class ADwin_Gold_II(Instrument): #1
         self.add_function('Set_FPar')
         self.add_function('Start_Process')
         self.add_function('Stop_Process')
+        self.add_function('Get_Error_Text')
 
 
 
@@ -75,6 +76,13 @@ class ADwin_Gold_II(Instrument): #1
         if ErrorMsg.value != 0:
             logging.warning(__name__ + ' : error in ADwin.Load: %s'%ErrorMsg.value)
 
+    def Get_Error_Text(self, ErrorCode):
+        text = ctypes.create_string_buffer(256)
+        Text = ctypes.byref(text)
+        self._adwin32.ADGetErrorText(ErrorCode,Text,256)
+        print(text.value)
+        return text.value
+
     def Get_Data_Length(self,index):
         ErrorMsg=c_int32(0)
         data = self._adwin32.e_GetDataLength(index,self._address,ctypes.byref(ErrorMsg))
@@ -91,9 +99,13 @@ class ADwin_Gold_II(Instrument): #1
             logging.warning(__name__ + ' : error in ADwin.Get_Data_Long: %s'%ErrorMsg.value)
         return data
 
-    def Set_Data_Long(self, data = numpy.array, index = numpy.int32, start = numpy.int32, count = numpy.int32):
+    def Set_Data_Long(self, data=numpy.array, index=numpy.int32, 
+            start=numpy.int32, count=numpy.int32):
+        
         ErrorMsg=c_int32(0)
-        success = self._adwin32.e_Set_Data(data.ctypes.data,2,index,start,count, self._address,ctypes.byref(ErrorMsg))
+        success = self._adwin32.e_Set_Data(data.ctypes.data,2,index,start,
+                count,self._address,ctypes.byref(ErrorMsg))
+        
         if ErrorMsg.value != 0:
             logging.warning(__name__ + ' : error in ADwin.Set_Data_Long: %s'%ErrorMsg.value)
 
@@ -107,7 +119,9 @@ class ADwin_Gold_II(Instrument): #1
 
     def Set_Data_Float(self, data = numpy.array, index = numpy.int32, start = numpy.int32, count = numpy.int32):
         ErrorMsg=c_int32(0)
-        success = self._adwin32.e_Set_Data(data.ctypes.data,5,index,start,count, self._address,ctypes.byref(ErrorMsg))
+        
+        d=numpy.array(data,numpy.single)
+        success = self._adwin32.e_Set_Data(d.ctypes.data,5,index,start,count, self._address,ctypes.byref(ErrorMsg))
         if ErrorMsg.value != 0:
             logging.warning(__name__ + ' : error in ADwin.Set_Data_Float: %s'%ErrorMsg.value)
 

@@ -23,36 +23,57 @@ import numpy as np
 from matplotlib import pyplot as plt
 
 
-PREFIX = 'SSRO'
+PREFIX = 'SSRO_preselect'
 CR_SUFFIX = 'ChargeRO'
 SP_SUFFIX = 'SpinPumpkin'
 RO_SUFFIX = 'SpinRO'
 PARAMS_SUFFIX = 'parameters'
+PARAM_BINSIZE_COL = 12
+PARAM_REPS_COL = 10
 
-def ro_spinrelaxation(time, counts):
-    return
-
-
-def run_single(folder='', ms=0, index=0):
+def run_single(folder='', ms=0, index=0,binsize_col=12,reps_col=10):
     if folder == "":
         folder = os.getcwd()
 
     basepath = os.path.join(folder, PREFIX+'-'+str(index))
     params = loadtxt(basepath+'_'+PARAMS_SUFFIX+'.dat')
 
-    binsize = params[8]
-    reps = params[7]
-
+    PARAM_BINSIZE_COL = binsize_col
+    PARAM_REPS_COL=reps_col
+    binsize = params[PARAM_BINSIZE_COL]
+    reps = params[PARAM_REPS_COL]
+    print binsize
+    print reps
+    print 'index'
+    print index
     rodata = np.load(basepath+'_'+RO_SUFFIX+'.npz')
     spdata = np.load(basepath+'_'+SP_SUFFIX+'.npz')
     crdata = np.load(basepath+'_'+CR_SUFFIX+'.npz')
 
     autoanalyze_single_ssro(rodata, spdata, crdata, basepath, ms=ms, 
-            binsize=binsize)
+            binsize=binsize, reps=reps)
+
+def run_all(folder='', altern=True,binsize_col=12,reps_col=10):
+    if folder == "":
+        folder = os.getcwd()
+
+    print PREFIX
+    allfiles = os.listdir(folder)
+    rofiles = [ f for f in allfiles if RO_SUFFIX in f ]
+    for i in range(len(rofiles)):
+        ms = 1 if (i%2 and altern) else 0
+        run_single('',ms,i,binsize_col=binsize_col,reps_col=reps_col)
+
+        if altern and i%2:
+            f1 = PREFIX+'-%d_fid_vs_ROtime.npz' % (i)
+            f0 = PREFIX+'-%d_fid_vs_ROtime.npz' % (i-1)
+            t,f,ferr,fig = fidelities(f0,f1)
+            np.savetxt('totalfid-%d_+_%d.dat' % (i-1, i),(t,f,ferr))
+            fig.savefig('totalfid-%d_+_%d.png' % (i-1, i))
 
 
 def autoanalyze_single_ssro(rodata, spdata, crdata, save_basepath, 
-        binsize=0.131072/2, reps=1e4, ms=0, closefigs=True, stop=0, firstbin=0):
+        binsize=0.131072, reps=1e4, ms=0, closefigs=True, stop=0, firstbin=0):
     """
     Analyzes a single SSRO measurement (can do both ms=0/+-1).
     creates an overview plot over the measurement results, and a plot
@@ -63,8 +84,10 @@ def autoanalyze_single_ssro(rodata, spdata, crdata, save_basepath,
 
     if stop == 0:
         stop = rodata['time'][-1]/1e3
-
+    print rodata['time'][-1]/1e3
+    print stop
     lastbin = int(stop/binsize)
+    print lastbin
     t0 = time.time()
     ts = timestamp()
 
@@ -170,6 +193,12 @@ Measurement results:
         fid_dat = vstack((fid_dat, array([[t, fid, pzero_err]])))
 
     fig2 = plt.figure()
+    print 'fid_dat[:,0]'
+    print fid_dat[:,0]
+    print 'fid_dat[:,1]'
+    print fid_dat[:,1]
+    print 'fid_dat[:,2]'
+    print fid_dat[:,2]
     plt.errorbar(fid_dat[:,0], fid_dat[:,1], fmt='o', yerr=fid_dat[:,2])
     plt.xlabel('RO time [us]')
     plt.ylabel('ms = %d RO fidelity' % ms)
@@ -241,10 +270,90 @@ def fidelities(fid_ms0, fid_ms1):
 
     return  times, F, F_err, fig
 
+def fidelity_vs_power(folder=''):
+    
+    if folder == '':
+        folder = os.getcwd()
+
+    allfiles = os.listdir(folder)
+    fidfiles = [f for f in allfiles if ('totalfid' in f and '.dat' in f)]
+
+    pow = []
+    maxfid = []
+    maxfid_t = []
+
+    for f in fidfiles:
+        fn, ext = os.path.splitext(f)
+        idx = int(fn[fn.find('+_')+2:])
+        basepath = os.path.join(folder, PREFIX+'-'+str(idx))
+        parfile = basepath+'_'+PARAMS_SUFFIX+'.dat'  
+        pow.append(loadtxt(parfile)[get_param_column(parfile,'par_ro_Ex_power')]*1e9)
+        
+        fiddat = loadtxt(f)
+        maxidx = argmax(fiddat[1,:])
+        maxfid.append(fiddat[1,maxidx])
+        maxfid_t.append(fiddat[0,maxidx])
+    
+    
+    fig = plt.figure()
+    plt.plot(pow, maxfid, 'ro', label='max F')
+    plt.xlabel('P [nW]')
+    plt.ylabel('max. F')
+    plt.legend()
+    
+    plt.twinx()
+    plt.plot(pow, maxfid_t, 'bo')
+    plt.ylabel('best ro-time')
+    plt.savefig('fidelity_vs_power.png')
+
+def spin_flip_time_vs_MW_freq(folder=''):
+    
+    if folder == '':
+        folder = os.getcwd()
+    
+    print get_param_column(os.path.join(folder,'SSRO_preselect-0_parameters.dat'),'par_cr_threshold')
+
+    #allfiles = os.listdir(folder)
+    #fidfiles = [f for f in allfiles if ('_ro_countrate' in f and '.dat' in f)]
+ 
+    #pow = []
+    #maxfid = []
+    #maxfid_t = []
+
+    #for f in fidfiles:
+     #   fn, ext = os.path.splitext(f)
+      #  idx = int(fn[fn.find('+_')+2:])
+       # basepath = os.path.join(folder, PREFIX+'-'+str(index))
+        #params = loadtxt(basepath+'_'+PARAMS_SUFFIX+'.dat')
+        #pow.append(loadtxt('SSRO_preselect-%d_parameters.dat' %idx)[8]*1e9)
+     #   
+     #   fiddat = loadtxt(f)
+     #   maxidx = argmax(fiddat[1,:])
+     #   maxfid.append(fiddat[1,maxidx])
+     #   maxfid_t.append(fiddat[0,maxidx])
+    
+
+
+
+
+    #ro_time = rodata['time'][:lastbin] # create time axis [us]
+    #ro_countrate = sum(rocounts[:,:lastbin], axis=0) / (binsize*1e-6*reps) # [Hz]
+    #savetxt(save_basepath + '_ro_countrate.dat',
+    #     array([ro_time, ro_countrate]).transpose())
 
 # helper functions
 def timestamp():
     return time.strftime('%Y%m%d.%H%M%S')
+
+def get_param_column(parfile,parname):
+    with open(parfile) as f:
+        for line in f.readlines():
+            if line.find(parname) != -1:
+                return int(line[line.find('column')+7:line.find(':')]) 
+    return -1
+        
+
+
 
 
 

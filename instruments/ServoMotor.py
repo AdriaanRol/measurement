@@ -1,108 +1,109 @@
 from instrument import Instrument
-from numpy import *
-import time
-import matplotlib.pyplot as plt
-import ConfigParser
 import qt
 import types
+import os
+from lib import config
 
 class ServoMotor(Instrument):
 
-    def __init__(self, name):
+    def __init__(self, name, servo_controller='Servo'):
         Instrument.__init__(self, name)
-
+        self._ins_servo=qt.instruments[servo_controller]
+        #print 'servo:', self._ins_servo
         self.add_parameter('channel', 
                            type=types.IntType,
                            flags = Instrument.FLAG_GETSET,
                            minval=0,maxval=15)
         
         self.add_parameter('position', 
-                           type = types.StringType, 
-                           flags = Instrument.FLAG_GETSET)
+                           type = types.IntType, 
+                           flags = Instrument.FLAG_GETSET,
+                           minval=500, maxval=2500)
         
         self.add_parameter('speed',
                            type=types.IntType,
                            flags=Instrument.FLAG_GETSET,
                            minval=0,maxval=63)
         
-        config = ConfigParser.SafeConfigParser()
-        config.read(qt.config['setup_cfg'])
-        try:
-            self._channel = config.get('Servo', name+'_channel')
-        except ConfigParser.NoSectionError:
-            config.add_section('Servo')
-            config.set('Servo',name+'_channel','0')
-            config.set('Servo',name+'_positions',"{'in': 810, 'out': 700}")
-            config.set('Servo',name+'_speed','20')
-            config.set('Servo',name+'_position','out')
-            with open(qt.config['setup_cfg'], 'wb') as configfile:
-                config.write(configfile)
-        except ConfigParser.NoOptionError:
-            config.set('Servo',name+'_channel','0')
-            config.set('Servo',name+'_positions','{\'in\': 810, \'out\': 700}')
-            config.set('Servo',name+'_speed','20')
-            config.set('Servo',name+'_position','out')
-            with open(qt.config['setup_cfg'], 'wb') as configfile:
-                config.write(configfile)
+        self.add_parameter('in_position', 
+                           type = types.IntType, 
+                           flags = Instrument.FLAG_GETSET,
+                           minval=500, maxval=2500)
+        
+        self.add_parameter('out_position', 
+                           type = types.IntType, 
+                           flags = Instrument.FLAG_GETSET,
+                           minval=500, maxval=2500)
+        #defaults
+        self.set_channel(0)
+        self.set_speed(20)
+        self.set_position(700)
+        self.set_in_position(810)
+        self.set_out_position(700)
+        
+        # override from config       
+        cfg_fn = os.path.abspath(
+                os.path.join(qt.config['ins_cfg_path'], name+'.cfg'))
+        if not os.path.exists(cfg_fn):
+            _f = open(cfg_fn, 'w')
+            _f.write('')
+            _f.close()
 
-        self._channel = config.getint('Servo', name+'_channel')
-        self._positions = eval(config.get('Servo', name+'_positions'))
-        self._speed = config.getint('Servo', name+'_speed')
-        self._position = config.get('Servo', name+'_position')
+        self.ins_cfg = config.Config(cfg_fn)
+        self.load_cfg()
+        self.save_cfg()
+
+    def get_all(self):
+        for n in self._parlist:
+            self.get(n)
+        
+    def load_cfg(self):
+        params_from_cfg = self.ins_cfg.get_all()
+        for p in params_from_cfg:
+                self.set(p, value=self.ins_cfg.get(p))
 
     def save_cfg(self):
-        config = ConfigParser.SafeConfigParser()
-        config.read(qt.config['setup_cfg'])
-        name = self._name
-        config.set('Servo',name+'_channel',str(self._channel))
-        config.set('Servo',name+'_positions',str(self._positions))
-        config.set('Servo',name+'_speed',str(self._speed))
-        with open(qt.config['setup_cfg'], 'wb') as configfile:
-            config.write(configfile)
-
+        for param in self.get_parameter_names():
+            value = self.get(param)
+            self.ins_cfg[param] = value
+       
     def do_set_speed(self,val):
         self._speed = val
-        self.save_cfg()
 
     def do_get_speed(self):
         return self._speed
 
+    def do_set_in_position(self,val):
+        self._in_position = val
+
+    def do_get_in_position(self):
+        return self._in_position
+        
+    def do_set_out_position(self,val):
+        self._out_position = val
+
+    def do_get_out_position(self):
+        return self._out_position             
+
     def do_set_channel(self,val):
         self._channel = val
-        self.save_cfg()
 
     def do_get_channel(self):
         return self._channel
 
     def do_set_position(self, val):
         self._position = val
-        if val not in self._positions:
-            print('Error: invalid %s servo position %s'%(self._name,val))
-            return
-
-        pos = self._positions[val]
-        if (pos >= 500) & (pos <= 2500):
-            qt.instruments['Servo'].set_position(self._channel,self._speed,pos)
-            qt.instruments['Servo'].set_default_position(self._channel,pos)
-            self.save_cfg()
-        else:
-            print('Error: invalid %s servo position %s'%(self._name,pos))
-
+        succes = self._ins_servo.Set_Position(self._channel,self._speed,self._position)
+        succes = succes and self._ins_servo.Set_Default_Position(self._channel,self._position)
+        return succes
+        
     def do_get_position(self):
         return self._position
 
-    def move(self, val):
-        self.set_position(val)
+    def move_in(self):
+        return self.set_position(self._in_position)
 
-    def define_position(self, name, position):
-        pos = {name: position}
-        self._positions.update(pos)
-        self.save_cfg()
-
-    def delete_position(self, name):
-        if name in self._positions:
-            del self._positions[name]
-            self.save_cfg()
-        else:
-            print('Unable to delete position %s: position not defined.'%name)
-
+    def move_out(self):
+        return self.set_position(self._out_position)
+        
+        
