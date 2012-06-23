@@ -1,5 +1,5 @@
 '<ADbasic Header, Headerversion 001.001>
-' Process_Number                 = 4
+' Process_Number                 = 1
 ' Initial_Processdelay           = 300000
 ' Eventsource                    = Timer
 ' Control_long_Delays_for_Stop   = No
@@ -10,47 +10,53 @@
 ' Optimize_Level                 = 1
 ' Info_Last_Save                 = TUD276629  TUD276629\localadmin
 '<Header End>
-'primary purpose of this program: get count rates of internal ADwin counters 1 - 4 as floating average over last 1..1000ms
+' primary purpose of this program: 
+' get count rates of internal ADwin counters 1 - 4 as 
+' floating average over last 1..1000ms
  
-'set global delay to process time
-'once per process time: read counter 1 - 4  (PAR_24: int_time [ms])
-'store RATE (cps) in PAR_41 - PAR_44        (averaged over last (int_time/process_time) counts)
-'clear counters and restart them
-
-'Commented out (only for flow criostat): 
-'second task: flip mirrors for alternative excitation path (other dichroic)
-'if PAR_34 is set to 1, then set DO 1, DO 2, DO 3 'high', set PAR_34 back to 0
-'after 100ms set them back to 'low'
-
+' input:
+' - averaging steps : PAR_24 = over how many periods to do the floating avg
+' - integration time (ms) : PAR_23
+' - single run (bool) : PAR_25 = if true, only measure one shot (1 avg interval) then end
+' 
+' output:
+' - PAR_41--44 : floating average of countrate (Hz)
+' - DATA_45[1--4] : counts of the most recent count interval (int time)
 
 #INCLUDE ADwinPro_All.inc
 #INCLUDE configuration.inc
-DIM int_time AS LONG
-'DIM flip_time AS LONG
-DIM process_time AS LONG
-DIM counter_index AS LONG
-'DIM flip_index AS LONG
-DIM i AS LONG
-DIM DATA_41[1000] AS FLOAT
-DIM DATA_42[1000] AS FLOAT
-DIM DATA_43[1000] AS FLOAT
-DIM DATA_44[1000] AS FLOAT
+
+DIM int_time AS LONG        ' in ms
+DIM avg_steps AS LONG       ' multiples of int_time
+DIM counter_index AS LONG   ' 1--4
+DIM single_run AS INTEGER   ' if 1, measure only once, then stop
+DIM i AS LONG               ' tmp index
+DIM DATA_41[10000] AS LONG  ' for floating average of counter 1
+DIM DATA_42[10000] AS LONG  ' .. counter 2
+DIM DATA_43[10000] AS LONG  ' .. counter 3
+DIM DATA_44[10000] AS LONG  ' .. counter 4
+DIM DATA_45[4] AS LONG     ' for the counts of the last int_time period
+
 
 INIT:
-  process_time = 1                    '[ms]
-  int_time = PAR_24                   '[ms]
-  'flip_time = 100                     '[process_time]
-
-  for counter_index = 1 to int_time / process_time
+  int_time = PAR_23                  ' [ms]
+  avg_steps = PAR_24                 ' averaging periods
+  single_run = PAR_25
+  
+  if (single_run > 0) then
+    avg_steps = 1
+  endif
+    
+  for counter_index = 1 to avg_steps
     DATA_41[counter_index] = 0
     DATA_42[counter_index] = 0
     DATA_43[counter_index] = 0
     DATA_44[counter_index] = 0
   next counter_index
 
-  PROCESSDELAY = 300000*process_time  '[ms]
-  '  CONF_DIO(13)                        'configure DIO 08:15 as input, all other ports as output
-      
+  PROCESSDELAY = 300000*int_time  '[ms]      
+    
+  ' init counter
   P2_CNT_ENABLE(CTR_MODULE, 0000b)
   P2_CNT_MODE(CTR_MODULE, 1,00001000b)
   P2_CNT_MODE(CTR_MODULE, 2,00001000b)
@@ -62,51 +68,37 @@ INIT:
   
 EVENT:
   
-  'Counting and floating average
+  'get counts
   P2_CNT_LATCH(CTR_MODULE, 1111b)
-  DATA_41[counter_index] = P2_CNT_READ_LATCH(CTR_MODULE, 1)*1000/int_time
-  DATA_42[counter_index] = P2_CNT_READ_LATCH(CTR_MODULE, 2)*1000/int_time
-  DATA_43[counter_index] = P2_CNT_READ_LATCH(CTR_MODULE, 3)*1000/int_time
-  DATA_44[counter_index] = P2_CNT_READ_LATCH(CTR_MODULE, 4)*1000/int_time
+  DATA_41[counter_index] = P2_CNT_READ_LATCH(CTR_MODULE, 1)
+  DATA_42[counter_index] = P2_CNT_READ_LATCH(CTR_MODULE, 2)
+  DATA_43[counter_index] = P2_CNT_READ_LATCH(CTR_MODULE, 3)
+  DATA_44[counter_index] = P2_CNT_READ_LATCH(CTR_MODULE, 4)
+  DATA_45[1] = DATA_41[counter_index]
+  DATA_45[2] = DATA_42[counter_index]
+  DATA_45[3] = DATA_43[counter_index]
+  DATA_45[4] = DATA_44[counter_index]
   P2_CNT_ENABLE(CTR_MODULE,0000b)
   P2_CNT_CLEAR(CTR_MODULE,1111b)
   P2_CNT_ENABLE(CTR_MODULE,1111b)
   
+  ' floating average
   PAR_41 = 0
   PAR_42 = 0
   PAR_43 = 0
   PAR_44 = 0
-  
-  for i = 1 to int_time/process_time
-    PAR_41 = PAR_41 + DATA_41[i]
-    PAR_42 = PAR_42 + DATA_42[i]
-    PAR_43 = PAR_43 + DATA_43[i]
-    PAR_44 = PAR_44 + DATA_44[i]
+  for i = 1 to avg_steps
+    PAR_41 = PAR_41 + DATA_41[i]*1000/(avg_steps*int_time)
+    PAR_42 = PAR_42 + DATA_42[i]*1000/(avg_steps*int_time)
+    PAR_43 = PAR_43 + DATA_43[i]*1000/(avg_steps*int_time)
+    PAR_44 = PAR_44 + DATA_44[i]*1000/(avg_steps*int_time)
   next i
   
+  if (single_run > 0) then
+    end
+  endif
+    
   counter_index = counter_index - 1
   if (counter_index = 0) then
-    counter_index = int_time/process_time
+    counter_index = avg_steps
   endif
-  
-  'flip mirrors
-  'if (flip_index > 0) then
-  'flip_index = flip_index - 1
-  'if (flip_index = 0) then
-  'DIGOUT(1,0)
-  'DIGOUT(2,0)
-  'DIGOUT(3,0)
-  'endif
-  'endif
-  
-  'if (PAR_34 = 1) then
-  'DIGOUT(1,1)
-  'DIGOUT(2,1)
-  'DIGOUT(3,1)
-  'flip_index = flip_time / process_time
-  'PAR_34 = 0
-  'endif
-  
-  
-  
-  

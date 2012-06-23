@@ -180,8 +180,8 @@ def fit_rabi_multiple_detunings(g_A, g_a, g_F, g_tau, *arg):
     A = fit.Parameter(g_A, 'A')
     a = fit.Parameter(g_a, 'a')
     F = fit.Parameter(g_F, 'F')
-    # tau = fit.Parameter(g_tau, 'tau')
-    p0 = [A, a, F] # , tau]
+    tau = fit.Parameter(g_tau, 'tau')
+    p0 = [A, a, F ,tau]
 
     detunings =  []
     phases = []
@@ -197,7 +197,7 @@ def fit_rabi_multiple_detunings(g_A, g_a, g_F, g_tau, *arg):
             f2 = F()**2 + d**2
             val += A() * (F()**2/f2) * (cos(2*pi*sqrt(f2)*x + 0.) - 1)
 
-        return val # * exp(-x/tau())
+        return val * exp(-x/tau())
 
     return p0, fitfunc, fitfunc_str
 

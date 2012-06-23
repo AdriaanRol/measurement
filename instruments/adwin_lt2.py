@@ -297,6 +297,20 @@ class adwin_lt2(Instrument):
                         'params_float_index'  : 21,
                         'params_float_length' : 10,
                         },
+
+                'lde' : {
+                        'index' : 9,
+                        'file' : 'lde_control_lt2_v1.TB9',
+                        }
+
+
+                #gate modulation
+                'check_trigger_from_lt1' : {
+                        'index' : 9,
+                        'file' : 'check_trigger_from_lt1.TB9',
+                        'par' : {},
+                        'fpar': {}
+                        },
                 }
 
                
@@ -392,8 +406,6 @@ class adwin_lt2(Instrument):
         self.ins_cfg['dac_voltages'] = self._dac_voltages
 
     ### end config management
-
-
     def boot(self):
         self.physical_adwin.Boot()
         self.load_programs()  
@@ -402,6 +414,17 @@ class adwin_lt2(Instrument):
                         self.ADWIN_DIR + p['file'])
         self.physical_adwin.Start_Process(p['index'])
   
+    # automatic creation of process management/access tools from the 
+    # process dictionary
+    # def _make_process_tools(self, proc=self.ADWIN_PROCESSES):
+    #     for 
+
+    # def _make_process_load(self, pn, fn):
+    #     funcname = 'load_' + pn
+    #     def func
+    #     setattr(self, 
+    
+    
     def get_dac_channels(self):
         return self.ADWIN_DAC_OUTPUTS.copy() 
     
@@ -872,7 +895,24 @@ class adwin_lt2(Instrument):
             
         self.physical_adwin.Start_Process(p['index'])
 
+    #check for trigger from lt1
+    def start_check_trigger_from_lt1(self, **kw):
+        p = self.ADWIN_PROCESSES['check_trigger_from_lt1']
+        self.physical_adwin.Stop_Process(p['index'])
 
+        for i in range(10):
+            try:
+                if not(i==7):
+                    self.physical_adwin.Stop_Process(i)
+            except:
+                pass
+        self.physical_adwin.Load(self.ADWIN_DIR + p['file'])
+        
+        self.physical_adwin.Start_Process(p['index'])
+
+    def stop_check_trigger_from_lt1(self):
+        p = self.ADWIN_PROCESSES['check_trigger_from_lt1']
+        self.physical_adwin.Stop_Process(p['index'])
 
     def start_adwin_spincontrol(self, **kw):
         p = self.ADWIN_PROCESSES['spincontrol']

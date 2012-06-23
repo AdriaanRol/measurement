@@ -6,25 +6,48 @@ import msvcrt
 
 
 # measurement parameters
-start_v = -1
+start_v = -1.0
 stop_v = -2.5
-steps = 2001
+steps = 2501
 pxtime = 50  #ms
 do_smooth = True
-green_during = 0.0e-6
+green_during = 0.e-6
 green_before = 300e-6
-red_during= 4e-9
+red_during= 8e-9
 f_offset = 470400 # GHz
 mw = True
-mw_power = -20
-mw_frq = 2.745e9 #2.878e9
-dataname = 'Laserscan_sil2_LT1'
-LT2 = False
+mw_power = 15
+mw_frq = 2.8578e9 #2.878e9
+dataname = 'Laserscan_sil9_LT2_MW_0uW_green'
+LT2 = True
 
 # end measurement parameters
 
 # This version of laserscan now includes an abort function. To abort the laser
-# scan, press 'q'. 
+# scan, press 'q'.
+
+def power_ok():
+    if mw_power > 0:
+        proceed = 0
+        max_idx = 30
+        while proceed == 0:
+            print 'Warning: power > 0, hit c to continue' 
+            qt.msleep(1)
+            idx += idx + 1
+            if idx > max_idx:
+                proceed = 1
+                print 'No key stroke detected, quiting laser scan'
+                ret = False
+            if msvcrt.kbhit() and msvcrt.getch() = "q":
+                proceed = 1
+                print 'Quiting laser scan'
+                ret = False
+            if msvcrt.kbhit() and msvcrt.getch() = "c":
+                proceed = 1
+                print 'Continuing laser scan'
+                ret = True
+    return ret
+#while c 
 
 abort_check_time = 1000 #ms
 
@@ -55,7 +78,7 @@ if LT2:
 else:
     ins_adwin = qt.instruments['adwin_lt1']
     ins_laser_scan = qt.instruments['laser_scan_lt1']
-    ins_mw = qt.instruments['SMB100_lt1']
+    ins_mw = qt.instruments['SMB_100_lt1']
 
 ins_laser_scan.set_StartVoltage(start_v)
 ins_laser_scan.set_StopVoltage(stop_v)

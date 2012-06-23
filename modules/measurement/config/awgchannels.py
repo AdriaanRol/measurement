@@ -26,9 +26,9 @@ config['hydraharp'] = {
 config['mw'] = {
         'MW_pulsemod': {
             'AWG_channel' : 'ch1m1',
-            'high' : 2.0,
+            'high' : 2.5,
             'low' : 0.0,
-            'cable_delay' : 570,
+            'cable_delay' : 574,
             },
         'MW_Imod' : {
             'AWG_channel' : 'ch1',
@@ -46,12 +46,12 @@ config['mw'] = {
             'AWG_channel' : 'ch2',
             'high' : 0.9,
             'low' : -0.9,
-            'cable_delay': 549,
+            'cable_delay': 572,
             },
         'MW_Qmod_lt1' : {
             'AWG_channel' : 'ch1m2',
             'high' : 0.9,
-            'low' : -0.9,
+            'low' : 0,
             'cable_delay': 549,
             }
         }

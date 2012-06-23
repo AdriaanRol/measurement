@@ -6,9 +6,9 @@ import matplotlib.pyplot as plt
 from numpy import *
 
 #measurement parameters
-name = 'LT1-Sil2-MM-perkin-HH'
+name = 'LT2-Sil10-FS-HH'
 steps=35
-max_power=400e-6       #[w]
+max_power=500e-6       #[w]
 counter=1          #number of counter
 HH_count=False    # counting with the HH, assumes apd on channel 0
 bg_x=2          #delta x position of background [um]

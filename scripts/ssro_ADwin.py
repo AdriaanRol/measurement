@@ -7,7 +7,7 @@ import msvcrt
 import measurement.measurement as meas
 
 
-lt1=True
+lt1=False
 if lt1:
     ins_green_aom=qt.instruments['GreenAOM_lt1']
     ins_E_aom=qt.instruments['MatisseAOM_lt1']
@@ -40,7 +40,7 @@ par['SP_duration'] =                  250
 par['SP_filter_duration'] =           0
 par['sequence_wait_time'] =           10
 par['wait_after_pulse_duration'] =    1
-par['CR_preselect_'] =                20
+par['CR_preselect'] =                1000
 par['SSRO_repetitions'] =             5000
 par['SSRO_duration'] =                100
 par['SSRO_stop_after_first_photon'] = 0
@@ -48,11 +48,11 @@ par['cycle_duration'] =               300
 
 par['green_repump_amplitude'] =       200e-6
 par['green_off_amplitude'] =          0e-6
-par['Ex_CR_amplitude'] =              7e-9
-par['A_CR_amplitude'] =               7e-9
+par['Ex_CR_amplitude'] =              5e-9
+par['A_CR_amplitude'] =               10e-9
 par['Ex_SP_amplitude'] =              0e-9
-par['A_SP_amplitude'] =               7e-9
-par['Ex_RO_amplitude'] =              7e-9
+par['A_SP_amplitude'] =               5e-9
+par['Ex_RO_amplitude'] =              5e-9
 par['A_RO_amplitude'] =               0e-9
 
 ins_green_aom.set_power(0.)
@@ -222,8 +222,6 @@ def ssro_init(name, data, par, do_ms0 = True, do_ms1 = True,
         ssro(name,data,par)
 
 def main():
-    print 'lt1:', lt1
-    par['CR_preselect'] = 25
     name = 'SIL10'
     data = meas.Measurement(name,'ADwin_SSRO')
     #ssro_vs_Ex_amplitude(name,data,par,1000)
