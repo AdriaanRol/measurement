@@ -15,7 +15,7 @@ class adwin_lt1(Instrument):
         self.physical_adwin = qt.instruments['physical_adwin_lt1']
         #self.physical_adwin.Boot()
 
-        self.ADWIN_DIR = 'D:\\measuring\\user\\ADwin_Codes\\adwin_gold_2\\'
+        self.ADWIN_DIR = 'D:\\measuring\\user\\ADwin_Codes\\adwin_gold_2_lt1\\'
         
         self.ADWIN_DEFAULT_PROCESSES = [ 'counter', 'set_dio', 'set_dac',
                 'linescan' ]
