@@ -1,3 +1,12 @@
 *.swp
 *.pyc
 *~
+*.TB*
+*.bak
+*.npz
+*.dll
+*.bin
+Labview*
+config
+*.zip
+*.png

@@ -33,7 +33,8 @@ class Lakeshore_340(Instrument):
         self._channels = ('A', 'B', 'C', 'D')
         
         self.add_parameter('identification',
-            flags=Instrument.FLAG_GET)
+            flags=Instrument.FLAG_GET,
+            type=types.StringType)
 
         self.add_parameter('kelvin',
             flags=Instrument.FLAG_GET,
