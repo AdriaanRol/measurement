@@ -70,12 +70,11 @@
 '  10 : SSRO time (process cycles)
 '  11 : LDE time before CR check force (process cycles)
 '  12 : AWG start DO channel
-'  13 : AWG done DI channel
-'  14 : PLU arm DO channel
-'  15 : Trigger remote CR DO
-'  16 : Remote CR done DI-bit
-'  17 : Trigger remote SSRO DO
-'  18 : PLU success DI-bit
+'  13 : PLU arm DO channel
+'  14 : Trigger remote CR DO
+'  15 : Remote CR done DI-bit
+'  16 : Trigger remote SSRO DO
+'  17 : PLU success DI-bit
 
 ' DATA_21: float parameters
 '   1 : green repump voltage
@@ -95,7 +94,7 @@
 #INCLUDE configuration.inc
 
 ' parameters
-DIM DATA_20[18] AS LONG               ' integer parameters
+DIM DATA_20[17] AS LONG               ' integer parameters
 DIM DATA_21[6] AS FLOAT              ' float parameters
 
 ' general variables
@@ -134,9 +133,7 @@ dim trigger_ssro_dio_out as long
 
 ' LDE sequence
 dim max_lde_time as long
-DIM AWG_done_DI_pattern AS LONG
 DIM AWG_start_DO_channel AS LONG
-DIM AWG_done_DI_channel AS LONG
 dim PLU_arm_DO_channel as LONG
 dim PLU_success_dio_in_bit as long
 dim is_PLU_success, was_PLU_success as integer
@@ -188,17 +185,16 @@ INIT:
   
   ' remote stuff
   is_cr_lt1_OK = 0
-  trigger_cr_dio_in_bit = data_20[16]
-  trigger_cr_dio_out = data_20[15]
-  trigger_ssro_dio_out = data_20[17]
+  trigger_cr_dio_in_bit = data_20[15]
+  trigger_cr_dio_out = data_20[14]
+  trigger_ssro_dio_out = data_20[16]
   
   ' LDE sequence
   max_lde_time = data_20[11]
   ' completed_lde_attempts = 0
   AWG_start_DO_channel = data_20[12]
-  AWG_done_DI_channel = data_20[13]
-  PLU_arm_DO_channel = data_20[14]
-  PLU_success_dio_in_bit = data_20[18]
+  PLU_arm_DO_channel = data_20[13]
+  PLU_success_dio_in_bit = data_20[17]
   is_PLU_success = 0
   
   ' SSRO
@@ -212,7 +208,6 @@ INIT:
   next i
   
   ' misc
-  AWG_done_DI_pattern = 2 ^ AWG_done_DI_channel
   counter_pattern     = 2 ^ (counter-1)
 
   ' prepare hardware

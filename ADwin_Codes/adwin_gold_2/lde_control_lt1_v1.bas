@@ -241,6 +241,9 @@ event:
           DIGOUT(trigger_cr_dio_out, 1)
           par_77 = par_77 + 1
           current_cr_threshold = cr_check_count_threshold_probe
+          mode = 0
+          timer = -1
+          cr_is_triggered = 0
         endif
         
         if (current_cr_check_counts < max_hist_cts) then
@@ -290,6 +293,7 @@ event:
         RO_event_idx = RO_event_idx+1
         mode = 0
         timer = -1
+        ssro_is_triggered = 0 
       endif
                
       timer = timer + 1

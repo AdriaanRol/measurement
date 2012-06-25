@@ -184,7 +184,7 @@ class master_of_space(CyclopeanInstrument):
                 print "Error in master_of_space.linescan_start: Exceeding max.min voltage"
                 print stops[i] / dim['micron_per_volt']            
 
-        self._adwin.start_linescan(dacs, np.array(starts_v), np.array(stops_v),
+        self._adwin.linescan(dacs, np.array(starts_v), np.array(stops_v),
                 steps, px_time, value=value, scan_to_start=True)
 
         # start monitoring the status
