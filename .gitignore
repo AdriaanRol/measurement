@@ -8,3 +8,4 @@ Labview*
 *.npz
 *.png
 config
+*.cfg
