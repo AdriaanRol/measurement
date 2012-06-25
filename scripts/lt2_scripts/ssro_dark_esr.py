@@ -12,17 +12,17 @@ import measurement.PQ_measurement_generator_v2 as pqm
 from measurement.config import awgchannels as awgcfg
 from measurement.sequence import common as commonseq
 
-f_mw    = 2.844E9
-f_start = 2.854E9           #start frequency in Hz
-f_stop = 2.864E9            #stop frequency in Hz
-pi_pulse_length = 5000      #length of MW pi pulse
+f_mw    = 2.84E9
+f_start = 2.8542E9           #start frequency in Hz
+f_stop = 2.8613E9            #stop frequency in Hz
+pi_pulse_length = 1500      #length of MW pi pulse
 mwpower_lt1 = -20           #in dBm
 mwpower_lt2 = 15            #in dBm
-nr_of_datapoints = 80       #max nr_of_datapoints*repetitions_per_datapoint should be < 20000
-repetitions_per_datapoint = 500 
-
+nr_of_datapoints = 150       #max nr_of_datapoints*repetitions_per_datapoint should be < 20000
+repetitions_per_datapoint = 2000 
+amplitude_ssbmod = 0.2
 mwfreq = np.linspace(f_start,f_stop,nr_of_datapoints)
-lt1 = False
+lt1 = True
 
 awg = qt.instruments['AWG']
 
@@ -33,9 +33,9 @@ if lt1:
     adwin=qt.instruments['adwin_lt1']
     counters=qt.instruments['counters_lt1']
     physical_adwin=qt.instruments['physical_adwin_lt1']
-    microwaves = qt.instruments['SMB100_lt1']
-    mwpower = mwpower_lt1
+    microwaves = qt.instruments['SMB_100_lt1']
     ctr_channel=2
+    mwpower = mwpower_lt1
 else:
     ins_green_aom=qt.instruments['GreenAOM']
     ins_E_aom=qt.instruments['MatisseAOM']
@@ -44,14 +44,14 @@ else:
     counters=qt.instruments['counters']
     physical_adwin=qt.instruments['physical_adwin']
     microwaves = qt.instruments['SMB100']
-    mwpower = mwpower_lt2
     ctr_channel=1
+    mwpower = mwpower_lt2
 
 microwaves.set_iq('on')
 microwaves.set_frequency(f_mw)
 microwaves.set_pulm('on')
 microwaves.set_power(mwpower)
-microwaves.on()
+microwaves.set_status('on')
 
 par = {}
 par['counter_channel'] =              ctr_channel
@@ -63,25 +63,25 @@ par['AWG_done_DI_channel'] =          8
 par['send_AWG_start'] =               1
 par['wait_for_AWG_done'] =            0
 par['green_repump_duration'] =        6
-par['CR_duration'] =                  60
-par['SP_duration'] =                  25
+par['CR_duration'] =                  100
+par['SP_duration'] =                  250
 par['SP_filter_duration'] =           0
-par['sequence_wait_time'] =           ceil(pi_pulse_length/1E3)+1
+par['sequence_wait_time'] =           int(ceil(pi_pulse_length/1e3)+1)
 par['wait_after_pulse_duration'] =    1
-par['CR_preselect'] =                 100
-par['RO_repetitions'] =               nr_of_datapoints*repetitions_per_datapoint
-par['RO_duration'] =                  20
-par['sweep_length'] =                 nr_of_datapoints
+par['CR_preselect'] =                 1000
+par['RO_repetitions'] =               int(nr_of_datapoints*repetitions_per_datapoint)
+par['RO_duration'] =                  25
+par['sweep_length'] =                 int(nr_of_datapoints)
 par['cycle_duration'] =               300
 par['CR_probe'] =                     100
 
 par['green_repump_amplitude'] =       200e-6
 par['green_off_amplitude'] =          0e-6
-par['Ex_CR_amplitude'] =              7e-9 #OK
-par['A_CR_amplitude'] =               7e-9 #OK
+par['Ex_CR_amplitude'] =              5e-9 #OK
+par['A_CR_amplitude'] =               10e-9 #OK
 par['Ex_SP_amplitude'] =              0e-9
-par['A_SP_amplitude'] =               7e-9 #OK: PREPARE IN MS = 0
-par['Ex_RO_amplitude'] =              7e-9 #OK: READOUT MS = 0
+par['A_SP_amplitude'] =               10e-9 #OK: PREPARE IN MS = 0
+par['Ex_RO_amplitude'] =              5e-9 #OK: READOUT MS = 0
 par['A_RO_amplitude'] =               0e-9
 
 
@@ -119,16 +119,20 @@ max_RO_dim = 1000000
 def generate_sequence(fstart = f_start-f_mw, fstop = f_stop-f_mw, steps = nr_of_datapoints, do_program = True):
     seq = Sequence('dark_esr')
 
-    print (fstart+f_mw)/1E9
-    print (fstop+f_mw)/1E9
+    print 'start frequency = ',(fstart+f_mw)/1E9
+    print 'stop frequency = ',(fstop+f_mw)/1E9
 
-    
     awgcfg.configure_sequence(seq,'mw')
     
     # vars for the channel names
-    chan_mwpulsemod = 'MW_pulsemod'
-    chan_mwI = 'MW_Imod'
-    chan_mwQ = 'MW_Qmod'    
+    chan_mw_pm = 'MW_pulsemod' #is connected to ch1m1
+
+    if lt1:
+        chan_mwI = 'MW_Imod_lt1'
+        chan_mwQ = 'MW_Qmod_lt1'
+    else:
+        chan_mwI = 'MW_Imod'
+        chan_mwQ = 'MW_Qmod'
 
     # in this version we keep the center frequency and sweep the
     # modulation frequency
@@ -136,17 +140,17 @@ def generate_sequence(fstart = f_start-f_mw, fstop = f_stop-f_mw, steps = nr_of_
     # f_central = (fstart+fstop)/2.0
     
     pipulse = pi_pulse_length
-    # amplitude_mod = 1. 
-    # power = 20.
 
     mode = 'SSB'
     amplitude_i = 0.
     amplitude_q = 0. 
 
-    amplitude_ssbmod = 0.8
-    # f_ssbmod = 0.
+    
 
-    MW_pulse_mod_risetime = 20
+    if lt1:
+        MW_pulse_mod_risetime = 2
+    else:
+        MW_pulse_mod_risetime = 6
 
     # sweep the modulation freq
     for i, f_mod in enumerate(linspace(fstart, fstop, steps)):
@@ -157,15 +161,20 @@ def generate_sequence(fstart = f_start-f_mw, fstop = f_stop-f_mw, steps = nr_of_
         ename = 'desrseq%d' % i
         kw = {} if i < steps-1 else {'goto_target': 'desrseq0'}
         seq.add_element(ename, trigger_wait = True, **kw)
+
+        seq.add_pulse('wait', channel = chan_mw_pm, element = ename,
+                start = 0, duration = 100, amplitude = 0)
         
-        seq.add_IQmod_pulse(name = 'mwburst', channel = (chan_mwI,chan_mwQ), 
-            element = ename, start = 0, duration = pipulse,  
-            frequency = f_mod, 
-            amplitude = amplitude_ssbmod)
+        seq.add_pulse(name = 'mwburst', channel = chan_mwI, 
+            element = ename, start = 0, duration = pipulse,
+            frequency = f_mod, shape = 'sine', 
+            amplitude = amplitude_ssbmod, link_start_to = 'end',
+            start_reference = 'wait')
                              
-        seq.clone_channel(chan_mwpulsemod, chan_mwI, ename,
+        seq.add_pulse('pulse_mod', channel = chan_mw_pm, element = ename,
             start=-MW_pulse_mod_risetime, duration=2*MW_pulse_mod_risetime, 
-            link_start_to = 'start', link_duration_to = 'duration', 
+            start_reference = 'mwburst', link_start_to = 'start', 
+            duration_reference = 'mwburst', link_duration_to = 'duration', 
             amplitude = 2.0)
 
         ###################################################################
@@ -229,6 +238,9 @@ def dark_esr(name, data, par):
         Ex_RO_voltage = par['Ex_RO_voltage'],
         A_RO_voltage = par['A_RO_voltage'])
 
+    if lt1:
+        adwin_lt2.start_check_trigger_from_lt1()
+
     CR_counts = 0
     while (physical_adwin.Process_Status(9) == 1):
         reps_completed = physical_adwin.Get_Par(73)
@@ -241,6 +253,9 @@ def dark_esr(name, data, par):
         qt.msleep(1)
     physical_adwin.Stop_Process(9)
     
+    if lt1:
+        adwin_lt2.stop_check_trigger_from_lt1()
+
     reps_completed      = physical_adwin.Get_Par(73)
     print('completed %s / %s readout repetitions'%(reps_completed,par['RO_repetitions']))
 
@@ -260,23 +275,8 @@ def dark_esr(name, data, par):
     sp_time = arange(par['SP_duration'])*par['cycle_duration']*3.333
     ro_time = arange(par['RO_duration'])*par['cycle_duration']*3.333
 
-    #stat_str = ''
-    #stat_str += '# successful repetitions: %s\n'%(reps_completed/sweep_length)
-    #stat_str += '# total repumps: %s\n'%(statistics[0])
-    #stat_str += '# total repump counts: %s\n'%(statistics[1])
-    #stat_str += '# failed CR: %s\n'%(statistics[2])
-    #stat_str += '# MW center frequency: %s\n'%(f_mw)
-    #stat_str += '# MW drive frequency: %s\n'%(f_drive)
-    #stat_str += '# MW power: %s dBm\n'%(mwpower)
-    #stat_str += '# min MW length: %s ns\n'%(min_mwpulse_length )
-    #stat_str += '# max MW length: %s ns\n'%(max_mwpulse_length )
-    #stat_str += '# nr of datapoints: %s \n'%(nr_of_datapoints)
 
     data.save()
-    #savdat={}
-    #savdat['counts']=CR_before
-    #data.save_dataset(name='ChargeRO_before', do_plot=False, 
-    #    txt = {'statistics': stat_str}, data = savdat, idx_increment = False)
     savdat={}
     savdat['counts']=CR_after
     data.save_dataset(name='ChargeRO_after', do_plot=False, 
@@ -324,7 +324,7 @@ def end_measurement():
     adwin.set_simple_counting()
     counters.set_is_running(1)
     ins_green_aom.set_power(200e-6)   
-    microwaves.off()
+    microwaves.set_status('off')
     microwaves.set_iq('off')
     microwaves.set_pulm('off')
 

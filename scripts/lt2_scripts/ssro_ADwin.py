@@ -30,7 +30,7 @@ par['counter_channel'] =              ctr_channel
 par['green_laser_DAC_channel'] =      adwin.get_dac_channels()['green_aom']
 par['Ex_laser_DAC_channel'] =         adwin.get_dac_channels()['matisse_aom']
 par['A_laser_DAC_channel'] =          adwin.get_dac_channels()['newfocus_aom']
-par['AWG_start_DO_channel'] =         16
+par['AWG_start_DO_channel'] =         1
 par['AWG_done_DI_channel'] =          8
 par['send_AWG_start'] =               0
 par['wait_for_AWG_done'] =            0
@@ -38,9 +38,9 @@ par['green_repump_duration'] =        6
 par['CR_duration'] =                  100
 par['SP_duration'] =                  250
 par['SP_filter_duration'] =           0
-par['sequence_wait_time'] =           0
+par['sequence_wait_time'] =           10
 par['wait_after_pulse_duration'] =    1
-par['CR_preselect_'] =                20
+par['CR_preselect'] =                1000
 par['SSRO_repetitions'] =             5000
 par['SSRO_duration'] =                100
 par['SSRO_stop_after_first_photon'] = 0
@@ -49,7 +49,7 @@ par['cycle_duration'] =               300
 par['green_repump_amplitude'] =       200e-6
 par['green_off_amplitude'] =          0e-6
 par['Ex_CR_amplitude'] =              5e-9
-par['A_CR_amplitude'] =               5e-9
+par['A_CR_amplitude'] =               10e-9
 par['Ex_SP_amplitude'] =              0e-9
 par['A_SP_amplitude'] =               5e-9
 par['Ex_RO_amplitude'] =              5e-9
@@ -222,8 +222,6 @@ def ssro_init(name, data, par, do_ms0 = True, do_ms1 = True,
         ssro(name,data,par)
 
 def main():
-    print 'lt1:', lt1
-    par['CR_preselect'] = 25
     name = 'SIL10'
     data = meas.Measurement(name,'ADwin_SSRO')
     #ssro_vs_Ex_amplitude(name,data,par,1000)

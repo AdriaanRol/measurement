@@ -195,6 +195,8 @@ INIT:
   mode = 0
   timer = 0
   processdelay = cycle_duration
+  
+  ' No documentation for this stuff at the top and in the adwin class --wp, Jun16
   Par_73 = repetition_counter
   'PAR_23 = 0
   'PAR_25 = 0
