@@ -184,6 +184,48 @@ class adwin_lt1(Instrument):
                         'params_float_index'  : 21,
                         'params_float_length' : 10,
                         },
+
+                'spincontrol' : {  #with conditional repump, resonant
+                        'index' : 9,
+                        'file' : 'spincontrol_lt1.TB9',
+                        'params_long' : [           # keep order!!!!!!!!!!!!!
+                            ['counter_channel'             ,   1],
+                            ['green_laser_DAC_channel'     ,   7],
+                            ['Ex_laser_DAC_channel'        ,   6],
+                            ['A_laser_DAC_channel'         ,   8],
+                            ['AWG_start_DO_channel'        ,   1],
+                            ['AWG_done_DI_channel'         ,   8],
+                            ['send_AWG_start'              ,   0],
+                            ['wait_for_AWG_done'           ,   0],
+                            ['green_repump_duration'       ,   5],
+                            ['CR_duration'                 ,  50],
+                            ['SP_duration'                 , 100],
+                            ['SP_filter_duration'          ,   0],
+                            ['sequence_wait_time'          ,   0],
+                            ['wait_after_pulse_duration'   ,   1],
+                            ['CR_preselect'                ,  10],
+                            ['RO_repetitions'              ,1000],
+                            ['RO_duration'                 ,  50],
+                            ['sweep_length'                ,  10],
+                            ['cycle_duration'              , 300],
+                            ['CR_probe'                    ,  10]
+                            ],
+                        'params_long_index'  : 20,
+                        'params_long_length' : 25,
+                        'params_float' : [
+                            ['green_repump_voltage' , 0.8],
+                            ['green_off_voltage'    , 0.0],
+                            ['Ex_CR_voltage'        , 0.8],
+                            ['A_CR_voltage'         , 0.8],
+                            ['Ex_SP_voltage'        , 0.8],
+                            ['A_SP_voltage'         , 0.8],
+                            ['Ex_RO_voltage'        , 0.8],
+                            ['A_RO_voltage'         , 0.8]
+                            ],
+                        'params_float_index'  : 21,
+                        'params_float_length' : 10,
+                        },
+
                 }
 
         self.ADWIN_DAC_OUTPUTS = {
@@ -660,6 +702,47 @@ class adwin_lt1(Instrument):
             p['params_float_index'], 1, p['params_float_length'])
             
         self.physical_adwin.Start_Process(p['index'])
+
+    def start_adwin_spincontrol(self, **kw):
+        p = self.ADWIN_PROCESSES['spincontrol']
+        self.physical_adwin.Stop_Process(p['index'])
+        for i in range(10):
+            try:
+                if not(i==7):
+                    self.physical_adwin.Stop_Process(i)
+            except:
+                pass
+
+        self.physical_adwin.Load(
+                        self.ADWIN_DIR + p['file'])
+
+        params_long = np.zeros(p['params_long_length'], dtype = int)
+        for i in range(len(p['params_long'])):
+            val = kw.get(p['params_long'][i][0], p['params_long'][i][1])
+            params_long[i] = val
+        self.physical_adwin.Set_Data_Long(params_long, 
+            p['params_long_index'], 1, p['params_long_length'])
+            
+        params_float = np.zeros(p['params_float_length'], dtype = float)
+        for i in range(len(p['params_float'])):
+            val = kw.get(p['params_float'][i][0], p['params_float'][i][1])
+            params_float[i] = val
+        self.physical_adwin.Set_Data_Float(params_float, 
+            p['params_float_index'], 1, p['params_float_length'])
+            
+        self.physical_adwin.Start_Process(p['index'])    
+
+    def remote_tpqi_control_get_noof_tailcts(self):
+        p = self.ADWIN_PROCESSES['remote_tpqi_control']
+        return self.physical_adwin.Get_Par(p['par']['set_noof_tailcts'])
+
+    def noof_tailcts_to_par(self,noof_tailcts):
+        p = self.ADWIN_PROCESSES['remote_tpqi_control']
+        self.physical_adwin.Set_Par(p['par']['set_noof_tailcts'],noof_tailcts)
+
+    def stop_remote_tpqi_control(self):
+        p = self.ADWIN_PROCESSES['remote_tpqi_control']
+        self.physical_adwin.Stop_Process(p['index'])        
 
     def stop_remote_tpqi_control(self):
         p = self.ADWIN_PROCESSES['remote_tpqi_control']

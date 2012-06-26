@@ -1,6 +1,7 @@
 *.swp
 *.pyc
 *~
+*.cfg
 *.TB*
 *.bak
 *.npz

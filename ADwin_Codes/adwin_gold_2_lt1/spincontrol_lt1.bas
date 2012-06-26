@@ -10,7 +10,9 @@
 ' Optimize_Level                 = 1
 ' Info_Last_Save                 = TUD276629  TUD276629\localadmin
 '<Header End>
-' this program implements single-shot readout fully controlled by ADwin Gold II
+' this program implements spin readout based on the ssro protocol, 
+' but integrated over repetitions and readout time.
+' the measurement protocol is fully controlled by ADwin Pro II.
 '
 ' protocol:
 ' mode  0:  green pulse, 
@@ -42,9 +44,9 @@
 '  13       sequence_wait_time
 '  14       wait_after_pulse_duration
 '  15       CR_preselect
-'  16       SSRO_repetitions
-'  17       SSRO_duration
-'  18       SSRO_stop_after_first_photon
+'  16       RO_repetitions
+'  17       RO_duration
+'  18       sweep_length
 '  19       cycle_duration              (in processor clock cycles, 3.333ns)
 
 ' float parameters: DATA_21[i]
@@ -59,10 +61,10 @@
 '   8       A_RO_voltage
 
 ' return values:
-' Data_22[repetitions]                 CR counts before sequence
-' Data_23[repetitions]                 CR counts after sequence
+' Data_22[1]                 CR counts before sequence
+' Data_23[1]                 CR counts after sequence
 ' Data_24[SP_duration]                 time dependence SP
-' Data_25[SSRO_duration*repetitions]   spin readout
+' Data_25[RO_duration]                 spin readout
 ' Data_26[...]                         statistics
 '   1   repumps
 '   2   CR_failed
@@ -70,17 +72,16 @@
 
 #INCLUDE ADwinGoldII.inc
 
-#DEFINE max_repetitions 10000
 #DEFINE max_SP_bins       500
-#DEFINE max_SSRO_dim   500000
+#DEFINE max_RO_dim    1000000
 #DEFINE max_stat           10
 
-DIM DATA_20[25] AS LONG               ' integer parameters
-DIM DATA_21[10] AS FLOAT              ' float parameters
-DIM DATA_22[max_repetitions] AS LONG AT EM_LOCAL  ' CR counts before sequence
-DIM DATA_23[max_repetitions] AS LONG AT EM_LOCAL  ' CR counts after sequence
+DIM DATA_20[25] AS LONG                           ' integer parameters
+DIM DATA_21[10] AS FLOAT                          ' float parameters
+DIM DATA_22[1] AS LONG AT EM_LOCAL                ' CR counts before sequence
+DIM DATA_23[1] AS LONG AT EM_LOCAL                ' CR counts after sequence
 DIM DATA_24[max_SP_bins] AS LONG AT EM_LOCAL      ' SP counts
-DIM DATA_25[max_SSRO_dim] AS LONG AT DRAM_EXTERN  ' SSRO counts
+DIM DATA_25[max_RO_dim] AS LONG AT DRAM_EXTERN    ' RO counts
 DIM DATA_26[max_stat] AS LONG AT EM_LOCAL         ' statistics
 
 DIM counter_channel AS LONG
@@ -98,10 +99,10 @@ DIM SP_filter_duration AS LONG
 DIM sequence_wait_time AS LONG
 DIM wait_after_pulse_duration AS LONG
 DIM CR_preselect AS LONG
-DIM SSRO_repetitions AS LONG
-DIM SSRO_duration AS LONG
-DIM SSRO_stop_after_first_photon AS LONG
+DIM RO_repetitions AS LONG
+DIM RO_duration AS LONG
 DIM cycle_duration AS LONG
+DIM sweep_length AS LONG
 
 DIM green_repump_voltage AS FLOAT
 DIM green_off_voltage AS FLOAT
@@ -122,8 +123,9 @@ DIM CR_failed AS LONG
 DIM total_repump_counts AS LONG
 DIM counter_pattern AS LONG
 DIM AWG_done_DI_pattern AS LONG
-DIM counts, old_counts AS LONG
+DIM counts, old_counts, counts_CR AS LONG
 DIM first AS LONG
+DIM sweep_index AS LONG
 
 INIT:
   counter_channel              = DATA_20[1]
@@ -141,9 +143,9 @@ INIT:
   sequence_wait_time           = DATA_20[13]
   wait_after_pulse_duration    = DATA_20[14]
   CR_preselect                 = DATA_20[15]
-  SSRO_repetitions             = DATA_20[16]
-  SSRO_duration                = DATA_20[17]
-  SSRO_stop_after_first_photon = DATA_20[18]
+  RO_repetitions               = DATA_20[16]
+  RO_duration                  = DATA_20[17]
+  sweep_length = DATA_20[18]
   cycle_duration               = DATA_20[19]
   
   green_repump_voltage         = DATA_21[1]
@@ -155,16 +157,14 @@ INIT:
   Ex_RO_voltage                = DATA_21[7]
   A_RO_voltage                 = DATA_21[8]
   
-  FOR i = 1 TO SSRO_repetitions
-    DATA_22[i] = 0
-    DATA_23[i] = 0
-  NEXT i
+  DATA_22[1] = 0
+  DATA_23[1] = 0
   
   FOR i = 1 TO max_SP_bins
     DATA_24[i] = 0
   NEXT i
   
-  FOR i = 1 TO SSRO_repetitions*SSRO_duration
+  FOR i = 1 TO max_RO_dim
     DATA_25[i] = 0
   NEXT i
   
@@ -189,24 +189,24 @@ INIT:
   CNT_ENABLE(0000b)'turn off all counters
   CNT_MODE(counter_channel,00001000b) 'configure counter
 
-  CONF_DIO(13)      'configure DIO 08:15 as input, all other ports as output
+  CONF_DIO(13) 'P2_Digprog(DIO_MODULE, 13)      'configure DIO 08:15 as input, all other ports as output
   DIGOUT(AWG_start_DO_channel,0)
 
   mode = 0
   timer = 0
+  sweep_index = 0
   processdelay = cycle_duration
-  
-  ' No documentation for this stuff at the top and in the adwin class --wp, Jun16
   Par_73 = repetition_counter
-  'PAR_23 = 0
-  'PAR_25 = 0
+  PAR_23 = 0
+  PAR_25 = 0
   
   PAR_70 = 0                      ' cumulative counts from probe intervals
   PAR_71 = 0                      ' below CR threshold events
-  PAR_72 = 0                      ' number of CR checks performed (lt1)
-  Par_75 = CR_preselect
+  PAR_72 = 0                      ' number of CR checks performed (lt2)
+  par_75 = CR_preselect
   par_76 = 0                      ' cumulative counts during repumping
-  Par_80 = 0                      ' cumulative counts in PSB when not CR chekging or repummping 
+  par_79 = 0                      ' cumulative LT2 counts in PSB during ssro sequence
+  
   
 EVENT:
   CR_preselect                 = PAR_75
@@ -219,7 +219,7 @@ EVENT:
     SELECTCASE mode
       CASE 0    ' green repump
         IF (timer = 0) THEN
-          CNT_CLEAR( counter_pattern)    'clear counter
+          CNT_CLEAR(counter_pattern)    'clear counter
           CNT_ENABLE(counter_pattern)	  'turn on counter
           DAC(green_laser_DAC_channel, 3277*green_repump_voltage+32768) ' turn on green
           repumps = repumps + 1
@@ -239,28 +239,31 @@ EVENT:
         IF (timer = 0) THEN
           DAC(Ex_laser_DAC_channel, 3277*Ex_CR_voltage+32768) ' turn on Ex laser
           DAC(A_laser_DAC_channel, 3277*A_CR_voltage+32768) ' turn on A laser
-          CNT_CLEAR( counter_pattern)    'clear counter
+          CNT_CLEAR(counter_pattern)    'clear counter
           CNT_ENABLE(counter_pattern)	  'turn on counter
           INC(PAR_72)
         ELSE 
           IF (timer = CR_duration) THEN
-            DAC(Ex_laser_DAC_channel, 32768) ' turn off Ex laser
-            DAC(A_laser_DAC_channel, 32768) ' turn off A laser
-            counts = CNT_READ(counter_channel)
+            counts_CR = CNT_READ(counter_channel)
             CNT_ENABLE(0)
-            PAR_70 = PAR_70 + counts
+            PAR_70 = PAR_70 + counts_CR
             IF (first > 0) THEN ' first CR after SSRO sequence
-              DATA_23[repetition_counter] = counts
+              DATA_23[1] = DATA_23[1] + counts_CR
               first = 0
             ENDIF
-            IF (counts < CR_preselect) THEN
+            IF (counts_CR < CR_preselect) THEN
               mode = 0
-              CR_failed = CR_failed + 1
+              INC(CR_failed)
               PAR_71 = CR_failed
               'PAR_25 = CR_preselect
+              'PAR_26 = counts
             ELSE
+              DAC(Ex_laser_DAC_channel, 32768) ' turn off Ex laser
+              DAC(A_laser_DAC_channel, 32768) ' turn off A laser
               mode = 2
-              DATA_22[repetition_counter+1] = counts  ' CR before next SSRO sequence
+              DATA_22[1] = DATA_22[1] + counts_CR  ' CR before next SSRO sequence
+              'PAR_25 = CR_preselect
+              'PAR_26 = counts
             ENDIF
             timer = -1
             wait_after_pulse = wait_after_pulse_duration
@@ -270,7 +273,7 @@ EVENT:
         IF (timer = 0) THEN
           DAC(Ex_laser_DAC_channel, 3277*Ex_SP_voltage+32768) ' turn on Ex laser
           DAC(A_laser_DAC_channel, 3277*A_SP_voltage+32768)   ' turn on A laser
-          CNT_CLEAR( counter_pattern)    'clear counter
+          CNT_CLEAR(counter_pattern)    'clear counter
           CNT_ENABLE(counter_pattern)	  'turn on counter
           old_counts = 0
         ELSE 
@@ -297,7 +300,7 @@ EVENT:
         ENDIF
       CASE 3    ' SP filter (postselection)
         IF (timer = 0) THEN
-          CNT_CLEAR( counter_pattern)    'clear counter
+          CNT_CLEAR(counter_pattern)    'clear counter
           CNT_ENABLE(counter_pattern)	  'turn on counter
         ELSE 
           IF (timer = SP_filter_duration) THEN
@@ -360,50 +363,39 @@ EVENT:
       
       CASE 5    ' spin readout
         IF (timer = 0) THEN
-          CNT_CLEAR( counter_pattern)    'clear counter
+          CNT_CLEAR(counter_pattern)    'clear counter
           CNT_ENABLE(counter_pattern)	  'turn on counter
           DAC(Ex_laser_DAC_channel, 3277*Ex_RO_voltage+32768) ' turn on Ex laser
           DAC(A_laser_DAC_channel, 3277*A_RO_voltage+32768) ' turn on A laser
           old_counts = 0
         ELSE 
-          IF (timer = SSRO_duration) THEN
+          IF (timer = RO_duration) THEN
             DAC(Ex_laser_DAC_channel, 32768) ' turn off Ex laser
             DAC(A_laser_DAC_channel, 32768) ' turn off A laser
             counts = CNT_READ(counter_channel) - old_counts
             old_counts = counts
             PAR_79 = PAR_79 + counts
-            i = timer + repetition_counter * SSRO_duration
-            DATA_25[i] = counts
+            i = timer + RO_duration * sweep_index
+            DATA_25[i] = DATA_25[i] + counts
             CNT_ENABLE(0)
             mode = 1
             timer = -1
             wait_after_pulse = wait_after_pulse_duration
             repetition_counter = repetition_counter + 1
             Par_73 = repetition_counter
-            IF (repetition_counter = SSRO_repetitions) THEN
+            INC(sweep_index)
+            IF (sweep_index = sweep_length) THEN
+              sweep_index = 0
+            ENDIF
+            
+            IF (repetition_counter = RO_repetitions) THEN
               END
             ENDIF
             first = 1
           ELSE
             counts = CNT_READ(counter_channel)
-            i = timer + repetition_counter * SSRO_duration
-            IF ((SSRO_stop_after_first_photon > 0 ) and (counts > 0)) THEN
-              DAC(Ex_laser_DAC_channel, 32768) ' turn off Ex laser
-              DAC(A_laser_DAC_channel, 32768) ' turn off A laser
-              CNT_ENABLE(0)
-              PAR_79 = PAR_79 + counts
-              mode = 1
-              timer = -1
-              wait_after_pulse = wait_after_pulse_duration
-              repetition_counter = repetition_counter + 1
-              Par_73 = repetition_counter
-              DATA_25[i] = counts
-              IF (repetition_counter = SSRO_repetitions) THEN
-                END
-              ENDIF
-              first = 1
-            ENDIF
-            DATA_25[i] = counts - old_counts
+            i = timer + RO_duration * sweep_index
+            DATA_25[i] = DATA_25[i] + counts - old_counts
             old_counts = counts
           ENDIF
         ENDIF
@@ -416,6 +408,4 @@ FINISH:
   DATA_26[1] = repumps
   DATA_26[2] = total_repump_counts
   DATA_26[3] = CR_failed
-  
-
 

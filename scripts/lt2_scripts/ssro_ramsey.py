@@ -17,19 +17,22 @@ from measurement.config import awgchannels as awgcfg
 from measurement.sequence import common as commonseq
 
 
-name = 'SIL9_LT2'
+name = 'SIL9_lt2'
 
-nr_of_datapoints = 20      #max nr_of_datapoints should be < 10000
-repetitions_per_datapoint = 1000
-min_mwpulse_length = 0    #in ns
-max_mwpulse_length = 3000    #in ns
-f_drive = 2.8569E9#2.85877E9#2.854E9         #in Hz
-mwpower_lt1 = 0               #in dBm
-mwpower_lt2 = -30               #in dBm
-f_mw = f_drive #- 30E6
-amplitude_ssbmod = 0.8 #do not exceed 0.8, weird stuff happens: ask Wolfgang 
+nr_of_datapoints =              201     #max nr_of_datapoints should be < 10000
+repetitions_per_datapoint =     500    
+min_wait_time =                 10      #in ns
+max_wait_time =                 8010    #in ns
+pi_2_pulse_length =             27      #in ns
+f_drive =                       2.8578E9#in Hz
+detuning=                       0       #in Hz
+mwpower_lt1 =                   0       #in dBm
+mwpower_lt2 =                   4       #in dBm
+f_mw =                          f_drive - detuning
+amplitude_ssbmod =              0.8     #do not exceed 0.8, weird stuff happens: ask Wolfgang 
 
-length = np.linspace(min_mwpulse_length,max_mwpulse_length,nr_of_datapoints)
+
+tau = np.linspace(min_wait_time,max_wait_time,nr_of_datapoints)
 lt1 = False
 
 awg = qt.instruments['AWG']
@@ -43,9 +46,9 @@ if lt1:
     counters=qt.instruments['counters_lt1']
     physical_adwin=qt.instruments['physical_adwin_lt1']
     microwaves = qt.instruments['SMB_100_lt1']
+    microwaves.set_status('off')
     ctr_channel=2
     mwpower = mwpower_lt1
-    microwaves.set_status('off')
 else:
     ins_green_aom=qt.instruments['GreenAOM']
     ins_E_aom=qt.instruments['MatisseAOM']
@@ -57,7 +60,6 @@ else:
     ctr_channel=1
     mwpower = mwpower_lt2
     microwaves.set_status('off')
-
 
 microwaves.set_iq('on')
 microwaves.set_frequency(f_mw)
@@ -77,7 +79,7 @@ par['green_repump_duration'] =        6
 par['CR_duration'] =                  100
 par['SP_duration'] =                  250
 par['SP_filter_duration'] =           0
-par['sequence_wait_time'] =           int(ceil(max_mwpulse_length/1e3)+1)
+par['sequence_wait_time'] =           int(ceil((max_wait_time+2*pi_2_pulse_length)/1e3)+1)
 par['wait_after_pulse_duration'] =    1
 par['CR_preselect'] =                 1000
 par['RO_repetitions'] =               int(nr_of_datapoints*repetitions_per_datapoint)
@@ -89,9 +91,9 @@ par['CR_probe'] =                     100
 par['green_repump_amplitude'] =       200e-6
 par['green_off_amplitude'] =          0e-6
 par['Ex_CR_amplitude'] =              5e-9 #OK
-par['A_CR_amplitude'] =               5e-9 #OK
+par['A_CR_amplitude'] =               10e-9 #OK
 par['Ex_SP_amplitude'] =              0e-9
-par['A_SP_amplitude'] =               5e-9 #OK: PREPARE IN MS = 0
+par['A_SP_amplitude'] =               10e-9 #OK: PREPARE IN MS = 0
 par['Ex_RO_amplitude'] =              5e-9 #OK: READOUT MS = 0
 par['A_RO_amplitude'] =               0e-9
 
@@ -135,10 +137,8 @@ def generate_sequence(do_program=True):
         chan_mwI = 'MW_Imod_lt1'
         chan_mwQ = 'MW_Qmod_lt1'
     else:
-        chan_mwI = 'MW_Imod' #ch1
-        chan_mwQ = 'MW_Qmod' #ch3
-    
-    
+        chan_mwI = 'MW_Imod'
+        chan_mwQ = 'MW_Qmod'
     
     if lt1:
         MW_pulse_mod_risetime = 2
@@ -156,24 +156,30 @@ def generate_sequence(do_program=True):
         seq.add_pulse('wait', channel = chan_mw_pm, element = 'spin_control_'+str(i+1),
                 start = 0, duration = 100, amplitude = 0)
 
-        if length[i] != 0:
-            seq.add_pulse('mwburst', channel = chan_mwI, element = 'spin_control_'+str(i+1),
-                    start = 0, duration = length[i], amplitude = amplitude_ssbmod, start_reference = 'wait',
-                    link_start_to = 'end', shape = 'rectangular')
-
-            seq.add_pulse('pulse_mod', channel = chan_mw_pm, element = 'spin_control_'+str(i+1),
-                start=-MW_pulse_mod_risetime, duration=2*MW_pulse_mod_risetime, 
-                start_reference = 'mwburst', link_start_to = 'start', 
-                duration_reference = 'mwburst', link_duration_to = 'duration', 
-                amplitude = 2.0)
+        seq.add_pulse('first_pi_over_2', channel = chan_mwI, element = 'spin_control_'+str(i+1),
+                start = 0, duration = pi_2_pulse_length, amplitude = amplitude_ssbmod, start_reference = 'wait',
+                link_start_to = 'end', shape = 'rectangular')
             
+
+        seq.add_pulse('pulse_mod', channel = chan_mw_pm, element = 'spin_control_'+str(i+1),
+            start=-MW_pulse_mod_risetime, duration=2*MW_pulse_mod_risetime, 
+            start_reference = 'first_pi_over_2', link_start_to = 'start', 
+            duration_reference = 'first_pi_over_2', link_duration_to = 'duration', 
+            amplitude = 2.0)
+
+        seq.add_pulse('tau', channel = chan_mw_pm, element = 'spin_control_'+str(i+1),
+                start_reference = 'first_pi_over_2',link_start_to ='end', duration = tau[i], amplitude = 0)
+
+        seq.add_pulse('second_pi_over_2', channel = chan_mwI, element = 'spin_control_'+str(i+1),
+                start = 0, duration = pi_2_pulse_length, amplitude = amplitude_ssbmod, start_reference = 'tau',
+                link_start_to = 'end', shape = 'rectangular')
             
-        #seq.add_IQmod_pulse(name = 'mwburst', channel = (chan_mwI,chan_mwQ), 
-        #    element = 'spin_control_'+str(i+1), start = 0, duration = length[i],  
-        #    frequency = f_drive-f_mw, 
-        #    amplitude = amplitude_ssbmod)
 
-
+        seq.add_pulse('pulse_mod2', channel = chan_mw_pm, element = 'spin_control_'+str(i+1),
+            start=-MW_pulse_mod_risetime, duration=2*MW_pulse_mod_risetime, 
+            start_reference = 'second_pi_over_2', link_start_to = 'start', 
+            duration_reference = 'second_pi_over_2', link_duration_to = 'duration', 
+            amplitude = 2.0)
 
 
     seq.set_instrument(awg)
@@ -270,7 +276,6 @@ def spin_control(name, data, par):
     sp_time = arange(par['SP_duration'])*par['cycle_duration']*3.333
     ro_time = arange(par['RO_duration'])*par['cycle_duration']*3.333
 
-
     data.save()
     savdat={}
     savdat['counts']=CR_after
@@ -301,12 +306,13 @@ def spin_control(name, data, par):
     savdat['total_repumps']=statistics[0]
     savdat['total_repump_counts']=statistics[1]
     savdat['noof_failed_CR_checks']=statistics[2]
-    savdat['mw_center_freq']=f_mw
     savdat['mw_drive_freq']=f_drive
+    savdat['detuning']=detuning
     savdat['mw_power']=mwpower
-    savdat['min_mw_length']=min_mwpulse_length
-    savdat['max_mw_length']=max_mwpulse_length
+    savdat['min_wait_time']=min_wait_time
+    savdat['max_wait_time']=max_wait_time
     savdat['noof_datapoints']=nr_of_datapoints
+    savdat['pi_2_duration']=pi_2_pulse_length
     
     data.save_dataset(name='statics_and_parameters', do_plot=False, 
         data = savdat, idx_increment = True)
@@ -322,7 +328,6 @@ def end_measurement():
     microwaves.set_status('off')
     microwaves.set_iq('off')
     microwaves.set_pulm('off')
-
 def ssro_init(name, data, par, do_ms0 = True, do_ms1 = True, 
         A_SP_init_amplitude     = 5e-9,
         Ex_SP_init_amplitude    = 5e-9):
@@ -338,15 +343,37 @@ def ssro_init(name, data, par, do_ms0 = True, do_ms1 = True,
         ssro(name,data,par)
 
 def main():
-    #print temp.get_kelvinB()
+    print 1
+    print temperature_lt1.get_kelvinB()
+    print 'MW status before generate sequence'
+    print microwaves.get_status()
+    print microwaves.get_pulm()
+    print microwaves.get_status()
+    print 2
+    print temperature_lt1.get_kelvinB()
     generate_sequence()
+    print 3
+    print temperature_lt1.get_kelvinB()
     awg.set_runmode('SEQ')
-    awg.start()  
+    print 4
+    print temperature_lt1.get_kelvinB()
+    awg.start()      
+    print 5    
+    print temperature_lt1.get_kelvinB()
     while awg.get_state() != 'Waiting for trigger':
         qt.msleep(1)
+        print 6    
+        print temperature_lt1.get_kelvinB()
+    print 7
+    print temperature_lt1.get_kelvinB()
 
-    data = meas.Measurement(name,'spin_control')
-    microwaves.set_status('on')
+    
+    data = meas.Measurement(name,'ramsey')
+    print 8
+    print temperature_lt1.get_kelvinB()
+    microwaves.set_status('on') 
+    print 9
+    print temperature_lt1.get_kelvinB()
     spin_control(name,data,par)
     end_measurement()
 
@@ -355,5 +382,6 @@ def main():
 
 if __name__ == '__main__':
     main()
+
 
 

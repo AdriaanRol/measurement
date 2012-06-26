@@ -24,7 +24,7 @@ for i in range(1):
     MatisseAOM.calibrate(41)
     MatisseAOM.set_power(0)
 
-    lt_1_cal = True
+    lt_1_cal = False
     if lt_1_cal:
         NewfocusAOM_lt1.set_power(0)
         MatisseAOM_lt1.set_power(0)

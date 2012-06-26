@@ -224,13 +224,13 @@ class laser_scan(Instrument):
                 self._update_data)
 
 
-        self._adwin.start_linescan(['newfocus_frq'], [self._StartVoltage],
+        self._adwin.linescan(['newfocus_frq'], [self._StartVoltage],
                 [self._StopVoltage], self._ScanSteps, self._IntegrationTime,
                 value='counts+suppl')
 
     def end_scan(self, scan_back=True):
         if scan_back:
-            self._adwin.start_linescan(['newfocus_frq'], [self._StopVoltage],
+            self._adwin.linescan(['newfocus_frq'], [self._StopVoltage],
                     [self._StartVoltage], 100, 50, value='none')
         
         if self._counter_was_running:

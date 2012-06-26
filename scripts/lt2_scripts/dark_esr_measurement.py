@@ -25,7 +25,7 @@ class DarkESRMeasurement(Measurement):
         
         self.pipulse = 670
         self.amplitude_mod = 1. 
-        self.power = 15.
+        self.power = -20.
 
         self.mode = 'SSB'
         self.amplitude_i = 0.
@@ -144,7 +144,7 @@ if __name__ == "__main__":
     
     #### AMPLIFIER!!!    
     
-    m.power = 6
+    m.power = -20
     
     m.setup(5e6, 50e6, 201, int(1e5), do_program=True)
     m.measure()

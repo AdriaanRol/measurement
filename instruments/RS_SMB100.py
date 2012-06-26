@@ -84,9 +84,9 @@ class RS_SMB100(Instrument):
             units='Hz', format='%.04e',
             tags=['sweep'])
 
-     #  self.add_function('reset')
+        self.add_function('reset')
         self.add_function('reset_sweep')
-     #   self.add_function('get_all')
+        self.add_function('get_all')
 
         if reset:
             self.reset()
