@@ -83,7 +83,8 @@ class Measurement:
 
 
     def save_dataset(self, name='', folder=None, data={}, formats=['npz'], do_plot=True,
-            files=[], txt={}, idx_increment=True, script_save_stack_depth=2):
+            files=[], txt={}, idx_increment=True, script_save_stack_depth=2,
+            index_pad=3):
         """
         Automatic data saving for measurements. On what is actually plotted,
         and how, see the tools.data_handling module.
@@ -157,7 +158,8 @@ DummyMeasurement-0.npz
         # to keep our folders clean, save extra data in a supplementaries
         # folder; we usually assume this is only one set per measurement
         # (and thus folder)
-        supplfolder = os.path.join(self.save_folder, SUPPL_DIRNAME)
+        supplfolder = os.path.join(self.save_folder, (SUPPL_DIRNAME+'-%.'+ \
+                str(index_pad)+'d') % (self.dataset_idx))
         if not os.path.isdir(supplfolder):
             try:
                 os.makedirs(supplfolder)
@@ -167,7 +169,7 @@ DummyMeasurement-0.npz
 
         # auto copy script files to suppl folder
         for i in range(script_save_stack_depth):
-            shutil.copy(inspect.stack()[i][1], supplfolder+'/')
+            shutil.copy(inspect.stack()[i][1], self.save_folder)
 
         # copy the given files to the folder
         for f in files:
@@ -201,7 +203,8 @@ DummyMeasurement-0.npz
         
         # save data from measurement devices
         for i,device in enumerate(self.measurement_devices):
-            devicefolder = os.path.join(self.save_folder, device.name)
+            devicefolder = os.path.join(self.save_folder, (device.name+\
+                    '-%.'+str(index_pad)+'d') % (self.dataset_idx))
             try:
                 os.makedirs(devicefolder)
             except:

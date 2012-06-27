@@ -46,10 +46,14 @@ params['t0'] = 0.
 params['t1'] = 5.
 params['pts'] = 501
 
+
+
 m = MyMeasurement('example', 'DummyMeasurement')
 adwin = DummyAdwin()
 adwindevice = measurement.AdwinMeasurementDevice(adwin, 'dummy_adwin')
 
+m.par_something = 0
+m.lst_something_else = [1,2,3,4]
 m.setup(adwindevice)
 m.measure(**params)
 m.save_dataset(data={'x': m.x, 'y':m.y})
