@@ -9,8 +9,8 @@ from measurement.AWG_HW_sequencer_v2 import Sequence
 from matplotlib import pyplot as plt
 
 pulse_nr = 20
-ch0_delay_time = -4
-ch1_delay_time = -4
+ch0_delay_time = -20
+ch1_delay_time = -20
 reset_delay_time = -700
 
 sync_intervals = ones(pulse_nr,dtype=int)*130    
@@ -31,11 +31,11 @@ for i in arange(pulse_nr):
 #    else:
 #        ch1_events[i]=1
 
-ch0_events[8]=1
+ch0_events[8]=0
 ch1_events[9]=1
 ch0_events[9]=0
 
-ch0_events[12]=1
+ch0_events[12]=0
 ch0_events[13]=1
 
 

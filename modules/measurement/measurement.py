@@ -32,6 +32,13 @@ class Measurement:
     Implements common tasks such as data saving, so they need not be implemented
     explicitly by all measurements
 
+    Usage notes:
+
+    adding instances of measurement devices to the list measurement_devices
+    will result in:
+        during saving of datasets, the get_save_data method of each device
+        is called, and the resulting data is saved automatically.
+
     """
 
     name = ''
@@ -49,7 +56,10 @@ class Measurement:
 
         self.save_filebase = self.mclass # the prefix for all saved
                                          # data
+        self.save_folder = ''
         self.dataset_idx = 0
+
+        self.measurement_devices = []
     
     def add_measurement_element(self, element_instance):
         """
@@ -72,8 +82,9 @@ class Measurement:
         pass
 
 
-    def save_dataset(self, name='', folder=None, data={}, formats=['npz'], do_plot=True, 
-            files=[], txt={}, idx_increment=True):
+    def save_dataset(self, name='', folder=None, data={}, formats=['npz'], do_plot=True,
+            files=[], txt={}, idx_increment=True, script_save_stack_depth=2,
+            index_pad=3):
         """
         Automatic data saving for measurements. On what is actually plotted,
         and how, see the tools.data_handling module.
@@ -84,7 +95,7 @@ class Measurement:
                 where to save the data. if not given, we use the previousely set
                 folder; if not has been set yet, a new one with the usal naming
                 scheme is created.
-
+DummyMeasurement-0.npz
             data ( {} ) : dict
                 expects data in the form { 'array_name' : narray, }
                 will be saved in one npz data
@@ -104,7 +115,7 @@ class Measurement:
                 any entry in the form { 'filename' : 'content', }
                 will be saved as txt file in the save folder
         """
-        
+
         if folder != None:
             if not os.path.isdir(folder):
                 try:
@@ -147,17 +158,22 @@ class Measurement:
         # to keep our folders clean, save extra data in a supplementaries
         # folder; we usually assume this is only one set per measurement
         # (and thus folder)
-        supplfolder = os.path.join(self.save_folder, SUPPL_DIRNAME)
-        if not os.path.isdir(supplfolder) and len(files) > 0:
+        supplfolder = os.path.join(self.save_folder, (SUPPL_DIRNAME+'-%.'+ \
+                str(index_pad)+'d') % (self.dataset_idx))
+        if not os.path.isdir(supplfolder):
             try:
                 os.makedirs(supplfolder)
             except:
                 print 'could not create separate folder for supplementals!'
                 supplfolder = self.save_folder
 
+        # auto copy script files to suppl folder
+        for i in range(script_save_stack_depth):
+            shutil.copy(inspect.stack()[i][1], self.save_folder)
+
         # copy the given files to the folder
         for f in files:
-            shutil.copy(f, supplfolder)
+            shutil.copy(f, supplfolder+'/')
 
         # save params in a table ; we take all variables that start with
         # 'par_' as parameters
@@ -171,7 +187,7 @@ class Measurement:
         f.close()
 
         # also prepare the lists
-        param_lists = [l for l in self.__dict__ if p[:4] == 'lst_']
+        param_lists = [l for l in self.__dict__ if l[:4] == 'lst_']
 
         # save parameters as pickle, exclude the 'par_' and 'lst_' prefices 
         # in the key
@@ -184,6 +200,24 @@ class Measurement:
         pickle.dump(params_dict, params_pickle)
         params_pickle.close()
   
+        
+        # save data from measurement devices
+        for i,device in enumerate(self.measurement_devices):
+            devicefolder = os.path.join(self.save_folder, (device.name+\
+                    '-%.'+str(index_pad)+'d') % (self.dataset_idx))
+            try:
+                os.makedirs(devicefolder)
+            except:
+                print 'could not create data folder for instrument %s' % \
+                        device.name
+                devicefolder = self.save_folder
+
+            savdat = device.get_save_data()
+            for data_set in savdat:
+                np.savez(os.path.join(devicefolder, data_set), 
+                        **savdat[data_set])
+        
+        
         if idx_increment:
             self.dataset_idx += 1
         return
@@ -209,6 +243,88 @@ class MeasurementElement:
         """
         pass
 
+
+class MeasurementDevice:
+    """
+    Basis class for measurement devices (anything that aquires data).
+    Need to implement specifically for each device.
+    """
+
+    def __init__(self, name): 
+        """
+        Constructor.
+        """
+        self.name = name
+
+
+    def get_save_data(self):
+        """
+        needs to be implemented.
+        """
+        pass
+
+
+class AdwinMeasurementDevice(MeasurementDevice):
+    """
+    A logical adwin used in the measurement class.
+
+    Usage:
+    after init, specify process parameters in a dictionary as
+        {'process_name', **params, },
+    and place as AdwinMeasurementDevice.process_params.
+    these will be saved automatically by the measurement class.
+
+    if you populate the list AdwinMeasurementDevice.processes with process
+    names, you can start all processes at the same time using start_all().
+
+    all data elements (names known to adwin configuration) added to 
+    process_data as
+        {'process_name', *dataelements, }
+    will be saved automatically.
+
+    single processes are started by start_process(name).
+
+    process names are as defined in the adwin configuration.
+
+    """
+    
+    def __init__(self, adwin_instrument, name='adwin'):
+        MeasurementDevice.__init__(self, name)
+
+        self.adwin = adwin_instrument
+        self.processes = []
+        self.process_params = {}
+        self.process_data = {}
+
+    def start_all(self):
+        for p in self.processes:
+            self.start_process(p)
+
+    def start_process(self, name):
+        """
+        starts the adwin process via the logical adwin instrument.
+        all arguments are passed to the start method of the instrument,
+        and should therefore be initialization parameters.
+        """
+        getattr(self.adwin, 'start_'+name)(**self.process_params[name])
+
+    def get_save_data(self):
+        """
+        return save data of all specified processes.
+        """
+        savdat = {}
+        
+        for p in self.process_params:
+            n = p+'_params'
+            savdat[n] = self.process_params[p]
+            
+        for p in self.process_data:
+            n = p+'_data'
+            savdat[n] = {}
+            for d in self.process_data[p]:
+                savdat[n][d] = getattr(self.adwin, 'get_'+p+'_var')(d)
+
+        return savdat
 
 
 def main():

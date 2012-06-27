@@ -1,16 +1,7 @@
 *.swp
 *.pyc
 *~
-<<<<<<< HEAD
-*.bak
-*.tb*
-bin
-Labview*
-*.npz
-*.png
-config
 *.cfg
-=======
 *.TB*
 *.bak
 *.npz
@@ -20,4 +11,5 @@ Labview*
 config
 *.zip
 *.png
->>>>>>> 36bd8405f83405a5407aba0277976ac163ce0f5f
+CPLD
+
