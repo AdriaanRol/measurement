@@ -8,7 +8,6 @@
 *.dll
 *.bin
 Labview*
-config
 *.zip
 *.png
 CPLD
