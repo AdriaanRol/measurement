@@ -25,12 +25,20 @@ class counters_via_adwin(CyclopeanInstrument):
                            doc="""
                            Returns the count rates for all counters.
                            """)
-
-        # public functions
-        self.add_function("monitor_countrates")
+        self.add_parameter('integration_time',
+                flags=Instrument.FLAG_GETSET,
+                units='ms',
+                minval=1,
+                maxval=1e6)
+        self.add_parameter('avg_periods',
+                flags=Instrument.FLAG_GETSET,
+                minval=1,
+                maxval=1e6)
 
         # init parameters
         self._countrate = {'cntr1': 0.0, 'cntr2': 0.0, }
+        self._integration_time = 1
+        self._avg_periods = 100
         
         # instruments we need to access
         self._ins_adwin = qt.instruments[adwin]
@@ -49,9 +57,17 @@ class counters_via_adwin(CyclopeanInstrument):
     def do_get_countrate(self, channel):
         return self._countrate[channel]
 
-    def monitor_countrates(self):
-        self._ins_adwin.set_is_counting(True)
-        gobject.timeout_add(int(self._integration_time), self._monitor_event)
+    def do_get_integration_time(self):
+        return self._integration_time
+
+    def do_set_integration_time(self, val):
+        self._integration_time = val
+
+    def do_get_avg_periods(self):
+        return self._avg_periods
+
+    def do_set_avg_periods(self, val):
+        self._avg_periods = val
 
     def _monitor_event(self):
         self._get_data()
@@ -62,7 +78,9 @@ class counters_via_adwin(CyclopeanInstrument):
 
     def _start_running(self):
         CyclopeanInstrument._start_running(self)
-        self._ins_adwin.start_counter()
+        self._ins_adwin.start_counter(
+                set_integration_time=self._integration_time,
+                set_avg_periods=self._avg_periods)
 
     def _stop_running(self):
         self._ins_adwin.stop_counter()

@@ -79,7 +79,7 @@
 DIM DATA_20[25] AS LONG               ' integer parameters
 DIM DATA_21[10] AS FLOAT              ' float parameters
 DIM DATA_22[max_repetitions] AS LONG AT EM_LOCAL  ' CR counts before sequence
-DIM DATA_23[max_repetitions] AS LONG AT EM_LOCAL  ' CR counts after sequence
+DIM DATA_23[max_repetitions] AS LONG  AT EM_LOCAL  ' CR counts after sequence
 DIM DATA_24[max_SP_bins] AS LONG AT EM_LOCAL      ' SP counts
 DIM DATA_25[max_SSRO_dim] AS LONG AT DRAM_EXTERN  ' SSRO counts
 DIM DATA_26[max_stat] AS LONG AT EM_LOCAL         ' statistics
@@ -207,6 +207,9 @@ INIT:
   par_76 = 0                      ' cumulative counts during repumping
   par_79 = 0                      ' cumulative LT2 counts in PSB during ssro sequence
   
+  par_60 = 0
+  par_61 = 0
+  par_61 = 0
   
 EVENT:
   CR_preselect                 = PAR_75
@@ -279,6 +282,17 @@ EVENT:
         ELSE 
           counts = P2_CNT_READ(CTR_MODULE, counter_channel)
           DATA_24[timer] = DATA_24[timer] + counts - old_counts
+          
+          if (counts < 0) then
+            par_60 = par_60 + 1
+          endif
+          if (old_counts < 0) then
+            par_61 = par_61 + 1
+          endif
+          if (counts < old_counts) then
+            par_62 = par_62 + 1
+          endif     
+          
           old_counts = counts
           IF (timer = SP_duration) THEN
             P2_CNT_ENABLE(CTR_MODULE, 0)

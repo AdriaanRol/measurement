@@ -38,6 +38,7 @@ class adwin(Instrument):
         # convenience functions that belong to processes
         self.add_function('set_dac_voltage')
         self.add_function('get_dac_voltage')
+        self.add_function('get_dac_channels')
 
         self.add_function('get_countrates')
         self.add_function('set_simple_counting')
@@ -112,19 +113,45 @@ class adwin(Instrument):
         while hasattr(self, funcname):
             funcname += '_'
 
-        def f(timeout=None, stop=False, load=False, **kw):
+        def f(timeout=None, stop=True, load=False, 
+                stop_processes=[], **kw):
+
             """
             this function is generated automatically by the logical
             adwin driver.
+            
 
-            all kws are interpreted as parameters for the process (as defined
+            kw args:
+            - load : load the process first (default: False)
+            - stop_processes : list of processes (numbers or names) that
+              are stopped before starting this one.
+
+            all other kws are interpreted as parameters for the process (as defined
             in the process dictionary).
             PAR and FPAR parmeters (old style) have no default at the moment, 
             DATA param (new style) defaults are specified in the process 
             dictionary.
             """
 
-            if stop and self.physical_adwin.Process_Status(pidx):
+            for p in stop_processes:
+                if type(p) == str:
+                    if p in self.processes:
+                        try:
+                            getattr(self, 'stop_'+p)()
+                        except:
+                            print 'cannot stop process %s' % p
+                    else:
+                        'unknown process %s' % p
+                elif type(p) == int:
+                    try:
+                        self.physical_adwin.Stop_Process(p)
+                    except:
+                        print 'cannot stop process %s' % p
+                else:
+                    print 'cannot figure out what process %s is' % p
+
+
+            if self.physical_adwin.Process_Status(pidx):
                 self.physical_adwin.Stop_Process(pidx)
             if load:
                 getattr(self, 'load_'+pn)()
@@ -144,15 +171,15 @@ class adwin(Instrument):
                     pls[i] = kw.pop(pl[0], pl[1])
                 self.physical_adwin.Set_Data_Long(pls, 
                         proc['params_long_index'], 1, 
-                        len(len(proc['params_long'])))
+                       len(proc['params_long']))
 
             if 'params_float' in proc:
-                pfs = np.zeros(len(proc['params_float']), dtype=int)
+                pfs = np.zeros(len(proc['params_float']), dtype=float)
                 for i,pf in enumerate(proc['params_float']):
                     pfs[i] = kw.pop(pf[0], pf[1])
                 self.physical_adwin.Set_Data_Float(pfs, 
                         proc['params_float_index'], 1, 
-                        len(len(proc['params_float'])))
+                        len(proc['params_float']))
 
             setfunc = getattr(self, pn+'_setfunc_name')
             getattr(self, setfunc)(**kw)

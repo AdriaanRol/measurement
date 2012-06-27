@@ -6,18 +6,18 @@ import msvcrt
 
 
 # measurement parameters
-start_v = -0.5
-stop_v = -2
-steps = 2501
+start_v = -1.3
+stop_v = -2.3
+steps = 1001
 pxtime = 50  #ms
 do_smooth = True
-green_during = 0.e-6
+green_during = 0.5e-6
 green_before = 300e-6
 red_during= 8e-9
 f_offset = 470400 # GHz
 mw = True
 amp = True
-mw_power = -18
+mw_power = -21
 mw_frq = 2.8578e9 #2.878e9
 dataname = 'Laserscan_sil10_LT2_MW_0uW_green'
 LT2 = True
@@ -38,6 +38,7 @@ else:
 
 
 def power_ok():
+    ret = True
     if mw and amp and mw_power >= -20:
         proceed = 0
         max_idx = 30

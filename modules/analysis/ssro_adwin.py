@@ -21,7 +21,7 @@ import sys, os, time
 from numpy import *
 import numpy as np
 from matplotlib import pyplot as plt
-
+from analysis import fit, rabi, common, esr, ramsey
 
 PREFIX = 'ADwin_SSRO'
 CR_SUFFIX = 'ChargeRO_after'
@@ -153,8 +153,18 @@ Measurement results:
 
     # convert counts to Hz
     sp = array([j/(binsize*1e-6*reps) for j in spdata['counts']]) 
+    if False and len(spdata['counts'])>2:
+        offset_guess = spdata['counts'][len(spdata['counts'])-1]
+        init_amp_guess = spdata['counts'][2]
+        decay_guess = 10
+        ax = plt.subplot(223)
 
-    ax = plt.subplot(223)
+        fit_result=fit.fit1d(spdata['time'][2:len(spdata['counts'])-1]/1E3, spdata['counts'][2:len(spdata['counts'])-1], 
+                common.fit_exp_decay_with_offset, 
+                offset_guess, init_amp_guess, decay_guess,
+                do_plot = True, do_print = True, newfig = False, ret=True,
+                plot_fitparams_xy = (0.5,0.5))
+
     # ax.set_yscale('log')
     plt.plot(spdata['time'], sp, 'o')
     plt.xlabel('spin pumping time [ns]')
@@ -268,7 +278,7 @@ def fidelities(fid_ms0, fid_ms1):
 
     return  times, F, F_err, fig
 
-def fidelity_vs_power(folder=''):
+def fidelity_vs_power(folder='',sweep_param='Ex_RO_amplitude'):
     
     if folder == '':
         folder = os.getcwd()
@@ -282,12 +292,14 @@ def fidelity_vs_power(folder=''):
 
     for f in fidfiles:
         fn, ext = os.path.splitext(f)
-        idx = int(fn[fn.find('+_')+2:])
+        idx = int(fn[fn.find('+_')+2:])-1
         basepath = os.path.join(folder, PREFIX+'-'+str(idx))
-        parfile = basepath+'_'+PARAMS_SUFFIX+'.dat'  
+        parfile = basepath+'_parameters_dict.npz'  
+        param_dict=load(parfile)
         #pow.append(loadtxt(parfile)[get_param_column(parfile,'par_ro_Ex_power')]*1e9)
-        pow.append(int(idx/2)*1.)
-        
+        #pow.append(int(idx/2)*1.)
+        pow.append(param_dict[sweep_param])
+
         fiddat = loadtxt(f)
         maxidx = argmax(fiddat[1,:])
         maxfid.append(fiddat[1,maxidx])
@@ -340,6 +352,123 @@ def spin_flip_time_vs_MW_freq(folder=''):
     #savetxt(save_basepath + '_ro_countrate.dat',
     #     array([ro_time, ro_countrate]).transpose())
 
+def analyze_SP_RO(sp_file,folder='', plot=True,save=True,do_print=False,ret = False,name='spin_pumping.png'):
+    if folder == '':
+        folder = os.getcwd()
+
+    v = load(folder+'\\'+sp_file)
+
+    if 'Spin_RO' in sp_file:
+        sp_counts = sum(v['counts'],axis=0)
+    else:
+        sp_counts = v['counts']
+    
+    sp_time = v['time']
+
+    offset_guess = sp_counts[len(sp_counts)-1]
+    init_amp_guess = sp_counts[2]
+    decay_guess = 10
+
+    if plot:
+        figure4 = plt.figure(4)
+        plt.clf()
+
+    fit_result=fit.fit1d(sp_time[2:len(sp_counts)-1]/1E3, sp_counts[2:len(sp_counts)-1], common.fit_exp_decay_with_offset, 
+            offset_guess, init_amp_guess, decay_guess,
+            do_plot = plot, do_print = do_print, newfig = False, ret=True,
+            plot_fitparams_xy = (0.5,0.5))
+    
+    if plot:
+       
+        plt.plot(sp_time/1E3,sp_counts,'sg')
+        plt.xlabel('Time ($\mu$s)')
+        plt.ylabel('Integrated counts')
+        plt.title(sp_file)
+    
+        if save:
+            figure4.savefig(folder+'\\'+name+'.png')
+    v.close()
+
+    if ret:
+        return fit_result
+       
+
+def SP_RO_fitparam_vs_sweepparam(folder='',fitparam_nr=2,sweeppar='Ex_RO_power',
+        suffix = PREFIX,fitfile=SP_SUFFIX,
+        xlabel = 'sweep',ylabel = 'fitresult',name='fitvssweep'):
+    '''
+    This function fits all spin-pumping/spin readout data from 1 folder and plots one of 
+    the fitparameters (amplitude, decay or offset) versus a parameter that is varied.
+
+    datapath     string     folder where data is located
+    fitparam_nr  integer    fit1d returns p, fitparam = p[integer]
+    sweeppar     string     fitparam is plotted vs par['string'] from params_dict.npz
+    suffix       string     name of measurement
+    fitfile      string     (part of) the filename that contains data of interest
+                      
+    '''
+    if folder == '':
+        folder = os.getcwd()
+
+    sweepparam=[]
+    fitparam=[]
+    ###########################################
+    ######## MEASUREMENT SPECS ################
+    ###########################################
+    files = os.listdir(folder)
+    
+    for fn in files:        
+        if (fitfile in fn) and ('.npz' in fn):
+            data = load(folder + '\\' + fn)
+            idx = fn[len(suffix)+1:len(fn)-len(fitfile)-5]
+            fitresult = analyze_SP_RO(fn,folder,save=True,ret=True,name=fitfile+num2str(len(fitparam),0))
+            if fitresult:
+                fitparam.append(fitresult[0]['params'][fitparam_nr])
+                params=load(folder + '\\' + suffix + '-'+idx+'_parameters_dict.npz')
+                sweepparam.append(params[sweeppar])
+               
+    figure1 = plt.figure(1)    
+    plt.clf()
+    plt.plot(sweepparam,fitparam, 'or')
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+    plt.title(name)
+    
+    if save:
+        figure1.savefig(folder+'\\'+name+'.png')
+    return {'fitparam' : fitparam,'sweepparam':sweepparam}
+
+def spin_pumping_vs_power(folder='',transition='A'):
+
+    if folder == '':
+        folder = os.getcwd()
+    fittau = SP_RO_fitparam_vs_sweepparam(folder,2,'A_RO_amplitude',fitfile='Spin_RO',
+            xlabel=transition+' power [W]',ylabel='Decay constant [us]',
+            name='decay_const_vs_'+transition+'_power')
+    fitA   = SP_RO_fitparam_vs_sweepparam(folder,1,'A_RO_amplitude',fitfile='Spin_RO',
+            xlabel=transition+' power [W]',ylabel='Amplitude  [cts]',
+            name='peak_counts_vs_'+transition+'_power')
+    fita   = SP_RO_fitparam_vs_sweepparam(folder,0,'A_RO_amplitude',fitfile='Spin_RO',
+            xlabel=transition+' power [W]',ylabel='Amplitude  [cts]',
+            name='offset_vs_'+transition+'_power')
+    
+    fig1 = plt.figure(1)
+    plt.clf()
+    ax1 = fig1.add_subplot(111)
+    tau = ax1.plot(fittau['sweepparam'],fittau['fitparam'], 'ob')
+    plt.ylabel("Decay constant [us]")
+ 
+    ax2 = fig1.add_subplot(111, sharex=ax1, frameon=False)
+    A = ax2.plot(fitA['sweepparam'],fitA['fitparam'], 'xr')
+    ax2.yaxis.tick_right()
+    ax2.yaxis.set_label_position("right")
+    plt.ylabel("Amplitude [counts]")
+ 
+
+    plt.legend((tau, A), ("Tau", "Amplitude"))
+    fig1.savefig(folder+'\\'+'SP_A_and_tau_vs_'+transition+'_power.png')
+    
+
 # helper functions
 def timestamp():
     return time.strftime('%Y%m%d.%H%M%S')
@@ -349,12 +478,10 @@ def get_param_column(parfile,parname):
         for line in f.readlines():
             if line.find(parname) != -1:
                 return int(line[line.find('column')+7:line.find(':')]) 
-    return -1
-        
+    return -1       
 
-
-
-
+def num2str(num, precision): 
+    return "%0.*f" % (precision, num)
 
 
 

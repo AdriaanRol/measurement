@@ -37,12 +37,15 @@ class pid_controller(Instrument):
 
     _demo_mode = False
 
-    def __init__(self, name, set_ctrl_func=None, get_val_func=None,get_ctrl_func=None, **kw):
+    def __init__(self, name, set_ctrl_func=None, get_val_func=None,get_ctrl_func=None, get_stabilizor_func=None, **kw):
         Instrument.__init__(self, name)
 
         self._set_ctrl = set_ctrl_func
         self._get_val = get_val_func
-        self._get_ctrl = get_ctrl_func
+        self._get_ctrl = get_ctrl_func #neccecary for the Matisse pid
+        self._get_stabilizor = get_stabilizor_func #neccecary for the HeNe true wavelength stabilisation
+        
+        if not(self._get_stabilizor == None): self._stabilizor_value = self._get_stabilizor()
         
         if self._demo_mode or self._set_ctrl == None or self._get_val == None:
             self._set_ctrl = self._set_demo_ctrl
@@ -63,6 +66,10 @@ class pid_controller(Instrument):
                 flags=Instrument.FLAG_GET)
 
         self.add_parameter('is_running',
+                type=types.BooleanType,
+                flags=Instrument.FLAG_GETSET)
+                
+        self.add_parameter('use_stabilizor',
                 type=types.BooleanType,
                 flags=Instrument.FLAG_GETSET)
 
@@ -116,6 +123,7 @@ class pid_controller(Instrument):
         self.add_function('stop')
 
         self.set_is_running(False)
+        self.set_use_stabilizor(False)
         self.set_control_parameter(0)
         self.set_max_value_deviation(10) #GHz
         self.set_max_control_deviation(6)
@@ -141,7 +149,7 @@ class pid_controller(Instrument):
         
         self._parlist = ['P', 'I', 'D', 'control_parameter', 'integration_time', 
                 'setpoint', 'value_factor', 'value_offset','max_value_deviation',
-                'max_control_deviation','PID_type']
+                'max_control_deviation','PID_type','use_stabilizor']
         self.ins_cfg = config.Config(cfg_fn)
         self.load_cfg()
         self.save_cfg()
@@ -173,6 +181,13 @@ class pid_controller(Instrument):
         return self._control_parameter
 
     def do_get_value(self):
+        if self._use_stabilizor:
+            if not(self._get_stabilizor == None):
+                offset_from_stabilizor = self._stabilizor_value - self._get_stabilizor()
+                return (self._get_val() + offset_from_stabilizor - self._value_offset)*self._value_factor
+            else:
+                print 'Cannot use stabilizor, no stabilizor set'
+                self.set_use_stabilizor(False)
         return (self._get_val() - self._value_offset)*self._value_factor
 
     def do_get_value_offset(self):
@@ -204,7 +219,13 @@ class pid_controller(Instrument):
 
     def do_set_is_running(self, val):
         self._is_running = val
+        
+    def do_get_use_stabilizor(self):
+        return self._use_stabilizor
 
+    def do_set_use_stabilizor(self, val):
+        self._use_stabilizor = val
+        
     def do_get_setpoint(self):
         return self._setpoint
 
@@ -271,7 +292,9 @@ class pid_controller(Instrument):
                 valdim=1, maxpoints=100, clear=True)
         self._plt.add(self._dat, 'b-', coorddim=0, valdim=2, maxpoints=100)
         
+        if not(self._get_stabilizor == None): self._stabilizor_value = self._get_stabilizor()
         self.get_control_parameter()
+        
         gobject.timeout_add(int(self._read_interval*1e3), self._update)
 
     def stop(self):
@@ -316,8 +339,6 @@ class pid_controller(Instrument):
                 dterm = 0
 
             return pterm + iterm + dterm
-        
-
 
     def _update(self):
         # print self._integral

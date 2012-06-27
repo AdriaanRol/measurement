@@ -445,7 +445,7 @@ def plot_esmw(datapath, fit_data = True, save = True):
     ###########################################
     files = os.listdir(datapath)
     
-    e = load(datapath+'\\'+suffix+'-0_statics_and_parameters.npz')
+    e = load(datapath+'\\'+suffix+'-1_statics_and_parameters.npz')
     f_drive = e['mw_drive_freq']
     mwpower = e['mw_power']
     mw_min_freq = e['min_esmw_freq']
@@ -489,13 +489,17 @@ def plot_esmw(datapath, fit_data = True, save = True):
         decay_guess = 10
 
         if fit_data:
-            fit_result,p=fit.fit1d(ro_time[arange(4,len(ro_time)-1)], counts_during_readout[arange(4,len(ro_time)-1)], common.fit_exp_decay_with_offset, 
-            offset_guess, init_amp_guess, decay_guess,
-            do_plot = True, do_print = True, newfig = False,
-            plot_fitparams_xy = (0.5,0.5),
-            ret=True)
-       
-        fit_par.append(fit_result['params'][2])
+            fit_result,p=fit.fit1d(ro_time[arange(4,len(ro_time)-1)], 
+                    counts_during_readout[arange(4,len(ro_time)-1)], 
+                    common.fit_exp_decay_with_offset, 
+                    offset_guess, init_amp_guess, decay_guess,
+                    do_plot = True, do_print = True, newfig = False,
+                    plot_fitparams_xy = (0.5,0.5),
+                    ret=True)
+            if fit_result != False:
+                fit_par.append(fit_result['params'][2])
+            else:
+                fit_par.append(0)
         plt.plot(ro_time, counts_during_readout, 'or')
         plt.xlabel('Read-out duration ($\mu$s)')
         plt.ylabel('Integrated counts')
@@ -503,6 +507,7 @@ def plot_esmw(datapath, fit_data = True, save = True):
                 ' MHz, power = '+num2str(mwpower,0)+' dBm')
         if save:
             figure1.savefig(datapath+'\\histogram_integrated'+num2str(idx,0)+'.png')
+        plt.clf()
 
         x = 6.0
         y = 8.0
@@ -515,6 +520,7 @@ def plot_esmw(datapath, fit_data = True, save = True):
         plt.colorbar()
         if save:
             figure2.savefig(datapath+'\\histogram_counts_2d'+num2str(idx,0)+'.png')
+        plt.clf()
 
         f.close()
         
@@ -530,40 +536,45 @@ def plot_esmw(datapath, fit_data = True, save = True):
         decay_guess = 10
 
         figure3 = plt.figure(3)
-        fit.fit1d(sp_time/1E3, sp_counts, common.fit_exp_decay_with_offset, 
-                offset_guess, init_amp_guess, decay_guess,
-                do_plot = True, do_print = True, newfig = False,
-                plot_fitparams_xy = (0.5,0.5))
+        if fit_data:
+            fit.fit1d(sp_time/1E3, sp_counts, common.fit_exp_decay_with_offset, 
+                    offset_guess, init_amp_guess, decay_guess,
+                    do_plot = True, do_print = True, newfig = False,
+                    plot_fitparams_xy = (0.5,0.5))
         
         plt.plot(sp_time/1E3,sp_counts,'sg')
         plt.xlabel('Time ($\mu$s)')
         plt.ylabel('Integrated counts')
         plt.title('Spin pumping')
         v.close()
-
         if save:
             figure3.savefig(datapath+'\\spin_pumping'+num2str(idx,0)+'.png')
-
-            #Save a dat file for use in e.g. Origin with the rabi oscillation.
-            curr_date = '#'+time.ctime()+'\n'
-            col_names = '#Col0: MW length (ns)\tCol1: Integrated counts\n'
-            col_vals = str()
-            for k in arange(max(ro_time)):
-                col_vals += num2str(ro_time[k],2)+'\t'+num2str(counts_during_readout[k],0)+'\n'
-            fo = open(datapath+'\\integrated_histogram.dat', "w")
-            for item in [curr_date, col_names, col_vals]:
-                fo.writelines(item)
-            fo.close()
-
-    plt.close('all')
-    print len(mw_freq)
-    print len(fit_par)
-    figure4 = plt.figure(4)
-    plt.plot(mw_freq/1E6,fit_par, '-r')
-    plt.xlabel('MW frequency (MHz)')
-    plt.ylabel('Decay constant')
-
-    figure4.savefig(datapath+'\\decay_constant_vs_mw_freq.png')
+        plt.clf()
+    
+    if save:
+        #Save a dat file for use in e.g. Origin with the rabi oscillation.
+        curr_date = '#'+time.ctime()+'\n'
+        col_names = '#Col0: MW Freq (ns)\tCol1: Integrated counts\n'
+        col_vals = str()
+        for k in arange(len(mw_freq)):
+            col_vals += num2str(mw_freq[k],4)+'\t'+num2str(counts_during_readout[k],0)+'\n'
+        fo = open(datapath+'\\integrated_histogram.dat', "w")
+        for item in [curr_date, col_names, col_vals]:
+            fo.writelines(item)
+        fo.close()
+    
+    if fit_data:
+        plt.close('all')
+        print len(mw_freq)
+        print len(fit_par)
+        figure4 = plt.figure(4)
+        plt.plot(mw_freq/1E6,fit_par, '-r')
+        plt.xlabel('MW frequency (MHz)')
+        plt.ylabel('Decay constant')
+        
+        if save:
+            figure4.savefig(datapath+'\\decay_constant_vs_mw_freq.png')
+        plt.clf()
 
 
 

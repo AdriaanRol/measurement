@@ -12,25 +12,26 @@ import msvcrt
 import measurement.measurement as meas
 from measurement.AWG_HW_sequencer_v2 import Sequence
 import measurement.PQ_measurement_generator_v2 as pqm
-
-from measurement.config import awgchannels as awgcfg
 from measurement.sequence import common as commonseq
 
 
-name = 'SIL10_LT2'
+name = 'SIL9_LT2'
 
-nr_of_datapoints = 33      #max nr_of_datapoints should be < 10000
-repetitions_per_datapoint = 1000
-min_esmw_freq = 4.84E9    #in ns
-max_esmw_freq = 4.92E9    #in ns
-#f_drive = 2.8569E9#2.85877E9#2.854E9         #in Hz
-mwpower_lt1 = 0               #in dBm
-mwpower_lt2 = 20               #in dBm
-f_mw = f_drive #- 30E6
+nr_of_datapoints = 41      #max nr_of_datapoints should be < 10000
+repetitions_per_datapoint = 5000
+min_esmw_freq = 3.35E9#(2.8569 + 0.5 - 0.1)*1E9    #in GHz
+max_esmw_freq = 3.45E9#(2.8569 + 0.5 + 0.1)*1E9    #in GHz
+mwpower_lt1 = 0                 #in dBm
+mwpower_lt2 = 5               #in dBm
 amplitude_ssbmod = 0.8 #do not exceed 0.8, weird stuff happens: ask Wolfgang 
 
 freqs = np.linspace(min_esmw_freq,max_esmw_freq,nr_of_datapoints)
 lt1 = False
+
+if lt1:
+    pass
+else:
+    from measurement.config import awgchannels_lt2 as awgcfg
 
 awg = qt.instruments['AWG']
 temp = qt.instruments['temperature_lt1']
@@ -73,7 +74,7 @@ par['AWG_start_DO_channel'] =         1
 par['AWG_done_DI_channel'] =          8
 par['send_AWG_start'] =               1
 par['wait_for_AWG_done'] =            0
-par['green_repump_duration'] =        6
+par['green_repump_duration'] =        10
 par['CR_duration'] =                  100
 par['SP_duration'] =                  250
 par['SP_filter_duration'] =           0
@@ -82,7 +83,7 @@ par['wait_after_pulse_duration'] =    1
 par['CR_preselect'] =                 1000
 par['RO_repetitions'] =               repetitions_per_datapoint
 par['RO_duration'] =                  100
-par['sweep_length'] =                 int(nr_of_datapoints)
+par['sweep_length'] =                 1
 par['cycle_duration'] =               300
 par['CR_probe'] =                     100
 
@@ -90,11 +91,12 @@ par['green_repump_amplitude'] =       200e-6
 par['green_off_amplitude'] =          0e-6
 par['Ex_CR_amplitude'] =              5e-9 #OK
 par['A_CR_amplitude'] =               5e-9 #OK
-par['Ex_SP_amplitude'] =              0e-9
-par['A_SP_amplitude'] =               5e-9 #OK: PREPARE IN MS = 0
-par['Ex_RO_amplitude'] =              5e-9 #OK: READOUT MS = 0
-par['A_RO_amplitude'] =               0e-9
+par['Ex_SP_amplitude'] =              5e-9 
+par['A_SP_amplitude'] =               0e-9 #OK: PREPARE IN MS = 0
+par['Ex_RO_amplitude'] =              0e-9 #OK: READOUT MS = -1
+par['A_RO_amplitude'] =               2.5e-9 
 
+par['MW_freq'] =                      microwaves.get_frequency()
 
 ins_green_aom.set_power(0.)
 ins_E_aom.set_power(0.)
@@ -161,14 +163,6 @@ def generate_sequence(do_program=True):
         duration_reference = 'mwburst', link_duration_to = 'duration', 
         amplitude = 2.0)
             
-            
-        #seq.add_IQmod_pulse(name = 'mwburst', channel = (chan_mwI,chan_mwQ), 
-        #    element = 'spin_control_'+str(i+1), start = 0, duration = length[i],  
-        #    frequency = f_drive-f_mw, 
-        #    amplitude = amplitude_ssbmod)
-
-
-
 
     seq.set_instrument(awg)
     seq.set_clock(1e9)
@@ -180,7 +174,7 @@ def generate_sequence(do_program=True):
     seq.send_sequence()
 
 
-def spin_control(name, data, par):
+def spin_control(name, data, par, f_drive):
     par['green_repump_voltage'] = ins_green_aom.power_to_voltage(par['green_repump_amplitude'])
     par['green_off_voltage'] = ins_green_aom.power_to_voltage(par['green_off_amplitude'])
     par['Ex_CR_voltage'] = ins_E_aom.power_to_voltage(par['Ex_CR_amplitude'])
@@ -198,7 +192,7 @@ def spin_control(name, data, par):
     print 'SP E amplitude: %s'%par['Ex_SP_voltage']
     print 'SP A amplitude: %s'%par['A_SP_voltage']
 
-    adwin.start_adwin_spincontrol(
+    adwin.start_spincontrol(
         counter_channel = par['counter_channel'],
         green_laser_DAC_channel = par['green_laser_DAC_channel'],
         Ex_laser_DAC_channel = par['Ex_laser_DAC_channel'],
@@ -240,7 +234,7 @@ def spin_control(name, data, par):
         print('threshold: %s cts, last CR check: %s cts'%(trh,cts))
         if (msvcrt.kbhit() and (msvcrt.getch() == 'q')): 
             break
-        qt.msleep(1)
+        qt.msleep(5)
     physical_adwin.Stop_Process(9)
     
     if lt1:
@@ -286,6 +280,9 @@ def spin_control(name, data, par):
     savdat['par_float']=par_float
     data.save_dataset(name='parameters', do_plot=False, 
         data = savdat, idx_increment = False)
+    data.save_dataset(name='parameters_dict', do_plot=False, 
+        data = par, idx_increment = False)
+
     
     ######################
     ###statistics file####
@@ -295,7 +292,7 @@ def spin_control(name, data, par):
     savdat['total_repumps']=statistics[0]
     savdat['total_repump_counts']=statistics[1]
     savdat['noof_failed_CR_checks']=statistics[2]
-    savdat['mw_center_freq']=f_mw
+    savdat['mw_center_freq']=(max(freqs)+min(freqs))/2.0
     savdat['mw_drive_freq']=f_drive
     savdat['mw_power']=mwpower
     savdat['min_esmw_freq']=min_esmw_freq
@@ -308,28 +305,16 @@ def spin_control(name, data, par):
     return 
 
 def end_measurement():
+    microwaves.set_status('off')
     awg.stop()
     awg.set_runmode('CONT')
     adwin.set_simple_counting()
     counters.set_is_running(1)
-    ins_green_aom.set_power(200e-6)   
-    microwaves.set_status('off')
+    ins_green_aom.set_power(200e-6)  
+    ins_E_aom.set_power(0.)
+    ins_A_aom.set_power(0.)
     microwaves.set_iq('off')
     microwaves.set_pulm('off')
-
-def ssro_init(name, data, par, do_ms0 = True, do_ms1 = True, 
-        A_SP_init_amplitude     = 5e-9,
-        Ex_SP_init_amplitude    = 5e-9):
-
-    if do_ms0:
-        par['A_SP_amplitude']  = A_SP_init_amplitude
-        par['Ex_SP_amplitude'] = 0.
-        ssro(name,data,par)
-
-    if do_ms1:
-        par['A_SP_amplitude']  = 0.
-        par['Ex_SP_amplitude'] = Ex_SP_init_amplitude
-        ssro(name,data,par)
 
 def main():
     generate_sequence()
@@ -341,14 +326,18 @@ def main():
     data = meas.Measurement(name,'esmw')
     microwaves.set_status('on')
 
+    idx = 0
     for f in freqs:
-        print '#########################'
-        print '#### f = ',f
-        print '#########################\n\n'
+        idx += 1
+        print str(idx)+'\n\n==========================='
+        print ' f = ',f
+        print '============================\n\n'
         microwaves.set_frequency(f)
+        par['MW_freq'] = microwaves.get_frequency()
         qt.msleep(1)
-        f_drive = f
-        spin_control(name,data,par)
+        spin_control(name,data,par,f)
+        if (msvcrt.kbhit() and (msvcrt.getch() == 'Q')): 
+            break
     end_measurement()
 
 
