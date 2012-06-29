@@ -13,6 +13,16 @@ config['hydraharp'] = {
             'AWG_channel' : 'ch3m1',
             'cable_delay' : 0.,
             'high' : 2.0, },
+        }
+
+config['hydraharp+adwin'] = {
+        'HH_sync' : {
+            'AWG_channel' : 'ch2m2',
+            'cable_delay' : 0. - 50, },
+        'HH_MA1' : {
+            'AWG_channel' : 'ch3m1',
+            'cable_delay' : 0.,
+            'high' : 2.0, },
         'ADwin_sync' : {
             'AWG_channel' : 'ch3m2',
             'high' : 2.0,
@@ -76,6 +86,42 @@ config['rf'] = {
             'cable_delay' : 120, }
         }
 
+
+config['LDE'] = {
+        'EOM_Matisse' : {
+            'AWG_channel' : 'ch4',
+            'high' : 1.5,
+            'low' : -1.5,
+            'cable_delay' : 132, 
+            'default_voltage' : 0.0,
+            },
+        'EOM_AOM_Matisse' : {
+            'AWG_channel' : 'ch4m1',
+            'high' : 0.8,
+            'low' : 0.01,
+            'cable_delay' : 283, 
+            },
+        'AOM_Newfocus' : {
+            'AWG_channel' : 'ch2m1',
+            'high' : 0.4,
+            'cable_delay' : 540, 
+            },        
+        'HH_Marker' : {
+            'AWG_channel' : 'ch1m1',
+            'high' : 2.,
+            'low' : 0.,
+            'default_voltage' : 0.0,            
+            'cable_delay' : 0, 
+            },
+        'PLU_gate' : {
+            'AWG_channel' : 'ch4m2',
+            'high' : 2.,
+            'low' : 0.,
+            'default_voltage' : 2.0,
+            'cable_delay' : 5*5+10, 
+            },
+        }
+
 config['optical_rabi'] = {
         'EOM_Matisse' : {
             'AWG_channel' : 'ch4',
@@ -112,8 +158,6 @@ config['optical_rabi'] = {
         }
 
 
-### DEPRECATED!
-### For newer scripts this is now in the config manager
 def configure_sequence(sequence, *use, **use_modified):
     """
     Creates the channel configuration on the given sequence.
