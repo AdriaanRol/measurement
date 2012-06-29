@@ -6,20 +6,20 @@ import msvcrt
 
 
 # measurement parameters
-start_v = -1.3
-stop_v = -2.3
-steps = 1001
+start_v = 1.4
+stop_v = 0.2
+steps = 3001
 pxtime = 50  #ms
 do_smooth = True
-green_during = 0.5e-6
+green_during = 0e-6
 green_before = 300e-6
 red_during= 8e-9
 f_offset = 470400 # GHz
 mw = True
 amp = True
-mw_power = -21
+mw_power = -20
 mw_frq = 2.8578e9 #2.878e9
-dataname = 'Laserscan_sil10_LT2_MW_0uW_green'
+dataname = 'Laserscan_sil9_LT2_MW_0uW_green'
 LT2 = True
 
 # end measurement parameters
@@ -39,29 +39,23 @@ else:
 
 def power_ok():
     ret = True
-    if mw and amp and mw_power >= -20:
-        proceed = 0
+    if mw and amp and mw_power > -20:
+        ret=False
         max_idx = 30
         idx = 0
-        while proceed == 0:
+        while idx<max_idx:
             print 'Warning: power > -20 dBm, hit c to continue' 
             qt.msleep(1)
             idx += 1
-            if idx > max_idx:
-                proceed = 1
-                print 'No key stroke detected, quiting laser scan'
-                ret = False
-                break
-            if msvcrt.kbhit() and msvcrt.getch() == "q":
-                proceed = 1
-                print 'Quiting laser scan'
-                ret = False
-                break
-            if msvcrt.kbhit() and msvcrt.getch() == "c":
-                proceed = 1
-                print 'Continuing laser scan'
-                ret = True
-                break
+            if msvcrt.kbhit():
+                kbchar=msvcrt.getch()
+                if kbchar == "q":
+                    print 'Quiting laser scan'
+                    break
+                if kbchar == "c":
+                    print 'Continuing laser scan'
+                    ret = True
+                    break
     return ret
 #while c 
 

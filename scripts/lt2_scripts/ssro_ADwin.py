@@ -36,21 +36,21 @@ par['AWG_done_DI_channel'] =          8
 par['send_AWG_start'] =               0
 par['wait_for_AWG_done'] =            0
 par['green_repump_duration'] =        10
-par['CR_duration'] =                  100
+par['CR_duration'] =                  45
 par['SP_duration'] =                  250
 par['SP_filter_duration'] =           0
 par['sequence_wait_time'] =           10
 par['wait_after_pulse_duration'] =    1
 par['CR_preselect'] =                 1000
 par['SSRO_repetitions'] =             5000
-par['SSRO_duration'] =                25 #NOTE CHANGED THIS FOR MORE CR CHECKS
+par['SSRO_duration'] =                100 #NOTE CHANGED THIS FOR MORE CR CHECKS
 par['SSRO_stop_after_first_photon'] = 0
 par['cycle_duration'] =               300
 
 par['green_repump_amplitude'] =       200e-6
 par['green_off_amplitude'] =          0e-6
 par['Ex_CR_amplitude'] =              5e-9
-par['A_CR_amplitude'] =               5e-9
+par['A_CR_amplitude'] =               10e-9
 par['Ex_SP_amplitude'] =              0e-9
 par['A_SP_amplitude'] =               5e-9
 par['Ex_RO_amplitude'] =              5e-9 #
@@ -276,6 +276,36 @@ def ssro_vs_SP_duration(name, data, par, sp_power, max_duration, stepsize, reps_
         par['Ex_SP_amplitude'] = 5e-9
         ssro(name,data,par)
 
+def ssro_vs_SP(name, data, par, min_power, max_power,steps, max_duration, stepsize, reps_per_point):
+
+    par['A_RO_amplitude'] = 0
+    par['Ex_RO_amplitude'] = 5e-9
+    for i in range(1,max_duration+1,stepsize):
+        print '==============================='
+        print 'SP duration sweep:duration [us] = ',(i)*1e-6
+        print '==============================='
+        SP_duration = (i)
+        for j in linspace(min_power,max_power,steps):
+            print '==============================='
+            print 'SP amplitude sweep: amplitude = ',(j)*1e-9
+            print '==============================='
+            SP_amplitude = (j)*1e-9 
+            par['SSRO_repetitions'] = reps_per_point
+     
+    
+            par['SP_duration'] = SP_duration
+            par['A_SP_amplitude']  = SP_amplitude
+            par['Ex_SP_amplitude'] = 0.
+            ssro(name,data,par)
+            par['SP_duration'] = 250
+            par['A_SP_amplitude']  = 0
+            par['Ex_SP_amplitude'] = 5e-9
+            ssro(name,data,par)
+            if (msvcrt.kbhit() and (msvcrt.getch() == 'w')): return
+    qt.instruments['GreenAOM'].set_power(200e-6)
+    qt.instruments['optimiz0r'].optimize(cnt=1,cycles=2,int_time=50)
+    qt.instruments['GreenAOM'].set_power(0)
+
 def ssro_vs_CR_duration(name, data, par, min_CR_duration, 
         max_CR_duration, steps, reps_per_point):
 
@@ -347,17 +377,23 @@ def end_measurement():
     
 
 def main():
-    name = 'SIL9'
-    qt.instruments['counters'].set_is_running(False)
-    data = meas.Measurement(name,'ADwin_SSRO')
+    for i in range(50):
+        name = 'SIL9'+str(i)
+        qt.instruments['counters'].set_is_running(False)
+        data = meas.Measurement(name,'ADwin_SSRO')
     #ssro_vs_SP_amplitude(name,data,par,min_power=1, max_power = 25, 
     #        steps = 25, reps_per_point = 5000)
+    #
     #ssro_init(name,data,par)
     #ssro_vs_SP_duration(name,data,par,sp_power=25e-9, max_duration = 10, 
     #        stepsize = 1, reps_per_point = 5000)
     #ssro_vs_CR_duration(name, data, par, 20, 100, 5, 5000)
-    ssro_vs_CR_power(name, data, par, 15e-9, 15e-9, 1, 10000)
-    end_measurement()
+    #ssro_vs_CR_power(name, data, par, 15e-9, 15e-9, 1, 10000)
+        ssro_vs_SP(name,data,par,min_power=1, max_power = 25, 
+            steps = 25, max_duration=10, stepsize=1, reps_per_point = 5000)
+        end_measurement()
+        if (msvcrt.kbhit() and (msvcrt.getch() == 'e')): return
+
 
 if __name__ == '__main__':
     main()

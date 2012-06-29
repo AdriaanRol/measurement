@@ -193,7 +193,8 @@ class tpqi_optimiz0r(Instrument):
                     (cr_failed_lt2/cr_checks_lt2 > self._fraction_failed_min)):
                 print 'Optimize LT2'
                 lt2_optimize = True
-            
+        if self._lt2_opt_only:lt1_optimize=False
+        
         if (lt1_optimize or lt2_optimize):    
             wait_time_after_optimize = self._optimize(lt1_optimize, lt2_optimize)
             self._wait_after_optimize(wait_time_after_optimize)
@@ -205,14 +206,14 @@ class tpqi_optimiz0r(Instrument):
     def _get_input_values(self):
         self._raw_values=zeros(9)    
         self._raw_values+=[time.time(),
-                         self._ins_adwin_lt1.remote_tpqi_control_get_noof_cr_checks(),
-                         self._ins_adwin_lt1.remote_tpqi_control_get_cr_check_counts(),
-                         self._ins_adwin_lt1.remote_tpqi_control_get_cr_below_threshold_events(),
-                         self._ins_adwin.remote_tpqi_control_get_noof_cr_checks(),
-                         self._ins_adwin.remote_tpqi_control_get_cr_check_counts(),
-                         self._ins_adwin.remote_tpqi_control_get_cr_below_threshold_events(),
-                         self._ins_adwin.remote_tpqi_control_get_noof_tpqi_starts(),
-                         self._ins_adwin.remote_tpqi_control_get_noof_tailcts()]
+                         1,#self._ins_adwin_lt1.get_remote_tpqi_control_var('get_noof_cr_checks'),
+                         1,#self._ins_adwin_lt1.get_remote_tpqi_control_var('get_cr_check_counts'),
+                         1,#self._ins_adwin_lt1.get_remote_tpqi_control_var('get_cr_below_threshold_events'),
+                         self._ins_adwin.get_remote_tpqi_control_var('get_noof_cr_checks'),
+                         self._ins_adwin.get_remote_tpqi_control_var('get_cr_check_counts'),
+                         self._ins_adwin.get_remote_tpqi_control_var('get_cr_below_threshold_events'),
+                         self._ins_adwin.get_remote_tpqi_control_var('get_noof_tpqi_starts'),
+                         1]#self._ins_adwin.get_remote_tpqi_control_var('get_noof_tailcts')]
         
         diff=self._raw_values-self._prev_raw_values
         dt, cr_checks_lt1, cr_cts_lt1, cr_failed_lt1, cr_checks_lt2,\
@@ -446,7 +447,7 @@ class tpqi_optimiz0r(Instrument):
 
     def optimize_gate(self,optimum_lt2):
         if self._lt2_opt_only:
-            'Setting new setpoint matisse (LT2):', optimum_lt2
+            print 'Setting new setpoint matisse (LT2):', optimum_lt2
             self._ins_pidmatisse.set_setpoint(optimum_lt2)
             return
         print 'Optimizing Gate'
