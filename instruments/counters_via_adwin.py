@@ -80,7 +80,8 @@ class counters_via_adwin(CyclopeanInstrument):
         CyclopeanInstrument._start_running(self)
         self._ins_adwin.start_counter(
                 set_integration_time=self._integration_time,
-                set_avg_periods=self._avg_periods)
+                set_avg_periods=self._avg_periods,
+                set_single_run=0)
 
     def _stop_running(self):
         self._ins_adwin.stop_counter()
