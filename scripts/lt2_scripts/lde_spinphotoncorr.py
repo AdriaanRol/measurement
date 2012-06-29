@@ -2,6 +2,7 @@
 
 # TODO kill measurement sequence
 # TODO make sure the awg config is correct
+# FIXME there are still some pars over 80! change!
 
 import qt
 import numpy as np
