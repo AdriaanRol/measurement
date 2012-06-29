@@ -95,7 +95,7 @@ class Measurement:
                 where to save the data. if not given, we use the previousely set
                 folder; if not has been set yet, a new one with the usal naming
                 scheme is created.
-DummyMeasurement-0.npz
+
             data ( {} ) : dict
                 expects data in the form { 'array_name' : narray, }
                 will be saved in one npz data
@@ -132,8 +132,9 @@ DummyMeasurement-0.npz
 
         
         # this is the basepath for the files we're about to save
-        self.basepath = os.path.join(self.save_folder, 
-                self.save_filebase+'-%d' % self.dataset_idx)
+        self.basepath = os.path.join( self.save_folder, 
+                (self.save_filebase+'-%.'+str(index_pad)+'d') % \
+                        self.dataset_idx )
 
         # we'd like to have the option to save several datasets from one
         # measurement run, where they share the same statistics, parameters,
@@ -160,7 +161,7 @@ DummyMeasurement-0.npz
         # (and thus folder)
         supplfolder = os.path.join(self.save_folder, (SUPPL_DIRNAME+'-%.'+ \
                 str(index_pad)+'d') % (self.dataset_idx))
-        if not os.path.isdir(supplfolder):
+        if not len(files) > 0 and os.path.isdir(supplfolder):
             try:
                 os.makedirs(supplfolder)
             except:
@@ -175,27 +176,14 @@ DummyMeasurement-0.npz
         for f in files:
             shutil.copy(f, supplfolder+'/')
 
-        # save params in a table ; we take all variables that start with
-        # 'par_' as parameters
-        params = [p for p in self.__dict__ if p[:4] == 'par_']
-        f = open(self.basepath+'_%s.dat' % PARAMS_FNAME, 'w')
-        for i,p in enumerate(params):
-            f.write('# column %d: %s\n\n' % (i,p))
-        for i,p in enumerate(params):
-            f.write('%s\t' % str(getattr(self, p)))
-        f.write('\n')        
-        f.close()
-
-        # also prepare the lists
-        param_lists = [l for l in self.__dict__ if l[:4] == 'lst_']
-
-        # save parameters as pickle, exclude the 'par_' and 'lst_' prefices 
-        # in the key
+        # save params in a table ; we take all variables of types
+        # int, float, numpy.ndarray, str
+        params = [ p for p in self.__dict__ if type(getattr(self, p)) in \
+                [ int, float, str, np.ndarray ] ]
+       
         params_dict = {}
         for p in params:
-            params_dict[p[4:]] = getattr(self, p)
-        for p in param_lists:
-            params_dict[p[4:]] = getattr(self,p)
+            params_dict[p] = getattr(self, p)
         params_pickle = open(self.basepath+'_%s.pkl' % PARAMS_FNAME, 'wb')
         pickle.dump(params_dict, params_pickle)
         params_pickle.close()
