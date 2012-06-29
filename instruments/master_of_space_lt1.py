@@ -1,6 +1,7 @@
 # controls a single dimension of a position that is set via an
 # adwin DAC voltage
 
+import os
 from instrument import Instrument
 from cyclopean_instrument import CyclopeanInstrument
 import qt
@@ -8,6 +9,7 @@ import time
 import types
 import gobject
 import numpy as np
+from lib import config
 
 # constants
 LINESCAN_CHECK_INTERVAL = 50 # [ms]
@@ -102,10 +104,6 @@ class master_of_space_lt1(CyclopeanInstrument):
             # register the step function
             self.add_function('step_'+d)
 
-            # set default value
-            getattr(self, 'set_'+d,)(dim['default'])
-
-
         # scan control
         self._linescan_running = False
         self._linescan_px_clock = 0
@@ -143,6 +141,33 @@ class master_of_space_lt1(CyclopeanInstrument):
         self.add_function('push_position')
         self.add_function('pop_position')
 
+        # set up config file
+        cfg_fn = os.path.join(qt.config['ins_cfg_path'], name+'.cfg')
+        if not os.path.exists(cfg_fn):
+            _f = open(cfg_fn, 'w')
+            _f.write('')
+            _f.close()
+
+        self.ins_cfg = config.Config(cfg_fn)     
+        self.load_cfg()
+        self.save_cfg()
+        
+        # set initial position values (need to know whether LT or RT settings)
+        for d in self.dimensions:
+            dim = self.dimensions[d]
+            voltage = self._adwin.get_dac_voltage(dim['dac'])
+            position = voltage * dim['micron_per_volt']
+            setattr(self, '_'+d, position)
+
+    ### config management
+    def load_cfg(self):
+        params = self.ins_cfg.get_all()
+        if 'lt_settings' in params:
+            if params['lt_settings']:
+                self.set_lt_settings(True)
+
+    def save_cfg(self):
+        self.ins_cfg['lt_settings'] = self._lt_settings
 
     # Line scan control
     def linescan_start(self, dimensions, starts, stops, steps, px_time, 
@@ -182,7 +207,7 @@ class master_of_space_lt1(CyclopeanInstrument):
                 print "Error in master_of_space.linescan_start: Exceeding max.min voltage"
                 print stops[i] / dim['micron_per_volt']            
         
-        self._adwin.start_linescan(dacs, np.array(starts_v), np.array(stops_v),
+        self._adwin.linescan(dacs, np.array(starts_v), np.array(stops_v),
                 steps, px_time, value=value, scan_to_start=True)
 
         # start monitoring the status

@@ -41,7 +41,6 @@ class optimize1d_counts(CyclopeanInstrument):
         self._linescan = qt.instruments[linescan]
         self._mos = qt.instruments[mos]
         self._counters = qt.instruments[counters]
-        print counters
         self._counter_was_running = False
         
         self.add_parameter('dimension',

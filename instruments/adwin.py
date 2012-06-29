@@ -413,4 +413,4 @@ class adwin(Instrument):
             return False
 
         return self.get_counter_var('get_last_counts', start=1, length=4)        
-
+ 

@@ -12,7 +12,7 @@ import measurement.config.adwins as adwinscfg
 
 class adwin_lt1(adwin):
     def __init__(self, name, **kw):
-        Instrument.__init__(self, name, 
+        adwin.__init__(self, name, 
                 adwin = qt.instruments['physical_adwin_lt1'], 
                 processes = adwinscfg.config['adwin_lt1_processes'],
                 default_processes = ['counter', 'set_dac', 'set_dio', 'linescan',
@@ -45,7 +45,7 @@ class adwin_lt1(adwin):
         for i,n in enumerate(red_aoms):
             qt.instruments[n].set_power(red_powers[i])
 
-         self.start_resonant_counting(stop=True, load=True,
+        self.start_resonant_counting(stop=True, load=True,
                 set_aom_dac = self.dacs[aom_dac],
                 set_aom_duration = aom_duration,
                 set_probe_duration = probe_duration,
@@ -93,7 +93,7 @@ class adwin_lt1(adwin):
                
         if scan_to_start:
             _steps,_pxtime = self.speed2px(dac_names, start_voltages)
-            self.start_linescan(dac_names, self.get_dac_voltages(dac_names),
+            self.linescan(dac_names, self.get_dac_voltages(dac_names),
                     start_voltages, _steps, _pxtime, value='none', 
                     scan_to_start=False)
             while self.is_linescan_running():
@@ -105,8 +105,8 @@ class adwin_lt1(adwin):
             # stabilize a bit, better for attocubes
             time.sleep(0.05)
 
-        p = self.ADWIN_PROCESSES['linescan']
-        dacs = [ self.ADWIN_DAC_OUTPUTS[n] for n in dac_names ]
+        p = self.processes['linescan']
+        dacs = [ self.dacs[n] for n in dac_names ]
         
         # set all the required input params for the adwin process
         # see the adwin process for details
@@ -158,14 +158,14 @@ class adwin_lt1(adwin):
         return max(steps, minsteps), pxtime
 
     def stop_linescan(self):
-        p = self.ADWIN_PROCESSES['linescan']
+        p = self.processes['linescan']
         self.physical_adwin.Stop_Process(p['index'])
 
     def is_linescan_running(self):
         return bool(self.get_process_status('linescan'))
 
     def get_linescan_counts(self, steps):
-        p = self.ADWIN_PROCESSES['linescan']
+        p = self.processes['linescan']
         c = []
         
         for i in p['data_long']['get_counts']:
@@ -175,12 +175,12 @@ class adwin_lt1(adwin):
         return c
 
     def get_linescan_supplemental_data(self, steps):
-        p = self.ADWIN_PROCESSES['linescan']
+        p = self.processes['linescan']
         return self.physical_adwin.Get_Data_Float(
                 p['data_float']['get_supplemental_data'], 1, steps+1)[1:]
         
     def get_linescan_px_clock(self):
-        p = self.ADWIN_PROCESSES['linescan']
+        p = self.processes['linescan']
         return self.physical_adwin.Get_Par(p['par']['get_px_clock'])
 
     # end linescan            
@@ -194,7 +194,7 @@ class adwin_lt1(adwin):
         dac_names = ['atto_x','atto_y','atto_z']
         steps, pxtime = self.speed2px(dac_names, target_voltages, speed)
         
-        self.start_linescan(dac_names, current_voltages, target_voltages,
+        self.linescan(dac_names, current_voltages, target_voltages,
                 steps, pxtime, value='none', scan_to_start=False,
                 blocking=blocking)
         
@@ -205,9 +205,13 @@ class adwin_lt1(adwin):
 
         current_voltage = self.get_dac_voltage(dac_name)
         steps, pxtime = self.speed2px([dac_name], [target_voltage], speed)
-        self.start_linescan([dac_name], [current_voltage], [target_voltage],
+        self.linescan([dac_name], [current_voltage], [target_voltage],
                 steps, pxtime, value='none', scan_to_start=False,
                 blocking=blocking)
 
-
+    def measure_counts(self, int_time):
+        self.start_counter(set_integration_time=int_time, set_avg_periods=1, set_single_run= 1)
+        while self.is_counter_running():
+            time.sleep(0.01)
+        return self.get_last_counts()
 

@@ -32,6 +32,7 @@ class adwin_lt2(adwin):
         self.add_function('move_to_xyz_U')
         self.add_function('get_xyz_U')
         self.add_function('move_to_dac_voltage')
+        self.add_function('measure_counts')
 
 
     # TODO put this into a script
@@ -235,4 +236,8 @@ class adwin_lt2(adwin):
         p = self.processes['gate_modulation']
         self.physical_adwin.Stop_Process(p['index'])
 
-
+    def measure_counts(self, int_time):
+        self.start_counter(set_integration_time=int_time, set_avg_periods=1, set_single_run= 1)
+        while self.is_counter_running():
+            time.sleep(0.01)
+        return self.get_last_counts()
