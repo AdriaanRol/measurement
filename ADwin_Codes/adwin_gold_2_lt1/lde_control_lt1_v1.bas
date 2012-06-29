@@ -156,6 +156,10 @@ init:
   ' ssro
   RO_event_idx = 1
   RO_steps = data_20[12]  
+  for i=1 to max_readouts
+    DATA_22[i] = 0
+    DATA_23[i] = 0
+  next i
   
   ' prepare hardware
   DAC(green_aom_channel, 3277*green_off_voltage+32768)

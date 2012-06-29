@@ -34,6 +34,9 @@ class ServoMotor(Instrument):
                            type = types.IntType, 
                            flags = Instrument.FLAG_GETSET,
                            minval=500, maxval=2500)
+
+        self.add_function('move_in')
+        self.add_function('move_out')
         #defaults
         self.set_channel(0)
         self.set_speed(20)

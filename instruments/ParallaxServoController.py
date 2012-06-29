@@ -7,7 +7,7 @@ class ParallaxServoController(Instrument):
         Instrument.__init__(self, name)
 
         self._address = address
-        self._ser = serial.Serial(address,2400,timeout = 1)
+        self._ser = serial.Serial(address,2400,timeout = 10)
         self.add_function('Set_Position')
         self.add_function('Get_Position')
         self.add_function('Disable')
@@ -53,5 +53,5 @@ class ParallaxServoController(Instrument):
 
     def Reload(self):
         self._ser.close()
-        self._ser = serial.Serial(self._address,2400,timeout = 1)
+        self._ser = serial.Serial(self._address,2400,timeout = 10)
 
