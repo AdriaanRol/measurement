@@ -12,11 +12,9 @@ from measurement.AWG_HW_sequencer import Sequence
 from measurement.config import awchannels_lt2 as awgcfg
 
 # instruments
-
 adwin_lt2 = qt.instruments['adwin_lt2']
 awg = qt.instruments['AWG']
 hharp = qt.instruments['HH_400']
-
 green_aom_lt2 = qt.instruments['GreenAOM']
 E_aom_lt2 = qt.instruments['MatisseAOM']
 A_aom_lt2 = qt.instruments['NewfocusAOM']
@@ -24,10 +22,19 @@ green_aom_lt1 = qt.instruments['GreenAOM_lt1']
 E_aom_lt1 = qt.instruments['MatisseAOM_lt1']
 A_aom_lt1 = qt.instruments['NewfocusAOM_lt1']
 
+# prepare
+green_aom_lt2.set_power(0.)
+E_aom_lt2.set_power(0.)
+A_aom_lt2.set_power(0.)
+green_aom_lt1.set_power(0.)
+E_aom_lt1.set_power(0.)
+A_aom_lt1.set_power(0.)
+
 class LDEMeasurement(meas.Measurement):
 
     def setup(self, adwin):
         self.measurement_devices.append(adwin)
+        return
 
     def generate_sequence(self, do_program=True):
         self.seq = Sequence('lde')
@@ -382,20 +389,21 @@ class LDEMeasurement(meas.Measurement):
         seq.set_start_sequence(False)
         seq.force_HW_sequencing(True)
         seq.send_sequence()        
+        
+        return seq
 
-    def measure(self):
+
+    def measure(self, adwin_lt2_params={}, adwin_lt1_params={}):
+        awg.set_runmode('SEQ')
+        awg.start()
+
+        adwin_lt1.start_lde(**adwin_lt1_params)
+        adwin_lt2.start_lde(**adwin_lt2_params)
 
         pass
 
 # intial setup
 m = LDEMeasurement('test1', 'LDESpinPhotonCorr')
-
-green_aom_lt2.set_power(0.)
-E_aom_lt2.set_power(0.)
-A_aom_lt2.set_power(0.)
-green_aom_lt1.set_power(0.)
-E_aom_lt1.set_power(0.)
-A_aom_lt1.set_power(0.)
 
 ### measurement parameters
 
@@ -412,7 +420,10 @@ m.max_LDE_attempts          = 100
 m.finaldelay                = 0     # after last postsync pulse
 
 # spin pumping
-m.A_SP_amplitude            = 1.0
+A_aom_lt2.set_cur_controller('AWG')
+A_aom_lt1.set_cur_controller('AWG')
+m.A_SP_power                = 15e-9
+m.A_SP_amplitude            = A_aom_lt2.power_to_voltage(m.A_SP_power)
 m.SP_duration               = 2000
 m.wait_after_SP             = 100
 
@@ -487,13 +498,47 @@ adpar['remote_CR_done_DI_bit']      = 2**8
 adpar['remote_CR_SSRO_DO_channel']  = 17
 adpar['PLU_success_DI_bit']         = 2**9 # TODO figure out
 
-adpar['green_repump_voltage']       = ins_green_aom.power_to_voltage(
+green_aom_lt2.set_cur_controller('ADWIN')
+E_aom_lt2.set_cur_controller('ADWIN')
+A_aom_lt2.set_cur_controller('ADWIN')
+adpar['green_repump_voltage']       = green_aom_lt2.power_to_voltage(
         m.green_repump_power)
 adpar['green_off_voltage']          = m.green_off_voltage
-adpar['Ex_CR_voltage']              = ins_E_aom.power_to_voltage(
+adpar['Ex_CR_voltage']              = E_aom_lt2.power_to_voltage(
         m.Ex_CR_power)
-adpar['A_CR_voltage']               = ins_A_aom.power_to_voltage(
+adpar['A_CR_voltage']               = A_aom_lt2.power_to_voltage(
         m.A_CR_power)
-adpar['Ex_RO_voltage']              = ins_Ex_aom.power_to_voltage(
+adpar['Ex_RO_voltage']              = E_aom_lt2.power_to_voltage(
         m.Ex_RO_power)
 adpar['A_RO_voltage']               = 0
+
+# remote adwin process parameters
+adpar_lt1 = {}
+adpar_lt1['counter_channel'] = 1
+adpar_lt1['green_laser_DAC_channel']    = adwin_lt1.get_dac_channels()['green_aom']
+adpar_lt1['Ex_laser_DAC_channel']       = adwin_lt1.get_dac_channels()['matisse_aom']
+adpar_lt1['A_laser_DAC_channel']        = adwin_lt1.get_dac_channels()['newfocus_aom']
+adpar_lt1['CR_duration']                = 100
+adpar_lt1['CR_preselect']               = 10
+adpar_lt1['CR_probe']                   = 10
+adpar_lt1['green_repump_duration']      = 6
+adpar_lt1['remote_CR_DI_channel']       = 10
+adpar_lt1['remote_CR_done_DO_channel']  = 1
+adpar_lt1['remote_SSRO_DI_channel']     = 9
+adpar_lt1['SSRO_duration']              = 20
+
+green_aom_lt1.set_cur_controller('ADWIN')
+E_aom_lt1.set_cur_controller('ADWIN')
+A_aom_lt1.set_cur_controller('ADWIN')
+adpar_lt1['green_repump_voltage']       = green_aom_lt1.power_to_voltage(
+        m.green_repump_power)
+adpar_lt1['green_off_voltage']          = m.green_off_voltage
+adpar_lt1['Ex_CR_voltage']              = E_aom_lt1.power_to_voltage(
+        m.Ex_CR_power)
+adpar_lt1['A_CR_voltage']               = A_aom_lt1.power_to_voltage(
+        m.A_CR_power)
+adpar_lt1['Ex_RO_voltage']              = E_aom_lt1.power_to_voltage(
+        m.Ex_RO_power)
+adpar_lt1['A_RO_voltage']               = 0
+
+
