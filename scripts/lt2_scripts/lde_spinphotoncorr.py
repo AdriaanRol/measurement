@@ -9,10 +9,12 @@ import numpy as np
 
 import measurement.measurement as meas
 from measurement.AWG_HW_sequencer import Sequence
-from measurement.config import awchannels_lt2 as awgcfg
+from measurement.config import awgchannels_lt2 as awgcfg
+from measurement.config import adwins as adwincfg
 
 # instruments
 adwin_lt2 = qt.instruments['adwin_lt2']
+adwin_lt1 = qt.instruments['adwin_lt1']
 awg = qt.instruments['AWG']
 hharp = qt.instruments['HH_400']
 green_aom_lt2 = qt.instruments['GreenAOM']
@@ -21,6 +23,9 @@ A_aom_lt2 = qt.instruments['NewfocusAOM']
 green_aom_lt1 = qt.instruments['GreenAOM_lt1']
 E_aom_lt1 = qt.instruments['MatisseAOM_lt1']
 A_aom_lt1 = qt.instruments['NewfocusAOM_lt1']
+
+adwin_mdevice_lt1 = meas.AdwinMeasurementDevice(adwin_lt1, 'adwin_lt1')
+adwin_mdevice_lt2 = meas.AdwinMeasurementDevice(adwin_lt2, 'adwin_lt2')
 
 # prepare
 green_aom_lt2.set_power(0.)
@@ -32,9 +37,25 @@ A_aom_lt1.set_power(0.)
 
 class LDEMeasurement(meas.Measurement):
 
-    def setup(self, adwin):
-        self.measurement_devices.append(adwin)
-        return
+    def setup(self, adwin_mdevice_lt1, adwin_mdevice_lt2):
+        self.adwin_lt1 = adwin_mdevice_lt1
+        self.adwin_lt2 = adwin_mdevice_lt2
+        self.measurement_devices.append(self.adwin_lt1)
+        self.measurement_devices.append(self.adwin_lt2)
+
+        self.adwin_lt1.process_data['lde'] = \
+                [p for p in adwincfg.config['adwin_lt1_processes']['lde']['par']]
+
+        self.adwin_lt2.process_data['lde'] = \
+                [p for p in adwincfg.config['adwin_lt2_processes']['lde']['par']]
+        
+        
+        hharp.start_T3_mode()
+        hharp.calibrate()
+        hharp.set_Binning(self.binsize_T3)
+        
+        
+        return True
 
     def generate_sequence(self, do_program=True):
         self.seq = Sequence('lde')
@@ -394,13 +415,72 @@ class LDEMeasurement(meas.Measurement):
 
 
     def measure(self, adwin_lt2_params={}, adwin_lt1_params={}):
+        self.adwin_lt1.process_params = adwin_lt1_params
+        self.adwin_lt2.process_params = adwin_lt2_params
+
         awg.set_runmode('SEQ')
         awg.start()
-
+        hharp.StartMeas(self.measurement_time)
         adwin_lt1.start_lde(**adwin_lt1_params)
         adwin_lt2.start_lde(**adwin_lt2_params)
 
+        ch0_events, ch1_events, markers = hharp.get_T3_pulsed_events(
+                sync_period = 200,
+                range_sync = 500,
+                start_ch0 = 0,
+                start_ch1 = 0,
+                max_pulses = 2,
+                save_markers = [2])
+        
+        adwin_lt2.stop_lde()
+        adwin_lt1.stop_lde()
+        awg.stop()
+        qt.msleep(0.1)
+        awg.set_runmode('CONT')        
+
+        return ch0_events, ch1_events, markers
+
+    def get_adwin_data(self, noof_readouts=10000, crhist_length=100):
+        a1_crhist_first = self.adwin_lt1.get(
+                'CR_hist_first', start=1, length=crhist_length)
+        a1_crhist = self.adwin_lt1.get(
+                'CR_hist', start=1, length=crhist_length)
+        a1_ssro = self.adwin_lt1.get(
+                'SSRO_counts', start=1, length=noof_readouts)
+        a1_cr = self.adwin_lt1.get(
+                'CR_before_SSRO_counts', start=1, length=noof_readouts)
+        a2_crhist_first = self.adwin_lt2.get(
+                'CR_hist_first', start=1, length=crhist_length)
+        a2_crhist = self.adwin_lt2.get(
+                'CR_hist', start=1, length=crhist_length)
+        a2_ssro = self.adwin_lt2.get(
+                'SSRO_counts', start=1, length=noof_readouts)
+        a2_cr = self.adwin_lt2.get(
+                'CR_before_SSRO_counts', start=1, length=noof_readouts)
+
+        return {
+                'adwin_lt1_CRhist_first' : a1_crhist_first,
+                'adwin_lt1_CRhist' : a1_crhist,
+                'adwin_lt1_SSRO'   : a1_ssro,
+                'adwin_lt1_CR'     : a1_cr,
+                'adwin_lt2_CRhist_first' : a2_crhist_first,
+                'adwin_lt2_CRhist' : a2_crhist,
+                'adwin_lt2_SSRO'   : a2_ssro,
+                'adwin_lt2_CR'     : a2_cr,
+                }
+
+    def save(self, **kw):
+        self.save_dataset(data=kw, plot=False)
+
+        # TODO here: plotting stuff and transferring to website
+        #
+
+    def optimize(self):
         pass
+
+    def end(self):
+        pass
+
 
 # intial setup
 m = LDEMeasurement('test1', 'LDESpinPhotonCorr')
@@ -416,6 +496,7 @@ m.Ex_RO_power               = 5e-9
 m.A_RO_power                = 0
 
 # general LDE
+m.measurement_time          = 60 * 15
 m.max_LDE_attempts          = 100
 m.finaldelay                = 0     # after last postsync pulse
 
@@ -472,6 +553,7 @@ m.opt_pi_separation         = max(m.pi_lt2_duration, m.pi_lt1_duration) + 0
 # HH settings
 m.presync_pulses            = 10
 m.postsync_pulses           = 10
+m.binsize_T3                = 8
 
 # PLU pulses
 m.plu_gate_duration         = 50
