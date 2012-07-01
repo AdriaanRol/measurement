@@ -148,6 +148,7 @@ class HydraHarp_HH400(Instrument): #1
         self.add_parameter('Channel', flags = Instrument.FLAG_SET, type=types.IntType)
         self.add_parameter('Binning', flags = Instrument.FLAG_SET, type=types.IntType,
                            minval=0, maxval=MAXBINSTEPS-1)
+        
         self.add_function('start_histogram_mode')
         self.add_function('start_T2_mode')
         self.add_function('start_T3_mode')
@@ -157,6 +158,7 @@ class HydraHarp_HH400(Instrument): #1
         self.add_function('StopMeas')
         self.add_function('OpenDevice')
         self.add_function('CloseDevice')
+        self.add_function('get_T3_pulsed_events')
 
         self._do_set_DeviceIndex(DeviceIndex)
         self.OpenDevice()
@@ -585,279 +587,54 @@ class HydraHarp_HH400(Instrument): #1
                     if 0 <= dt < hist_length:
                         histogram[dt] += 1
         return histogram
-   
-    def get_T3_pulsed_g2_2DHistogram(self, binsize_sync, range_sync, binsize_g2, range_g2, sync_period = 100, blocksize = TTREADMAX):   # in bins, period in ns
-        if .001*2**binsize_g2 * 2**15 < sync_period:
-            print('Warning: resolution is too high to cover entire sync period in T3 mode, events might get lost.')
-        histogram = zeros((range_sync,range_g2), dtype = int)
-	hist_ch0 = zeros(range_sync)
-	hist_ch1 = zeros(range_sync)
-	hist_ch1_long = zeros(range_g2)
-        mode = 2    # mode = 0, if a start was received on channel 0, 
-        #        1, if start on 1 
-        #        2, if no start was detected, or after a stop was detected as well
-        dt = -1     # dt = t_stop - t_start, if stop and start were detected (in bins set by binsize_g2)
-        # dt = -1, otherwise
-        nsync_overflow=0
-        while self._do_get_MeasRunning() == True:
-            length, data = self.get_TTTR_Data(blocksize)
-            for i in arange(0, length):
-                nsync   = data[i] & (2**10 - 1)
-                time    = (data[i] / 2**10) & (2**15 - 1)
-                channel = (data[i] / 2**25) & (2**6 - 1)
-                special = data[i] / 2**31
 
-                if special == 1:
-                    if channel == 63:
-                        nsync_overflow += 2**10
-                    else:
-                        marker = channel & 15
-                else:
-                    if channel == 0:
-                        bin = time/(2**binsize_sync)
-			if (0 <= bin) and (bin < range_sync):
-                            hist_ch0[time/(2**binsize_sync)] += 1			
-                        if mode != 1:
-                            start = time
-                            start_sync = nsync
-                            nsync_overflow = 0
-                            mode = 0
-                        else:
-                            stop = time
-                            stop_sync = nsync
-                            dt = stop - start + (stop_sync + nsync_overflow - start_sync)*int(sync_period*1000)
-                            dt = dt / (2**binsize_g2)
-                            mode = 2
+    def get_T3_pulsed_events(self, sync_period=200, 
+            range_sync, blocksize=TTREADMAX, start_ch0=0, start_ch1=0, 
+            max_pulses = 2, save_markers=[2,3,4]):
+        """
+        Get ch0 and ch1 events in T3 mode.
+        Author: Wolfgang, July 1, 2012.
 
-                            dt_ch1 = 0 - start + (stop_sync + nsync_overflow - start_sync)*int(sync_period*1000)
-                            dt_ch1 = dt_ch1 / (2**binsize_g2)
-			    if (0<=dt_ch1) and (dt_ch1 < range_g2/2):
-                                dt_ch1 = range_g2/2 - dt_ch1
-                                hist_ch1_long[dt_ch1] += 1
+        Filtering options:
+        range_sync: 
+            how many bins after a sync are accepted
+        start_ch0, start_ch1:
+            minimum event time (in bins) after the sync
+        max_pulses:
+            how many syncs after a marker on channel 1 are taken into
+            account
+        
+        other options:
+        save_markers:
+            all markers with channel in that list will be returned.
 
-                    if channel == 1:
-                        bin = time/(2**binsize_sync)
-			if (0 <= bin) and (bin < range_sync):
-                            hist_ch1[time/(2**binsize_sync)] += 1			
-                        if mode != 0:
-                            start = time
-                            start_sync = nsync
-                            nsync_overflow = 0
-                            mode = 1
-                        else:
-                            stop = time
-                            stop_sync = nsync
-                            dt = stop - start + (stop_sync + nsync_overflow - start_sync)*int(sync_period*1000)
-                            dt = dt / 2**binsize_g2
-                            mode = 2
-
-                            dt_ch1 = stop - 0 + (stop_sync + nsync_overflow - start_sync)*int(sync_period*1000)
-                            dt_ch1 = dt_ch1 / (2**binsize_g2)
-			    if (0<=dt_ch1) and (dt_ch1 < range_g2/2):
-                                dt_ch1 = range_g2/2 + dt_ch1
-                                hist_ch1_long[dt_ch1] += 1
-
-                if (dt >= 0) and (dt < range_g2/2) and (start / 2**binsize_sync < range_sync):
-                    if channel == 1:
-                        dt = range_g2/2 + dt
-                    else:
-                        dt = range_g2/2 - dt
-                    histogram[start/2**binsize_sync,dt] += 1
-                    dt = -1
-        return histogram
-   
-    def get_T3_pulsed_g2_2DHistogram_v2(self, binsize_T3, binsize_sync, range_sync, binsize_g2, range_g2, sync_period = 100, blocksize = TTREADMAX):   # in bins, period in ns
-	
-        if .001*2**binsize_T3 * 2**15 < sync_period:
-            print('Warning: resolution is too high to cover entire sync period in T3 mode, events might get lost.')
-        histogram = zeros((range_sync,range_g2), dtype = int)
-        hist_ch0 = zeros(range_sync, dtype = int)
-        hist_ch1 = zeros(range_sync, dtype = int)
-        hist_ch1_long = zeros(range_g2, dtype = int)
-        mode = 2    # mode = 0, if a click was received on channel 0, 
-                    #        1, if a click was received on channel 1,
-                    #        2, if no click was detected
-		    #        3, if a click on each channel was detected
-        nsync_overflow=0
-        ch0_sync=0
-        ch0_time=0
-        ch1_sync=0
-        ch1_time=0
-        while self._do_get_MeasRunning() == True:
-            length, data = self.get_TTTR_Data(blocksize)
-            for i in arange(0, length):
-                nsync   = data[i] & (2**10 - 1)
-                time    = (data[i] >> 10) & (2**15 - 1)
-                channel = (data[i] >> 25) & (2**6 - 1)
-                special = (data[i] >> 31) & 1
-#                time    = (data[i] / 2**10) & (2**15 - 1)
-#                channel = (data[i] / 2**25) & (2**6 - 1)
-#                special = data[i] / 2**31
-                #print int(sync_period / (0.001*(2**binsize_T3)))
-                if special == 1:
-                    #print 'I feel so special'
-                    if channel == 63:
-                        nsync_overflow += 2**10
-                    else:
-                        marker = channel & 15
-                else:
-                    if channel == 0:
-                        ch0_bin = time/(2**binsize_sync)
-                        if (0 <= ch0_bin) and (ch0_bin < range_sync):
-                            hist_ch0[ch0_bin] += 1
-                        ch0_time = time
-                        ch0_sync = int((nsync + nsync_overflow) * sync_period / (0.001*(2**binsize_T3)))
-                        if mode != 1:
-                            mode = 0
- #                           nsync_overflow = 0
-                        else:
-                            mode = 3
-                        dt_ch0 = (ch1_sync-ch0_sync-ch0_time) / (2**binsize_g2) + range_g2/2
-                        if (0 <= dt_ch0) and (dt_ch0 < range_g2):
-                            hist_ch1_long[dt_ch0] += 1
-
-                    if channel == 1:
-                        ch1_bin = time/(2**binsize_sync)
-                        if (0 <= ch1_bin) and (ch1_bin < range_sync):
-                            hist_ch1[ch1_bin] += 1			
-                        ch1_time = time
-                        ch1_sync = int((nsync + nsync_overflow) * sync_period / (0.001*(2**binsize_T3)))
-                        if mode != 0:
-                            mode = 1				
-#                            nsync_overflow = 0
-                        else:
-                            mode = 3
-                        dt_ch1 = (ch1_time+ch1_sync-ch0_sync) / (2**binsize_g2) + range_g2/2
-                        if (0 <= dt_ch1) and (dt_ch1 < range_g2):
-                            hist_ch1_long[dt_ch1] += 1
-
-                if mode == 3:
-                    dt = range_g2/2 + ((ch1_time+ch1_sync) - (ch0_time+ch0_sync))/(2**binsize_g2)
-                    #print ch0_sync, ch1_sync
-                    #print dt
-                    #print nsync+nsync_overflow
-                    if (dt >= 0) and (dt < range_g2) and (ch0_bin < range_sync):
-                        histogram[ch0_bin,dt] += 1
-                        mode = 2
-                        nsync_overflow = 0
-        print 'Total detected coincidences in histogram: %s'%(histogram.sum())
-        return histogram, hist_ch0, hist_ch1, hist_ch1_long
-
-    def get_T3_pulsed_g2_2DHistogram_v3(self, binsize_sync, range_sync, binsize_g2, range_g2, sync_period = 100, blocksize = TTREADMAX):   # in bins, period in ns
-	
+        returns:
+            (ch0, ch1, markers)
+            ch0: array with two columns: col1 = absolute sync no, col2 = time
+            ch1: ditto
+            markers: array with three columns:
+                col1 = sync no, col2 = time, col3 = marker channel
+        """
+        
         if .001*self.get_ResolutionPS() * 2**15 < sync_period:
-            print('Warning: resolution is too high to cover entire sync period in T3 mode, events might get lost.')
-        histogram = zeros((range_sync,range_g2), dtype = int)
-        hist_ch0 = zeros(range_sync, dtype = int)
-        hist_ch1 = zeros(range_sync, dtype = int)
-        hist_ch1_long = zeros(range_g2, dtype = int)
-        mode = 2    # mode = 0, if a click was received on channel 0, 
-                    #        1, if a click was received on channel 1,
-                    #        2, if no click was detected
+            print('Warning: resolution is too high to cover entire sync \
+                    period in T3 mode, events might get lost.')
 
-        nsync_overflow=0
-        ch0_sync=0
-        ch0_time=0
-        ch1_sync=0
-        ch1_time=0
-        idx = 0        
-        timestamp = strftime('%Y%m%d%H%M%S')
+        ch0_events = zeros((0,2), dtype=int) # col 1: sync no (abs), col 2: event time
+        ch1_events = zeros((0,2), dtype=int)
+        markers = zeros((0,3), dtype=int) # col1 sync no, col2 time, col3 marker channel
+        
+        nsync_overflow = 0
+        ch0_sync = 0
+        ch0_time = 0
+        ch1_sync = 0
+        ch1_time = 0
+        nsync_ma1 = -max_pulses
+
         while self._do_get_MeasRunning() == True:
             length, data = self.get_TTTR_Data(blocksize)
-
-            path = r"D:\measuring\user\hhdebug2"
-            savez(os.path.join(path, timestamp+'-alldata-'+str(idx)), length=length,
-                    data=data)
-            idx += 1
-
-            for i in arange(0, length):
-                nsync   = data[i] & (2**10 - 1)
-                time    = (data[i] >> 10) & (2**15 - 1)
-                channel = (data[i] >> 25) & (2**6 - 1)
-                special = (data[i] >> 31) & 1
-
-                if special == 1:
-                    if channel == 63:
-                        nsync_overflow += 2**10
-                    else:
-                        marker = channel & 15
-                        print 'marker on channel:', channel
-                        print marker
-                else:
-                    if channel == 0:
-                        ch0_bin = time/(2**binsize_sync)
-                        if (0 <= ch0_bin) and (ch0_bin < range_sync):
-                            hist_ch0[ch0_bin] += 1
-                        ch0_time = time
-                        ch0_sync = int((nsync + nsync_overflow) * sync_period / (0.001*self.get_ResolutionPS()))
-                        dt_ch0 = (ch1_sync-ch0_sync-ch0_time) / (2**binsize_g2) + range_g2/2
-                        if (0 <= dt_ch0) and (dt_ch0 < range_g2):
-                            hist_ch1_long[dt_ch0] += 1
-                            
-                        if mode != 1:
-                            mode = 0
-                        else:
-                            dt = range_g2/2 + ((ch1_time+ch1_sync) - (ch0_time+ch0_sync))/(2**binsize_g2)
-                            if (dt >= 0) and (dt < range_g2) and (ch0_bin < range_sync) and (ch1_bin < range_sync):
-                                histogram[ch0_bin,dt] += 1
-                                mode = 2
-                                nsync_overflow = 0
-                            else:
-                                mode=0
-
-
-                    if channel == 1:
-                        ch1_bin = time/(2**binsize_sync)
-                        if (0 <= ch1_bin) and (ch1_bin < range_sync):
-                            hist_ch1[ch1_bin] += 1			
-                        ch1_time = time
-                        ch1_sync = int((nsync + nsync_overflow) * sync_period / (0.001*self.get_ResolutionPS()))
-                        dt_ch1 = (ch1_time+ch1_sync-ch0_sync) / (2**binsize_g2) + range_g2/2
-                        if (0 <= dt_ch1) and (dt_ch1 < range_g2):
-                            hist_ch1_long[dt_ch1] += 1
-                            
-                        if mode != 0:
-                            mode = 1
-                        else:
-                            dt = range_g2/2 + ((ch1_time+ch1_sync) - (ch0_time+ch0_sync))/(2**binsize_g2)
-                            if (dt >= 0) and (dt < range_g2) and (ch0_bin < range_sync) and (ch1_bin < range_sync):
-                                histogram[ch0_bin,dt] += 1
-                                mode = 2
-                                nsync_overflow = 0
-                            else:
-                                mode=1
-           
-        print 'Total detected coincidences in histogram: %s'%(histogram.sum())
-        return histogram, hist_ch0, hist_ch1, hist_ch1_long
-
-    def get_T3_pulsed_g2_2DHistogram_v4(self, binsize_sync, range_sync, binsize_g2, range_g2, sync_period = 100, blocksize = TTREADMAX):   # in bins, period in ns
-	
-        if .001*self.get_ResolutionPS() * 2**15 < sync_period:
-            print('Warning: resolution is too high to cover entire sync period in T3 mode, events might get lost.')
-        histogram = zeros((range_sync,range_g2), dtype = int)
-        hist_ch0 = zeros(range_sync, dtype = int)
-        hist_ch1 = zeros(range_sync, dtype = int)
-        hist_ch1_long = zeros(range_g2, dtype = int)
-        mode = 2    # mode = 0, if a click was received on channel 0, 
-                    #        1, if a click was received on channel 1,
-                    #        2, if no click was detected
-
-        nsync_overflow=0
-        ch0_sync=0
-        ch0_time=0
-        ch1_sync=0
-        ch1_time=0
-        idx = 0
-        timestamp = strftime('%Y%m%d%H%M%S')
-        while self._do_get_MeasRunning() == True:
-            length, data = self.get_TTTR_Data(blocksize)
-
-#            path = r"D:\measuring\user\hhdebug"
-#            savez(os.path.join(path, timestamp+'-alldata-'+str(idx)), length=length,
-#                    data=data)
-#            idx += 1
-
-            for i in arange(0, length):
+            
+            for i in arange(0, length):                
                 nsync   = data[i] & (2**10 - 1)
                 event_time = (data[i] >> 10) & (2**15 - 1)
                 channel = (data[i] >> 25) & (2**6 - 1)
@@ -868,55 +645,42 @@ class HydraHarp_HH400(Instrument): #1
                         nsync_overflow += 1
                     else:
                         marker = channel & 15
-                        print 'marker on channel:', channel
-                        print marker
+                        
+                        if marker == 1:
+                            measuring = True
+                            nsync_overflow = 0
+                            nsync_ma1 = nsync
+                            
+                            if (nsync_ma1==-max_pulses):
+                                print 'first marker'
+                        
+                        if marker in save_markers:
+                            markers = vstack((markers, 
+                                array([nsync+nsync_overflow*2**10, 
+                                    event_time, marker])))
+
                 else:
-                    if channel == 0:
-                        ch0_bin = event_time/(2**binsize_sync)
-                        if (0 <= ch0_bin) and (ch0_bin < range_sync):
-                            hist_ch0[ch0_bin] += 1
-                        ch0_time = event_time
-                        ch0_sync = int((nsync + nsync_overflow*2**10) * sync_period / (0.001*self.get_ResolutionPS()))
-                        dt_ch0 = (ch1_sync-ch0_sync-ch0_time) / (2**binsize_g2) + range_g2/2
-                        if (0 <= dt_ch0) and (dt_ch0 < range_g2):
-                            hist_ch1_long[dt_ch0] += 1
-                            
-                        if mode != 1:
-                            mode = 0
-                        else:
-                            dt = range_g2/2 + ((ch1_time+ch1_sync) - (ch0_time+ch0_sync))/(2**binsize_g2)
-                            if (dt >= 0) and (dt < range_g2) and (ch0_bin < range_sync) and (ch1_bin < range_sync):
-                                histogram[ch0_bin,dt] += 1
-                                mode = 2
-                            else:
-                                mode=0
+                    if (nsync+nsync_overflow*2**10-nsync_ma1) < max_pulses and \
+                            event_time < range_sync:
+                        sync_no = nsync+nsync_overflow*2**10
 
+                        if channel == 0 and event_time >= start_ch0:
+                            ch0_events = vstack((ch0_events,
+                                array([nsync+nsync_overflow*2**10, event_time)))
 
-                    if channel == 1:
-                        ch1_bin = event_time/(2**binsize_sync)
-                        if (0 <= ch1_bin) and (ch1_bin < range_sync):
-                            hist_ch1[ch1_bin] += 1			
-                        ch1_time = event_time
-                        ch1_sync = int((nsync + nsync_overflow*2**10) * sync_period / (0.001*self.get_ResolutionPS()))
-                        dt_ch1 = (ch1_time+ch1_sync-ch0_sync) / (2**binsize_g2) + range_g2/2
-                        if (0 <= dt_ch1) and (dt_ch1 < range_g2):
-                            hist_ch1_long[dt_ch1] += 1
-                            
-                        if mode != 0:
-                            mode = 1
-                        else:
-                            dt = range_g2/2 + ((ch1_time+ch1_sync) - (ch0_time+ch0_sync))/(2**binsize_g2)
-                            if (dt >= 0) and (dt < range_g2) and (ch0_bin < range_sync) and (ch1_bin < range_sync):
-                                histogram[ch0_bin,dt] += 1
-                                mode = 2
-                            else:
-                                mode=1
-           
-        print 'Total detected coincidences in histogram: %s'%(histogram.sum())
-        return histogram, hist_ch0, hist_ch1, hist_ch1_long
+                        if channel == 1 and event_time >= start_ch1:
+                            ch1_events = vstack((ch1_events,
+                                array([nsync+nsync_overflow*2**10, event_time)))
 
-    def get_T3_pulsed_g2_2DHistogram_v5(self, binsize_sync, range_sync, binsize_g2, range_g2,\
-            sync_period = 100, blocksize = TTREADMAX, max_pulses = 100,laser_end_ch0 = 0,laser_end_ch1 = 0, tail_roi = 800, save_raw=""):   # in bins, period in ns
+        print "Detected events: %d / %d." % (len(ch0_events), len(ch1_events))
+
+        return ch0_events, ch1_events, markers
+
+   
+    def get_T3_pulsed_g2_2DHistogram(self, binsize_sync, range_sync, 
+            binsize_g2, range_g2, sync_period = 100, blocksize = TTREADMAX, 
+            max_pulses = 100, laser_end_ch0 = 0,laser_end_ch1 = 0, 
+            tail_roi = 800, save_raw=""):   # in bins, period in ns
 	
         if .001*self.get_ResolutionPS() * 2**15 < sync_period:
             print('Warning: resolution is too high to cover entire sync period in T3 mode, events might get lost.')
@@ -1065,8 +829,6 @@ class HydraHarp_HH400(Instrument): #1
         print 'Total detected coincidences in histogram: %s'%(histogram.sum())
         print 'Good events during measuring: %s'%good_events
         return histogram, hist_ch0, hist_ch1, hist_ch1_long, histogram_roi
-
-
 
     def get_Block(self):
         return self.get_Histogram(0,0)
