@@ -22,6 +22,7 @@ INIT:
   CONF_DIO(1011b)   'configure DIO-24 to DIO 31 as outputs, the rest are inputs
   channel=PAR_61    'OutputNR can only have values 1,2,3,4 corresponding to DIO28,29,30,31
   set=PAR_62
+ 
 
 EVENT:
   digout(channel, set)

@@ -203,6 +203,8 @@ INIT:
   PAR_23 = 0
   PAR_25 = 0
   
+  PAR_60 = 0                      ' dummy par!!!
+  
   PAR_70 = 0                      ' cumulative counts from probe intervals
   PAR_71 = 0                      ' below CR threshold events
   PAR_72 = 0                      ' number of CR checks performed (lt2)
@@ -375,10 +377,13 @@ EVENT:
           IF (timer = RO_duration) THEN
             P2_DAC(DAC_MODULE, Ex_laser_DAC_channel, 32768) ' turn off Ex laser
             P2_DAC(DAC_MODULE, A_laser_DAC_channel, 32768) ' turn off A laser
+            
+            PAR_60 = PAR_60 + P2_CNT_READ(CTR_MODULE, counter_channel) 'total spin-RO counts
+            
             counts = P2_CNT_READ(CTR_MODULE, counter_channel) - old_counts
             old_counts = counts
             PAR_79 = PAR_79 + counts
-            i = timer + RO_duration * sweep_index
+            i = RO_duration*(1+sweep_index)
             DATA_25[i] = DATA_25[i] + counts
             P2_CNT_ENABLE(CTR_MODULE, 0)
             mode = 1
