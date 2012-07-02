@@ -6,19 +6,19 @@ import msvcrt
 
 
 # measurement parameters
-start_v = 1.4
-stop_v = 0.2
+start_v = 0.1
+stop_v = -1.0
 steps = 3001
 pxtime = 50  #ms
 do_smooth = True
-green_during = 0e-6
-green_before = 300e-6
+green_during = 0.5e-6
+green_before = 200e-6
 red_during= 8e-9
 f_offset = 470400 # GHz
-mw = True
+mw = False
 amp = True
 mw_power = -20
-mw_frq = 2.8578e9 #2.878e9
+mw_frq = 2.8569e9 #2.878e9
 dataname = 'Laserscan_sil9_LT2_MW_0uW_green'
 LT2 = True
 

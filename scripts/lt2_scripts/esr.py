@@ -5,16 +5,16 @@ import measurement.PQ_measurement_generator_v2 as pqm
 import msvcrt
 # from measurement.AWG_HW_sequencer_v2 import Sequence
 
-name='ESR_SIL2_LT1'
-start_f = 2.84 #   2.853 #2.85 #  #in GHz
-stop_f  = 2.92 #   2.864 #2.905 #   #in GHz
+name='ESR_SIL9_LT2'
+start_f = 2.85 #   2.853 #2.85 #  #in GHz
+stop_f  = 2.87 #   2.864 #2.905 #   #in GHz
 steps   =   31
 mw_power_lt1 = -10  #in dBm
 mw_power_lt2 = -12   #in dBm
-int_time = 50       #in ms
-reps = 20
+int_time = 30       #in ms
+reps = 10
 
-lt1 = True
+lt1 = False
 
 #generate list of frequencies
 f_list = linspace(start_f*1e9, stop_f*1e9, steps)
@@ -47,7 +47,7 @@ for cur_rep in range(reps):
     for i,cur_f in enumerate(f_list):
         
         ins_smb.set_frequency(cur_f)
-        qt.msleep(0.5)
+        qt.msleep(0.1)
         
         total_cnts[i]+=ins_adwin.measure_counts(int_time)[counter-1]
         # qt.msleep(0.01)
