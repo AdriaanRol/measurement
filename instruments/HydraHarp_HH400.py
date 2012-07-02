@@ -1120,3 +1120,79 @@ class HydraHarp_HH400(Instrument): #1
 
     def get_DeviceType(self):
         return 'HH_400'
+
+    def get_T3_pulsed_g2_PLU_gated_histogram(self, range_g2, sync_period, blocksize = TTREADMAX, save_raw="")
+            if .001*self.get_ResolutionPS() * 2**15 < sync_period:
+                print('Warning: resolution is too high to cover entire sync period in T3 mode, events might get lost.')
+            
+            mode = 2    # mode = 0, if a start was received on channel 0, 
+            #        1, if start on 1 
+            #        2, if no start was detected, or after a stop was detected as well
+            histogram=zeros(range_g2,dtype=int)
+            ch0_hist=zeros(range_g2,dtype=int)
+            ch1_hist=zeros(range_g2,dtype=int)
+            
+            ch0_sync=0
+            ch0_time=0
+            ch1_sync=0
+            ch1_time=0
+            
+            idx=0
+            save_raw_bool=False
+            if not(save_raw==""):
+                save_raw_bool=True
+                if not(os.path.isdir(save_raw)):
+                    print "Raw data save path is not a valid directory, please create it first"
+                    return False
+                    
+            while self._do_get_MeasRunning() == True:
+                length, data = self.get_TTTR_Data(blocksize)
+                data_save = append(data_save,data[0:length])
+                if len(data_save) > max_length:
+                    if (save_raw_bool):
+                        savez(os.path.join(save_raw, timestamp+'-alldata-'+str(idx)), 
+                                length=len(data_save),data=data_save)
+                    data_save = []
+                    idx += 1
+                for i in arange(0, length):
+                    nsync   = data[i] & (2**10 - 1)
+                    event_time = (data[i] >> 10) & (2**15 - 1)
+                    channel = (data[i] >> 25) & (2**6 - 1)
+                    special = (data[i] >> 31) & 1
+                    
+                    if special == 1:
+                        if channel == 63:
+                            pass
+                        else:
+                            marker = channel & 15
+                            print 'marker detected:', marker 
+                    else:
+                        if channel == 0:
+                            ch0_time = time
+                            ch0_sync = nsync
+                            if ch0_time<range_g2: ch0_hist[ch0_time] += 1
+                            
+                            if mode != 1:
+                                mode = 0
+                            else:
+                                if ch0_sync==ch1_sync:
+                                   if ch0_time<range_g2: histogram[ch0_time] +=1
+                                   mode = 2
+                                else:
+                                    mode = 0
+                                
+                        if channel == 1:
+                            ch1_time = time
+                            ch1_sync = nsync
+                            if ch1_time<range_g2: ch1_hist[ch1_time] += 1
+                                
+                            if mode != 0:
+                                mode = 1
+                            else:
+                                if ch0_sync==ch1_sync:
+                                   if ch0_time<range_g2: histogram[ch0_time] +=1
+                                   mode = 2
+                                else:
+                                    mode = 1
+            return ch0_hist, ch1_hist, histogram
+    
