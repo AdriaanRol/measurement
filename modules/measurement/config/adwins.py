@@ -629,7 +629,7 @@ config['adwin_lt1_processes'] = {
                     },
                 },
 
-                }
+                
         }
 
 
