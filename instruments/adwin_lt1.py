@@ -6,7 +6,6 @@ import numpy as np
 from instrument import Instrument
 import time
 from lib import config
-
 from adwin import adwin
 import measurement.config.adwins as adwinscfg
 

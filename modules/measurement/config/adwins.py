@@ -577,11 +577,12 @@ config['adwin_lt1_processes'] = {
                 'params_float_index'  : 21,
                 'params_float_length' : 10,
                 },
+
         'lde' : {
                 'index' : 9,
                 'file' : 'lde_control_lt1_v1.TB9',
                 'params_long': [
-                    ('counter'                      , 1),
+                    ('counter_channel'              , 1),
                     ('green_laser_DAC_channel'      , 7),
                     ('Ex_laser_DAC_channel'         , 6),
                     ('A_laser_DAC_channel'          , 8),
