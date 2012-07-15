@@ -8,11 +8,13 @@ import time
 from lib import config
 
 class adwin(Instrument):
-    def __init__(self, name, adwin, processes={}, **kw):
+    def __init__(self, name, adwin, processes={}, 
+            process_subfolder='', **kw):
         Instrument.__init__(self, name, tags=['virtual'])
 
         self.physical_adwin = adwin
-        self.process_dir = qt.config['adwin_programs']
+        self.process_dir = os.path.join(qt.config['adwin_programs'], 
+                process_subfolder)
         self.processes = processes
         self.default_processes = kw.get('default_processes', [])
         self.dacs = kw.get('dacs', {})
@@ -113,7 +115,7 @@ class adwin(Instrument):
         while hasattr(self, funcname):
             funcname += '_'
 
-        def f(timeout=None, stop=True, load=False, 
+        def f(timeout=None, stop=True, load=True, 
                 stop_processes=[], **kw):
 
             """
@@ -246,6 +248,9 @@ class adwin(Instrument):
             a PAR, FPAR or DATA element. What is returned is specified by
             the name of the variable.
 
+            It is also possible to get all pars or fpars belonging to a process, by 
+            setting name = 'par' or 'fpar'
+
             known keywords:
             - start (integer): if DATA is returned, the start index of the
               array. default is 1.
@@ -292,8 +297,15 @@ class adwin(Instrument):
                     return self.physical_adwin.Get_Data_Float(
                             proc['data_float'][name], start, length)
             else:
-                print 'Unknown variable.'
-                return False
+                if name == 'par':
+                     return [ (key, self.physical_adwin.Get_Par(proc['par'][key])) \
+                             for key in proc['par'] ]
+                elif name == 'fpar':
+                    return [ (key, self.physical_adwin.Get_FPar(proc['fpar'][key])) \
+                            for key in proc['fpar'] ]
+                else:
+                    print 'Unknown variable.'
+                    return False
 
         f.__name__ = funcname
         setattr(self, funcname, f)

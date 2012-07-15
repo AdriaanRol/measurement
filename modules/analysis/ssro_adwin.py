@@ -39,7 +39,14 @@ def run_single(folder='', ms=0, index=0):
     if folder == "":
         folder = os.getcwd()
 
-    basepath = os.path.join(folder, PREFIX+'-'+str(index))
+    if index < 10:
+        SUFFIX = '-00'+str(index)
+    elif index < 100:
+        SUFFIX = '-0'+str(index)
+    else:
+        SUFFIX = str(index)
+
+    basepath = os.path.join(folder, PREFIX+SUFFIX)
     params = load(basepath+'_'+PARAMS_SUFFIX+'.npz')
 
     reps    = params['par_long'][PARAM_REPS]
@@ -51,6 +58,10 @@ def run_single(folder='', ms=0, index=0):
 
     autoanalyze_single_ssro(rodata, spdata, crdata, basepath, ms=ms, 
             binsize=binsize, reps=reps)
+    rodata.close()
+    spdata.close()
+    crdata.close()
+    params.close()
 
 def run_all(folder='', altern=True):
     if folder == "":
@@ -59,15 +70,29 @@ def run_all(folder='', altern=True):
     allfiles = os.listdir(folder)
     rofiles = [ f for f in allfiles if RO_SUFFIX in f ]
     for i in range(len(rofiles)):
+        print i
+  
         ms = 1 if (i%2 and altern) else 0
-        run_single('',ms,i)
+        run_single(folder,ms,i)
 
         if altern and i%2:
-            f1 = PREFIX+'-%d_fid_vs_ROtime.npz' % (i)
-            f0 = PREFIX+'-%d_fid_vs_ROtime.npz' % (i-1)
-            t,f,ferr,fig = fidelities(f0,f1)
-            np.savetxt('totalfid-%d_+_%d.dat' % (i-1, i),(t,f,ferr))
-            fig.savefig('totalfid-%d_+_%d.png' % (i-1, i))
+ 
+            if i < 10:
+                SUFFIX_i = '-00'+str(i)
+                SUFFIX_j = '-00'+str(i-1)
+            elif i == 10:
+                SUFFIX_i = '-0'+str(i)
+                SUFFIX_j = '-00'+str(i-1)
+            elif i < 100:
+                SUFFIX_i = '-0'+str(i)
+                SUFFIX_j = '-0'+str(i-1)
+
+            f1 = PREFIX+SUFFIX_i+'_fid_vs_ROtime.npz' 
+            f0 = PREFIX+SUFFIX_j+'_fid_vs_ROtime.npz'
+            t,f,ferr,fig = fidelities(folder,f0,f1)
+
+            np.savetxt(folder+'\\'+'totalfid-%d_+_%d.dat' % (i-1, i),(t,f,ferr))
+            fig.savefig(folder+'\\'+'totalfid-%d_+_%d.png' % (i-1, i))
 
 
 def autoanalyze_single_ssro(rodata, spdata, crdata, save_basepath, 
@@ -83,9 +108,10 @@ def autoanalyze_single_ssro(rodata, spdata, crdata, save_basepath,
     if stop == 0:
         stop = rodata['time'][-1]/1e3
     #print rodata['time'][-1]/1e3
-    #print stop
+    print 'stop = ',stop
     lastbin = int(stop/binsize)
-    #print lastbin
+    print 'lastbin = ',lastbin
+    print 'binsize = ',binsize
     t0 = time.time()
     ts = timestamp()
 
@@ -153,11 +179,12 @@ Measurement results:
 
     # convert counts to Hz
     sp = array([j/(binsize*1e-6*reps) for j in spdata['counts']]) 
+    ax = plt.subplot(223)
     if False and len(spdata['counts'])>2:
         offset_guess = spdata['counts'][len(spdata['counts'])-1]
         init_amp_guess = spdata['counts'][2]
         decay_guess = 10
-        ax = plt.subplot(223)
+        
 
         fit_result=fit.fit1d(spdata['time'][2:len(spdata['counts'])-1]/1E3, spdata['counts'][2:len(spdata['counts'])-1], 
                 common.fit_exp_decay_with_offset, 
@@ -166,7 +193,10 @@ Measurement results:
                 plot_fitparams_xy = (0.5,0.5))
 
     # ax.set_yscale('log')
-    plt.plot(spdata['time'], sp, 'o')
+    # NOTE: spin pumping starts at 1 us, that is the first datapoint
+    # that is retrieved from the adwin. Fit might not be displayed properly
+    # anymore now...
+    plt.plot(spdata['time']+1E3, sp, 'o')
     plt.xlabel('spin pumping time [ns]')
     plt.ylabel('counts [Hz]')
     plt.title('spin relaxation during pumping')
@@ -201,12 +231,6 @@ Measurement results:
         fid_dat = vstack((fid_dat, array([[t, fid, pzero_err]])))
 
     fig2 = plt.figure()
-    print 'fid_dat[:,0]'
-    print fid_dat[:,0]
-    print 'fid_dat[:,1]'
-    print fid_dat[:,1]
-    print 'fid_dat[:,2]'
-    print fid_dat[:,2]
     plt.errorbar(fid_dat[:,0], fid_dat[:,1], fmt='o', yerr=fid_dat[:,2])
     plt.xlabel('RO time [us]')
     plt.ylabel('ms = %d RO fidelity' % ms)
@@ -238,7 +262,7 @@ Measurement results:
         plt.close('all')
 
 
-def fidelities(fid_ms0, fid_ms1):
+def fidelities(folder,fid_ms0, fid_ms1):
     """
     Performs the analysis for two SSROs with ms=0/1, and
     plots the total measurement fidelity (F) in dependence of the RO time.
@@ -246,13 +270,13 @@ def fidelities(fid_ms0, fid_ms1):
     The two measurements need to fit (same nr of points, points matching)
 
     Parameters: The two respective npz files from the analysis of the single
-    SSRO measurements.
+    SSRO measurements. Filepath (string) to show at plot
 
     returns F, error of F
     """
 
-    d_ms0 = np.load(fid_ms0)
-    d_ms1 = np.load(fid_ms1)
+    d_ms0 = np.load(folder+'\\'+fid_ms0)
+    d_ms1 = np.load(folder+'\\'+fid_ms1)
 
     times = d_ms0['time']
     fid0 = d_ms0['fid']
@@ -270,12 +294,14 @@ def fidelities(fid_ms0, fid_ms1):
     plt.errorbar(times, F, fmt='.', yerr=F_err, label='total')
     plt.xlabel('RO time [us]')
     plt.ylabel('RO fidelity')
-    plt.ylim((0.5,1))
+    plt.ylim((0.5,1.08))
+    plt.text(0.01*(max(times)+min(times)),1.05*max(fid1),folder+'\\'+fid_ms1,fontsize='x-small')
     plt.title('SSRO fidelity')
-    plt.legend(loc=4)
+    plt.legend(loc=4, fancybox = True, shadow = True)
     plt.figtext(0.8, 0.5, "max. F=%.2f at t=%.2f us" % (F_max, t_max),
             horizontalalignment='right')
-
+    d_ms0.close()
+    d_ms1.close()
     return  times, F, F_err, fig
 
 def fidelity_vs_power(folder='',sweep_param='Ex_RO_amplitude'):
@@ -290,31 +316,45 @@ def fidelity_vs_power(folder='',sweep_param='Ex_RO_amplitude'):
     maxfid = []
     maxfid_t = []
 
+    
     for f in fidfiles:
         fn, ext = os.path.splitext(f)
         idx = int(fn[fn.find('+_')+2:])-1
-        basepath = os.path.join(folder, PREFIX+'-'+str(idx))
+        print idx
+        
+        if idx < 10:
+            SUFFIX = '-00'+str(idx)
+        elif idx == 10:
+            SUFFIX = '-0'+str(idx)
+        elif idx < 100:
+            SUFFIX = '-0'+str(idx)
+
+        basepath = os.path.join(folder, PREFIX+SUFFIX)
         parfile = basepath+'_parameters_dict.npz'  
         param_dict=load(parfile)
         #pow.append(loadtxt(parfile)[get_param_column(parfile,'par_ro_Ex_power')]*1e9)
         #pow.append(int(idx/2)*1.)
         pow.append(param_dict[sweep_param])
-
+        param_dict.close
         fiddat = loadtxt(f)
         maxidx = argmax(fiddat[1,:])
         maxfid.append(fiddat[1,maxidx])
         maxfid_t.append(fiddat[0,maxidx])
-    
+        #fiddat.close() 
     
     fig = plt.figure()
     plt.plot(pow, maxfid, 'ro', label='max F')
     plt.xlabel('P [nW]')
     plt.ylabel('max. F')
+    plt.ylim(ymax=1.2*max(maxfid))
+    plt.title('Maximum SSRO Fidelity and Optimal readout time vs' + sweep_param)
+    plt.text(0.01*(max(pow)+min(pow)),1.15*max(maxfid),folder,fontsize='x-small')
     plt.legend()
     
     plt.twinx()
     plt.plot(pow, maxfid_t, 'bo')
     plt.ylabel('best ro-time')
+    plt.ylim(ymax=1.2*max(maxfid_t))
     plt.savefig('fidelity_vs_power.png')
 
 def spin_flip_time_vs_MW_freq(folder=''):
@@ -352,28 +392,46 @@ def spin_flip_time_vs_MW_freq(folder=''):
     #savetxt(save_basepath + '_ro_countrate.dat',
     #     array([ro_time, ro_countrate]).transpose())
 
-def analyze_SP_RO(sp_file,folder='', plot=True,save=True,do_print=False,ret = False,name='spin_pumping.png'):
+def analyze_SP_RO(sp_file, params,folder='',plot=True,save=True,do_print=False,ret = False,name='spin_pumping.png'):
+    '''
+    Function to plot and fit a single SP or RO curve. 
+    
+
+    sp_file     string      (part of) the filename that contains data of interest
+    folder      string      folder that contains the data
+    '''     
+    
     if folder == '':
         folder = os.getcwd()
 
     v = load(folder+'\\'+sp_file)
+    Ex_RO_power = params['Ex_RO_amplitude']
+    A_RO_power = params['Ex_RO_amplitude']
+    Ex_SP_power = params['Ex_SP_amplitude']
+    A_SP_power = params['A_SP_amplitude']
 
     if 'Spin_RO' in sp_file:
         sp_counts = sum(v['counts'],axis=0)
+        title = 'RO Powers: Ex = ' + str(Ex_RO_power*1E9) + 'nW, A = ' + str(A_RO_power*1E9) + 'nW'
     else:
         sp_counts = v['counts']
+        title = 'SP Powers: Ex = ' + str(Ex_SP_power*1E9) + 'nW, A = ' + str(A_SP_power*1E9) + 'nW'
+        
     
     sp_time = v['time']
+    v.close()
 
     offset_guess = sp_counts[len(sp_counts)-1]
-    init_amp_guess = sp_counts[2]
+    init_amp_guess = max(sp_counts)
+    firstpoint=int(find_nearest(sp_counts,init_amp_guess))
+
     decay_guess = 10
 
     if plot:
         figure4 = plt.figure(4)
         plt.clf()
 
-    fit_result=fit.fit1d(sp_time[2:len(sp_counts)-1]/1E3, sp_counts[2:len(sp_counts)-1], common.fit_exp_decay_with_offset, 
+    fit_result=fit.fit1d(sp_time[firstpoint:len(sp_counts)-1]/1E3, sp_counts[firstpoint:len(sp_counts)-1], common.fit_exp_decay_with_offset, 
             offset_guess, init_amp_guess, decay_guess,
             do_plot = plot, do_print = do_print, newfig = False, ret=True,
             plot_fitparams_xy = (0.5,0.5))
@@ -383,11 +441,12 @@ def analyze_SP_RO(sp_file,folder='', plot=True,save=True,do_print=False,ret = Fa
         plt.plot(sp_time/1E3,sp_counts,'sg')
         plt.xlabel('Time ($\mu$s)')
         plt.ylabel('Integrated counts')
-        plt.title(sp_file)
+        plt.title(title)
+        plt.ylim(ymax=max(sp_counts)*1.2)
+        plt.text(0.01*(max(sp_time/1E3)+min(sp_time/1E3)),1.15*max(sp_counts),folder+sp_file,fontsize='x-small')
     
         if save:
             figure4.savefig(folder+'\\'+name+'.png')
-    v.close()
 
     if ret:
         return fit_result
@@ -409,7 +468,7 @@ def SP_RO_fitparam_vs_sweepparam(folder='',fitparam_nr=2,sweeppar='Ex_RO_power',
     '''
     if folder == '':
         folder = os.getcwd()
-
+    
     sweepparam=[]
     fitparam=[]
     ###########################################
@@ -419,53 +478,86 @@ def SP_RO_fitparam_vs_sweepparam(folder='',fitparam_nr=2,sweeppar='Ex_RO_power',
     
     for fn in files:        
         if (fitfile in fn) and ('.npz' in fn):
-            data = load(folder + '\\' + fn)
             idx = fn[len(suffix)+1:len(fn)-len(fitfile)-5]
-            fitresult = analyze_SP_RO(fn,folder,save=True,ret=True,name=fitfile+num2str(len(fitparam),0))
+            params=load(folder + '\\' + suffix + '-'+idx+'_parameters_dict.npz')
+            if (params['do_ms0']) and (params['do_ms1']):
+                altern = True
+            else:
+                altern = False
+            sweeppar_val = params[sweeppar]                    
+            fitresult = analyze_SP_RO(fn,params,folder,save=True,ret=True,name=fitfile+num2str(len(fitparam),0))
             if fitresult:
                 fitparam.append(fitresult[0]['params'][fitparam_nr])
-                params=load(folder + '\\' + suffix + '-'+idx+'_parameters_dict.npz')
-                sweepparam.append(params[sweeppar])
-               
+                sweepparam.append(float(sweeppar_val*1E9))
+            params.close()
+    
+    if (altern) and ('SP' in sweepparam):
+        if 'Ex' in sweepparam:
+            sweepparamplot = sweepparam[1::2]
+            fitparamplot   = fitparam[1::2]
+        if 'A' in sweepparam:
+            sweepparamplot = sweepparam[::2]
+            fitparamplot   = fitparam[::2]
+    else:
+        sweepparamplot = sweepparam
+        fitparamplot = fitparam
     figure1 = plt.figure(1)    
     plt.clf()
-    plt.plot(sweepparam,fitparam, 'or')
+    plt.plot(sweepparamplot,fitparamplot, 'or')
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
     plt.title(name)
+    plt.ylim(ymax=1.2*max(fitparamplot))
+    plt.text(0.01*(max(sweepparamplot)+min(sweepparamplot)),1.15*max(fitparamplot),folder,fontsize='x-small')
     
     if save:
         figure1.savefig(folder+'\\'+name+'.png')
     return {'fitparam' : fitparam,'sweepparam':sweepparam}
 
-def spin_pumping_vs_power(folder='',transition='A'):
+def spin_pumping_during_readout_vs_RO_power(folder='',transition='A'):
+    '''
+    This function uses SP_RO_fitparam_vs_sweepparam to fit the Spin_RO curves
+    for a measurement where the RO amplitude ('A' or 'Ex') is swept.
+    It plots the resulting decay constant and amplitude vs RO power in 1 plot
+    and the offset vs RO power in a separate plot.
+    '''
+
 
     if folder == '':
         folder = os.getcwd()
-    fittau = SP_RO_fitparam_vs_sweepparam(folder,2,'A_RO_amplitude',fitfile='Spin_RO',
+    fittau = SP_RO_fitparam_vs_sweepparam(folder,2,transition + '_RO_amplitude',fitfile='Spin_RO',
             xlabel=transition+' power [W]',ylabel='Decay constant [us]',
-            name='decay_const_vs_'+transition+'_power')
-    fitA   = SP_RO_fitparam_vs_sweepparam(folder,1,'A_RO_amplitude',fitfile='Spin_RO',
+            name='RO Curve Decay const vs '+transition+' RO power')
+    fitA   = SP_RO_fitparam_vs_sweepparam(folder,1,transition + '_RO_amplitude',fitfile='Spin_RO',
             xlabel=transition+' power [W]',ylabel='Amplitude  [cts]',
-            name='peak_counts_vs_'+transition+'_power')
-    fita   = SP_RO_fitparam_vs_sweepparam(folder,0,'A_RO_amplitude',fitfile='Spin_RO',
+            name='RO Curve Peak counts vs '+transition+' RO power')
+    fita   = SP_RO_fitparam_vs_sweepparam(folder,0,transition + '_RO_amplitude',fitfile='Spin_RO',
             xlabel=transition+' power [W]',ylabel='Amplitude  [cts]',
-            name='offset_vs_'+transition+'_power')
-    
+            name='RO Curve Offset vs '+transition+' RO power')
+   
     fig1 = plt.figure(1)
     plt.clf()
     ax1 = fig1.add_subplot(111)
+    
+
     tau = ax1.plot(fittau['sweepparam'],fittau['fitparam'], 'ob')
-    plt.ylabel("Decay constant [us]")
- 
+    plt.ylabel("Decay constant [us]",color = 'b')
+    plt.ylim(ymax=1.3*max(fittau['fitparam']))
+    ax1.tick_params(axis='y',colors='b',right='off')
+    ax1.yaxis.set_label_position("left")
+
     ax2 = fig1.add_subplot(111, sharex=ax1, frameon=False)
     A = ax2.plot(fitA['sweepparam'],fitA['fitparam'], 'xr')
+    ax2.tick_params(axis='y',colors='r')
     ax2.yaxis.tick_right()
     ax2.yaxis.set_label_position("right")
-    plt.ylabel("Amplitude [counts]")
- 
-
-    plt.legend((tau, A), ("Tau", "Amplitude"))
+    plt.ylabel("Amplitude [counts]",color = 'r')
+    plt.ylim(ymax = 1.3*max(fitA['fitparam']))
+    plt.text(0.01*(max(fitA['sweepparam'])+min(fitA['sweepparam'])),1.25*max(fitA['fitparam']),folder,fontsize='x-small')
+    plt.xlabel(transition+" power [nW]")
+    plt.title('RO Curve Decay time and Peak counts vs '+transition+' RO power')
+    
+    plt.legend((tau, A), ("Tau", "Amplitude"),loc='upper right',bbox_to_anchor=(1,1/1.05))
     fig1.savefig(folder+'\\'+'SP_A_and_tau_vs_'+transition+'_power.png')
     
 
@@ -483,6 +575,9 @@ def get_param_column(parfile,parname):
 def num2str(num, precision): 
     return "%0.*f" % (precision, num)
 
+def find_nearest(array,value):
+    idx=(np.abs(array-value)).argmin()
+    return idx
 
 
 

@@ -9,18 +9,18 @@ import measurement.measurement as meas
 from measurement.AWG_HW_sequencer_v2 import Sequence
 import measurement.PQ_measurement_generator_v2 as pqm
 
-from measurement.config import awgchannels as awgcfg
+from measurement.config import awgchannels_lt2 as awgcfg
 from measurement.sequence import common as commonseq
 
-f_mw    = 2.84E9
-f_start = 2.8542E9           #start frequency in Hz
-f_stop = 2.8613E9            #stop frequency in Hz
-pi_pulse_length = 1500      #length of MW pi pulse
-mwpower_lt1 = -20           #in dBm
+f_mw    = 2.82E9
+f_start = 2.823E9           #start frequency in Hz
+f_stop = 2.836E9            #stop frequency in Hz
+pi_pulse_length = 98      #length of MW pi pulse
+mwpower_lt1 = 20           #in dBm
 mwpower_lt2 = 15            #in dBm
-nr_of_datapoints = 150       #max nr_of_datapoints*repetitions_per_datapoint should be < 20000
+nr_of_datapoints = 71       #max nr_of_datapoints*repetitions_per_datapoint should be < 20000
 repetitions_per_datapoint = 2000 
-amplitude_ssbmod = 0.2
+amplitude_ssbmod = 0.8
 mwfreq = np.linspace(f_start,f_stop,nr_of_datapoints)
 lt1 = True
 
@@ -33,7 +33,7 @@ if lt1:
     adwin=qt.instruments['adwin_lt1']
     counters=qt.instruments['counters_lt1']
     physical_adwin=qt.instruments['physical_adwin_lt1']
-    microwaves = qt.instruments['SMB_100_lt1']
+    microwaves = qt.instruments['SMB100_lt1']
     ctr_channel=2
     mwpower = mwpower_lt1
 else:
@@ -51,7 +51,7 @@ microwaves.set_iq('on')
 microwaves.set_frequency(f_mw)
 microwaves.set_pulm('on')
 microwaves.set_power(mwpower)
-microwaves.set_status('on')
+
 
 par = {}
 par['counter_channel'] =              ctr_channel
@@ -77,10 +77,10 @@ par['CR_probe'] =                     100
 
 par['green_repump_amplitude'] =       200e-6
 par['green_off_amplitude'] =          0e-6
-par['Ex_CR_amplitude'] =              5e-9 #OK
-par['A_CR_amplitude'] =               10e-9 #OK
+par['Ex_CR_amplitude'] =              10e-9 #OK
+par['A_CR_amplitude'] =               15e-9 #OK
 par['Ex_SP_amplitude'] =              0e-9
-par['A_SP_amplitude'] =               10e-9 #OK: PREPARE IN MS = 0
+par['A_SP_amplitude'] =               15e-9 #OK: PREPARE IN MS = 0
 par['Ex_RO_amplitude'] =              5e-9 #OK: READOUT MS = 0
 par['A_RO_amplitude'] =               0e-9
 
@@ -209,7 +209,7 @@ def dark_esr(name, data, par):
     #print 'SP E amplitude: %s'%par['Ex_SP_voltage']
     #print 'SP A amplitude: %s'%par['A_SP_voltage']
 
-    adwin.start_adwin_spincontrol(
+    adwin.start_spincontrol(load = True, stop_processes=['counter'],
         counter_channel = par['counter_channel'],
         green_laser_DAC_channel = par['green_laser_DAC_channel'],
         Ex_laser_DAC_channel = par['Ex_laser_DAC_channel'],
@@ -353,8 +353,9 @@ def main():
             end_measurement()
             break
 
-    name = 'SIL9'
+    name = 'SIL2_lt1'
     data = meas.Measurement(name,'dark_esr')
+    microwaves.set_status('on')
     dark_esr(name,data,par)
     end_measurement()
 

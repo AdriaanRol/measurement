@@ -48,8 +48,8 @@ time_limit = 50 #in Adwin_proII processor cycles # in units of 1us
 # makes sure that the hydraharp is not initialized such that the HH software
 # can be used independently. 
 debug_mode = True
-par_meas_time = 5 #measurement time in minutes
-par_reps = 50
+par_meas_time = 1/10 #measurement time in minutes
+par_reps = 1
 par_raw_path=r'D:\measuring\data\20120601\raw'
 
 lt1_rempump_duration = 6 # in units of 1us
@@ -155,8 +155,6 @@ par_sp_voltage_lt2 = qt.instruments['NewfocusAOM'].power_to_voltage(
         par_sp_power_lt2)
 ins_newfocus_aom_lt2.set_cur_controller('ADWIN')
 
-#print lt2_green_aom_voltage 
-
 
 
 def generate_sequence(do_program=True):
@@ -171,14 +169,11 @@ def generate_sequence(do_program=True):
     chan_adwinsync = 'ADwin_sync'   # ok
     chan_eom = 'EOM_Matisse'
     chan_eom_aom = 'EOM_AOM_Matisse'
-    #chan_pulse_gating_module = 'Pulse_gating_module'
 
     awgcfg.configure_sequence(seq, 'hydraharp',
             optical_rabi = {chan_eom_aom: {'high': par_eom_aom_amplitude}, 
                 chan_alaser_lt1: {'high': par_sp_voltage_lt1}},
             ssro = {chan_alaser_lt2: {'high': par_sp_voltage_lt2}})
-        
-    #int(par_adwin_aom_duration*1e4)
 
     seq.add_element('optical_rabi', goto_target = 'idle')#'optical_rabi',event_jump_target='idle')
 
@@ -206,8 +201,7 @@ def generate_sequence(do_program=True):
             duration = 50)
 
     for i in arange(par_rabi_reps):
-        #FIXME position for the initialization pulse
-        
+
         seq.add_pulse('start'+str(i),  chan_hhsync, 'optical_rabi',         
                 start = par_rabi_cycle_duration, duration = 50, 
                 amplitude = 2.0, start_reference = last_start,  

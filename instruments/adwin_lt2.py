@@ -19,7 +19,8 @@ class adwin_lt2(adwin):
                 default_processes=['counter', 'set_dac', 'set_dio', 'linescan',
                     'DIO_test'], 
                 dacs=adwinscfg.config['adwin_lt2_dacs'], 
-                tags=['virtual'])
+                tags=['virtual'],
+                process_subfolder = qt.config['adwin_lt2_subfolder'])
         
         
         self.add_function('set_resonant_counting')

@@ -7,7 +7,12 @@ os.chdir('D:/measuring/qtlab/')
 reload(awgcfg)
 os.chdir('D:/measuring/user/scripts/lt2_scripts/')
 
-awgcfg.configure_sequence(seq,'mw','optical_rabi','hydraharp')
+SMB100_lt1.set_frequency(2.8295E9)
+SMB100.set_power(15)
+SMB100_lt1.set_pulm('on')
+SMB100_lt1.set_iq('on')
+
+awgcfg.configure_sequence(seq,'mw','LDE','hydraharp')
 
 #seq.add_channel('PH_start', 'ch4m2', cable_delay=0)
 #seq.add_channel('Green', 'ch2m1', cable_delay=604, high=0.5)
@@ -55,14 +60,20 @@ seq.add_pulse(name='trigger', channel = 'HH_sync', element=elt,
 #        start = 0, duration = 50 )
 #seq.add_pulse(name='wait', channel = 'trigger', element=elt, 
 #        start_reference='trigger',link_start_to='end', duration = 948, amplitude = 0)
+
+seq.add_pulse(name='Matisse', channel = 'EOM_AOM_Matisse',element = elt, duration = 50, 
+        start_reference='trigger',link_start_to = 'end', start=0,amplitude = 1)
+
 seq.add_pulse(name='MW_Imod', channel = 'MW_Imod_lt1',element = elt, duration = MW_Imod_duration, 
         start_reference='trigger',link_start_to = 'end', start=500,amplitude = 1)
 seq.add_pulse(name = 'MW_Pmod', channel = 'MW_pulsemod', element = elt,
             start=-MW_pulse_mod_risetime, duration=2*MW_pulse_mod_risetime, 
             start_reference = 'MW_Imod', link_start_to = 'start', duration_reference = 'MW_Imod', link_duration_to = 'duration')
-seq.add_pulse(name='wait', channel = 'PLU_Gate', element = elt, start = 0,
-        amplitude=0, duration = 10000,start_reference = 'trigger',
-        link_start_to = 'end')
+seq.add_pulse(name='wait_after', channel = 'MW_Imod_lt1',element = elt, duration = 2000, 
+        start_reference='MW_Imod',link_start_to = 'end', start=0,amplitude = 0)
+#seq.add_pulse(name='wait', channel = 'PLU_Gate', element = elt, start = 0,
+#        amplitude=0, duration = 10000,start_reference = 'trigger',
+#        link_start_to = 'end')
 
 #print 'MW pulse mod duration = ',(2*MW_pulse_mod_risetime+MW_Imod_duration)
 ##seq.add_pulse(name='MWpulse', channel = 'pm', element=elt, 
@@ -77,5 +88,10 @@ seq.set_program_channels(True)
 seq.set_start_sequence(True)
 seq.force_HW_sequencing(True)
 seq.send_sequence()
+
+
+SMB100_lt1.set_status('on')
+
+
 
 

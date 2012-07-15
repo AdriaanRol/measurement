@@ -41,6 +41,7 @@ class Sequence:
         self.use_HW_sequencing = True
         self.update_element = 'all'
         self.opt_09 = False
+        self.element_lengths = {}
 
     def set_instrument(self,instrument):
         self.AWG = instrument
@@ -873,6 +874,8 @@ class Sequence:
             print "Generating element '%s' (%d/%d) : %.3f us" % (element['name'], 
                     sequence_element_counter, len(self.elements), 
                     length/self.clock*1e6)
+            
+            self.element_lengths[element['name']] = length/self.clock
             
             # send the waveform to the AWG
             if (self.send_waveforms == True) and \

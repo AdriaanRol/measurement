@@ -10,8 +10,8 @@
 ' Optimize_Level                 = 1
 ' Info_Last_Save                 = TUD276629  TUD276629\localadmin
 '<Header End>
-#INCLUDE ADwinPro_All.inc
-#INCLUDE configuration.inc
+'#INCLUDE ADwinPro_All.inc
+'#INCLUDE configuration.inc
 
 'Linescan:
 DIM DATA_1[8] AS FLOAT
@@ -26,8 +26,8 @@ DIM DATA_200[8] AS LONG
 'DIM DATA_15[100000] AS FLOAT
 
 'Conditional repump TPQI:
-'DIM DATA_71[100] AS LONG
-'DIM DATA_72[100] AS LONG
+DIM DATA_8[100] AS LONG
+DIM DATA_7[100] AS LONG
 
 'Conditional repump:
 'DIM DATA_51[10000] AS FLOAT

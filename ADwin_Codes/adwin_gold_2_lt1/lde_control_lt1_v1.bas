@@ -27,6 +27,8 @@
 ' 75  cr_check_count_threshold_prepare
 
 ' Outputs:
+' 65  number of raw edges detected from SSRO in from lt2
+' 67  number of ROs performed
 ' 70  cumulative counts from probe intervals
 ' 71  below CR threshold events
 ' 72  number of CR checks performed (lt1)
@@ -53,9 +55,9 @@
 '   6 : CR threshold (after preparation with green)
 '   7 : CR threshold (already prepared)
 '   8 : repump steps
-'   9 : trigger remote cr in
+'   9 : trigger remote cr in bit
 '  10 : trigger finished remote cr out
-'  11 : trigger remote ssro in
+'  11 : trigger remote ssro in bit
 '  12 : ssro steps
 '
 ' DATA_21 (float)
@@ -71,7 +73,7 @@
 ' DATA_7[-max_hist_cts] (int) : CR count histogram after unsuccessful entanglement attempts
 ' DATA_8[-max_hist_cts] (int) : CR count histogram after all attempts
 ' DATA_22 (int) : SSRO results
-' DATA_23 (int) : CR counts
+' DATA_23 (int) : CR counts after SSRO
 
 ' general, parameters
 DIM i as long
@@ -103,13 +105,16 @@ dim current_cr_threshold as long
 dim first_cr_probe_after_lde as integer
 
 ' control from lt2
-dim trigger_cr_dio_in, trigger_cr_dio_out as integer
+dim trigger_cr_dio_in_bit, trigger_cr_dio_out as integer
 dim cr_was_triggered, cr_is_triggered as integer
-dim trigger_ssro_dio_in as integer
+dim trigger_ssro_dio_in_bit as integer
 dim ssro_was_triggered, ssro_is_triggered as integer
+dim DIO_register as long
+dim trigger_ssro_dio_in as long
+dim trigger_cr_dio_channel as long
 
 ' ssro
-#define max_readouts 10000
+#define max_readouts 1000000
 dim DATA_22[max_readouts] as long
 dim DATA_23[max_readouts] as long
 dim RO_event_idx as long
@@ -117,10 +122,12 @@ dim RO_counts as long
 dim ex_ro_voltage as float
 dim a_ro_voltage as float
 dim RO_steps as long
+dim cr_after_ssro as integer
 
 init:
   mode = 0
   timer = 0
+  cr_after_ssro = 0
   
   for i=1 to max_hist_cts
     DATA_7[i] = 0
@@ -147,18 +154,23 @@ init:
   first_cr_probe_after_lde = 0
   
   ' remote control
-  trigger_cr_dio_in = data_20[9] ' ATM 10 'par_32 later maybe as a variable
-  trigger_cr_dio_out = data_20[10] ' ATM 1 'par_33 later maybe as a variable
+  trigger_cr_dio_channel = data_20[9]
+  trigger_cr_dio_in_bit =  2^trigger_cr_dio_channel
+  trigger_cr_dio_out = data_20[10] 
   trigger_ssro_dio_in = data_20[11]
-  cr_is_triggered = 0
-  ssro_is_triggered = 0
+  cr_is_triggered = 1
+  cr_was_triggered = 1
+  ssro_is_triggered = 1
+  ssro_was_triggered = 1
   
   ' ssro
-  RO_event_idx = 1
+  ex_ro_voltage = data_21[5]
+  a_ro_voltage = data_21[6]
+  RO_event_idx = 0
   RO_steps = data_20[12]  
   for i=1 to max_readouts
-    DATA_22[i] = 0
-    DATA_23[i] = 0
+    DATA_22[i] = -1
+    DATA_23[i] = -1
   next i
   
   ' prepare hardware
@@ -166,6 +178,16 @@ init:
   DAC(ex_aom_channel, 32768)
   DAC(a_aom_channel, 32768)
   
+  par_58 = 0
+  par_59 = 0
+  
+  par_60 = 0
+  par_61 = 0
+  par_62 = 0
+  par_63 = 0
+  par_64 = 0
+  par_65 = 0                      ' number of SSRO triggers received from LT2
+  par_67 = 0                      ' number of SSROs performed
   par_68 = cr_check_count_threshold_probe
   par_75 = cr_check_count_threshold_prepare
   
@@ -174,8 +196,7 @@ init:
   PAR_72 = 0                      ' number of CR checks performed (lt1)
   par_76 = 0                      ' cumulative counts during repumping
   par_77 = 0                      ' number of ok pulses sent to lt2
-  Par_79 = 0                      ' number of start pulses received from lt2
-  Par_80 = 0                      ' cumulative counts in PSB when not CR chekging or repummping 
+  Par_79 = 0                      ' number of CR triggers received from lt2
   
   CNT_ENABLE(0000b)
   CNT_MODE(1,00001000b)
@@ -193,18 +214,36 @@ event:
   cr_check_count_threshold_probe = par_68
   cr_check_count_threshold_prepare = par_75
   
+  'DIO_register = digin_edge(1)
+  
+  'cr_is_triggered = ((DIO_register) and (trigger_cr_dio_in_bit))
+  'ssro_is_triggered = ((DIO_register) and (trigger_ssro_dio_in_bit))
+  
+  cr_was_triggered = cr_is_triggered   
+  cr_is_triggered = DIGIN(trigger_cr_dio_channel)
+
+  ssro_was_triggered = ssro_is_triggered 
+  ssro_is_triggered = DIGIN(trigger_ssro_dio_in)
+  
+  if ((cr_was_triggered = 0) and (cr_is_triggered > 0)) then
+    inc(par_62)
+  endif
+  
+  
+  if ((ssro_was_triggered = 0) and (ssro_is_triggered > 0)) then
+    inc(RO_event_idx)
+    inc(par_65)
+  endif
+  
   selectcase mode:
-    
-    case 0
-      cr_was_triggered = cr_is_triggered
-      cr_is_triggered = DIGIN(trigger_cr_dio_in)
       
-      ssro_was_triggered = ssro_is_triggered
-      ssro_is_triggered = DIGIN(trigger_ssro_dio_in)
-      
-      if ((cr_was_triggered = 0) and (cr_is_triggered > 0)) then
+    case 0 'received a trigger from LT2
+  
+      if ((cr_was_triggered = 0) and (cr_is_triggered > 0)) then       
+        inc(Par_79)
         mode = 1
         timer = -1
+        first_cr_probe_after_lde = 1
       else 
         if ((ssro_was_triggered = 0) and (ssro_is_triggered > 0)) then
           mode = 3
@@ -212,9 +251,10 @@ event:
         endif
       endif
       
-    case 1
+    case 1 'CR check
+        
       if (timer = 0) then
-        Par_79 = Par_79 + 1
+        inc(Par_60)
         DIGOUT(trigger_cr_dio_out, 0)
         
         CNT_ENABLE(0000b)
@@ -228,30 +268,41 @@ event:
       if (timer = cr_check_steps) then
         CNT_LATCH(1111b)
         current_cr_check_counts = CNT_READ_LATCH(counter)
-        DATA_23[RO_event_idx] = current_cr_check_counts            
         par_70 = par_70 + current_cr_check_counts
-        par_72 = par_72 + 1
           
         CNT_ENABLE(0000b)
         CNT_CLEAR(1111b) ' clear counter
         
-        if (current_cr_check_counts < current_cr_threshold) then
-          mode = 1
-          par_71 = par_71 + 1
-        else
-          DAC(ex_aom_channel, 32768) ' turn off the red lasers
-          DAC(a_aom_channel, 32768)
-        
-          DIGOUT(trigger_cr_dio_out, 1)
-          par_77 = par_77 + 1
-          current_cr_threshold = cr_check_count_threshold_probe
+        if (cr_after_ssro > 0) then ' this is for the cr after ssro. than it has to go back to mode 0
+          DATA_23[RO_event_idx] = current_cr_check_counts 'save cr counts after ssro
           mode = 0
           timer = -1
-          cr_is_triggered = 0
+          DAC(ex_aom_channel, 32768) ' turn off the red lasers
+          DAC(a_aom_channel, 32768)
+          cr_after_ssro = 0
+          Inc(par_61)
+        else
+          Inc(par_72)     
+          if (current_cr_check_counts < current_cr_threshold) then
+            mode = 2
+            timer = -1
+            Inc(par_71)
+          else
+            DAC(ex_aom_channel, 32768) ' turn off the red lasers
+            DAC(a_aom_channel, 32768)
+        
+            DIGOUT(trigger_cr_dio_out, 1)
+            Inc(par_77)
+            current_cr_threshold = cr_check_count_threshold_probe
+            mode = 0
+            timer = -1
+
+          endif
         endif
         
+        
         if (current_cr_check_counts < max_hist_cts) then
-          if (first_cr_probe_after_lde > 0) then
+          if (first_cr_probe_after_lde > 0) then ' first CR after the sequence 
             DATA_7[current_cr_check_counts+1] = DATA_7[current_cr_check_counts+1] + 1
           endif
           DATA_8[current_cr_check_counts+1] = DATA_8[current_cr_check_counts+1] + 1
@@ -261,7 +312,7 @@ event:
         
       endif
       
-    case 2
+    case 2 'Repump
       if (timer = 0) then
         CNT_ENABLE(0000b)
         CNT_CLEAR(1111b)
@@ -273,12 +324,12 @@ event:
         DAC(green_aom_channel, 3277*green_off_voltage+32768)
         current_cr_threshold = cr_check_count_threshold_prepare
         CNT_LATCH(1111b)
-        par_76 = par_76 + CNT_READ_LATCH(counter)      
+        par_76 = par_76 + CNT_READ_LATCH(counter)       
         mode = 1
         timer = -1      
       endif
       
-    case 3
+    case 3 'SSRO
       if (timer = 0) then      
         CNT_ENABLE(0000b)
         CNT_CLEAR(1111b)
@@ -289,18 +340,19 @@ event:
       
       if (timer = RO_steps) then
         DAC(ex_aom_channel, 32768) ' turn off the red lasers
-        DAC(a_aom_channel, 32768)        
+        DAC(a_aom_channel, 32768)
+        CNT_LATCH(1111b)        
         data_22[RO_event_idx] = CNT_READ_LATCH(counter)
         CNT_ENABLE(0000b)
-        CNT_CLEAR(1111b) ' clear counter        
+        CNT_CLEAR(1111b) ' clear counter   
         
-        RO_event_idx = RO_event_idx+1
-        mode = 0
+        inc(par_67)
+        cr_after_ssro = 1
+        mode = 1
         timer = -1
-        ssro_is_triggered = 0 
+
       endif
                
-      timer = timer + 1
-  
   endselect
   
+  timer = timer + 1

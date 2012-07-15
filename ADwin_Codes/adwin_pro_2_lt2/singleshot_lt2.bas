@@ -209,7 +209,7 @@ INIT:
   
   par_60 = 0
   par_61 = 0
-  par_61 = 0
+  par_62 = 0
   
 EVENT:
   CR_preselect                 = PAR_75

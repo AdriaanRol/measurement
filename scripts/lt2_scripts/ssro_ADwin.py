@@ -8,7 +8,7 @@ import measurement.measurement as meas
 import shutil
 
 
-lt1=False
+lt1=True
 if lt1:
     ins_green_aom=qt.instruments['GreenAOM_lt1']
     ins_E_aom=qt.instruments['MatisseAOM_lt1']
@@ -21,7 +21,7 @@ else:
     ins_green_aom=qt.instruments['GreenAOM']
     ins_E_aom=qt.instruments['MatisseAOM']
     ins_A_aom=qt.instruments['NewfocusAOM']
-    adwin= adwin_lt2 #qt.instruments['adwin_lt2']
+    adwin= qt.instruments['adwin']
     counters=qt.instruments['counters']
     physical_adwin=qt.instruments['physical_adwin']
     ctr_channel=1
@@ -36,13 +36,13 @@ par['AWG_done_DI_channel'] =          8
 par['send_AWG_start'] =               0
 par['wait_for_AWG_done'] =            0
 par['green_repump_duration'] =        10
-par['CR_duration'] =                  100
-par['SP_duration'] =                  10
+par['CR_duration'] =                  50
+par['SP_duration'] =                  150
 par['SP_filter_duration'] =           0
 par['sequence_wait_time'] =           1
 par['wait_after_pulse_duration'] =    1
-par['CR_preselect'] =                 1000
-par['SSRO_repetitions'] =             5000
+par['CR_preselect'] =                 100
+par['SSRO_repetitions'] =             20000
 par['SSRO_duration'] =                50 #NOTE CHANGED THIS FOR MORE CR CHECKS
 par['SSRO_stop_after_first_photon'] = 0
 par['cycle_duration'] =               300
@@ -81,9 +81,9 @@ par['A_RO_voltage'] = ins_A_aom.power_to_voltage(par['A_RO_amplitude'])
 ##  hardcoded in ADwin program (adjust there if necessary!)
 ##
 
-max_repetitions = 10000
+max_repetitions = 20000
 max_SP_bins = 500
-max_SSRO_dim = 500000
+max_SSRO_dim = 1000000
 
 ##
 ###########################################################
@@ -91,13 +91,14 @@ max_SSRO_dim = 500000
 
 def ssro(name, data, par):
     par['green_repump_voltage'] = ins_green_aom.power_to_voltage(par['green_repump_amplitude'])
-    par['green_off_voltage'] = ins_green_aom.power_to_voltage(par['green_off_amplitude'])
+    par['green_off_voltage'] = 0.0
     par['Ex_CR_voltage'] = ins_E_aom.power_to_voltage(par['Ex_CR_amplitude'])
     par['A_CR_voltage'] = ins_A_aom.power_to_voltage(par['A_CR_amplitude'])
     par['Ex_SP_voltage'] = ins_E_aom.power_to_voltage(par['Ex_SP_amplitude'])
     par['A_SP_voltage'] = ins_A_aom.power_to_voltage(par['A_SP_amplitude'])
     par['Ex_RO_voltage'] = ins_E_aom.power_to_voltage(par['Ex_RO_amplitude'])
     par['A_RO_voltage'] = ins_A_aom.power_to_voltage(par['A_RO_amplitude'])
+
 
     if (par['SSRO_repetitions'] > max_repetitions) or \
         (par['SP_duration'] > max_SP_bins) or \
@@ -109,7 +110,7 @@ def ssro(name, data, par):
     #print 'SP A amplitude: %s'%par['A_SP_voltage']
 
     adwin.start_singleshot(
-            load=True,
+            load=True, stop_processes=['counter'],
             counter_channel = par['counter_channel'],
             green_laser_DAC_channel = par['green_laser_DAC_channel'],
             Ex_laser_DAC_channel = par['Ex_laser_DAC_channel'],
@@ -149,7 +150,7 @@ def ssro(name, data, par):
         print('completed %s / %s readout repetitions, %s CR counts/s'%(reps_completed,par['SSRO_repetitions'], CR_counts))
         print('threshold: %s cts, last CR check: %s cts'%(trh,cts))
         if (msvcrt.kbhit() and (msvcrt.getch() == 'q')): break
-        qt.msleep(5)
+        qt.msleep(1)
     physical_adwin.Stop_Process(9)
     
     reps_completed      = physical_adwin.Get_Par(73)
@@ -207,7 +208,7 @@ def ssro(name, data, par):
    
     return 
     
-def ssro_vs_Ex_amplitude(name, data, par, min_power, max_power, steps, reps_per_point):
+def ssro_vs_Ex_amplitude(name, data, par, min_power, max_power, steps, reps_per_point, do_ms0 = True, do_ms1=True):
 
     for i in linspace(min_power,max_power,steps):
         print '==============================='
@@ -217,7 +218,7 @@ def ssro_vs_Ex_amplitude(name, data, par, min_power, max_power, steps, reps_per_
         par['Ex_RO_amplitude'] = (i)*1e-9
         par['A_RO_amplitude'] = 0
 
-        ssro_init(name, data, par, do_ms0 = True, do_ms1 = True,
+        ssro_init(name, data, par, do_ms0 = do_ms0, do_ms1 = do_ms1,
                 A_SP_init_amplitude = 5e-9, Ex_SP_init_amplitude = 5e-9)
 
 def ssro_vs_A_amplitude(name, data, par, min_power, max_power, steps, reps_per_point):
@@ -246,11 +247,11 @@ def ssro_vs_SP_amplitude(name, data, par, min_power, max_power, steps, reps_per_
         par['Ex_RO_amplitude'] = 5e-9
         
         
-        par['SP_duration'] = 5
+        par['SP_duration'] = 50
         par['A_SP_amplitude']  = SP_amplitude
         par['Ex_SP_amplitude'] = 0.
         ssro(name,data,par)
-        par['SP_duration'] = 250
+        par['SP_duration'] = 50
         par['A_SP_amplitude']  = 0
         par['Ex_SP_amplitude'] = 5e-9
         ssro(name,data,par)
@@ -388,17 +389,21 @@ def ssro_vs_Ex_CR_power(name, data, par, min_Ex_CR_power,
 
 
 def ssro_init(name, data, par, do_ms0 = True, do_ms1 = True, 
-        A_SP_init_amplitude     = 7e-9,
-        Ex_SP_init_amplitude    = 7e-9):
+        A_SP_init_amplitude     = 5e-9,
+        Ex_SP_init_amplitude    = 5e-9):
 
     if do_ms0:
         par['A_SP_amplitude']  = A_SP_init_amplitude
         par['Ex_SP_amplitude'] = 0.
+        par['do_ms0'] = 1
+        par['do_ms1'] = 0
         ssro(name,data,par)
 
     if do_ms1:
         par['A_SP_amplitude']  = 0.
         par['Ex_SP_amplitude'] = Ex_SP_init_amplitude
+        par['do_ms0'] = 0
+        par['do_ms1'] = 1
         ssro(name,data,par)
 
 def end_measurement():
@@ -410,14 +415,16 @@ def end_measurement():
 
 def main():
 
-    name = 'SIL9'
+    name = 'SIL2_LT1_multimode'
     qt.instruments['counters'].set_is_running(False)
     data = meas.Measurement(name,'ADwin_SSRO')
 
-    #ssro_vs_SP_amplitude(name,data,par,min_power=1, max_power = 25, 
-    #        steps = 25, reps_per_point = 5000)
-    #
-    ssro_init(name,data,par)
+    #ssro_vs_SP_amplitude(name,data,par,min_power=2, max_power = 20, 
+    #        steps = 10, reps_per_point = 5000)
+    #ssro_vs_Ex_amplitude(name, data, par, 1, 25, 13, 5000, do_ms1=False)
+    #ssro_vs_Ex_amplitude(name, data, par, 1, 21, 10, 5000)
+    #ssro_vs_A_amplitude(name, data, par, 1, 25, 13, 5000)
+    ssro_init(name,data,par, A_SP_init_amplitude = 15e-9, Ex_SP_init_amplitude = 5e-9)
     #ssro_vs_SP_duration(name,data,par,sp_power=25e-9, max_duration = 10, 
     #        stepsize = 1, reps_per_point = 5000)
     #ssro_vs_CR_duration(name, data, par, 20, 100, 5, 5000)
@@ -440,5 +447,7 @@ def main():
 
 
 if __name__ == '__main__':
+    #counters_lt1.set_is_running(False)
+    #counters.set_is_running(False)
     main()
 

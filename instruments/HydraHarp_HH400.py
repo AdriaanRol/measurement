@@ -588,9 +588,10 @@ class HydraHarp_HH400(Instrument): #1
                         histogram[dt] += 1
         return histogram
 
-    def get_T3_pulsed_events(self, sync_period=200, 
+    def get_T3_pulsed_events(self, sync_period, 
             range_sync, blocksize=TTREADMAX, start_ch0=0, start_ch1=0, 
-            max_pulses = 2, save_markers=[2,3,4]):
+            max_pulses = 2, save_markers=[2,3,4], save_raw=True,
+            raw_max_len=100000):
         """
         Get ch0 and ch1 events in T3 mode.
         Author: Wolfgang, July 1, 2012.
@@ -631,47 +632,83 @@ class HydraHarp_HH400(Instrument): #1
         ch1_time = 0
         nsync_ma1 = -max_pulses
 
+        if save_raw:
+            timestamp = strftime('%Y%m%d%H%M%S')
+            rawdir = os.path.join(qt.config['datadir'], strftime('%Y%m%d'), \
+                strftime('%H%M%S')+'_LDE_rawdata')
+            if not os.path.isdir(rawdir):
+                os.makedirs(rawdir)
+            rawdat = array([])
+            rawidx = 0
+            lengths = array([])
+            times = array([])
+
         while self._do_get_MeasRunning() == True:
             length, data = self.get_TTTR_Data(blocksize)
+
+            # print length
+
+            if save_raw:
+                rawdat = append(rawdat, data[:length])
+                lengths = append(lengths, length)
+                times = append(times, int(strftime('%M%S')))
+                
+                if len(rawdat) > raw_max_len:
+                    
+                    #print len(rawdat)
+
+                    savez(os.path.join(rawdir, 
+                        timestamp+'_LDE_rawdata-%.3d' % rawidx), 
+                        length=len(rawdat), data=rawdat)
+                    
+                    rawdat = array([])
+                    rawidx += 1
+
             
-            for i in arange(0, length):                
-                nsync   = data[i] & (2**10 - 1)
-                event_time = (data[i] >> 10) & (2**15 - 1)
-                channel = (data[i] >> 25) & (2**6 - 1)
-                special = (data[i] >> 31) & 1
+#            for i in arange(0, length):                
+#                nsync   = data[i] & (2**10 - 1)
+#                event_time = (data[i] >> 10) & (2**15 - 1)
+#                channel = (data[i] >> 25) & (2**6 - 1)
+#                special = (data[i] >> 31) & 1
+#
+#                if special == 1:
+#                    if channel == 63:
+#                        nsync_overflow += 1
+#                    else:
+#                        marker = channel & 15
+#                        
+#                        if marker == 1:
+#                            measuring = True
+#                            nsync_overflow = 0
+#                            nsync_ma1 = nsync
+#                            
+#                            if (nsync_ma1==-max_pulses):
+#                                print 'first marker'
+#                        
+#                        if marker in save_markers:
+#                            markers = vstack((markers, 
+#                                array([nsync+nsync_overflow*2**10, 
+#                                    event_time, marker])))
+#
+#                else:
+#                    if (nsync+nsync_overflow*2**10-nsync_ma1) < max_pulses and \
+#                            event_time < range_sync:
+#                        sync_no = nsync+nsync_overflow*2**10
+#
+#                        if channel == 0 and event_time >= start_ch0:
+#                            ch0_events = vstack((ch0_events,
+#                                array([nsync+nsync_overflow*2**10, event_time])))
+#
+#                        if channel == 1 and event_time >= start_ch1:
+#                            ch1_events = vstack((ch1_events,
+#                                array([nsync+nsync_overflow*2**10, event_time])))
 
-                if special == 1:
-                    if channel == 63:
-                        nsync_overflow += 1
-                    else:
-                        marker = channel & 15
-                        
-                        if marker == 1:
-                            measuring = True
-                            nsync_overflow = 0
-                            nsync_ma1 = nsync
+        if save_raw:
+            savez(os.path.join(rawdir, 'lengths'), lengths=lengths)
+            savez(os.path.join(rawdir, 'times'), times=times)
+            savez(os.path.join(rawdir, timestamp+'_LDE_rawdata-%.3d' % rawidx), 
+                        length=len(rawdat), data=rawdat)
                             
-                            if (nsync_ma1==-max_pulses):
-                                print 'first marker'
-                        
-                        if marker in save_markers:
-                            markers = vstack((markers, 
-                                array([nsync+nsync_overflow*2**10, 
-                                    event_time, marker])))
-
-                else:
-                    if (nsync+nsync_overflow*2**10-nsync_ma1) < max_pulses and \
-                            event_time < range_sync:
-                        sync_no = nsync+nsync_overflow*2**10
-
-                        if channel == 0 and event_time >= start_ch0:
-                            ch0_events = vstack((ch0_events,
-                                array([nsync+nsync_overflow*2**10, event_time)))
-
-                        if channel == 1 and event_time >= start_ch1:
-                            ch1_events = vstack((ch1_events,
-                                array([nsync+nsync_overflow*2**10, event_time)))
-
         print "Detected events: %d / %d." % (len(ch0_events), len(ch1_events))
 
         return ch0_events, ch1_events, markers
@@ -733,7 +770,7 @@ class HydraHarp_HH400(Instrument): #1
                 channel = (data[i] >> 25) & (2**6 - 1)
                 special = (data[i] >> 31) & 1
 
-                self.adwin.noof_tailcts_to_par(noof_tailcts) #writed the noof_tailcts into adwin
+                self.adwin.set_remote_tpqi_control_var(set_noof_tailcts = noof_tailcts) #writed the noof_tailcts into adwin
 
                 if special == 1:
                     if channel == 63:
@@ -883,78 +920,95 @@ class HydraHarp_HH400(Instrument): #1
     def get_DeviceType(self):
         return 'HH_400'
 
-    def get_T3_pulsed_g2_PLU_gated_histogram(self, range_g2, sync_period, blocksize = TTREADMAX, save_raw="")
-            if .001*self.get_ResolutionPS() * 2**15 < sync_period:
-                print('Warning: resolution is too high to cover entire sync period in T3 mode, events might get lost.')
+    def get_T3_pulsed_g2_PLU_gated_histogram(self, range_g2, sync_period, blocksize = TTREADMAX, save_raw=""):
+        if .001*self.get_ResolutionPS() * 2**15 < sync_period:
+            print('Warning: resolution is too high to cover entire sync period in T3 mode, events might get lost.')
+        
+       
+        ch0_gated=zeros(range_g2,dtype=int)
+        ch1_gated=zeros(range_g2,dtype=int)
+        ch0_hist=zeros(range_g2,dtype=int)
+        ch1_hist=zeros(range_g2,dtype=int)
+        
+        ch0_sync=0
+        ch0_time=0
+        ch1_sync=0
+        ch1_time=0
+        marker_sync=-1
+        data_save = []
+        timestamp = strftime('%Y%m%d%H%M%S')
+        max_length = 100000
+        
+        idx=0
+        save_raw_bool=False
+        if not(save_raw==""):
+            save_raw_bool=True
+            if not(os.path.isdir(save_raw)):
+                print "Raw data save path is not a valid directory, please create it first"
+                return False
+        
+        while self._do_get_MeasRunning() == True:
+           
+            length, data = self.get_TTTR_Data(blocksize)
+            data_save = append(data_save,data[0:length])
+            if len(data_save) > max_length:
+                if (save_raw_bool):
+                    savez(os.path.join(save_raw, timestamp+'-alldata-'+str(idx)), 
+                            length=len(data_save),data=data_save)
+                data_save = []
+                idx += 1
             
-            mode = 2    # mode = 0, if a start was received on channel 0, 
-            #        1, if start on 1 
-            #        2, if no start was detected, or after a stop was detected as well
-            histogram=zeros(range_g2,dtype=int)
-            ch0_hist=zeros(range_g2,dtype=int)
-            ch1_hist=zeros(range_g2,dtype=int)
-            
-            ch0_sync=0
-            ch0_time=0
-            ch1_sync=0
-            ch1_time=0
-            
-            idx=0
-            save_raw_bool=False
-            if not(save_raw==""):
-                save_raw_bool=True
-                if not(os.path.isdir(save_raw)):
-                    print "Raw data save path is not a valid directory, please create it first"
-                    return False
-                    
-            while self._do_get_MeasRunning() == True:
-                length, data = self.get_TTTR_Data(blocksize)
-                data_save = append(data_save,data[0:length])
-                if len(data_save) > max_length:
-                    if (save_raw_bool):
-                        savez(os.path.join(save_raw, timestamp+'-alldata-'+str(idx)), 
-                                length=len(data_save),data=data_save)
-                    data_save = []
-                    idx += 1
-                for i in arange(0, length):
-                    nsync   = data[i] & (2**10 - 1)
-                    event_time = (data[i] >> 10) & (2**15 - 1)
-                    channel = (data[i] >> 25) & (2**6 - 1)
-                    special = (data[i] >> 31) & 1
-                    
-                    if special == 1:
-                        if channel == 63:
-                            pass
-                        else:
-                            marker = channel & 15
-                            print 'marker detected:', marker 
+            ch0_tmp = []
+            ch1_tmp = []            
+            for i in arange(0, length):
+               
+                nsync   = data[i] & (2**10 - 1)
+                event_time = (data[i] >> 10) & (2**15 - 1)
+                channel = (data[i] >> 25) & (2**6 - 1)
+                special = (data[i] >> 31) & 1
+                
+                             
+                if special == 1:                    
+                    if channel == 63:
+                        pass
                     else:
-                        if channel == 0:
-                            ch0_time = time
-                            ch0_sync = nsync
-                            if ch0_time<range_g2: ch0_hist[ch0_time] += 1
-                            
-                            if mode != 1:
-                                mode = 0
-                            else:
-                                if ch0_sync==ch1_sync:
-                                   if ch0_time<range_g2: histogram[ch0_time] +=1
-                                   mode = 2
-                                else:
-                                    mode = 0
-                                
-                        if channel == 1:
-                            ch1_time = time
-                            ch1_sync = nsync
-                            if ch1_time<range_g2: ch1_hist[ch1_time] += 1
-                                
-                            if mode != 0:
-                                mode = 1
-                            else:
-                                if ch0_sync==ch1_sync:
-                                   if ch0_time<range_g2: histogram[ch0_time] +=1
-                                   mode = 2
-                                else:
-                                    mode = 1
-            return ch0_hist, ch1_hist, histogram
-    
+                        marker = channel & 15
+                        if marker == 2:
+                            if nsync==10: 
+                                print 'PLU marker arrived'
+                            for t in ch0_tmp:
+                                if t[0] == nsync:
+                                    ch0_gated[t[1]] += 1
+                            for t in ch1_tmp:
+                                if t[0] == nsync:
+                                    ch1_gated[t[1]] += 1
+                            ch0_tmp = []
+                            ch1_tmp = []
+                
+                else:
+                    if channel == 0:
+                        ch0_time = event_time
+                        ch0_sync = nsync
+                        if ch0_time<range_g2: 
+                            ch0_hist[ch0_time] += 1
+                            ch0_tmp.append((nsync, ch0_time))
+                        
+                        
+#                         if marker_sync==ch0_sync:
+#                             if ch0_time<range_g2: ch0_gated[ch0_time] +=1
+#                         else:
+#                             marker_sync=-1
+
+                    if channel == 1:
+                        ch1_time = event_time
+                        ch1_sync = nsync
+                        if ch1_time<range_g2:
+                            ch1_hist[ch1_time] += 1
+                            ch1_tmp.append((nsync, ch1_time))
+                        
+#                         if marker_sync==ch1_sync:
+#                             if ch1_time<range_g2: ch1_gated[ch1_time] +=1
+#                         else:
+#                             marker_sync=-1
+
+        return ch0_hist, ch1_hist, ch0_gated, ch1_gated

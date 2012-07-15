@@ -70,9 +70,9 @@
 
 #INCLUDE ADwinGoldII.inc
 
-#DEFINE max_repetitions 10000
+#DEFINE max_repetitions 20000
 #DEFINE max_SP_bins       500
-#DEFINE max_SSRO_dim   500000
+#DEFINE max_SSRO_dim  1000000
 #DEFINE max_stat           10
 
 DIM DATA_20[25] AS LONG               ' integer parameters
