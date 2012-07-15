@@ -31,8 +31,8 @@ for i in arange(pulse_nr):
 #    else:
 #        ch1_events[i]=1
 
-ch0_events[8]=0
-ch1_events[9]=1
+ch0_events[8]=1
+ch1_events[9]=0
 ch0_events[9]=0
 
 ch0_events[12]=0
@@ -44,13 +44,18 @@ seq.add_channel('sync', 'ch2m2', cable_delay=0, high=2, low=0)
 seq.add_channel('ch0', 'ch1m1', cable_delay=0, high=2, low=0)
 seq.add_channel('ch1', 'ch1m2', cable_delay=0, high=2, low=0)
 seq.add_channel('ma3', 'ch2m1', cable_delay=0, high=2, low=0)
+seq.add_channel('hhsync','ch3m1', cable_delay=-300, high=2, low=0)
 
 pulse_duration = 50
 photon_duration = 20
 
 elt = 'plu_test'
-seq.add_element(elt, repetitions = 1, goto_target=elt)
+wait = 'wait'
+elt2 = 'plu_test2'
 
+seq.add_element(elt, repetitions = 500, goto_target = 'wait')
+seq.add_element(wait, repetitions = 30, goto_target = 'elt2')
+seq.add_element(elt2, repetitions = 500)
 
 last = 'none'
 
@@ -61,6 +66,8 @@ for i in arange(len(sync_intervals)):
     else:
         seq.add_pulse(name, 'sync', elt, start=0, duration = pulse_duration, 
             start_reference = last, link_start_to='end')
+    if i%4==0:
+        seq.add_pulse('sync', 'hhsync', elt, start=0, duration = pulse_duration)
     last = name+'_off'
     seq.add_pulse(last, 'sync', elt, start=pulse_duration, 
             duration = sync_intervals[i]-pulse_duration, amplitude = 0,
@@ -78,14 +85,41 @@ for i in arange(len(sync_intervals)):
                 duration = pulse_duration, start_reference = name,
                 link_start_to='end')
 
+seq.add_pulse('wait','ma3', wait, start=0, duration = 1000, amplitude =0)
+        
 
+last = 'none'
+
+for i in arange(len(sync_intervals)):
+    name = 'sync_'+str(i)
+    if i==0:
+        seq.add_pulse(name, 'sync', elt2, start=0, duration = pulse_duration)
+    else:
+        seq.add_pulse(name, 'sync', elt2, start=0, duration = pulse_duration, 
+            start_reference = last, link_start_to='end')
+    last = name+'_off'
+    seq.add_pulse(last, 'sync', elt2, start=pulse_duration, 
+            duration = sync_intervals[i]-pulse_duration, amplitude = 0,
+            start_reference = name, link_start_to='end')
+    if ch0_events[i]:
+        seq.add_pulse('ch0_'+str(i), 'ch0', elt2, start = ch0_delays[i],
+                duration = photon_duration, start_reference = name,
+                link_start_to='end')
+    if ch1_events[i]:
+        seq.add_pulse('ch1_'+str(i), 'ch1', elt2, start = ch1_delays[i],
+                duration = photon_duration, start_reference = name,
+                link_start_to='end')
+    if reset_events[i]:
+        seq.add_pulse('ma3_'+str(i), 'ma3', elt2, start = reset_delays[i],
+                duration = pulse_duration, start_reference = name,
+                link_start_to='end')        
 
 seq.set_instrument(AWG)
 seq.set_clock(1e9)
 seq.set_send_waveforms(True)
 seq.set_send_sequence(True)
 seq.set_program_channels(True)
-seq.set_start_sequence(True)
+seq.set_start_sequence(False)
 seq.force_HW_sequencing(True)
 seq.send_sequence()
 

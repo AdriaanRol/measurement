@@ -49,7 +49,7 @@ class optimiz0r(Instrument):
                 },
             }
    
-    def __init__(self, name, opt1d_ins=qt.instruments['opt1d_counts'],
+    def __init__(self, name, opt1d_ins=qt.instruments['opt1d_counts'], mos_ins=qt.instruments['master_of_space'],
             dimension_set='lt2'):
         Instrument.__init__(self, name)
 
@@ -57,12 +57,9 @@ class optimiz0r(Instrument):
         self.opt1d_ins = opt1d_ins
         self.dimensions = self.dimension_sets[dimension_set]
         
-        if dimension_set == 'lt2':
-            self.mos = qt.instruments['master_of_space']
-        elif dimension_set == 'lt1':
-            self.mos = qt.instruments['master_of_space_lt1']
-
-
+        
+        self.mos = mos_ins
+       
     def optimize(self, cycles=1, cnt=1, int_time=50):
         for c in range(cycles):
             for d in self.dimensions['order']:
