@@ -44,7 +44,7 @@ class adwin(Instrument):
         self.add_function('set_simple_counting')
 
         # set up config file
-        cfg_fn = os.path.join(qt.config['ins_cfg_path'], name+'.cfg')
+        cfg_fn = os.path.abspath(os.path.join(qt.config['ins_cfg_path'], name+'.cfg'))
         if not os.path.exists(cfg_fn):
             _f = open(cfg_fn, 'w')
             _f.write('')
