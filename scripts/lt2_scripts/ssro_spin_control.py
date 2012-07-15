@@ -13,19 +13,19 @@ import measurement.measurement as meas
 from measurement.AWG_HW_sequencer_v2 import Sequence
 import measurement.PQ_measurement_generator_v2 as pqm
 
-from measurement.config import awgchannels as awgcfg
+from measurement.config import awgchannels_lt2 as awgcfg
 from measurement.sequence import common as commonseq
 
 
 name = 'SIL9_LT2'
 
-nr_of_datapoints = 20      #max nr_of_datapoints should be < 10000
+nr_of_datapoints = 33      #max nr_of_datapoints should be < 10000
 repetitions_per_datapoint = 1000
 min_mwpulse_length = 0    #in ns
-max_mwpulse_length = 3000    #in ns
+max_mwpulse_length = 200    #in ns
 f_drive = 2.8569E9#2.85877E9#2.854E9         #in Hz
 mwpower_lt1 = 0               #in dBm
-mwpower_lt2 = -30               #in dBm
+mwpower_lt2 = 20              #in dBm
 f_mw = f_drive #- 30E6
 amplitude_ssbmod = 0.8 #do not exceed 0.8, weird stuff happens: ask Wolfgang 
 
@@ -50,7 +50,7 @@ else:
     ins_green_aom=qt.instruments['GreenAOM']
     ins_E_aom=qt.instruments['MatisseAOM']
     ins_A_aom=qt.instruments['NewfocusAOM']
-    adwin=qt.instruments['adwin']
+    adwin = adwin_lt2 #adwin=qt.instruments['adwin']
     counters=qt.instruments['counters']
     physical_adwin=qt.instruments['physical_adwin']
     microwaves = qt.instruments['SMB100']
@@ -73,28 +73,27 @@ par['AWG_start_DO_channel'] =         1
 par['AWG_done_DI_channel'] =          8
 par['send_AWG_start'] =               1
 par['wait_for_AWG_done'] =            0
-par['green_repump_duration'] =        6
+par['green_repump_duration'] =        10
 par['CR_duration'] =                  100
-par['SP_duration'] =                  250
+par['SP_duration'] =                  10
 par['SP_filter_duration'] =           0
 par['sequence_wait_time'] =           int(ceil(max_mwpulse_length/1e3)+1)
 par['wait_after_pulse_duration'] =    1
 par['CR_preselect'] =                 1000
 par['RO_repetitions'] =               int(nr_of_datapoints*repetitions_per_datapoint)
-par['RO_duration'] =                  25
+par['RO_duration'] =                  30
 par['sweep_length'] =                 int(nr_of_datapoints)
 par['cycle_duration'] =               300
 par['CR_probe'] =                     100
 
 par['green_repump_amplitude'] =       200e-6
 par['green_off_amplitude'] =          0e-6
-par['Ex_CR_amplitude'] =              5e-9 #OK
-par['A_CR_amplitude'] =               5e-9 #OK
+par['Ex_CR_amplitude'] =              10e-9 #OK
+par['A_CR_amplitude'] =               15e-9 #OK
 par['Ex_SP_amplitude'] =              0e-9
-par['A_SP_amplitude'] =               5e-9 #OK: PREPARE IN MS = 0
-par['Ex_RO_amplitude'] =              5e-9 #OK: READOUT MS = 0
+par['A_SP_amplitude'] =               15e-9 #OK: PREPARE IN MS = 0
+par['Ex_RO_amplitude'] =              10e-9 #OK: READOUT MS = 0
 par['A_RO_amplitude'] =               0e-9
-
 
 ins_green_aom.set_power(0.)
 ins_E_aom.set_power(0.)
@@ -106,14 +105,6 @@ ins_green_aom.set_power(0.)
 ins_E_aom.set_power(0.)
 ins_A_aom.set_power(0.)
 
-par['green_repump_voltage'] = ins_green_aom.power_to_voltage(par['green_repump_amplitude'])
-par['green_off_voltage'] = ins_green_aom.power_to_voltage(par['green_off_amplitude'])
-par['Ex_CR_voltage'] = ins_E_aom.power_to_voltage(par['Ex_CR_amplitude'])
-par['A_CR_voltage'] = ins_A_aom.power_to_voltage(par['A_CR_amplitude'])
-par['Ex_SP_voltage'] = ins_E_aom.power_to_voltage(par['Ex_SP_amplitude'])
-par['A_SP_voltage'] = ins_A_aom.power_to_voltage(par['A_SP_amplitude'])
-par['Ex_RO_voltage'] = ins_E_aom.power_to_voltage(par['Ex_RO_amplitude'])
-par['A_RO_voltage'] = ins_A_aom.power_to_voltage(par['A_RO_amplitude'])
 
 ###########################################################
 ##
@@ -197,14 +188,14 @@ def spin_control(name, data, par):
     par['A_RO_voltage'] = ins_A_aom.power_to_voltage(par['A_RO_amplitude'])
 
     if  (par['SP_duration'] > max_SP_bins) or \
-        (par['RO_repetitions'] > max_RO_dim):
+        (par['sweep_length']*par['RO_duration'] > max_RO_dim):
             print ('Error: maximum dimensions exceeded')
             return(-1)
 
-    print 'SP E amplitude: %s'%par['Ex_SP_voltage']
-    print 'SP A amplitude: %s'%par['A_SP_voltage']
+    #print 'SP E amplitude: %s'%par['Ex_SP_voltage']
+    #print 'SP A amplitude: %s'%par['A_SP_voltage']
 
-    adwin.start_adwin_spincontrol(
+    adwin.start_spincontrol(
         counter_channel = par['counter_channel'],
         green_laser_DAC_channel = par['green_laser_DAC_channel'],
         Ex_laser_DAC_channel = par['Ex_laser_DAC_channel'],
@@ -246,7 +237,8 @@ def spin_control(name, data, par):
         print('threshold: %s cts, last CR check: %s cts'%(trh,cts))
         if (msvcrt.kbhit() and (msvcrt.getch() == 'q')): 
             break
-        qt.msleep(1)
+
+        qt.msleep(2.5)
     physical_adwin.Stop_Process(9)
     
     if lt1:
@@ -317,40 +309,60 @@ def end_measurement():
     awg.stop()
     awg.set_runmode('CONT')
     adwin.set_simple_counting()
-    counters.set_is_running(1)
+    counters.set_is_running(True)
     ins_green_aom.set_power(200e-6)   
     microwaves.set_status('off')
     microwaves.set_iq('off')
     microwaves.set_pulm('off')
+    ins_E_aom.set_power(0)
+    ins_A_aom.set_power(0)
 
-def ssro_init(name, data, par, do_ms0 = True, do_ms1 = True, 
-        A_SP_init_amplitude     = 5e-9,
-        Ex_SP_init_amplitude    = 5e-9):
 
-    if do_ms0:
-        par['A_SP_amplitude']  = A_SP_init_amplitude
-        par['Ex_SP_amplitude'] = 0.
-        ssro(name,data,par)
 
-    if do_ms1:
-        par['A_SP_amplitude']  = 0.
-        par['Ex_SP_amplitude'] = Ex_SP_init_amplitude
-        ssro(name,data,par)
+def power_and_mw_ok():
+    ret = True
+    max_E_power = ins_E_aom.get_cal_a()
+    max_A_power = ins_A_aom.get_cal_a()
+    if (max_E_power < par['Ex_CR_amplitude']) or \
+            (max_E_power < par['Ex_SP_amplitude']) or \
+            (max_E_power < par['Ex_RO_amplitude']):
+        print 'Trying to set too large value for E laser, quiting!'
+        ret = False    
+    if (max_A_power < par['A_CR_amplitude']) or \
+            (max_A_power < par['A_SP_amplitude']) or \
+            (max_A_power < par['A_RO_amplitude']):
+        print 'Trying to set too large value for A laser, quiting'
+        ret = False
+    if mwpower > 0:
+        print 'MW power > 0 dBm, are you sure you want to continue? Press q to quit, c to continue.'
+        idx = 0
+        max_idx = 5
+        kb_hit = None
+        while (idx<max_idx) and kb_hit == None:
+            kb_hit = msvcrt.getch()
+            if kb_hit == 'q':
+                ret = False
+            if kb_hit == 'c':
+                ret = True
+            qt.msleep(1)
+            idx += 1
+       
+    return ret
 
 def main():
-    #print temp.get_kelvinB()
-    generate_sequence()
-    awg.set_runmode('SEQ')
-    awg.start()  
-    while awg.get_state() != 'Waiting for trigger':
-        qt.msleep(1)
-
-    data = meas.Measurement(name,'spin_control')
-    microwaves.set_status('on')
-    spin_control(name,data,par)
-    end_measurement()
-
-
+    if power_and_mw_ok():
+        counters.set_is_running(False)
+        generate_sequence()
+        awg.set_runmode('SEQ')
+        awg.start()  
+        while awg.get_state() != 'Waiting for trigger':
+            qt.msleep(1)
+        data = meas.Measurement(name,'spin_control')
+        microwaves.set_status('on')
+        spin_control(name,data,par)
+        #end_measurement()
+    else:
+        print 'Measurement aborted.'
 
 
 if __name__ == '__main__':

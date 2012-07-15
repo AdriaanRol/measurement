@@ -22,7 +22,7 @@ class MyMeasurement(measurement.Measurement):
         # preferably don't add data as class members, then they
         # would be saved also alongside the parameters
         x = np.arange(self.length)
-        y = self.x**self.exponent
+        y = x**self.exponent
         self.save_dataset(data={'x': x, 'y': y})
 
 class DummyAdwin:

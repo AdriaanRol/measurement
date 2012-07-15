@@ -21,7 +21,7 @@ else:
     ins_green_aom=qt.instruments['GreenAOM']
     ins_E_aom=qt.instruments['MatisseAOM']
     ins_A_aom=qt.instruments['NewfocusAOM']
-    adwin=qt.instruments['adwin']
+    adwin= adwin_lt2 #qt.instruments['adwin_lt2']
     counters=qt.instruments['counters']
     physical_adwin=qt.instruments['physical_adwin']
     ctr_channel=1
@@ -36,21 +36,21 @@ par['AWG_done_DI_channel'] =          8
 par['send_AWG_start'] =               0
 par['wait_for_AWG_done'] =            0
 par['green_repump_duration'] =        10
-par['CR_duration'] =                  45
-par['SP_duration'] =                  250
+par['CR_duration'] =                  100
+par['SP_duration'] =                  10
 par['SP_filter_duration'] =           0
-par['sequence_wait_time'] =           10
+par['sequence_wait_time'] =           1
 par['wait_after_pulse_duration'] =    1
 par['CR_preselect'] =                 1000
 par['SSRO_repetitions'] =             5000
-par['SSRO_duration'] =                100 #NOTE CHANGED THIS FOR MORE CR CHECKS
+par['SSRO_duration'] =                50 #NOTE CHANGED THIS FOR MORE CR CHECKS
 par['SSRO_stop_after_first_photon'] = 0
 par['cycle_duration'] =               300
 
 par['green_repump_amplitude'] =       200e-6
 par['green_off_amplitude'] =          0e-6
-par['Ex_CR_amplitude'] =              5e-9
-par['A_CR_amplitude'] =               10e-9
+par['Ex_CR_amplitude'] =              10e-9
+par['A_CR_amplitude'] =               15e-9
 par['Ex_SP_amplitude'] =              0e-9
 par['A_SP_amplitude'] =               5e-9
 par['Ex_RO_amplitude'] =              5e-9 #
@@ -332,7 +332,7 @@ def ssro_vs_CR_duration(name, data, par, min_CR_duration,
 def ssro_vs_CR_power(name, data, par, min_CR_power, 
         max_CR_power, steps, reps_per_point):
 
-    for CR_power in linspace(min_CR_power,max_CR_power,steps):
+    for k,CR_power in enumerate(linspace(min_CR_power,max_CR_power,steps)):
         if CR_power == 0:
             print 'Invalid CR power: CR_power = 0 nW.' 
         elif ins_E_aom.get_cal_a() < max_CR_power or ins_A_aom.get_cal_a() < max_CR_power:
@@ -345,14 +345,46 @@ def ssro_vs_CR_power(name, data, par, min_CR_power,
         par['CR_duration'] = 30
         par['SSRO_repetitions'] = reps_per_point
         par['Ex_CR_amplitude'] = CR_power
-        par['A_CR_amplitude'] = CR_power
+        par['A_CR_amplitude'] = 0#CR_power
+
+
         #### INITIALIZE #####
         par['Ex_SP_amplitude'] = 0e-9
-        par['A_SP_amplitude'] = 5e-9        
+        par['A_SP_amplitude'] = 15e-9
+        par['SP_duration'] = 2
         ###### READOUT ######
         par['A_RO_amplitude'] = 0
         par['Ex_RO_amplitude'] = 5e-9
         ssro(name,data,par)
+
+def ssro_vs_Ex_CR_power(name, data, par, min_Ex_CR_power, 
+        max_Ex_CR_power, steps, reps_per_point):
+
+    for k,CR_power in enumerate(linspace(min_Ex_CR_power,max_Ex_CR_power,steps)):
+        if CR_power == 0:
+            print 'Invalid CR power: CR_power = 0 nW.' 
+        elif ins_E_aom.get_cal_a() < max_Ex_CR_power:
+            print 'Not enough power for the power sweep, check AOM calibration!'
+            break
+        
+        print '================================='
+        print 'CR power sweep: power = ', CR_power,' W'
+        print '================================='
+        par['CR_duration'] = 30
+        par['SSRO_repetitions'] = reps_per_point
+        par['Ex_CR_amplitude'] = CR_power
+        par['A_CR_amplitude'] = 0e-9
+
+
+        #### INITIALIZE #####
+        par['Ex_SP_amplitude'] = 0e-9
+        par['A_SP_amplitude'] = 15e-9
+        par['SP_duration'] = 2
+        ###### READOUT ######
+        par['A_RO_amplitude'] = 0
+        par['Ex_RO_amplitude'] = 5e-9
+        ssro(name,data,par)
+
 
 
 def ssro_init(name, data, par, do_ms0 = True, do_ms1 = True, 
@@ -377,22 +409,34 @@ def end_measurement():
     
 
 def main():
-    for i in range(50):
-        name = 'SIL9'+str(i)
-        qt.instruments['counters'].set_is_running(False)
-        data = meas.Measurement(name,'ADwin_SSRO')
+
+    name = 'SIL9'
+    qt.instruments['counters'].set_is_running(False)
+    data = meas.Measurement(name,'ADwin_SSRO')
+
     #ssro_vs_SP_amplitude(name,data,par,min_power=1, max_power = 25, 
     #        steps = 25, reps_per_point = 5000)
     #
-    #ssro_init(name,data,par)
+    ssro_init(name,data,par)
     #ssro_vs_SP_duration(name,data,par,sp_power=25e-9, max_duration = 10, 
     #        stepsize = 1, reps_per_point = 5000)
     #ssro_vs_CR_duration(name, data, par, 20, 100, 5, 5000)
-    #ssro_vs_CR_power(name, data, par, 15e-9, 15e-9, 1, 10000)
-        ssro_vs_SP(name,data,par,min_power=1, max_power = 25, 
-            steps = 25, max_duration=10, stepsize=1, reps_per_point = 5000)
-        end_measurement()
-        if (msvcrt.kbhit() and (msvcrt.getch() == 'e')): return
+     
+    #ssro_vs_Ex_CR_power(name, data, par, 
+    #        min_Ex_CR_power = 5e-9, max_Ex_CR_power = 15e-9, 
+    #        steps = 5, reps_per_point = 5000)
+    
+    end_measurement()
+
+    ### 2D Spin Pumping sweep
+    #for i in range(50):
+    #    name = 'SIL9'+str(i)
+    #    qt.instruments['counters'].set_is_running(False)
+    #    data = meas.Measurement(name,'ADwin_SSRO')
+    #    ssro_vs_SP(name,data,par,min_power=1, max_power = 25, 
+    #        steps = 25, max_duration=10, stepsize=1, reps_per_point = 5000)
+    #    end_measurement()
+    #    if (msvcrt.kbhit() and (msvcrt.getch() == 'e')): return
 
 
 if __name__ == '__main__':

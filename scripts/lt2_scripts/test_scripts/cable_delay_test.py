@@ -55,7 +55,7 @@ seq.add_pulse(name='trigger', channel = 'HH_sync', element=elt,
 #        start = 0, duration = 50 )
 #seq.add_pulse(name='wait', channel = 'trigger', element=elt, 
 #        start_reference='trigger',link_start_to='end', duration = 948, amplitude = 0)
-seq.add_pulse(name='MW_Imod', channel = 'MW_Qmod',element = elt, duration = MW_Imod_duration, 
+seq.add_pulse(name='MW_Imod', channel = 'MW_Imod_lt1',element = elt, duration = MW_Imod_duration, 
         start_reference='trigger',link_start_to = 'end', start=500,amplitude = 1)
 seq.add_pulse(name = 'MW_Pmod', channel = 'MW_pulsemod', element = elt,
             start=-MW_pulse_mod_risetime, duration=2*MW_pulse_mod_risetime, 
