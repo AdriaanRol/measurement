@@ -31,7 +31,8 @@ class linescan_counts(linescan):
         linescan._stop_running(self)
 
         if self._counter_was_running:
-            self._counters.set_is_running(True)
+            if (self.get_scan_value() != 'resonant') :
+                self._counters.set_is_running(True)
             self._counter_was_running = False
     
 
@@ -48,7 +49,8 @@ class linescan_counts(linescan):
         self.get_data_update()
 
         if self._counter_was_running:
-            self._counters.set_is_running(True)
+            if (self.get_scan_value() != 'resonant') :
+                self._counters.set_is_running(True)
             self._counter_was_running = False
 
         

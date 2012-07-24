@@ -64,6 +64,11 @@ class scan2d_counts(scan):
                            type=types.IntType,
                            flags=Instrument.FLAG_GETSET,
                            )
+        #BH30-03-2012 we now need value paramater to distinguish between simple and resonant counting
+        self.add_parameter('scan_value',
+                           type=types.StringType,
+                           flags=Instrument.FLAG_GETSET,
+                           )
 
         # parameters to access the member instruments
         self.add_parameter('position', 
@@ -87,7 +92,7 @@ class scan2d_counts(scan):
         self.set_xsteps(6)
         self.set_ysteps(6)
         self.set_counter(1)
-      
+        self.set_scan_value('counts')
 
         self._position = { 
                 'x': getattr(self._mos, 'get_'+xdim)(),
@@ -154,6 +159,12 @@ class scan2d_counts(scan):
     def do_get_counter(self):
         return self._counter
 
+    def do_get_scan_value(self):
+        return self.get_linescan_value()
+
+    def do_set_scan_value(self, val):
+        self.set_linescan_value(val)
+
     # get and set for instruments
     def do_get_position(self, channel):
         return self._position[channel]
@@ -187,9 +198,10 @@ class scan2d_counts(scan):
 	# internal functions
     def _start_running(self):
 
+        # make sure the counter is off, when not in resonant counting mode
         if self._counters.get_is_running():
             self._counter_was_running = True
-            if self._linescan.get_scan_value() != 'resonant':
+            if self.get_linescan_value() != 'resonant':
                 self._counters.set_is_running(False)
 
         # first prepare params such that the underlying scan instruments
@@ -210,8 +222,7 @@ class scan2d_counts(scan):
 
     def _stop_running(self):
         if self._counter_was_running:
-            if (self._linescan.get_scan_value() != 'resonant') :
-                self._counters.set_is_running(True)
+            self._counters.set_is_running(True)
             self._counter_was_running = False
         self.save()
 
@@ -228,6 +239,11 @@ class scan2d_counts(scan):
 
 
     def _scan_finished(self):
-         self.save()
+        if self._counter_was_running:
+            if self.get_linescan_value() != 'resonant':
+                self._counters.set_is_running(True)
+            self._counter_was_running = False
+
+        self.save()
 
 

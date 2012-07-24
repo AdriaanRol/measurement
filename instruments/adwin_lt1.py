@@ -18,7 +18,7 @@ class adwin_lt1(adwin):
                     'DIO_test'], 
                 dacs = adwinscfg.config['adwin_lt1_dacs'],
                 tags = ['virtual'],
-                process_subfolder = qt.config['adwin_lt1_subfolder'])
+                process_subfolder = qt.config['adwin_lt1_subfolder'], **kw)
 
         # counting
         self.add_function('set_resonant_counting')

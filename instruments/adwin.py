@@ -9,7 +9,8 @@ from lib import config
 
 class adwin(Instrument):
     def __init__(self, name, adwin, processes={}, 
-            process_subfolder='', **kw):
+            process_subfolder='', 
+            use_cfg=True, **kw):
         Instrument.__init__(self, name, tags=['virtual'])
 
         self.physical_adwin = adwin
@@ -18,6 +19,7 @@ class adwin(Instrument):
         self.processes = processes
         self.default_processes = kw.get('default_processes', [])
         self.dacs = kw.get('dacs', {})
+        self.use_cfg = use_cfg
 
         self._dac_voltages = {}
         for d in self.dacs:
@@ -46,28 +48,31 @@ class adwin(Instrument):
         self.add_function('set_simple_counting')
 
         # set up config file
-        cfg_fn = os.path.abspath(os.path.join(qt.config['ins_cfg_path'], name+'.cfg'))
-        if not os.path.exists(cfg_fn):
-            _f = open(cfg_fn, 'w')
-            _f.write('')
-            _f.close()
+        if self.use_cfg:
+            cfg_fn = os.path.abspath(os.path.join(qt.config['ins_cfg_path'], name+'.cfg'))
+            if not os.path.exists(cfg_fn):
+                _f = open(cfg_fn, 'w')
+                _f.write('')
+                _f.close()
 
-        self.ins_cfg = config.Config(cfg_fn)     
-        self.load_cfg()
-        self.save_cfg()
+            self.ins_cfg = config.Config(cfg_fn)     
+            self.load_cfg()
+            self.save_cfg()
 
     ### config management
     def load_cfg(self, set_voltages=False):
-        params = self.ins_cfg.get_all()
-        if 'dac_voltages' in params:
-            for d in params['dac_voltages']:
-                if set_voltages:
-                    self.set_dac_voltage((d, params['dac_voltages'][d]))
-                else:
-                    self._dac_voltages[d] = params['dac_voltages'][d]
+        if self.use_cfg:
+            params = self.ins_cfg.get_all()
+            if 'dac_voltages' in params:
+                for d in params['dac_voltages']:
+                    if set_voltages:
+                        self.set_dac_voltage((d, params['dac_voltages'][d]))
+                    else:
+                        self._dac_voltages[d] = params['dac_voltages'][d]
 
     def save_cfg(self):
-        self.ins_cfg['dac_voltages'] = self._dac_voltages
+        if self.use_cfg:
+            self.ins_cfg['dac_voltages'] = self._dac_voltages
 
     ### end config management
     def boot(self):

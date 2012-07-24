@@ -14,7 +14,7 @@ LIB_VERSION = "1.2"
 MAXDEVNUM	  = 8		      # max num of USB devices
 HHMAXCHAN   = 8		      # max num of logical channels
 MAXBINSTEPS	= 12	      # get actual number via HH_GetBaseResolution) !
-MAXHISTLEN  = 65536	    # max number of histogram bins
+MAXHISTLEN  = 6  	    # max number of histogram bins= 1024*2**MAXHISTLEN
 MAXLENCODE  = 6	    	  # max length code histo mode
 MAXHISTLEN_CONT	= 8192	# max number of histogram bins in continuous mode
 MAXLENCODE_CONT	= 3	  	# max length code in continuous mode
