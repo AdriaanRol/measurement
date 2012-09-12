@@ -77,6 +77,7 @@ class counters_via_adwin(CyclopeanInstrument):
         return True
 
     def _start_running(self):
+        #print 'counters started running'
         CyclopeanInstrument._start_running(self)
         self._ins_adwin.start_counter(
                 set_integration_time=self._integration_time,
@@ -84,6 +85,7 @@ class counters_via_adwin(CyclopeanInstrument):
                 set_single_run=0)
 
     def _stop_running(self):
+        #print 'counters stopped running'
         self._ins_adwin.stop_counter()
         self._countrate = {'cntr1': 0.0, 'cntr2': 0.0, }
 

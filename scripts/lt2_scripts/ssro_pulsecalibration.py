@@ -5,31 +5,34 @@
 
 import qt
 import numpy as np
-
+import ctypes
+import inspect
+import time
 import msvcrt
+import measurement.measurement as meas
 from measurement.AWG_HW_sequencer_v2 import Sequence
+import measurement.PQ_measurement_generator_v2 as pqm
 
 from measurement.config import awgchannels_lt2 as awgcfg
 from measurement.sequence import common as commonseq
-
+#from measurement.sequence import mwseq_calibration as cal
 
 name = 'SIL9_LT2'
 
-nr_of_datapoints =          41      #max nr_of_datapoints should be < 10000
+nr_of_datapoints =          21      #max nr_of_datapoints should be < 10000
 repetitions_per_datapoint = 1000
 
 min_pulse_nr =              1    #in ns
 max_pulse_nr =              41    #in ns
 
-min_pulse_amp =             0.46
-max_pulse_amp =             0.52
-nr_of_pulses=               1
-
+min_pulse_amp =             0.6
+max_pulse_amp =             0.8
+nr_of_pulses=               2
 min_time =                  5
 max_time =                  1000
 
 f_drive =                   2.8283E9#2.85877E9#2.854E9         #in Hz
-pi_pulse_length =           62
+pi_pulse_length =           25
 pi_over_two_length =        31
 time_between_pulses =       10#476/2
 mwpower_lt1 =               0               #in dBm
@@ -43,7 +46,7 @@ pulse_300_length   =   103
 pulse_60_length    =   21
 time_between_CORPSE = 0 #ns
 
-duty_cycle_time     = 5000 # ns, wait time at the end of each sequence element
+duty_cycle_time     = 100 # ns, wait time at the end of each sequence element
 
 max_seq_time = (pulse_420_length+pulse_300_length + pulse_60_length + 3*time_between_CORPSE + time_between_pulses)*max_pulse_nr+duty_cycle_time
 
@@ -53,26 +56,95 @@ time=np.linspace(min_time,max_time,nr_of_datapoints)
 lt1 = False
 
 awg = qt.instruments['AWG']
+temp = qt.instruments['temperature_lt1']
 
-def Multiple_Pi_pulses(sweep_param,pulse_dict,lt1 = False,do_program=True):
-    '''
-    This sequence consists of a number of Pi-pulses per element
-    
-    sweep_param = numpy array with number of Pi-pulses per element
-    pulse_dict={
-                "Pi":{"duration": ...,"amplitude": ...},
-                "istate_pulse": {"duration":... , "amplitude":...}, First pulse to create init state
-                "time_between_pulses": ...,
-                "duty_cycle_time": ...,                             waiting time at the end of each element
-                }
-    '''
+if lt1:
+    ins_green_aom=qt.instruments['GreenAOM_lt1']
+    ins_E_aom=qt.instruments['MatisseAOM_lt1']
+    ins_A_aom=qt.instruments['NewfocusAOM_lt1']
+    adwin=qt.instruments['adwin_lt1']
+    counters=qt.instruments['counters_lt1']
+    physical_adwin=qt.instruments['physical_adwin_lt1']
+    microwaves = qt.instruments['SMB_100_lt1']
+    ctr_channel=2
+    mwpower = mwpower_lt1
+    microwaves.set_status('off')
+else:
+    ins_green_aom=qt.instruments['GreenAOM']
+    ins_E_aom=qt.instruments['MatisseAOM']
+    ins_A_aom=qt.instruments['NewfocusAOM']
+    adwin = adwin_lt2 #adwin=qt.instruments['adwin']
+    counters=qt.instruments['counters']
+    physical_adwin=qt.instruments['physical_adwin']
+    microwaves = qt.instruments['SMB100']
+    ctr_channel=1
+    mwpower = mwpower_lt2
+    microwaves.set_status('off')
+
+
+microwaves.set_iq('on')
+microwaves.set_frequency(f_mw)
+microwaves.set_pulm('on')
+microwaves.set_power(mwpower)
+
+par = {}
+par['counter_channel'] =              ctr_channel
+par['green_laser_DAC_channel'] =      adwin.get_dac_channels()['green_aom']
+par['Ex_laser_DAC_channel'] =         adwin.get_dac_channels()['matisse_aom']
+par['A_laser_DAC_channel'] =          adwin.get_dac_channels()['newfocus_aom']
+par['AWG_start_DO_channel'] =         1
+par['AWG_done_DI_channel'] =          8
+par['send_AWG_start'] =               1
+par['wait_for_AWG_done'] =            0
+par['green_repump_duration'] =        10
+par['CR_duration'] =                  100
+par['SP_duration'] =                  50
+par['SP_filter_duration'] =           0
+par['sequence_wait_time'] =           int(ceil(max_seq_time/1e3)+1)
+par['wait_after_pulse_duration'] =    1
+par['CR_preselect'] =                 1000
+par['RO_repetitions'] =               int(nr_of_datapoints*repetitions_per_datapoint)
+par['RO_duration'] =                  26
+par['sweep_length'] =                 int(nr_of_datapoints)
+par['cycle_duration'] =               300
+par['CR_probe'] =                     100
+
+par['green_repump_amplitude'] =       200e-6
+par['green_off_amplitude'] =          0e-6
+par['Ex_CR_amplitude'] =              10e-9 #OK
+par['A_CR_amplitude'] =               15e-9 #OK
+par['Ex_SP_amplitude'] =              0
+par['A_SP_amplitude'] =               15e-9 #OK: PREPARE IN MS = 0
+par['Ex_RO_amplitude'] =              10e-9 #OK: READOUT MS = 0
+par['A_RO_amplitude'] =               0e-9
+
+ins_green_aom.set_power(0.)
+ins_E_aom.set_power(0.)
+ins_A_aom.set_power(0.)
+ins_green_aom.set_cur_controller('ADWIN')
+ins_E_aom.set_cur_controller('ADWIN')
+ins_A_aom.set_cur_controller('ADWIN')
+ins_green_aom.set_power(0.)
+ins_E_aom.set_power(0.)
+ins_A_aom.set_power(0.)
+
+
+###########################################################
+##
+##  hardcoded in ADwin program (adjust there if necessary!)
+##
+
+max_SP_bins = 500
+max_RO_dim = 1000000
+
+##
+###########################################################
+def generate_sequence(do_program=True):
     seq = Sequence('spin_control')
     awgcfg.configure_sequence(seq,'mw')
-    
     # vars for the channel names
     chan_mw_pm = 'MW_pulsemod' #is connected to ch1m1
     superposition_pulse=False
-    
     if lt1:
         chan_mwI = 'MW_Imod_lt1'
         chan_mwQ = 'MW_Qmod_lt1'
@@ -80,23 +152,12 @@ def Multiple_Pi_pulses(sweep_param,pulse_dict,lt1 = False,do_program=True):
         chan_mwI = 'MW_Imod'
         chan_mwQ = 'MW_Qmod'
     
-#FIXME: take this from a dictionary
     if lt1:
         MW_pulse_mod_risetime = 10
     else:
         MW_pulse_mod_risetime = 10
 
-    nr_of_datapoints = len(sweep_param)
-    pulse_nr = sweep_param
-
-    pi = pulse_dict["Pi"]
-    time_between_pulses = pulse_dict["time_between_pulses"]
-    duty_cycle_time = pulse_dict["duty_cycle_time"]
-    istate_pulse = pulse_dict["init_state_pulse"]
-    
     for i in np.arange(nr_of_datapoints):
-
-        #create element for each datapoint and link last element to first
         if i == nr_of_datapoints-1:
             seq.add_element(name = 'spin_control_'+str(i+1), 
                 trigger_wait = True, goto_target = 'spin_control_1')
@@ -104,58 +165,51 @@ def Multiple_Pi_pulses(sweep_param,pulse_dict,lt1 = False,do_program=True):
             seq.add_element(name = 'spin_control_'+str(i+1), 
                 trigger_wait = True)
 
-        
+
         for j in np.arange(pulse_nr[i]):
   
             if j == 0:
-                if init_state_pulse["Do_Pulse"]: 
+                if superposition_pulse: 
+                    seq.add_pulse('first_wait', channel = chan_mw_pm, element = 'spin_control_'+str(i+1), 
+                        start = 0, duration = 50, amplitude = 0)
 
-                    seq.add_pulse('first_wait', channel = chan_mw_pm, 
-                        element = 'spin_control_'+str(i+1),start = 0, 
-                        duration = 50, amplitude = 0)
+                    seq.add_pulse('pi_over_2' + str(j), channel = chan_mwI, element = 'spin_control_'+str(i+1),
+                        start_reference = 'first_wait', link_start_to = 'end', start = 0, duration = 46, amplitude = 0.78, shape = 'rectangular')
 
-                    seq.add_pulse('init_state_pulse' + str(j), channel = chan_mwI, element = 'spin_control_'+str(i+1),
-                        start_reference = 'first_wait', link_start_to = 'end', start = 0, 
-                        duration = istate_pulse["duration"], amplitude = istate_pulse["amplitude"], shape = 'rectangular')
-
-                    seq.add_pulse('init_state_pulse_mod' + str(j), channel = chan_mw_pm, element = 'spin_control_'+str(i+1),
+                    seq.add_pulse('pulse_mod_over_2' + str(j), channel = chan_mw_pm, element = 'spin_control_'+str(i+1),
                         start=-MW_pulse_mod_risetime, duration=2*MW_pulse_mod_risetime, 
-                        start_reference = 'init_state_pulse' + str(j), link_start_to = 'start', 
-                        duration_reference = 'init_state_pulse'+str(j), link_duration_to = 'duration', 
-                        amplitude = 2.0)
+                        start_reference = 'pi_over_2' + str(j), link_start_to = 'start', 
+                        duration_reference = 'pi_over_2'+str(j), link_duration_to = 'duration', amplitude = 2.0)
 
                     seq.add_pulse('wait' + str(j), channel = chan_mw_pm, element = 'spin_control_'+str(i+1), 
-                        start_reference = 'init_state_pulse' + str(j), link_start_to='end',start = 0, 
-                        duration = time_between_pulses, amplitude = 0)
+                        start_reference = 'pi_over_2' + str(j), link_start_to='end',start = 0, duration = time_between_pulses, amplitude = 0)
                 else:
-                    seq.add_pulse('wait' + str(j), channel = chan_mw_pm, 
-                        element = 'spin_control_'+str(i+1), start = 0, 
-                        duration = 50, amplitude = 0)
+                    seq.add_pulse('wait' + str(j), channel = chan_mw_pm, element = 'spin_control_'+str(i+1), 
+                        start = 0, duration = 50, amplitude = 0)
                
             else:
     
                 seq.add_pulse('wait' + str(j), channel = chan_mw_pm, element = 'spin_control_'+str(i+1),
-                    start = 0,start_reference = last,link_start_to ='end', 
-                    duration = time_between_pulses, amplitude = 0)
+                    start = 0,start_reference = last,link_start_to ='end', duration = time_between_pulses, amplitude = 0)
             
             
             seq.add_pulse('pi' + str(j), channel = chan_mwI, element = 'spin_control_'+str(i+1),
-                start = 0, start_reference = 'wait'+str(j), link_start_to = 'end', 
-                duration = pi["duration"], amplitude = pi["amplitude"], shape = 'rectangular')
+                start = 0, duration = pi_pulse_length, amplitude = amplitude_ssbmod, start_reference = 'wait'+str(j),
+                link_start_to = 'end', shape = 'rectangular')
 
             seq.add_pulse('pulse_mod' + str(j), channel = chan_mw_pm, element = 'spin_control_'+str(i+1),
                 start=-MW_pulse_mod_risetime, duration=2*MW_pulse_mod_risetime, 
                 start_reference = 'pi' + str(j), link_start_to = 'start', 
                 duration_reference = 'pi'+str(j), link_duration_to = 'duration', 
                 amplitude = 2.0)
-
-        
-            last = 'pi'+str(j)
+ 
+            seq.add_pulse('wait_3'+str(j), channel = chan_mw_pm, element = 'spin_control_'+str(i+1),
+                start_reference = 'pulse_mod'+str(j),link_start_to ='end', duration = time_between_pulses, amplitude = 0)    
+            
+            last = 'wait_3'+str(j)
         
         seq.add_pulse('final_wait', channel = chan_mw_pm, element = 'spin_control_'+str(i+1),
-                start_reference = last,link_start_to ='end', 
-                duration = duty_cycle_time, amplitude = 0)
-
+                start_reference = last,link_start_to ='end', duration = duty_cycle_time, amplitude = 0)    
     seq.set_instrument(awg)
     seq.set_clock(1e9)
     seq.set_send_waveforms(do_program)
@@ -166,23 +220,9 @@ def Multiple_Pi_pulses(sweep_param,pulse_dict,lt1 = False,do_program=True):
     seq.send_sequence()
 
 
-def Pi_Pulse_amp(sweep_param,pulse_dict,lt1 = False,do_program=True):
-    '''
-    This sequence consists of a fixed number of Pi pulses 
-    and sweeps their amplitude
-    
-    sweep_param = numpy array with amplitude of Pi-pulses
-    pulse_dict={
-                "Pi":{"duration": ...},
-                "Pi_2":   {"duration":..., "amplitude"...},
-                "istate_pulse": {"duration":... , "amplitude":...,  First pulse to create init state
-                                "Do_Pulse": Boolean},
-                "time_between_pulses": ...,
-                "nr_of_pulses":..,
-                "duty_cycle_time": ...,                             waiting time at the end of each element
-                }
-    '''
-    
+#FIXME: all generate sequence functions can be deleted. they are imported
+# from modules/measurement/sequence/mwseq_calibration !
+def generate_amplitude_sequence(do_program=True):
     seq = Sequence('spin_control')
     awgcfg.configure_sequence(seq,'mw')
     # vars for the channel names
@@ -199,15 +239,6 @@ def Pi_Pulse_amp(sweep_param,pulse_dict,lt1 = False,do_program=True):
         MW_pulse_mod_risetime = 10
     else:
         MW_pulse_mod_risetime = 10
-    
-    nr_of_datapoints = len(sweep_param)
-    amplitude = sweep_param
-
-    pi = pulse_dict["Pi"]
-    istate_pulse = pulse_dict["init_state_pulse"]
-    time_between_pulses = pulse_dict["time_between_pulses"]
-    nr_of_pulses = pulse_dict["nr_of_pulses"]
-    duty_cycle_time = pulse_dict["duty_cycle_time"]
 
     for i in np.arange(nr_of_datapoints):
         if i == nr_of_datapoints-1:
@@ -218,51 +249,34 @@ def Pi_Pulse_amp(sweep_param,pulse_dict,lt1 = False,do_program=True):
                 trigger_wait = True)
 
         for j in np.arange(nr_of_pulses):
-
+  
             if j == 0:
-
-                if init_state_pulse["Do_Pulse"]: 
-                    seq.add_pulse('first_wait', channel = chan_mw_pm, 
-                        element = 'spin_control_'+str(i+1),start = 0, 
-                        duration = 50, amplitude = 0)
-
-                    seq.add_pulse('init_state_pulse' + str(j), channel = chan_mwI, element = 'spin_control_'+str(i+1),
-                        start_reference = 'first_wait', link_start_to = 'end', start = 0, 
-                        duration = istate_pulse["duration"], amplitude = istate_pulse["amplitude"], shape = 'rectangular')
-
-                    seq.add_pulse('init_state_pulse_mod' + str(j), channel = chan_mw_pm, element = 'spin_control_'+str(i+1),
-                        start=-MW_pulse_mod_risetime, duration=2*MW_pulse_mod_risetime, 
-                        start_reference = 'init_state_pulse' + str(j), link_start_to = 'start', 
-                        duration_reference = 'init_state_pulse'+str(j), link_duration_to = 'duration', 
-                        amplitude = 2.0)
-
-                    seq.add_pulse('wait' + str(j), channel = chan_mw_pm, element = 'spin_control_'+str(i+1), 
-                        start_reference = 'init_state_pulse' + str(j), link_start_to='end',start = 0, 
-                        duration = time_between_pulses, amplitude = 0)
-                else:
-                    seq.add_pulse('wait' + str(j), channel = chan_mw_pm, 
-                        element = 'spin_control_'+str(i+1), start = 0, 
-                        duration = 50, amplitude = 0)
+                seq.add_pulse('wait' + str(j), channel = chan_mw_pm, element = 'spin_control_'+str(i+1), start = 0, duration = 50, amplitude = 0)
             else:
-                seq.add_pulse('wait' + str(j), channel = chan_mw_pm, 
-                        element = 'spin_control_'+str(i+1), start = 0, 
-                        duration = 50, amplitude = 0)
+                seq.add_pulse('wait' + str(j), channel = chan_mw_pm, element = 'spin_control_'+str(i+1),
+                    start = 0,start_reference = last,link_start_to ='end', duration = time_between_pulses, amplitude = 0)
+
     
             seq.add_pulse('pi' + str(j), channel = chan_mwI, element = 'spin_control_'+str(i+1),
-               start = 0, start_reference = 'wait'+str(j), link_start_to = 'end',
-               duration = pi["duration"], amplitude = amplitude[i], shape = 'rectangular')
+               start = 0, duration = pi_pulse_length, amplitude = amplitude[i], start_reference = 'wait'+str(j),
+               link_start_to = 'end', shape = 'rectangular')
 
             seq.add_pulse('pulse_mod' + str(j), channel = chan_mw_pm, element = 'spin_control_'+str(i+1),
                start=-MW_pulse_mod_risetime, duration=2*MW_pulse_mod_risetime, 
                start_reference = 'pi' + str(j), link_start_to = 'start', 
                duration_reference = 'pi'+str(j), link_duration_to = 'duration', 
                amplitude = 2.0)
+ 
+            seq.add_pulse('wait_3'+str(j), channel = chan_mw_pm, element = 'spin_control_'+str(i+1),
+               start_reference = 'pulse_mod'+str(j),link_start_to ='end', duration = time_between_pulses, amplitude = 0)    
             
-            last = 'pulse_mod'+str(j)
+            last = 'wait_3'+str(j)
 
         seq.add_pulse('final_wait', channel = chan_mw_pm, element = 'spin_control_'+str(i+1),
             start_reference = last,link_start_to ='end', duration = duty_cycle_time, amplitude = 0)
 
+
+    
     seq.set_instrument(awg)
     seq.set_clock(1e9)
     seq.set_send_waveforms(do_program)
@@ -272,23 +286,7 @@ def Pi_Pulse_amp(sweep_param,pulse_dict,lt1 = False,do_program=True):
     seq.force_HW_sequencing(True)
     seq.send_sequence()
 
-def Multiple_DSC_Pulses(sweep_param,pulse_dict,lt1 = False,do_program=True):
-    '''
-    This sequence consists of a number of CORPSE-pulses per element
-    
-    A CORPSE Pi-pulse consists of 3 pulses along the x, -x and x direction
-    along rotation angles of 420, 300 and 60 degrees.
-
-    sweep_param = numpy array with number of Pi-pulses per element
-    pulse_dict={
-                "Pi":{"duration": ...,"amplitude": ...},
-                "istate_pulse": {"duration":... , "amplitude":...}, First pulse to create init state
-                "time_between_pulses": ...,                         wait time between each CORPSE-pulse
-                "time_between_CORPSE": ...,                         wait time between the indivudeal pulses inside the CORPSE pulse
-                "duty_cycle_time": ...,                             waiting time at the end of each element
-                }
-    '''
-
+def generate_DSC_sequence(do_program=True):
     seq = Sequence('spin_control')
     awgcfg.configure_sequence(seq,'mw')
     # vars for the channel names
@@ -307,19 +305,6 @@ def Multiple_DSC_Pulses(sweep_param,pulse_dict,lt1 = False,do_program=True):
     else:
         MW_pulse_mod_risetime = 10
 
-    nr_of_datapoints = len(sweep_param)
-    pulse_nr = sweep_param
-
-    pi = pulse_dict["Pi"]
-    istate_pulse = pulse_dict["init_state_pulse"]
-    time_between_pulses = pulse_dict["time_between_pulses"]
-    time_between_CORPSE = pulse_dict["time_between_CORPSE"]
-    duty_cycle_time = pulse_dict["duty_cycle_time"]
-
-    pulse_420_length = int(2.*pi["duration"]*(420./360.))
-    pulse_300_length = int(2.*pi["duration"]*(300./360.))
-    pulse_60_length = int(2.*pi["duration"]*(60./360.))
-
     for i in np.arange(nr_of_datapoints):
         if i == nr_of_datapoints-1:
             seq.add_element(name = 'spin_control_'+str(i+1), 
@@ -333,38 +318,32 @@ def Multiple_DSC_Pulses(sweep_param,pulse_dict,lt1 = False,do_program=True):
         for j in np.arange(pulse_nr[i]):
   
             if j == 0:
+                if superposition_pulse: 
+                    seq.add_pulse('first_wait', channel = chan_mw_pm, element = 'spin_control_'+str(i+1), 
+                        start = 0, duration = 50, amplitude = 0)
 
-                if init_state_pulse["Do_Pulse"]: 
-                    seq.add_pulse('first_wait', channel = chan_mw_pm, 
-                        element = 'spin_control_'+str(i+1),start = 0, 
-                        duration = 50, amplitude = 0)
+                    seq.add_pulse('pi_over_2' + str(j), channel = chan_mwI, element = 'spin_control_'+str(i+1),
+                        start_reference = 'first_wait', link_start_to = 'end', start = 0, duration = pi_over_two_length, amplitude = amplitude_ssbmod, shape = 'rectangular')
 
-                    seq.add_pulse('init_state_pulse' + str(j), channel = chan_mwI, element = 'spin_control_'+str(i+1),
-                        start_reference = 'first_wait', link_start_to = 'end', start = 0, 
-                        duration = istate_pulse["duration"], amplitude = istate_pulse["amplitude"], shape = 'rectangular')
-
-                    seq.add_pulse('init_state_pulse_mod' + str(j), channel = chan_mw_pm, element = 'spin_control_'+str(i+1),
+                    seq.add_pulse('pulse_mod_over_2' + str(j), channel = chan_mw_pm, element = 'spin_control_'+str(i+1),
                         start=-MW_pulse_mod_risetime, duration=2*MW_pulse_mod_risetime, 
-                        start_reference = 'init_state_pulse' + str(j), link_start_to = 'start', 
-                        duration_reference = 'init_state_pulse'+str(j), link_duration_to = 'duration', 
-                        amplitude = 2.0)
+                        start_reference = 'pi_over_2' + str(j), link_start_to = 'start', 
+                        duration_reference = 'pi_over_2'+str(j), link_duration_to = 'duration', amplitude = 2.0)
 
                     seq.add_pulse('wait' + str(j), channel = chan_mw_pm, element = 'spin_control_'+str(i+1), 
-                        start_reference = 'init_state_pulse' + str(j), link_start_to='end',start = 0, 
-                        duration = time_between_pulses, amplitude = 0)
+                        start_reference = 'pi_over_2' + str(j), link_start_to='end',start = 0, duration = time_between_pulses, amplitude = 0)
                 else:
-                    seq.add_pulse('wait' + str(j), channel = chan_mw_pm, 
-                        element = 'spin_control_'+str(i+1), start = 0, 
-                        duration = 50, amplitude = 0)
+                    seq.add_pulse('wait' + str(j), channel = chan_mw_pm, element = 'spin_control_'+str(i+1), 
+                        start = 0, duration = 50, amplitude = 0)
             else:
-                seq.add_pulse('wait' + str(j), channel = chan_mw_pm, 
-                        element = 'spin_control_'+str(i+1), start = 0, 
-                        duration = time_between_pulses, amplitude = 0)
+ 
+                seq.add_pulse('wait' + str(j), channel = chan_mw_pm, element = 'spin_control_'+str(i+1),
+                    start = 0,start_reference = last,link_start_to ='end', duration = time_between_pulses, amplitude = 0)
 
     
             seq.add_pulse('pulse_420' + str(j), channel = chan_mwI, element = 'spin_control_'+str(i+1),
-                start = 0, start_reference = 'wait'+str(j), link_start_to = 'end', 
-                duration = pulse_420_length, amplitude = pi["amplitude"], shape = 'rectangular')
+                start = 0, duration = pulse_420_length, amplitude = amplitude_ssbmod, start_reference = 'wait'+str(j),
+                link_start_to = 'end', shape = 'rectangular')
 
             seq.add_pulse('pulse_mod_420' + str(j), channel = chan_mw_pm, element = 'spin_control_'+str(i+1),
                 start=-MW_pulse_mod_risetime, duration=2*MW_pulse_mod_risetime, 
@@ -373,12 +352,11 @@ def Multiple_DSC_Pulses(sweep_param,pulse_dict,lt1 = False,do_program=True):
                 amplitude = 2.0)
  
             seq.add_pulse('wait_1' + str(j), channel = chan_mw_pm, element = 'spin_control_'+str(i+1),
-                start = 0,start_reference = 'pulse_mod_420'+str(j),link_start_to ='end', 
-                duration = time_between_CORPSE, amplitude = 0)
+                    start = 0,start_reference = 'pulse_mod_420'+str(j),link_start_to ='end', duration = time_between_CORPSE, amplitude = 0)
 
             seq.add_pulse('pulse_300' + str(j), channel = chan_mwI, element = 'spin_control_'+str(i+1),
-                start = 0, start_reference = 'wait_1'+str(j),link_start_to = 'end', 
-                duration = pulse_300_length, amplitude = -1*pi["amplitude"],shape = 'rectangular')
+                start = 0, duration = pulse_300_length, amplitude = -amplitude_ssbmod, start_reference = 'wait_1'+str(j),
+                link_start_to = 'end', shape = 'rectangular')
 
             seq.add_pulse('pulse_mod_300' + str(j), channel = chan_mw_pm, element = 'spin_control_'+str(i+1),
                 start=-MW_pulse_mod_risetime, duration=2*MW_pulse_mod_risetime, 
@@ -387,12 +365,11 @@ def Multiple_DSC_Pulses(sweep_param,pulse_dict,lt1 = False,do_program=True):
                 amplitude = 2.0)
  
             seq.add_pulse('wait_2' + str(j), channel = chan_mw_pm, element = 'spin_control_'+str(i+1),
-                start = 0,start_reference = 'pulse_mod_300'+str(j),link_start_to ='end', 
-                duration = time_between_CORPSE, amplitude = 0)
+                    start = 0,start_reference = 'pulse_mod_300'+str(j),link_start_to ='end', duration = time_between_CORPSE, amplitude = 0)
 
             seq.add_pulse('pulse_60' + str(j), channel = chan_mwI, element = 'spin_control_'+str(i+1),
-                start = 0, start_reference = 'wait_2'+str(j), link_start_to = 'end', 
-                duration = pulse_60_length, amplitude = pi["amplitude"],shape = 'rectangular')
+                start = 0, duration = pulse_60_length, amplitude = amplitude_ssbmod, start_reference = 'wait_2'+str(j),
+                link_start_to = 'end', shape = 'rectangular')
 
             seq.add_pulse('pulse_mod_60' + str(j), channel = chan_mw_pm, element = 'spin_control_'+str(i+1),
                 start=-MW_pulse_mod_risetime, duration=2*MW_pulse_mod_risetime, 
@@ -400,8 +377,10 @@ def Multiple_DSC_Pulses(sweep_param,pulse_dict,lt1 = False,do_program=True):
                 duration_reference = 'pulse_60'+str(j), link_duration_to = 'duration', 
                 amplitude = 2.0)
 
-           
-            last = 'pulse_60'+str(j)
+            seq.add_pulse('wait_3'+str(j), channel = chan_mw_pm, element = 'spin_control_'+str(i+1),
+                start_reference = 'pulse_mod_60'+str(j),link_start_to ='end', duration = time_between_pulses, amplitude = 0)    
+            
+            last = 'wait_3'+str(j)
 
         seq.add_pulse('final_wait', channel = chan_mw_pm, element = 'spin_control_'+str(i+1),
         start_reference = last,link_start_to ='end', duration = duty_cycle_time, amplitude = 0) 
@@ -415,23 +394,7 @@ def Multiple_DSC_Pulses(sweep_param,pulse_dict,lt1 = False,do_program=True):
     seq.force_HW_sequencing(True)
     seq.send_sequence()
 
-def DSC_pulses_amp(sweep_param,pulse_dict,lt1 = False,do_program=True,do_program=True):
-
-    '''
-    This sequence consists of a fixed number of CORPSE pulses 
-    and sweeps their amplitude
-    
-    sweep_param = numpy array with amplitude of CORPSE-pulses
-    pulse_dict={
-                "Pi":{"duration": ...},
-                "istate_pulse": {"duration":... , "amplitude":...,  First pulse to create init state
-                                "Do_Pulse": Boolean},
-                "time_between_pulses": ...,                         waiting time between the CORPSE-pulses
-                "time_between_CORPSE":...,                          waiting time between each individual pulse inside the CORPSE pulse sequence
-                "duty_cycle_time": ...,                             waiting time at the end of each element
-                "nr_of_pulses": ...,
-                }
-    '''
+def generate_DSC_sequence_amp(do_program=True):
     seq = Sequence('spin_control')
     awgcfg.configure_sequence(seq,'mw')
     # vars for the channel names
@@ -449,21 +412,6 @@ def DSC_pulses_amp(sweep_param,pulse_dict,lt1 = False,do_program=True,do_program
     else:
         MW_pulse_mod_risetime = 10
 
-    nr_of_datapoints = len(sweep_param)
-    amplitude = sweep_param
-
-    pi = pulse_dict["Pi"]
-    istate_pulse = pulse_dict["init_state_pulse"]
-    time_between_pulses = pulse_dict["time_between_pulses"]
-    time_between_CORPSE = pulse_dict["time_between_CORPSE"]
-    duty_cycle_time = pulse_dict["duty_cycle_time"]
-    nr_of_pulses = pulse_dict["nr_of_pulses"]
-
-    pulse_420_length = int(2.*pi["duration"]*(420./360.))
-    pulse_300_length = int(2.*pi["duration"]*(300./360.))
-    pulse_60_length = int(2.*pi["duration"]*(60./360.))
-
-
     for i in np.arange(nr_of_datapoints):
         if i == nr_of_datapoints-1:
             seq.add_element(name = 'spin_control_'+str(i+1), 
@@ -477,74 +425,53 @@ def DSC_pulses_amp(sweep_param,pulse_dict,lt1 = False,do_program=True,do_program
         for j in np.arange(nr_of_pulses):
         
             if j == 0:
-
-                if init_state_pulse["Do_Pulse"]: 
-
-                    seq.add_pulse('first_wait', channel = chan_mw_pm, 
-                        element = 'spin_control_'+str(i+1),start = 0, 
-                        duration = 50, amplitude = 0)
-
-                    seq.add_pulse('init_state_pulse' + str(j), channel = chan_mwI, element = 'spin_control_'+str(i+1),
-                        start_reference = 'first_wait', link_start_to = 'end', start = 0, 
-                        duration = istate_pulse["duration"], amplitude = istate_pulse["amplitude"], shape = 'rectangular')
-
-                    seq.add_pulse('init_state_pulse_mod' + str(j), channel = chan_mw_pm, element = 'spin_control_'+str(i+1),
-                            start=-MW_pulse_mod_risetime, duration=2*MW_pulse_mod_risetime, 
-                            start_reference = 'init_state_pulse' + str(j), link_start_to = 'start', 
-                            duration_reference = 'init_state_pulse'+str(j), link_duration_to = 'duration', 
-                            amplitude = 2.0)
-
-                    seq.add_pulse('wait' + str(j), channel = chan_mw_pm, element = 'spin_control_'+str(i+1), 
-                            start_reference = 'init_state_pulse' + str(j), link_start_to='end',start = 0, 
-                            duration = time_between_pulses, amplitude = 0)
-                else:
-                    seq.add_pulse('wait' + str(j), channel = chan_mw_pm, 
-                        element = 'spin_control_'+str(i+1), start = 0, 
-                        duration = 50, amplitude = 0)
+       
+                seq.add_pulse('wait' + str(j), channel = chan_mw_pm, element = 'spin_control_'+str(i+1), start = 0, duration =50, amplitude = 0)
             else:
-                seq.add_pulse('wait' + str(j), channel = chan_mw_pm, 
-                        element = 'spin_control_'+str(i+1), start = 0, 
-                        duration = time_between_pulses, amplitude = 0)
+ 
+                seq.add_pulse('wait' + str(j), channel = chan_mw_pm, element = 'spin_control_'+str(i+1),
+                    start = 0,start_reference = last,link_start_to ='end', duration = time_between_pulses, amplitude = 0)
 
             seq.add_pulse('pulse_420' + str(j), channel = chan_mwI, element = 'spin_control_'+str(i+1),
-                start = 0, start_reference = 'wait'+str(j),link_start_to = 'end', 
-                duration = pulse_420_length, amplitude = amplitude[i], shape = 'rectangular')
+                start = 0, duration = pulse_420_length, amplitude = amplitude[i], start_reference = 'wait'+str(j),
+                link_start_to = 'end', shape = 'rectangular')
 
             seq.add_pulse('pulse_mod_420' + str(j), channel = chan_mw_pm, element = 'spin_control_'+str(i+1),
-                    start=-MW_pulse_mod_risetime, duration=2*MW_pulse_mod_risetime, 
-                    start_reference = 'pulse_420' + str(j), link_start_to = 'start', 
-                    duration_reference = 'pulse_420'+str(j), link_duration_to = 'duration', 
-                    amplitude = 2.0)
+                start=-MW_pulse_mod_risetime, duration=2*MW_pulse_mod_risetime, 
+                start_reference = 'pulse_420' + str(j), link_start_to = 'start', 
+                duration_reference = 'pulse_420'+str(j), link_duration_to = 'duration', 
+                amplitude = 2.0)
  
             seq.add_pulse('wait_1' + str(j), channel = chan_mw_pm, element = 'spin_control_'+str(i+1),
-                    start = 0,start_reference = 'pulse_mod_420'+str(j),link_start_to ='end', 
-                    duration = time_between_CORPSE, amplitude = 0)
+                    start = 0,start_reference = 'pulse_mod_420'+str(j),link_start_to ='end', duration = time_between_CORPSE, amplitude = 0)
 
             seq.add_pulse('pulse_300' + str(j), channel = chan_mwI, element = 'spin_control_'+str(i+1),
-                start = 0, start_reference = 'wait_1'+str(j), link_start_to = 'end',
-                duration = pulse_300_length, amplitude = -amplitude[i],shape = 'rectangular')
+                start = 0, duration = pulse_300_length, amplitude = -amplitude[i], start_reference = 'wait_1'+str(j),
+                link_start_to = 'end', shape = 'rectangular')
 
             seq.add_pulse('pulse_mod_300' + str(j), channel = chan_mw_pm, element = 'spin_control_'+str(i+1),
-                    start=-MW_pulse_mod_risetime, duration=2*MW_pulse_mod_risetime, 
-                    start_reference = 'pulse_300' + str(j), link_start_to = 'start', 
-                    duration_reference = 'pulse_300'+str(j), link_duration_to = 'duration', 
-                    amplitude = 2.0)
+                start=-MW_pulse_mod_risetime, duration=2*MW_pulse_mod_risetime, 
+                start_reference = 'pulse_300' + str(j), link_start_to = 'start', 
+                duration_reference = 'pulse_300'+str(j), link_duration_to = 'duration', 
+                amplitude = 2.0)
  
             seq.add_pulse('wait_2' + str(j), channel = chan_mw_pm, element = 'spin_control_'+str(i+1),
-                    start = 0,start_reference = 'pulse_mod_300'+str(j),link_start_to ='end', 
-                    duration = time_between_CORPSE, amplitude = 0)
+                    start = 0,start_reference = 'pulse_mod_300'+str(j),link_start_to ='end', duration = time_between_CORPSE, amplitude = 0)
 
             seq.add_pulse('pulse_60' + str(j), channel = chan_mwI, element = 'spin_control_'+str(i+1),
-                start = 0, start_reference = 'wait_2'+str(j), link_start_to = 'end', 
-                duration = pulse_60_length, amplitude = amplitude[i],shape = 'rectangular')
+                start = 0, duration = pulse_60_length, amplitude = amplitude[i], start_reference = 'wait_2'+str(j),
+                link_start_to = 'end', shape = 'rectangular')
 
             seq.add_pulse('pulse_mod_60' + str(j), channel = chan_mw_pm, element = 'spin_control_'+str(i+1),
-                    start=-MW_pulse_mod_risetime, duration=2*MW_pulse_mod_risetime, 
-                    start_reference = 'pulse_60' + str(j), link_start_to = 'start', 
-                    duration_reference = 'pulse_60'+str(j), link_duration_to = 'duration', 
-                    amplitude = 2.0)
+                start=-MW_pulse_mod_risetime, duration=2*MW_pulse_mod_risetime, 
+                start_reference = 'pulse_60' + str(j), link_start_to = 'start', 
+                duration_reference = 'pulse_60'+str(j), link_duration_to = 'duration', 
+                amplitude = 2.0)
 
-            last = 'Pulse_60'+str(j)
+            seq.add_pulse('wait_3'+str(j), channel = chan_mw_pm, element = 'spin_control_'+str(i+1),
+                start_reference = 'pulse_mod_60'+str(j),link_start_to ='end', duration = time_between_pulses, amplitude = 0)    
+            
+            last = 'wait_3'+str(j)
 
         seq.add_pulse('final_wait', channel = chan_mw_pm, element = 'spin_control_'+str(i+1),
             start_reference = last,link_start_to ='end', duration = duty_cycle_time, amplitude = 0) 
@@ -558,27 +485,12 @@ def DSC_pulses_amp(sweep_param,pulse_dict,lt1 = False,do_program=True,do_program
     seq.set_program_channels(True)
     seq.set_start_sequence(False)
     seq.force_HW_sequencing(True)
-
     seq.send_sequence()
 
 
 
 
-def DSC_Pulses_time(do_program=True):
-    '''
-    This sequence consists of a fixed number of CORPSE pulses 
-    and sweeps the time between the individual pulses in the CORPSE pulse sequence
-    
-    sweep_param = numpy array with time between each pulse in the CORPSE pulses sequence
-    pulse_dict={
-                "Pi":{"duration": ..., "amplitude":... ,},
-                "istate_pulse": {"duration":... , "amplitude":...,  First pulse to create init state
-                                "Do_Pulse": Boolean},
-                "time_between_pulses": ...,                         waiting time between the CORPSE-pulses
-                "duty_cycle_time": ...,                             waiting time at the end of each element
-                "nr_of_pulses": ...,
-                }
-    '''
+def generate_DSC_sequence_time(do_program=True):
     seq = Sequence('spin_control')
     awgcfg.configure_sequence(seq,'mw')
     # vars for the channel names
@@ -596,21 +508,6 @@ def DSC_Pulses_time(do_program=True):
     else:
         MW_pulse_mod_risetime = 10
 
-    nr_of_datapoints = len(sweep_param)
-    time_between_CORPSE = sweep_param
-
-    pi = pulse_dict["Pi_pulse"]
-    istate_pulse = pulse_dict["init_state_pulse"]
-    time_between_pulses = pulse_dict["time_between_pulses"]
-
-    duty_cycle_time = pulse_dict["duty_cycle_time"]
-    nr_of_pulses = pulse_dict["nr_of_pulses"]
-
-    pulse_420_length = int(2.*pi["duration"]*(420./360.))
-    pulse_300_length = int(2.*pi["duration"]*(300./360.))
-    pulse_60_length = int(2.*pi["duration"]*(60./360.))
-
-
     for i in np.arange(nr_of_datapoints):
         if i == nr_of_datapoints-1:
             seq.add_element(name = 'spin_control_'+str(i+1), 
@@ -624,73 +521,53 @@ def DSC_Pulses_time(do_program=True):
         for j in np.arange(nr_of_pulses):
         
             if j == 0:
-
-                if init_state_pulse["Do_Pulse"]: 
-                    seq.add_pulse('first_wait', channel = chan_mw_pm, 
-                        element = 'spin_control_'+str(i+1),start = 0, 
-                        duration = 50, amplitude = 0)
-
-                    seq.add_pulse('init_state_pulse' + str(j), channel = chan_mwI, element = 'spin_control_'+str(i+1),
-                        start_reference = 'first_wait', link_start_to = 'end', start = 0, 
-                        duration = istate_pulse["duration"], amplitude = istate_pulse["amplitude"], shape = 'rectangular')
-
-                    seq.add_pulse('init_state_pulse_mod' + str(j), channel = chan_mw_pm, element = 'spin_control_'+str(i+1),
-                            start=-MW_pulse_mod_risetime, duration=2*MW_pulse_mod_risetime, 
-                            start_reference = 'init_state_pulse' + str(j), link_start_to = 'start', 
-                            duration_reference = 'init_state_pulse'+str(j), link_duration_to = 'duration', 
-                            amplitude = 2.0)
-
-                    seq.add_pulse('wait' + str(j), channel = chan_mw_pm, element = 'spin_control_'+str(i+1), 
-                            start_reference = 'init_state_pulse' + str(j), link_start_to='end',start = 0, 
-                            duration = time_between_pulses, amplitude = 0)
-                else:
-                    seq.add_pulse('wait' + str(j), channel = chan_mw_pm, 
-                        element = 'spin_control_'+str(i+1), start = 0, 
-                        duration = 50, amplitude = 0)
+       
+                seq.add_pulse('wait' + str(j), channel = chan_mw_pm, element = 'spin_control_'+str(i+1), start = 0, duration = 50, amplitude = 0)
             else:
-                seq.add_pulse('wait' + str(j), channel = chan_mw_pm, 
-                        element = 'spin_control_'+str(i+1), start = 0, 
-                        duration = time_between_pulses, amplitude = 0)
+ 
+                seq.add_pulse('wait' + str(j), channel = chan_mw_pm, element = 'spin_control_'+str(i+1),
+                    start = 0,start_reference = last,link_start_to ='end', duration = time_between_pulses, amplitude = 0)
 
             seq.add_pulse('pulse_420' + str(j), channel = chan_mwI, element = 'spin_control_'+str(i+1),
-                start = 0, start_reference = 'wait'+str(j),link_start_to = 'end', 
-                duration = pulse_420_length, amplitude = pi["amplitude"], shape = 'rectangular')
+                start = 0, duration = pulse_420_length, amplitude = amplitude_ssbmod, start_reference = 'wait'+str(j),
+                link_start_to = 'end', shape = 'rectangular')
 
             seq.add_pulse('pulse_mod_420' + str(j), channel = chan_mw_pm, element = 'spin_control_'+str(i+1),
-                    start=-MW_pulse_mod_risetime, duration=2*MW_pulse_mod_risetime, 
-                    start_reference = 'pulse_420' + str(j), link_start_to = 'start', 
-                    duration_reference = 'pulse_420'+str(j), link_duration_to = 'duration', 
-                    amplitude = 2.0)
+                start=-MW_pulse_mod_risetime, duration=2*MW_pulse_mod_risetime, 
+                start_reference = 'pulse_420' + str(j), link_start_to = 'start', 
+                duration_reference = 'pulse_420'+str(j), link_duration_to = 'duration', 
+                amplitude = 2.0)
  
             seq.add_pulse('wait_1' + str(j), channel = chan_mw_pm, element = 'spin_control_'+str(i+1),
-                    start = 0,start_reference = 'pulse_mod_420'+str(j),link_start_to ='end', 
-                    duration = time_between_CORPSE[i], amplitude = 0)
+                    start = 0,start_reference = 'pulse_mod_420'+str(j),link_start_to ='end', duration = time[i], amplitude = 0)
 
             seq.add_pulse('pulse_300' + str(j), channel = chan_mwI, element = 'spin_control_'+str(i+1),
-                start = 0, start_reference = 'wait_1'+str(j), link_start_to = 'end',
-                duration = pulse_300_length, amplitude = -1*pi["duration"],shape = 'rectangular')
+                start = 0, duration = pulse_300_length, amplitude = -amplitude_ssbmod, start_reference = 'wait_1'+str(j),
+                link_start_to = 'end', shape = 'rectangular')
 
             seq.add_pulse('pulse_mod_300' + str(j), channel = chan_mw_pm, element = 'spin_control_'+str(i+1),
-                    start=-MW_pulse_mod_risetime, duration=2*MW_pulse_mod_risetime, 
-                    start_reference = 'pulse_300' + str(j), link_start_to = 'start', 
-                    duration_reference = 'pulse_300'+str(j), link_duration_to = 'duration', 
-                    amplitude = 2.0)
+                start=-MW_pulse_mod_risetime, duration=2*MW_pulse_mod_risetime, 
+                start_reference = 'pulse_300' + str(j), link_start_to = 'start', 
+                duration_reference = 'pulse_300'+str(j), link_duration_to = 'duration', 
+                amplitude = 2.0)
  
             seq.add_pulse('wait_2' + str(j), channel = chan_mw_pm, element = 'spin_control_'+str(i+1),
-                    start = 0,start_reference = 'pulse_mod_300'+str(j),link_start_to ='end', 
-                    duration = time_between_CORPSE[i], amplitude = 0)
+                    start = 0,start_reference = 'pulse_mod_300'+str(j),link_start_to ='end', duration = time[i], amplitude = 0)
 
             seq.add_pulse('pulse_60' + str(j), channel = chan_mwI, element = 'spin_control_'+str(i+1),
-                start = 0, start_reference = 'wait_2'+str(j), link_start_to = 'end', 
-                duration = pulse_60_length, amplitude = pi["amplitude"],shape = 'rectangular')
+                start = 0, duration = pulse_60_length, amplitude = amplitude_ssbmod, start_reference = 'wait_2'+str(j),
+                link_start_to = 'end', shape = 'rectangular')
 
             seq.add_pulse('pulse_mod_60' + str(j), channel = chan_mw_pm, element = 'spin_control_'+str(i+1),
-                    start=-MW_pulse_mod_risetime, duration=2*MW_pulse_mod_risetime, 
-                    start_reference = 'pulse_60' + str(j), link_start_to = 'start', 
-                    duration_reference = 'pulse_60'+str(j), link_duration_to = 'duration', 
-                    amplitude = 2.0)
+                start=-MW_pulse_mod_risetime, duration=2*MW_pulse_mod_risetime, 
+                start_reference = 'pulse_60' + str(j), link_start_to = 'start', 
+                duration_reference = 'pulse_60'+str(j), link_duration_to = 'duration', 
+                amplitude = 2.0)
 
-            last = 'Pulse_60'+str(j)
+            seq.add_pulse('wait_3'+str(j), channel = chan_mw_pm, element = 'spin_control_'+str(i+1),
+                start_reference = 'pulse_mod_60'+str(j),link_start_to ='end', duration = time_between_pulses, amplitude = 0)    
+            
+            last = 'wait_3'+str(j)
 
         seq.add_pulse('final_wait', channel = chan_mw_pm, element = 'spin_control_'+str(i+1),
             start_reference = last,link_start_to ='end', duration = duty_cycle_time, amplitude = 0) 
@@ -891,12 +768,12 @@ def power_and_mw_ok():
 def main():
     if power_and_mw_ok():
         counters.set_is_running(False)
-        generate_DSC_sequence()
+        generate_amplitude_sequence()
         awg.set_runmode('SEQ')
         awg.start()  
         while awg.get_state() != 'Waiting for trigger':
             qt.msleep(1)
-        data = meas.Measurement(name,'41_CORPSE_pulses_62ns')
+        data = meas.Measurement(name,'2_Piover2_pulses_25ns')
         microwaves.set_status('on')
         spin_control(name,data,par)
         end_measurement()
@@ -906,4 +783,5 @@ def main():
 
 if __name__ == '__main__':
     main()
+
 

@@ -1,0 +1,6 @@
+adwin_lt1.start_set_dio(dio_no = 3, dio_val = 1)
+qt.msleep(0.5)
+adwin_lt1.start_set_dio(dio_no = 3, dio_val = 0)
+qt.msleep(0.3)
+adwin_lt1.start_set_dio(dio_no = 3, dio_val = 1)
+qt.msleep(3)

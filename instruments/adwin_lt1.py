@@ -17,7 +17,8 @@ class adwin_lt1(adwin):
                 default_processes = ['counter', 'set_dac', 'set_dio', 'linescan',
                     'DIO_test'], 
                 dacs = adwinscfg.config['adwin_lt1_dacs'],
-                tags = ['virtual'])
+                tags = ['virtual'],
+                process_subfolder = qt.config['adwin_lt1_subfolder'], **kw)
 
         # counting
         self.add_function('set_resonant_counting')
@@ -77,7 +78,8 @@ class adwin_lt1(adwin):
 
             in any case, the pixel clock will be incremented for each step.
         scan_to_start = False : bool
-            if True, scan involved dacs to start first
+            if True, scan involved dacs to start first counters_lt1.set_is_running(1)
+    counters.set_is_running(1)
             right now, with default settings of speed2px()
 
         blocking = False : bool

@@ -182,6 +182,7 @@ class ADwin_Pro_II(Instrument): #1
             logging.warning(__name__ + ' : error in ADwin.Start_Process: %s'%ErrorMsg.value)
 
     def Stop_Process(self,index):
+        #print 'Process stop called for index:', index
         ErrorMsg=c_int32(0)
         result = self._adwin32.e_ADB_Stop(index,self._address,ctypes.byref(ErrorMsg))
         if result == 255:

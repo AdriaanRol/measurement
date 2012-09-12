@@ -19,7 +19,8 @@ class adwin_lt2(adwin):
                 default_processes=['counter', 'set_dac', 'set_dio', 'linescan',
                     'DIO_test'], 
                 dacs=adwinscfg.config['adwin_lt2_dacs'], 
-                tags=['virtual'])
+                tags=['virtual'],
+                process_subfolder = qt.config['adwin_lt2_subfolder'], **kw)
         
         
         self.add_function('set_resonant_counting')
@@ -202,39 +203,6 @@ class adwin_lt2(adwin):
                 steps, pxtime, value='none', scan_to_start=False,
                 blocking=blocking)
 
-    #gate modulation
-    def gate_modulation(self, **kw):
-        p = self.processes['gate_modulation']
-        self.physical_adwin.Stop_Process(p['index'])
-        self.physical_adwin.Load(self.ADWIN_DIR + p['file'])
-
-        gate_dac=kw.get('gate_dac',4)
-        modulation_period=kw.get('modulation_period',20) #ms
-        gate_voltage=kw.get('gate_voltage',2.5)
-        modulation_on=kw.get('modulation_on',1)
-        
-        self.physical_adwin.Set_Par(p['par']['gate_dac'], 
-                gate_dac)
-        self.physical_adwin.Set_Par(p['par']['modulation_period'], 
-                modulation_period)
-        self.physical_adwin.Set_Par(p['par']['modulation_on'], 
-                modulation_on)
-        self.physical_adwin.Set_FPar(p['fpar']['gate_voltage'], 
-                gate_voltage)
-
-        self.physical_adwin.Start_Process(p['index'])
-
-    def set_gate_modulation_voltage(self, val):
-         p = self.processes['gate_modulation']
-         self.physical_adwin.Set_FPar(p['fpar']['gate_voltage'], val)
-
-    def get_gate_modulation_voltage(self):
-         p = self.processes['gate_modulation']
-         return self.physical_adwin.Get_FPar(p['fpar']['gate_voltage'])         
-
-    def stop_gate_modulation(self):
-        p = self.processes['gate_modulation']
-        self.physical_adwin.Stop_Process(p['index'])
 
     def measure_counts(self, int_time):
         self.start_counter(set_integration_time=int_time, set_avg_periods=1, set_single_run= 1)

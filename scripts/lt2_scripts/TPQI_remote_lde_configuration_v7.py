@@ -4,7 +4,7 @@ import numpy as np
 import msvcrt
 import time
 from measurement.AWG_HW_sequencer_v2 import Sequence
-from measurement.config import awgchannels as awgcfg
+from measurement.config import awgchannels_lt2 as awgcfg
 from measurement.sequence import common as commonseq
 import measurement.PQ_measurement_generator_v2 as pqm
 import shutil
@@ -47,72 +47,67 @@ time_limit = 50 #in Adwin_proII processor cycles # in units of 1us
 # measurement time to 0, so no need to change that anywhere else. it also
 # makes sure that the hydraharp is not initialized such that the HH software
 # can be used independently. 
-debug_mode = True
-par_meas_time = 1/10 #measurement time in minutes
-par_reps = 1
-par_raw_path=r'D:\measuring\data\20120601\raw'
+debug_mode = False
+par_meas_time = 1/10. #measurement time in minutes
+par_reps = 2
+raw = True              # if the raw events are to be saved
+polarizations = ['perpendicular', 'parallel']
 
-lt1_rempump_duration = 6 # in units of 1us
-lt1_probe_duration = 61 # in units of 1us
-lt1_cnt_threshold_prepare =0 #20
-lt1_cnt_threshold_probe =0 #9
+lt1_rempump_duration = 10 # in units of 1us
+lt1_probe_duration = 50 # in units of 1us
+lt1_cnt_threshold_prepare = 0 #NOTE
+lt1_cnt_threshold_probe = 0 #NOTE
 lt1_counter = 2
-lt1_green_power = 250e-6
-lt1_ex_power = 7e-9
-lt1_a_power = 7e-9
+lt1_green_power = 200e-6
+lt1_ex_cr_power = 10e-9
+lt1_a_cr_power = 15e-9
 
-lt2_rempump_duration = 6 # in units of 1us
-lt2_probe_duration = 60 # in units of 1us
-lt2_cnt_threshold_prepare = 17
-lt2_cnt_threshold_probe = 9
+lt2_rempump_duration = 10 # in units of 1us
+lt2_probe_duration = 50 # in units of 1us
+lt2_cnt_threshold_prepare = 15 #NOTE
+lt2_cnt_threshold_probe = 15 #NOTE
 lt2_counter = 1
-lt2_green_power = 220e-6
-lt2_green_aom_voltage_zero=0.06 #voltage with minimum AOM leakage
-lt2_ex_power = 7e-9
-lt2_a_power = 7e-9
+lt2_green_power = 200e-6
+lt2_green_aom_voltage_zero = 0.00 #voltage with minimum AOM leakage
+lt2_ex_cr_power = 10e-9
+lt2_a_cr_power = 15e-9
 
 #configure optimisation
-par_opt_lt1_green_power = 100e-6
+par_opt_lt1_green_power = 200e-6
 par_opt_lt2_green_power = 200e-6
-par_opt_min_cnts_lt1 = 2900 
-par_opt_min_cnts_lt2 = 1900# 5000
+par_opt_min_cnts_lt1 = 0 #NOTE
+par_opt_min_cnts_lt2 = 0 #NOTE
 par_opt_counter_lt1 = 1     # 2 for PSB and 1 for ZPL
 par_opt_counter_lt2 = 2     # 1 for PSB and 2 for ZPL
 par_zpl_cts_break = 250000
 par_check_redpower = 0.4 #voltage of eom-aom
 
 # configure pulses and sequence
-par_sp_duration = 5000# 5000
-par_sp_power_lt1 = 7e-9         
-par_sp_power_lt2 = 7e-9
+par_sp_duration = 5000 #5000
+par_sp_power = 15e-9         
 par_pre_rabi_syncs =  10
-par_rabi_reps = 300
+par_rabi_reps = 100
 par_post_rabi_syncs =  10
-par_eom_start = 0
-par_eom_off_duration = 65
+
+par_eom_start = 40
+par_eom_off_duration = 100
 par_eom_pulse_duration = 2
-par_eom_pulse_offset = -4
+par_eom_pulse_offset = 0
 pulse_start = par_eom_start + par_eom_off_duration/2 + par_eom_pulse_offset
 
-par_aom_start = pulse_start - 35 -45 #subtract aom rise time
+par_aom_start = pulse_start - 35 - 56 #subtract aom rise time
 par_aom_duration = 2*23+par_eom_pulse_duration #30
 
 par_eom_off_amplitude = -.25
 par_eom_pulse_amplitude = 1.2
 par_eom_overshoot_duration1 = 10
-par_eom_overshoot1 = -0.05
-par_eom_overshoot_duration2 = 10
+par_eom_overshoot1 = -0.03
+par_eom_overshoot_duration2 = 5
 par_eom_overshoot2 = -0.02
 
 par_eom_aom_amplitude = 1.0
 
 par_rabi_cycle_duration = 2*par_eom_off_duration
-
-# Parameters pulse gating unit #
-use_pulse_gating_module = False #flag if the unit should be used
-par_gate_start_offset = 0   #shifts your counting window over the pulse
-par_gate_duration = 40      #determines the length of the counting window
-
 
 # Configure hydraharp
 par_binsize_T3 = 8     # resolution of recorded data in HH 1ps*2**binsize_T3
@@ -129,30 +124,27 @@ par_laser_end_ch0 = 150#259     # last bin of laser pulse ch0
 par_laser_end_ch1 = 153#262
 par_tail_roi = 156          # how many bins the tail is long
 
-
-
-lt1_ex_aom_voltage = qt.instruments['MatisseAOM_lt1'].power_to_voltage(
-        lt1_ex_power)
 ins_newfocus_aom_lt1.set_cur_controller('ADWIN')
+ins_newfocus_aom_lt2.set_cur_controller('ADWIN')
 lt1_a_aom_voltage = qt.instruments['NewfocusAOM_lt1'].power_to_voltage(
-        lt1_a_power)
+        lt1_a_cr_power)
+lt2_a_aom_voltage = qt.instruments['NewfocusAOM'].power_to_voltage(
+        lt2_a_cr_power)
+lt1_ex_aom_voltage = qt.instruments['MatisseAOM_lt1'].power_to_voltage(
+        lt1_ex_cr_power)
+lt2_ex_aom_voltage = qt.instruments['MatisseAOM'].power_to_voltage(
+        lt2_ex_cr_power)
+
 lt1_green_aom_voltage = qt.instruments['GreenAOM_lt1'].power_to_voltage(
         lt1_green_power)
-ins_newfocus_aom_lt1.set_cur_controller('AWG')
-par_sp_voltage_lt1 = qt.instruments['NewfocusAOM_lt1'].power_to_voltage(
-        par_sp_power_lt1)
-ins_newfocus_aom_lt1.set_cur_controller('ADWIN')
-
-lt2_ex_aom_voltage = qt.instruments['MatisseAOM'].power_to_voltage(
-        lt2_ex_power)
-ins_newfocus_aom_lt2.set_cur_controller('ADWIN')
-lt2_a_aom_voltage = qt.instruments['NewfocusAOM'].power_to_voltage(
-        lt2_a_power)
 lt2_green_aom_voltage = qt.instruments['GreenAOM'].power_to_voltage(
         lt2_green_power)
-ins_newfocus_aom_lt2.set_cur_controller('AWG')
-par_sp_voltage_lt2 = qt.instruments['NewfocusAOM'].power_to_voltage(
-        par_sp_power_lt2)
+
+#determine spin pumping power for the shared awg channel
+ins_newfocus_aom_lt1.set_cur_controller('AWG')
+par_sp_voltage = qt.instruments['NewfocusAOM_lt1'].power_to_voltage(
+        par_sp_power)
+ins_newfocus_aom_lt1.set_cur_controller('ADWIN')
 ins_newfocus_aom_lt2.set_cur_controller('ADWIN')
 
 
@@ -163,26 +155,18 @@ def generate_sequence(do_program=True):
     # vars for the channel names
     chan_hhsync = 'HH_sync'         # historically PH_start
     chan_hh_ma1 = 'HH_MA1'          # historically PH_sync
-    chan_exlaser = 'AOM_Matisse'    # ok
-    chan_alaser_lt2 = 'AOM_Newfocus'    # ok
-    chan_alaser_lt1 = 'AOM_Newfocus_lt1'
-    chan_adwinsync = 'ADwin_sync'   # ok
+    chan_alasers = 'AOM_Newfocus'   # ok
     chan_eom = 'EOM_Matisse'
     chan_eom_aom = 'EOM_AOM_Matisse'
 
-    awgcfg.configure_sequence(seq, 'hydraharp',
-            optical_rabi = {chan_eom_aom: {'high': par_eom_aom_amplitude}, 
-                chan_alaser_lt1: {'high': par_sp_voltage_lt1}},
-            ssro = {chan_alaser_lt2: {'high': par_sp_voltage_lt2}})
+    awgcfg.configure_sequence(seq, 'hydraharp', 
+            LDE = {chan_eom_aom: {'high': par_eom_aom_amplitude}, 
+                chan_alasers: {'high': par_sp_voltage}})
 
     seq.add_element('optical_rabi', goto_target = 'idle')#'optical_rabi',event_jump_target='idle')
 
-    seq.add_pulse('spinpumping_LT1',chan_alaser_lt1, 'optical_rabi', 
+    seq.add_pulse('spinpumping',chan_alasers, 'optical_rabi', 
             start = 0, duration = par_sp_duration)
-
-    seq.add_pulse('spinpumping_LT2',chan_alaser_lt2, 'optical_rabi', 
-            start = 0, duration = par_sp_duration)
-
     
     #Define a start point for the sequence, set amplitude to 0. actual sync pulse comes later  
     if debug_mode:
@@ -191,7 +175,7 @@ def generate_sequence(do_program=True):
     
     
     seq.add_pulse('start', chan_hhsync, 'optical_rabi', start = 0,
-            start_reference='spinpumping_LT1', link_start_to='end',
+            start_reference='spinpumping', link_start_to='end',
             duration = 50, amplitude = 0.0)
 
     last_start = 'start'
@@ -272,14 +256,6 @@ def generate_sequence(do_program=True):
                 duration = par_eom_overshoot_duration2, 
                 start_reference = last, link_start_to = 'start')
 
-        if use_pulse_gating_module:
-            seq.add_pulse('gate'+str(i),  chan_pulse_gating_module, 'optical_rabi', 
-                amplitude = 2., 
-                start = par_eom_start + par_eom_off_duration/2 + \
-                        par_eom_pulse_offset + par_gate_start_offset, 
-                duration = par_gate_duration, 
-                start_reference = last, link_start_to = 'start')
-
     first_sync = 'start0'
     last_sync = 'start'+str(par_rabi_reps-1)
 
@@ -300,14 +276,9 @@ def generate_sequence(do_program=True):
 
     seq.add_element('idle', goto_target='idle', 
             event_jump_target = 'optical_rabi')
-    seq.add_pulse('empty', chan_exlaser, 'idle', start=0, duration = 1000, 
+    seq.add_pulse('empty', chan_alasers, 'idle', start=0, duration = 1000, 
             amplitude = 0)
     
-    #seq.add_pulse('probe2', chan_alaser, 'wait_for_ADwin', start=-125, duration = 1000, 
-    #        amplitude = par_cr_A_amplitude)
-    #seq.add_pulse('probemw', chan_mw, 'wait_for_ADwin', start=-525, duration = 1000, 
-    #       amplitude = 1.0)
-
     seq.set_instrument(awg)
     seq.set_clock(1e9)
     seq.set_send_waveforms(do_program)
@@ -363,33 +334,44 @@ def optimize():
     
     return True
 
+def flip_waveplate_lt1():
+    print 'flipping the waveplate in lt1 ZPL'
+    adwin_lt1.start_set_dio(dio_no = 3, dio_val = 1)
+    qt.msleep(0.5)
+    adwin_lt1.start_set_dio(dio_no = 3, dio_val = 0)    
+    qt.msleep(0.3)
+    adwin_lt1.start_set_dio(dio_no = 3, dio_val = 1)
+    qt.msleep(3)
 
 
-def measurement_cycle(hh_measurement_time):
+
+def measurement_cycle(hh_measurement_time, save_raw):
     awg.set_runmode('SEQ')
     awg.start()    
     
-    adwin_lt1.start_remote_tpqi_control(
-            repump_duration=lt1_rempump_duration,
-            probe_duration=lt1_probe_duration,
-            cr_count_threshold_probe=lt1_cnt_threshold_probe,
-            cr_count_threshold_prepare=lt1_cnt_threshold_prepare,          
-            counter=lt1_counter,
-            green_aom_voltage=lt1_green_aom_voltage,
-            ex_aom_voltage=lt1_ex_aom_voltage,
-            a_aom_voltage=lt1_a_aom_voltage,
+    adwin_lt1.start_remote_tpqi_control(load = True, 
+            stop_processes = ['counter'],
+            set_repump_duration=lt1_rempump_duration,
+            set_probe_duration=lt1_probe_duration,
+            set_cr_count_threshold_probe=lt1_cnt_threshold_probe,
+            set_cr_count_threshold_prepare=lt1_cnt_threshold_prepare,          
+            set_counter=lt1_counter,
+            set_green_aom_voltage=lt1_green_aom_voltage,
+            set_ex_aom_voltage=lt1_ex_aom_voltage,
+            set_a_aom_voltage=lt1_a_aom_voltage,
             )
-    adwin_lt2.start_remote_tpqi_control(
-            repump_duration=lt2_rempump_duration,
-            probe_duration=lt2_probe_duration,
-            cr_time_limit=time_limit,
-            cr_count_threshold_probe=lt2_cnt_threshold_probe,
-            cr_count_threshold_prepare=lt2_cnt_threshold_prepare,
-            counter=lt2_counter,
-            green_aom_voltage=lt2_green_aom_voltage,
-            green_aom_voltage_zero=lt2_green_aom_voltage_zero,
-            ex_aom_voltage=lt2_ex_aom_voltage,
-            a_aom_voltage=lt2_a_aom_voltage, 
+    adwin_lt2.start_remote_tpqi_control(load = True, 
+            stop_processes = ['counter'],
+            set_repump_duration=lt2_rempump_duration,
+            set_probe_duration=lt2_probe_duration,
+            set_cr_time_limit=time_limit,
+            set_cr_count_threshold_probe=lt2_cnt_threshold_probe,
+            set_cr_count_threshold_prepare=lt2_cnt_threshold_prepare,
+            set_counter=lt2_counter,
+            set_green_aom_voltage=lt2_green_aom_voltage,
+            set_green_aom_voltage_zero=lt2_green_aom_voltage_zero,
+            set_ex_aom_voltage=lt2_ex_aom_voltage,
+            set_a_aom_voltage=lt2_a_aom_voltage, 
             )
 
     
@@ -403,7 +385,7 @@ def measurement_cycle(hh_measurement_time):
         if hh_measurement_time > 0:
             hharp.StartMeas(hh_measurement_time)
         
-            [histogram,hist_ch0,hist_ch1,hist_ch1_long,hist_roi] = hharp.get_T3_pulsed_g2_2DHistogram_v5(
+            [histogram,hist_ch0,hist_ch1,hist_ch1_long,hist_roi] = hharp.get_T3_pulsed_g2_2DHistogram(
                     binsize_sync=par_binsize_sync,
                     range_sync=par_range_sync,
                     binsize_g2=par_binsize_g2,
@@ -413,7 +395,7 @@ def measurement_cycle(hh_measurement_time):
                     laser_end_ch0 = par_laser_end_ch0,
                     laser_end_ch1 = par_laser_end_ch1,
                     tail_roi = par_tail_roi,
-                    save_raw=par_raw_path
+                    save_raw=save_raw
                     )
     
     if debug_mode:
@@ -428,15 +410,18 @@ def measurement_cycle(hh_measurement_time):
 
     return histogram, hist_ch0,hist_ch1,hist_ch1_long, hist_roi
 
-def save_and_plot_data(data,histogram,histogram_summed,hist_ch0,hist_ch1,hist_ch1_long,hist_roi,hist_roi_summed):
+def save_and_plot_data(data,histogram,histogram_summed,
+        hist_ch0,hist_ch1,hist_ch1_long,hist_roi,hist_roi_summed):
     #Data processing
+
+    adpars_lt1 = adwin_lt1.get_remote_tpqi_control_var('par')
+    adpars_lt2 = adwin_lt2.get_remote_tpqi_control_var('par')
     
-    sync = 2**(par_binsize_sync+par_binsize_T3) * arange(par_range_sync) / 1e3    #sync axis in ns
-    dt = 2**(par_binsize_g2+par_binsize_T3) * linspace(-par_range_g2/2,par_range_g2/2,par_range_g2)/ 1e3 #dt axis in ns
-    #X,Y = meshgrid(dt, sync)
+    sync = 2**(par_binsize_sync+par_binsize_T3) * arange(par_range_sync) / 1e3 #sync axis in ns
+    dt = 2**(par_binsize_g2+par_binsize_T3) * \
+            linspace(-par_range_g2/2,par_range_g2/2,par_range_g2)/ 1e3 #dt axis in ns
+
     data.create_file()
-    #plt = qt.Plot3D(data, name='Interference',clear = Truprint 'Optimisation step completed'e, coorddims=(0,1), valdim=1, style='image')
-    #data.add_data_point(ravel(X),ravel(Y),ravel(histogram))
     
     max_cts = 100
     cr_hist_LT1_first = physical_adwin_lt1.Get_Data_Long(7,1,max_cts)
@@ -462,12 +447,13 @@ def save_and_plot_data(data,histogram,histogram_summed,hist_ch0,hist_ch1,hist_ch
             cr_hist_LT1_first=cr_hist_LT1_first,
             cr_hist_LT1_total=cr_hist_LT1_total,
             cr_hist_LT2_first=cr_hist_LT2_first,
-            cr_hist_LT2_total=cr_hist_LT2_total)
+            cr_hist_LT2_total=cr_hist_LT2_total,
+            adwin_lt1_pars = adpars_lt1,
+            adwin_lt2_pars = adpars_lt2)
 
     #Plot Data
     do_plot=not(debug_mode)
     if do_plot:
-
         plt = plot(dt,hist_roi)
         plt.set_xlabel('dt [ns]')
         plt.set_ylabel('number of coincidences in current cycle')
@@ -481,44 +467,40 @@ def save_and_plot_data(data,histogram,histogram_summed,hist_ch0,hist_ch1,hist_ch
 
     data.close_file()
 
-    print 'interference, bitch'
-    print '(entanglement expected in 3 weeks)'
-
-
-    
-    
-
 def initialize_hh():
     hharp.start_T3_mode()
     hharp.calibrate()
     hharp.set_Binning(par_binsize_T3)
 
-
 def print_save_cr_check_info(cr_stats,rep_nr):
  
     qt.msleep(1)
 
-    lt1_cnts_below = adwin_lt1.remote_tpqi_control_get_cr_below_threshold_events()
-    lt1_cr_checks = adwin_lt1.remote_tpqi_control_get_noof_cr_checks()
-    lt2_cnts_below = adwin_lt2.remote_tpqi_control_get_cr_below_threshold_events()
-    lt2_cr_checks = adwin_lt2.remote_tpqi_control_get_noof_cr_checks()
-    TPQI_starts = adwin_lt2.remote_tpqi_control_get_noof_tpqi_starts()
+    adpars_lt1 = adwin_lt1.get_remote_tpqi_control_var('par')
+    adpars_lt2 = adwin_lt2.get_remote_tpqi_control_var('par')
+
+    lt1_cnts_below = adpars_lt1[1][1]
+    lt1_cr_checks = adpars_lt1[0][1]
+    lt2_cnts_below = adpars_lt2[3][1]
+    lt2_cr_checks = adpars_lt2[2][1]
+    TPQI_starts = adpars_lt2[15][1]
        
-    lt1_repump_cts= adwin_lt1.remote_tpqi_control_get_repump_counts()
-    lt2_repump_cts= adwin_lt2.remote_tpqi_control_get_repump_counts()
-    lt1_triggers_received= adwin_lt1.remote_tpqi_control_get_noof_trigger()
-    lt2_triggers_sent= adwin_lt2.remote_tpqi_control_get_noof_triggers_sent()
-    lt1_oks_sent = adwin_lt1.remote_tpqi_control_get_noof_oks_sent()
-    lt2_oks_received = adwin_lt2.remote_tpqi_control_get_noof_lt1_oks()
+    lt1_repump_cts = adpars_lt1[8][1]
+    lt1_triggers_received= adpars_lt1[11][1]
+    lt1_oks_sent = adpars_lt1[7][1]
+    lt2_repump_cts= adpars_lt2[0][1]
+    lt2_triggers_sent= adpars_lt2[10][1]
+    lt2_oks_received = adpars_lt2[17][1]
     
-    print 'lt1 : CR below threshold: ', lt1_cnts_below
-    print 'lt1 : CR checks: ', lt1_cr_checks
-    print 'lt2 : CR below threshold: ', lt2_cnts_below
-    print 'lt2 : CR checks: ', lt2_cr_checks
-    print 'tpqi starts: ', TPQI_starts
-    print ' adwin check-trigger difference:', lt2_triggers_sent - lt1_triggers_received
-    print ' adwin ok-trigger difference: ', lt1_oks_sent - lt2_oks_received
-    print ''
+    #print 'lt1 : CR below threshold: ', lt1_cnts_below
+    #print 'lt1 : CR checks: ', lt1_cr_checks
+    #print 'lt2 : CR below threshold: ', lt2_cnts_below
+    #print 'lt2 : CR checks: ', lt2_cr_checks
+    print rep_nr, ': TPQI starts during the cycle = ', TPQI_starts
+    #print ' adwin check-trigger difference:', lt2_triggers_sent - lt1_triggers_received
+    #print ' adwin ok-trigger difference: ', lt1_oks_sent - lt2_oks_received
+    #print ''
+    
     cr_stats.add_data_point(rep_nr,lt1_cnts_below,lt1_cr_checks,
                             lt2_cnts_below,lt2_cr_checks,TPQI_starts,lt1_repump_cts,
                             lt2_repump_cts,lt1_triggers_received,lt2_triggers_sent,
@@ -540,18 +522,14 @@ def end_measuring():
 
 
 def main():
-
-    
+   
     if not debug_mode:
         initialize_hh()
-
 
     generate_sequence()
 
     # configure measurement
     repetitions = par_reps
-
-    
 
     hh_measurement_time = int(1e3 * 60 *  par_meas_time) #ms
 
@@ -573,9 +551,12 @@ def main():
     cr_stats.create_file()
 
 
-    histogram_summed=zeros((par_range_sync,par_range_g2))
-    hist_roi_summed = zeros(par_range_g2)
-    
+    histogram_summed= {}
+    hist_roi_summed = {}
+    for pol in polarizations:
+        histogram_summed[pol] = zeros((par_range_sync,par_range_g2))
+        hist_roi_summed[pol] = zeros(par_range_g2)
+      
     
     for idx in arange(repetitions):
         skip_opt=False
@@ -583,28 +564,43 @@ def main():
             kb_char=msvcrt.getch()
             if kb_char == "q" : break
             elif kb_char == "c" : skip_opt=True
-        
-        print 'Starting measurement cycle', idx, 'current time:', time.strftime('%H:%M',time.localtime())
-        [histogram,hist_ch0,hist_ch1,hist_ch1_long,hist_roi] = measurement_cycle(hh_measurement_time)
 
-        print_save_cr_check_info(cr_stats,idx)    
+        for pol in polarizations:
+            print 'Starting measurement cycle_'+pol+'_', idx, 'current time:',\
+                    time.strftime('%H:%M',time.localtime())
 
-        if not debug_mode:
-            histogram_summed += histogram
-            hist_roi_summed += hist_roi
-        print 'Finished measurement cycle', idx, 'start saving'
-        
-        data = qt.Data(name='interference'+"_"+str(idx))
-        data.add_coordinate('dt')
-        data.add_coordinate('sync')
-        data.add_value('counts')
-        save_and_plot_data(data,histogram,histogram_summed,hist_ch0,hist_ch1,hist_ch1_long, hist_roi, hist_roi_summed)
-        print 'Data saving cycle', idx, 'completed'
-        qt.msleep(1)
-        
-        if not(debug_mode) and not(skip_opt):
-            if not optimize(): break
-            print 'Optimisation step', idx, ' completed'
+            if raw:
+                save_raw = os.path.join(qt.config['datadir'], strftime('%Y%m%d'), \
+                strftime('%H%M%S')+'_interference_'+pol+'_rawdata'+ '%.3d' % idx)
+                if not os.path.isdir(save_raw):
+                    os.makedirs(save_raw)
+
+                    
+            [histogram,hist_ch0,hist_ch1,hist_ch1_long,hist_roi] = \
+                    measurement_cycle(hh_measurement_time, save_raw)
+
+            print_save_cr_check_info(cr_stats,idx)    
+
+            if not debug_mode:
+                histogram_summed[pol] += histogram
+                hist_roi_summed[pol] += hist_roi
+            print 'Finished measurement cycle_'+pol+'_', idx, 'start saving'
+            
+            data = qt.Data(name='interference_'+pol+'_'+'%.3d' % idx)
+            data.add_coordinate('dt')
+            data.add_coordinate('sync')
+            data.add_value('counts')
+            save_and_plot_data(data,histogram,histogram_summed[pol],\
+                    hist_ch0,hist_ch1,hist_ch1_long, hist_roi, hist_roi_summed[pol])
+            print 'Data saving cycle_'+pol+'_', idx, 'completed'
+            qt.msleep(1)
+
+            if (len(polarizations)>1):
+                flip_waveplate_lt1()
+            
+            if not(debug_mode) and not(skip_opt):
+                if not optimize(): break
+                print 'Optimisation step_'+pol+'_', idx, ' completed'
 
         
 
@@ -613,7 +609,7 @@ def main():
     end_measuring()
 
 if __name__ == '__main__':
-    
+
     main()
 
 

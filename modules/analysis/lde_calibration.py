@@ -4,6 +4,7 @@ import plot
 import qt
 from analysis import fit, rabi, common, esr, ramsey,spin_control
 
+
 """
 Please note that this module is written for qtlab. It is intended for 
 calibration and returns valuable information.
@@ -38,6 +39,7 @@ def find_newest_data(datapath, string = '_spin_control'):
 
 
 def rabi_calibration(datapath,fit_data = True, save = True,close_fig=True,new_fig=True):
+
     """ 
     Fits results from a spin_control data using a FFT. 
     Datapath should be a folder that contains the actual measurement results,
@@ -128,7 +130,6 @@ def rabi_calibration(datapath,fit_data = True, save = True,close_fig=True,new_fi
 
         #print 'frequency guess = ',freq_guess
 
-
         fit_result = fit.fit1d(mw_len, SSRO, rabi.fit_rabi_simple, 
                 freq_guess, amp_guess, offset_guess, phase_guess,
                 do_plot = False, ret = True)
@@ -138,10 +139,12 @@ def rabi_calibration(datapath,fit_data = True, save = True,close_fig=True,new_fi
         A = fit_result['params_dict']['A']
         phi = fit_result['params_dict']['phi']
         x = np.linspace(mw_min_len, mw_max_len, 501)
+
         fit_curve = a + A*np.cos(2*np.pi*(f*x + phi/360))
 
         pi_pulse_len = 0.5*1/f
         pi_2_pulse_len = 0.5*pi_pulse_len
+
 
     name= spin_ro_file[:len(spin_ro_file)-16]
     if new_fig:
@@ -189,6 +192,7 @@ def rabi_calibration(datapath,fit_data = True, save = True,close_fig=True,new_fi
     return rabi_dict
 
 def dark_esr_calibration(datapath, fit_data = True, save = True, f_dip = 2.858E9):
+
 
     ###########################################
     ######## MEASUREMENT SPECS ################
@@ -290,6 +294,7 @@ def dark_esr_calibration(datapath, fit_data = True, save = True, f_dip = 2.858E9
 
     return x0
 
+
 def esr_calibration(datapath, fit_data = True, save = True, f_dip = 2.828E9):
 
     ###########################################
@@ -360,6 +365,7 @@ def esr_calibration(datapath, fit_data = True, save = True, f_dip = 2.828E9):
 
     return x0*1E9
 
+
 def ssro_calibration(datapath, fit_data = True, save = True):
     """
     Returns the optimal read-out length for SSRO.
@@ -374,6 +380,7 @@ def ssro_calibration(datapath, fit_data = True, save = True):
 
     PARAM_REPS = 15
     PARAM_CYCLE_DURATION = 18
+
     def run_single(folder='', ms=0, index=0):
         if folder == "":
             folder = os.getcwd()
@@ -430,6 +437,7 @@ def ssro_calibration(datapath, fit_data = True, save = True):
                         PREFIX+SUFFIX_i+'_fid_vs_ROtime.npz') 
                 f0 = os.path.join(folder,'processed_data',
                         PREFIX+SUFFIX_j+'_fid_vs_ROtime.npz')
+
                 f,plot1  = fidelities(f0,f1)
                 if save:
                     plot1.save_png(os.path.join(folder,'figures','fidelity_vs_rotime.png'))
@@ -554,6 +562,7 @@ def ssro_calibration(datapath, fit_data = True, save = True):
         F_err = np.sqrt(fid0_err**2 + fid1_err**2)
         F_max = max(F)
         t_max = times[F.argmax()]
+
 
         plot1 = qt.Plot2D(name='fid',clear=True)
         plot1.clear()

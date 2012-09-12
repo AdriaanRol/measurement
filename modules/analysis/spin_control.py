@@ -301,6 +301,7 @@ def plot_dark_esr(datapath, fit_data = True, save = True, f_dip = 2.878E9):
                 do_plot = True, do_print = True, newfig = False, ret = True, 
                 plot_fitonly = True)
 
+
         center_peak = fit_result['params_dict']['x0']
         splitting = fit_result['params_dict']['s0']
 
@@ -846,6 +847,7 @@ def plot_esr(datapath, fit_data = True, save = True, f_dip = 2.828E9,msplusone=F
 
 
     data = np.load(datapath+'\\'+data_file)
+
     mw_freq = data['freq']
     counts = data['counts']
     data.close()
@@ -897,7 +899,9 @@ def plot_Pulse_cal(datapath, fit_data = True, save = True):
         if 'SP_histogram.npz' in k:
             sp_file = k
 
+
     e = np.load(datapath+'\\'+stats_params_file)
+
     f_drive = e['mw_drive_freq']
     mwpower = e['mw_power']
     min_pulse_nr = e['min_pulse_nr']
@@ -910,6 +914,7 @@ def plot_Pulse_cal(datapath, fit_data = True, save = True):
     ######## SPIN RO  #########################
     ###########################################
     
+
     f = np.load(datapath+'\\'+spin_ro_file)
     raw_counts = f['counts']
     repetitions = f['sweep_axis']
@@ -960,6 +965,7 @@ def plot_Pulse_cal(datapath, fit_data = True, save = True):
     ###########################################
     ######## SPIN PUMPING #####################
     ###########################################
+
     v = np.load(datapath+'\\'+sp_file)
     sp_counts = v['counts']
     sp_time = v['time']
@@ -1074,6 +1080,7 @@ def plot_Pulse_cal_amp(datapath, fit_data = True, save = True):
     ###########################################
     ######## SPIN PUMPING #####################
     ###########################################
+
     v = np.load(datapath+'\\'+sp_file)
     sp_counts = v['counts']
     sp_time = v['time']
@@ -1124,6 +1131,7 @@ def plot_Pulse_cal_time(datapath, fit_data = True, save = True):
             spin_ro_file = k
         if 'SP_histogram.npz' in k:
             sp_file = k
+
 
     e = np.load(datapath+'\\'+stats_params_file)
     f_drive = e['mw_drive_freq']

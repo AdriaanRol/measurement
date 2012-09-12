@@ -6,21 +6,21 @@ import msvcrt
 
 
 # measurement parameters
-start_v = 0.1
-stop_v = -1.0
+start_v = -1.2 #1.5
+stop_v = -2.5 #0.0
 steps = 3001
-pxtime = 50  #ms
+pxtime = 30  #ms
 do_smooth = True
-green_during = 0.5e-6
+green_during = 0e-6
 green_before = 200e-6
-red_during= 8e-9
+red_during= 20e-9
 f_offset = 470400 # GHz
 mw = False
 amp = True
-mw_power = -20
-mw_frq = 2.8569e9 #2.878e9
-dataname = 'Laserscan_sil9_LT2_MW_0uW_green'
-LT2 = True
+mw_power = 0
+mw_frq = 2.878e9 #2.8278e9
+dataname = 'Laserscan_sil2_LT1_no B_field_MW_0uW_green'
+LT2 = False
 
 # end measurement parameters
 
@@ -34,7 +34,7 @@ if LT2:
 else:
     ins_adwin = qt.instruments['adwin_lt1']
     ins_laser_scan = qt.instruments['laser_scan_lt1']
-    ins_mw = qt.instruments['SMB_100_lt1']
+    ins_mw = qt.instruments['SMB100_lt1']
 
 
 def power_ok():
@@ -66,6 +66,9 @@ def check_for_abort(ins_laser_scan = ins_laser_scan):
         ins_laser_scan.abort_scan()
         return False
     return True
+
+
+
 
 def rolling_avg(xvals, length=10):
     new = zeros(len(xvals))
@@ -103,8 +106,11 @@ def laserscan(ins_laser_scan = ins_laser_scan):
         GreenAOM_lt1.set_power(green_before)
         qt.msleep(1)
 
-        NewfocusAOM_lt1.set_power(red_during)
+        MatisseAOM_lt1.set_power(red_during)
         GreenAOM_lt1.set_power(green_during)
+    
+    #make sure microwaves are off 
+    ins_mw.set_status('off')
 
     if mw:
         ins_mw.set_iq('off')

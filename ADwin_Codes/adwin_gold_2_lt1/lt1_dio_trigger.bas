@@ -16,14 +16,17 @@
 
 #INCLUDE ADwinGoldII.inc
 #INCLUDE configuration.inc
-DIM channel, set AS LONG
+DIM channel AS LONG
 
 INIT:
-  CONF_DIO(13)   
+  CONF_DIO(13)   'configure DIO-24 to DIO 31 as outputs, the rest are inputs
   channel=PAR_61    'OutputNR can only have values 1,2,3,4 corresponding to DIO28,29,30,31
-  set=PAR_62
- 
+  par_61 = 3
+  digout(channel,0)
+  
 
 EVENT:
-  digout(channel, set)
+  digout(channel, 1)
+  CPU_SLEEP(9)
+  digout(channel, 0)
   END

@@ -22,3 +22,10 @@ def mat_scan(start, stop, steps):
         pidmatisse.set_setpoint(k)
         if (msvcrt.kbhit() and (msvcrt.getch() == 'q')): break
         qt.msleep(1.5)
+
+def newflt1_scan(start, stop, steps):
+    for k in linspace(start,stop,steps):
+        print 'f=',k
+        pidnewfocus_lt1.set_setpoint(k)
+        if (msvcrt.kbhit() and (msvcrt.getch() == 'q')): break
+        qt.msleep(1.5)

@@ -242,7 +242,7 @@ class optimize1d_counts(CyclopeanInstrument):
 
     
     def _process_fit(self):
-        print('Get the data')
+        #print('Get the data')
         
         self.set_data('points', self._linescan.get_points()[0])
         qt.msleep(0.1)

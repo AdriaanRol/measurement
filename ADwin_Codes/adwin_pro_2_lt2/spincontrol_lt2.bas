@@ -84,6 +84,7 @@ DIM DATA_23[1] AS LONG AT EM_LOCAL                ' CR counts after sequence
 DIM DATA_24[max_SP_bins] AS LONG AT EM_LOCAL      ' SP counts
 DIM DATA_25[max_RO_dim] AS LONG AT DRAM_EXTERN    ' RO counts
 DIM DATA_26[max_stat] AS LONG AT EM_LOCAL         ' statistics
+DIM DATA_27[max_RO_dim] AS LONG AT DRAM_EXTERN    ' SSRO counts
 
 DIM counter_channel AS LONG
 DIM green_laser_DAC_channel AS LONG
@@ -171,6 +172,10 @@ INIT:
   
   FOR i = 1 TO max_stat
     DATA_26[i] = 0
+  NEXT i
+  
+  FOR i = 1 to max_RO_dim
+    DATA_27[i] = 0
   NEXT i
   
   AWG_done_DI_pattern = 2 ^ AWG_done_DI_channel
@@ -382,6 +387,10 @@ EVENT:
             
             counts = P2_CNT_READ(CTR_MODULE, counter_channel) - old_counts
             old_counts = counts
+            IF (P2_CNT_READ(CTR_MODULE, counter_channel) > 0) THEN
+              DATA_27[i] = DATA_27[i] + 1
+            ENDIF
+            
             PAR_79 = PAR_79 + counts
             i = RO_duration*(1+sweep_index)
             DATA_25[i] = DATA_25[i] + counts

@@ -243,6 +243,10 @@ EVENT:
   endif
 
   if (is_tpqi_running=1) then
+    if (current_cr_time_limit_step=wait_before_tpqi-1) then
+      P2_DIGOUT(DIO_MODULE,5,0) ' PLU reset off
+    ENDIF
+    
     if (current_cr_time_limit_step=wait_before_tpqi) then
       if (count_psb_during_tpqi>0) then
         P2_CNT_ENABLE(CTR_MODULE, 0000b)
@@ -253,11 +257,14 @@ EVENT:
       P2_DIGOUT(DIO_MODULE,6,1)  ' AWG event jump (should be to tpqi sequence element)
       CPU_SLEEP(9)               ' need >= 20ns pulse width; adwin needs >= 9 as arg, which is 9*10ns
       P2_DIGOUT(DIO_MODULE,6,0)
+      
+      
     endif
     
     current_cr_time_limit_step = current_cr_time_limit_step + 1
     
     if (current_cr_time_limit_step > (cr_time_limit_steps+wait_before_tpqi)) then
+      P2_DIGOUT(DIO_MODULE,5,1)  ' PLU reset on
       is_tpqi_running = 0
       do_cr_lt2_check = 1
       do_cr_lt1_check = 1

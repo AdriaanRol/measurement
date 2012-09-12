@@ -39,16 +39,10 @@ class scan(CyclopeanInstrument):
                 type=types.ListType,
                 flags=Instrument.FLAG_GETSET)
          
-        self.add_parameter('linescan_value',
-                type=types.StringType,
-                flags=Instrument.FLAG_GETSET)
-
         self.add_parameter('current_line',
                 type=types.TupleType,
                 flags=Instrument.FLAG_GET)
-
-        #BH30-03-2012 we now need value paramater to distinguish between simple and resonant counting
-       
+ 
 
         self._supported = {
             'get_running': True,
@@ -91,13 +85,7 @@ class scan(CyclopeanInstrument):
 
     def do_get_linescan_px_time(self):
         return self._linescan_px_time
-    
-    def do_get_linescan_value(self):
-        return self._linescan_value
-
-    def do_set_linescan_value(self, val):
-        self._linescan_value = val
-       
+          
     def do_get_current_line(self):
         return self._current_line
  
@@ -195,7 +183,6 @@ class scan(CyclopeanInstrument):
                 [self._current_line]))
         self._linescan.set_px_time(self._linescan_px_time)
         self._linescan.set_steps(self._linescan_steps)
-        self._linescan.set_scan_value(self._linescan_value)
         self._linescan.set_is_running(True)
         return True
 

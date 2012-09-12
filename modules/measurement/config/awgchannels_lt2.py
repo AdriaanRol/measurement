@@ -9,6 +9,11 @@ config['hydraharp'] = {
         'HH_sync' : {
             'AWG_channel' : 'ch2m2',
             'cable_delay' : 0. },
+        'HH_MA1' : {
+            'AWG_channel' : 'ch3m1',
+            'cable_delay' : 0.,
+            'high' : 2.0, },
+
         }
 
 config['hydraharp+adwin'] = {
@@ -66,7 +71,7 @@ config['mw'] = {
 config['ssro'] = {
         'AOM_Newfocus' : {
             'AWG_channel' : 'ch2m1',
-            'high' : 0.4,
+            'high' : 0.8,
             'cable_delay' : 540, },
         'AOM_Matisse' : {
             'AWG_channel' : 'ch2',
@@ -84,37 +89,37 @@ config['rf'] = {
 
 
 config['LDE'] = {
-        'EOM_Matisse' : {
+       'EOM_Matisse' : {
             'AWG_channel' : 'ch4',
             'high' : 1.5,
             'low' : -1.5,
-            'cable_delay' : 132, 
+            'cable_delay' : 234, 
             'default_voltage' : 0.0,
             },
         'EOM_AOM_Matisse' : {
             'AWG_channel' : 'ch4m1',
-            'high' : 0.8,
+            'high' : 1.0,
             'low' : 0.01,
-            'cable_delay' : 283, 
+            'cable_delay' : 445, 
             },
         'AOM_Newfocus' : {
             'AWG_channel' : 'ch2m1',
-            'high' : 0.4,
-            'cable_delay' : 540, 
-            },        
-        'HH_Marker' : {
-            'AWG_channel' : 'ch1m1',
-            'high' : 2.,
-            'low' : 0.,
-            'default_voltage' : 0.0,            
-            'cable_delay' : 0, 
+            'high' : 0.8,
+            'cable_delay' : 525, 
             },
         'PLU_gate' : {
             'AWG_channel' : 'ch4m2',
             'high' : 2.,
             'low' : 0.,
-            'default_voltage' : 2.0,
-            'cable_delay' : 5*5+10, 
+            'default_voltage' : 0.0,
+            'cable_delay' : 153, 
+            },
+        'debug_channel' : {
+            'AWG_channel' : 'ch3m2',
+            'high' : 2.,
+            'low' : 0.,
+            'default_voltage' : 0.0,
+            'cable_delay' : 0, 
             },
         }
 
@@ -130,11 +135,11 @@ config['optical_rabi'] = {
             'AWG_channel' : 'ch4m1',
             'high' : 0.8,
             'low' : 0.01,
-            'cable_delay' : 385, 
+            'cable_delay' : 445, 
             },
         'AOM_Newfocus' : {
             'AWG_channel' : 'ch2m1',
-            'high' : 0.4,
+            'high' : 0.8,
             'cable_delay' : 525, 
             },        
         'HH_Marker' : {
@@ -144,12 +149,6 @@ config['optical_rabi'] = {
             'default_voltage' : 0.0,            
             'cable_delay' : 0, 
             },
-        'PLU_Gate' : {
-            'AWG_channel' : 'ch4m2',
-            'high' : 2,
-             'cable_delay' : 132, 
-            'default_voltage' : 0.0,
-            }
         }
 
 

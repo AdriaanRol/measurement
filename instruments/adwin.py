@@ -8,14 +8,18 @@ import time
 from lib import config
 
 class adwin(Instrument):
-    def __init__(self, name, adwin, processes={}, **kw):
+    def __init__(self, name, adwin, processes={}, 
+            process_subfolder='', 
+            use_cfg=True, **kw):
         Instrument.__init__(self, name, tags=['virtual'])
 
         self.physical_adwin = adwin
-        self.process_dir = qt.config['adwin_programs']
+        self.process_dir = os.path.join(qt.config['adwin_programs'], 
+                process_subfolder)
         self.processes = processes
         self.default_processes = kw.get('default_processes', [])
         self.dacs = kw.get('dacs', {})
+        self.use_cfg = use_cfg
 
         self._dac_voltages = {}
         for d in self.dacs:
@@ -44,28 +48,31 @@ class adwin(Instrument):
         self.add_function('set_simple_counting')
 
         # set up config file
-        cfg_fn = os.path.abspath(os.path.join(qt.config['ins_cfg_path'], name+'.cfg'))
-        if not os.path.exists(cfg_fn):
-            _f = open(cfg_fn, 'w')
-            _f.write('')
-            _f.close()
+        if self.use_cfg:
+            cfg_fn = os.path.abspath(os.path.join(qt.config['ins_cfg_path'], name+'.cfg'))
+            if not os.path.exists(cfg_fn):
+                _f = open(cfg_fn, 'w')
+                _f.write('')
+                _f.close()
 
-        self.ins_cfg = config.Config(cfg_fn)     
-        self.load_cfg()
-        self.save_cfg()
+            self.ins_cfg = config.Config(cfg_fn)     
+            self.load_cfg()
+            self.save_cfg()
 
     ### config management
     def load_cfg(self, set_voltages=False):
-        params = self.ins_cfg.get_all()
-        if 'dac_voltages' in params:
-            for d in params['dac_voltages']:
-                if set_voltages:
-                    self.set_dac_voltage((d, params['dac_voltages'][d]))
-                else:
-                    self._dac_voltages[d] = params['dac_voltages'][d]
+        if self.use_cfg:
+            params = self.ins_cfg.get_all()
+            if 'dac_voltages' in params:
+                for d in params['dac_voltages']:
+                    if set_voltages:
+                        self.set_dac_voltage((d, params['dac_voltages'][d]))
+                    else:
+                        self._dac_voltages[d] = params['dac_voltages'][d]
 
     def save_cfg(self):
-        self.ins_cfg['dac_voltages'] = self._dac_voltages
+        if self.use_cfg:
+            self.ins_cfg['dac_voltages'] = self._dac_voltages
 
     ### end config management
     def boot(self):
@@ -113,7 +120,7 @@ class adwin(Instrument):
         while hasattr(self, funcname):
             funcname += '_'
 
-        def f(timeout=None, stop=True, load=False, 
+        def f(timeout=None, stop=True, load=True, 
                 stop_processes=[], **kw):
 
             """
@@ -246,6 +253,9 @@ class adwin(Instrument):
             a PAR, FPAR or DATA element. What is returned is specified by
             the name of the variable.
 
+            It is also possible to get all pars or fpars belonging to a process, by 
+            setting name = 'par' or 'fpar'
+
             known keywords:
             - start (integer): if DATA is returned, the start index of the
               array. default is 1.
@@ -292,8 +302,15 @@ class adwin(Instrument):
                     return self.physical_adwin.Get_Data_Float(
                             proc['data_float'][name], start, length)
             else:
-                print 'Unknown variable.'
-                return False
+                if name == 'par':
+                     return [ (key, self.physical_adwin.Get_Par(proc['par'][key])) \
+                             for key in proc['par'] ]
+                elif name == 'fpar':
+                    return [ (key, self.physical_adwin.Get_FPar(proc['fpar'][key])) \
+                            for key in proc['fpar'] ]
+                else:
+                    print 'Unknown variable.'
+                    return False
 
         f.__name__ = funcname
         setattr(self, funcname, f)

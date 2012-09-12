@@ -48,7 +48,7 @@
 ' 71 : below CR threshold events
 ' 72 : number of CR checks performed (lt2)
 ' 73 : number of sequence starts
-' 74 : number of non-interrupted sequence runs 
+' 74 : number of sequence runs interrupted
 ' 76 : cumulative counts during repumping
 ' 77 : number of OK signals from LT1
 ' 79 : cumulative LT2 counts in PSB during tpqi sequence
@@ -102,7 +102,7 @@
 #INCLUDE configuration.inc
 
 ' parameters
-DIM DATA_20[20] AS LONG               ' integer parameters
+DIM DATA_20[18] AS LONG               ' integer parameters
 DIM DATA_21[6] AS FLOAT              ' float parameters
 
 ' general variables
@@ -132,15 +132,13 @@ dim cr_check_count_threshold_probe as long      ' C&R threshold for probe after 
 dim repump_steps as long                        ' how long to rempump w/ green, in process cycles (lt2)
 dim current_cr_threshold as long
 dim first_cr_probe_after_lde as integer
-dim cr_after_ssro as integer 
 
 ' remote stuff on lt1
 dim is_cr_lt1_OK, was_cr_lt1_OK as integer
 dim trigger_cr_dio_in_bit as long
 dim trigger_cr_dio_out as long
 dim trigger_ssro_dio_out as long
-dim RO_steps_lt1 as long
-dim cr_check_steps_lt1 as long
+
 ' LDE sequence
 dim max_lde_time as long
 DIM AWG_start_DO_channel AS LONG
@@ -168,11 +166,12 @@ DIM PLU_trigger_received AS LONG
 DIM PLU_state AS LONG
 
 INIT:
+
   ' general
   mode = 0
   remote_mode = 0
   timer = 0
-  cr_after_ssro = 0
+  
   ' init statistics variables
   for i=1 to max_hist_cts
     DATA_7[i] = 0
@@ -202,12 +201,9 @@ INIT:
   
   ' remote stuff
   is_cr_lt1_OK = 0
-  was_cr_lt1_OK = -1
   trigger_cr_dio_in_bit = data_20[15]
   trigger_cr_dio_out = data_20[14]
   trigger_ssro_dio_out = data_20[16]
-  RO_steps_lt1 = data_20[19]
-  cr_check_steps_lt1 = data_20[20] 
   
   ' LDE sequence
   max_lde_time = data_20[11]
@@ -245,19 +241,19 @@ INIT:
   par_76 = 0                      ' cumulative counts during repumping
   par_77 = 0                      ' number of OK signals from LT1
   par_79 = 0                      ' cumulative LT2 counts in PSB during lde sequence
-  Par_80 = 0                      ' number of start cr triggers to LT1
-  par_61 = 0                      ' number of start ssro triggers to LT1
+  Par_80 = 0                      ' number of start triggers to LT1
   par_67 = 0                      ' number of readouts performed
   par_65 = 0                      ' Number of raw edges detected on PLU DI
   par_60 = 0
-
-  par_62 = 0                      'debug par
-  par_63 = 0                      'debug par
-  par_64 = 0                      'debug par
+  par_61 = 0
+  par_62 = 0
+  par_63 = 0
+  
   
   P2_DAC(DAC_MODULE, green_aom_channel, 3277*green_off_voltage+32768) ' turn off green
   P2_DAC(DAC_MODULE, ex_aom_channel, 32768)
   P2_DAC(DAC_MODULE, a_aom_channel, 32768)
+  
   P2_CNT_ENABLE(CTR_MODULE, 0000b)'turn off all counters
   P2_CNT_MODE(CTR_MODULE, counter,00001000b) 'configure counter
   P2_Digprog(DIO_MODULE, 13)      'configure DIO 08:15 as input, all other ports as output
@@ -267,13 +263,13 @@ INIT:
   ' PLU-DO is high
   P2_DIGOUT(DIO_MODULE,PLU_arm_DO_channel,1)
   
+  
   ' P2_DIGOUT(DIO_MODULE,6,0)
 
 EVENT:
   cr_check_count_threshold_prepare = par_75
   cr_check_count_threshold_probe = par_68
   
-
   DIO_register = P2_DIGIN_EDGE(DIO_MODULE,1)
   PLU_trigger_received = ((DIO_register) AND (PLU_success_dio_in_bit))
   if (PLU_trigger_received >0) then
@@ -281,39 +277,33 @@ EVENT:
     inc(RO_event_idx) 
   endif
   
-  if (((DIO_register) AND (trigger_cr_dio_in_bit)) > 0) then
-    inc(par_64)
-  endif
-  
-
   if (par_67 = max_readouts) then
     end
   endif
   
   ' If only one setup is used, remote_mode may be set to 2.
- 
+  remote_mode = 2
   
   selectcase remote_mode
     case 0 'send LT1 CR start signal
       Inc(Par_80)
       P2_DIGOUT(DIO_MODULE,trigger_cr_dio_out,1) ' trigger lt1 do to CR check
       remote_mode = 1
-      
+
     case 1 'waiting for LT1 CR ok signal
-      if (((DIO_register) AND (trigger_cr_dio_in_bit)) > 0) then
+      was_cr_lt1_OK = is_cr_lt1_OK
+      is_cr_lt1_OK = ((P2_DIGIN_LONG(DIO_MODULE)) AND (trigger_cr_dio_in_bit))
+      if ((was_cr_lt1_OK = 0) and (is_cr_lt1_OK > 0)) then
         remote_mode = 2
         P2_DIGOUT(DIO_MODULE,trigger_cr_dio_out,0) ' remover HI-trigger for lt1
         Inc(par_77)
-        
-      endif   
-  
-   
+      endif    
   endselect
 
   selectcase mode
     case 0 'do local charge and resonance check
       if (timer = 0) then
-
+        inc(par_60)
         P2_DIGOUT(DIO_MODULE,PLU_arm_DO_channel,1)
         
         P2_CNT_ENABLE(CTR_MODULE, 0000b)
@@ -324,53 +314,40 @@ EVENT:
         P2_DAC(DAC_MODULE, a_aom_channel, 3277*a_cr_voltage+32768)
       endif
 
-      if (timer >= cr_check_steps) then
+      if (timer = cr_check_steps) then
         P2_CNT_LATCH(CTR_MODULE, 1111b)
         current_cr_check_counts = P2_CNT_READ_LATCH(CTR_MODULE, counter)
+        DATA_23[RO_event_idx] = current_cr_check_counts
         par_70 = par_70 + current_cr_check_counts
-        
+        Inc(par_72)
 
         P2_CNT_ENABLE(CTR_MODULE, 0000b)
         P2_CNT_CLEAR(CTR_MODULE,  1111b) ' clear counter
-        
-        if (cr_after_ssro > 0) then 'this is to keep sync between the adwins after SSRO and CR_after_SSRO
-          DATA_23[RO_event_idx] = current_cr_check_counts
+
+        if (current_cr_check_counts < current_cr_threshold) then
+          mode = 1
+          timer = -1
+          Inc(par_71)
+        else
           P2_DAC(DAC_MODULE, ex_aom_channel, 32768) ' turn off the red lasers
           P2_DAC(DAC_MODULE, a_aom_channel, 32768)
-          if ((timer > cr_check_steps ) and (timer > cr_check_steps_lt1)) then ' wait for both adwins to be finished with cr after ssro
-            remote_mode = 0
-            cr_after_ssro = 0
-            timer = -1
-            Inc(par_60)
-          endif
-        else
-          Inc(par_72)
-          if (current_cr_check_counts < current_cr_threshold) then
-            mode = 1
-            timer = -1
-            Inc(par_71)
-          else
-            P2_DAC(DAC_MODULE, ex_aom_channel, 32768) ' turn off the red lasers
-            P2_DAC(DAC_MODULE, a_aom_channel, 32768)
-            mode = 2
-            timer = -1
-            current_cr_threshold = cr_check_count_threshold_probe
-          endif
-
-          if (current_cr_check_counts < max_hist_cts) then
-            if (first_cr_probe_after_lde > 0) then
-              Inc(DATA_7[current_cr_check_counts+1])
-            endif
-            Inc(DATA_8[current_cr_check_counts+1])
-          endif
-        
-          first_cr_probe_after_lde = 0
+          mode = 2
+          timer = -1
+          current_cr_threshold = cr_check_count_threshold_probe
         endif
-      endif
-      
+
+        if (current_cr_check_counts < max_hist_cts) then
+          if (first_cr_probe_after_lde > 0) then
+            Inc(DATA_7[current_cr_check_counts+1])
+          endif
+          Inc(DATA_8[current_cr_check_counts+1])
+        endif
         
+        first_cr_probe_after_lde = 0
+      endif
 
     case 1 'do local repumping
+      inc(par_61)
       if (timer = 0) then
         P2_CNT_ENABLE(CTR_MODULE, 0000b)
         P2_CNT_CLEAR(CTR_MODULE,  1111b) ' clear counter
@@ -388,7 +365,7 @@ EVENT:
       endif
 
     case 2 'local CR OK, wait for remote
-
+      inc(par_62)
       if (remote_mode = 2) then
         mode = 3
         timer = -1
@@ -397,7 +374,8 @@ EVENT:
          
     case 3 ' run LDE sequence  
       P2_DIGOUT(DIO_MODULE,PLU_arm_DO_channel,0)
-
+      
+      inc(par_63)
       
       if (timer = 0) then        
         P2_DIGOUT(DIO_MODULE,AWG_start_DO_channel,1)  ' AWG trigger
@@ -430,7 +408,6 @@ EVENT:
             
       if (timer = wait_before_RO) then
         P2_DIGOUT(DIO_MODULE,trigger_ssro_dio_out,1) ' trigger lt1 do to SSRO
-        inc(par_61)
         remote_mode = 3
         
         P2_CNT_CLEAR(CTR_MODULE,  counter_pattern)    'clear counter
@@ -453,15 +430,12 @@ EVENT:
         
         data_22[RO_event_idx] = P2_CNT_READ(CTR_MODULE, counter)
         P2_CNT_ENABLE(CTR_MODULE, 0)
+        
         'inc(RO_event_idx)  => moved to edge detection
-
-      endif
-      if ((timer > wait_before_RO+RO_steps) and (timer > wait_before_RO+RO_steps_lt1)) then ' making sure that SSRO is finished before new round starts
         mode = 0
-        cr_after_ssro = 1
+        remote_mode = 0
         timer = -1
       endif
-          
       
   endselect
   
