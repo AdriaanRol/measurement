@@ -1,5 +1,6 @@
 import qt
 import data
+import numpy as np
 from measurement.measurement import Measurement
 import measurement.PQ_measurement_generator_v2 as pqm
 import msvcrt
@@ -14,10 +15,10 @@ mw_power_lt2 = -12   #in dBm
 int_time = 30       #in ms
 reps = 10
 
-lt1 = False
+lt1 = True
 
 #generate list of frequencies
-f_list = linspace(start_f*1e9, stop_f*1e9, steps)
+f_list = np.linspace(start_f*1e9, stop_f*1e9, steps)
 
 if lt1:
     ins_smb = qt.instruments['SMB_100_lt1']

@@ -10,9 +10,9 @@ from adwin import adwin
 import measurement.config.adwins as adwinscfg
 
 class adwin_lt1(adwin):
-    def __init__(self, name, **kw):
+    def __init__(self, name, physical_adwin='physical_adwin_lt1', **kw):
         adwin.__init__(self, name, 
-                adwin = qt.instruments['physical_adwin_lt1'], 
+                adwin = qt.instruments[physical_adwin], 
                 processes = adwinscfg.config['adwin_lt1_processes'],
                 default_processes = ['counter', 'set_dac', 'set_dio', 'linescan',
                     'DIO_test'], 

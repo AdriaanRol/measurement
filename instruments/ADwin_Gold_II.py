@@ -74,7 +74,7 @@ class ADwin_Gold_II(Instrument): #1
         ErrorMsg=c_int32(0)
         self._adwin32.e_ADBload(filename,self._address,0,ctypes.byref(ErrorMsg))
         if ErrorMsg.value != 0:
-            logging.warning(__name__ + ' : error in ADwin.Load: %s'%ErrorMsg.value)
+            logging.warning(__name__ + ' : error in ADwin.Load: %s, while loading %s' %(ErrorMsg.value,filename))
 
     def Get_Error_Text(self, ErrorCode):
         text = ctypes.create_string_buffer(256)

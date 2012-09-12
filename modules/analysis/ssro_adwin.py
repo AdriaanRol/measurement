@@ -38,8 +38,15 @@ PARAM_CYCLE_DURATION = 18
 def run_single(folder='', ms=0, index=0):
     if folder == "":
         folder = os.getcwd()
+        
+    if index < 10:
+        SUFFIX = '00'+str(index)
+    elif index < 100:
+        SUFFIX = '0'+str(index)
+    else:
+        SUFFIX = str(index)
 
-    basepath = os.path.join(folder, PREFIX+'-'+str(index))
+    basepath = os.path.join(folder, PREFIX+'-'+SUFFIX)
     params = load(basepath+'_'+PARAMS_SUFFIX+'.npz')
 
     reps    = params['par_long'][PARAM_REPS]
@@ -52,19 +59,26 @@ def run_single(folder='', ms=0, index=0):
     autoanalyze_single_ssro(rodata, spdata, crdata, basepath, ms=ms, 
             binsize=binsize, reps=reps)
 
-def run_all(folder='', altern=True):
+def run_all(folder='', altern=True,index_nr=3):
     if folder == "":
         folder = os.getcwd()
+        
+    if index_nr ==3:
+        SUFFIX = '00'
+    elif index_nr ==2:
+        SUFFIX = '0'
+    else:
+        SUFFIX = ''
 
     allfiles = os.listdir(folder)
     rofiles = [ f for f in allfiles if RO_SUFFIX in f ]
     for i in range(len(rofiles)):
         ms = 1 if (i%2 and altern) else 0
-        run_single('',ms,i)
+        run_single(folder,ms,i)
 
         if altern and i%2:
-            f1 = PREFIX+'-%d_fid_vs_ROtime.npz' % (i)
-            f0 = PREFIX+'-%d_fid_vs_ROtime.npz' % (i-1)
+            f1 = folder+'\\'+PREFIX+'-'+SUFFIX+'%d_fid_vs_ROtime.npz' % (i)
+            f0 = folder+'\\'+PREFIX+'-'+SUFFIX+'%d_fid_vs_ROtime.npz' % (i-1)
             t,f,ferr,fig = fidelities(f0,f1)
             np.savetxt('totalfid-%d_+_%d.dat' % (i-1, i),(t,f,ferr))
             fig.savefig('totalfid-%d_+_%d.png' % (i-1, i))
@@ -82,15 +96,17 @@ def autoanalyze_single_ssro(rodata, spdata, crdata, save_basepath,
 
     if stop == 0:
         stop = rodata['time'][-1]/1e3
+        sp_stop = spdata['time'][-1]/1e3
     #print rodata['time'][-1]/1e3
     #print stop
     lastbin = int(stop/binsize)
+    sp_lastbin = int(stop/binsize)
     #print lastbin
     t0 = time.time()
     ts = timestamp()
 
     rocounts = rodata['counts']  #.transpose()
-
+    spcounts = spdata['counts']
     info = '' # will be populated with information that is written to a file
     info = """Analyze SSRO measurement:
 
@@ -112,6 +128,11 @@ Measurement results:
     cpsh_vs_ROtime = """# columns:
 # - time
 # - counts per shot
+"""
+
+    cnts_vs_SPtime = """# columns:
+# - time
+# - counts
 """
 
     fig1 = plt.figure(figsize=(16,12))
@@ -139,8 +160,14 @@ Measurement results:
     ### spin relaxation during readout
     ro_time = rodata['time'][:lastbin] # create time axis [us]
     ro_countrate = sum(rocounts[:,:lastbin], axis=0) / (binsize*1e-6*reps) # [Hz]
+    sp_time = spdata['time']
+    sp_countrate = spcounts / (binsize*1e-6*reps) # [Hz] 
+
     savetxt(save_basepath + '_ro_countrate.dat',
          array([ro_time, ro_countrate]).transpose())
+    savetxt(save_basepath + '_sp_countrate.dat',
+         array([sp_time,sp_countrate]).transpose())
+            #array([sp_time, sp_countrate]).transpose())
 
     ax = plt.subplot(222)
     # ax.set_yscale('log') 

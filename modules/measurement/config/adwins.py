@@ -455,6 +455,19 @@ config['adwin_lt1_processes'] = {
                 'dio_val' : 62,
                 },
             },
+        
+        'gate_modulation' :  {
+            'index' : 7, 
+            'file' : 'gate_modulation.TB7',
+            'par' : {
+                'modulation_on' : 14,
+                'dac_channel' : 12,
+                'modulation_period' : 13, #half period ms
+                },
+            'fpar' : {
+                'modulation_voltage' : 12,
+                },
+            },
                   
 #                'dac_pulse' : {
 #                     'index' : 6,

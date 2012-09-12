@@ -1,12 +1,9 @@
 import numpy as np
 from numpy import *
 from scipy import optimize
-import pylab
+import logging
 
-from matplotlib import pyplot
 
-# own tools
-import tools.plot as plot
 
 
 # taken from the scipy fitting cookbook:
@@ -86,6 +83,10 @@ def fit1d(x, y, fitmethod, *arg, **kw):
         print_fit_result(result)
 
     if do_plot:
+        from matplotlib import pyplot
+        # own tools
+        import tools.plot as plot
+        logging.warning('matplotlib imported')
         if newfig:
             p = plot.Figure()
             ax = pyplot.subplot(111)

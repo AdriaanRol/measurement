@@ -20,14 +20,14 @@ from lib import config
 
 
 # needed instruments
-# ins_pm = qt.instruments['powermeter']
-# ins_adwin = qt.instruments['adwin']
+# _ins_pm = qt.instruments['powermeter']
+# _ins_adwin = qt.instruments['adwin']
 # ins_awg = qt.instruments['AWG']
 
 class AOM(Instrument):
 
-    def __init__(self, name, use_adwin=qt.instruments['adwin'], 
-            use_pm = qt.instruments['powermeter']):
+    def __init__(self, name, use_adwin='adwin', 
+            use_pm='powermeter'):
         Instrument.__init__(self, name)
         
         self.add_parameter('wavelength',
@@ -126,8 +126,8 @@ class AOM(Instrument):
                            flags=Instrument.FLAG_GETSET,
                            minval=0,maxval=31)
         
-        self.ins_adwin=use_adwin
-        self.ins_pm=use_pm
+        self._ins_adwin=qt.instruments[use_adwin]
+        self._ins_pm=qt.instruments[use_pm]
 
        
         # set defaults
@@ -158,7 +158,7 @@ class AOM(Instrument):
             _f.write('')
             _f.close()
 
-        self.ins_cfg = config.Config(cfg_fn)     
+        self._ins_cfg = config.Config(cfg_fn)     
         self.load_cfg()
         self.save_cfg()
 
@@ -168,9 +168,9 @@ class AOM(Instrument):
         
     
     def load_cfg(self):
-        params_from_cfg = self.ins_cfg.get_all()
+        params_from_cfg = self._ins_cfg.get_all()
         for p in params_from_cfg:
-            val = self.ins_cfg.get(p)
+            val = self._ins_cfg.get(p)
             if type(val) == unicode:
                 val = str(val)
             self.set(p, value=val)
@@ -179,7 +179,7 @@ class AOM(Instrument):
         parlist = self.get_parameters()
         for param in parlist:
             value = self.get(param)
-            self.ins_cfg[param] = value
+            self._ins_cfg[param] = value
 
     
     def apply_voltage(self, U):
@@ -212,7 +212,7 @@ class AOM(Instrument):
                      }
             apply[channel](U)
         elif controller in ('ADWIN'):
-            self.ins_adwin.set_dac_voltage([channel,U])
+            self._ins_adwin.set_dac_voltage([channel,U])
             #print 'Applying voltage: channel %s, voltage %s'%(channel,U)
         else:
             print('Error: unknown AOM controller %s'%controller)
@@ -241,7 +241,7 @@ class AOM(Instrument):
                      }
             return get_ch[channel]()
         elif controller in ('ADWIN'):
-            return self.ins_adwin.get_dac_voltage(channel)
+            return self._ins_adwin.get_dac_voltage(channel)
         else:
             print('Error: unknown AOM controller %s'%controller)
         return
@@ -252,9 +252,9 @@ class AOM(Instrument):
         y = zeros(steps,dtype = float)
         
         self.apply_voltage(0)
-        self.ins_pm.set_wavelength(self._wavelength*1e9)
+        self._ins_pm.set_wavelength(self._wavelength*1e9)
         time.sleep(2)
-        bg = self.ins_pm.get_power()
+        bg = self._ins_pm.get_power()
 
         print 'background power: %.4f uW' % (bg*1e6)
 
@@ -269,7 +269,7 @@ class AOM(Instrument):
             x[a] = a*(V_max-V_min)/float(steps-1)+V_min
             self.apply_voltage(x[a])
             time.sleep(1)
-            y[a] = self.ins_pm.get_power() - bg
+            y[a] = self._ins_pm.get_power() - bg
             
             print 'measured power at %.2f V: %.4f uW' % \
                     (a*(V_max-V_min)/float(steps-1)+V_min, y[a]*1e6)

@@ -222,8 +222,6 @@ class laser_scan(Instrument):
                 self._update_wm_frequency)
         gobject.timeout_add(self._data_update_interval,
                 self._update_data)
-
-
         self._adwin.linescan(['newfocus_frq'], [self._StartVoltage],
                 [self._StopVoltage], self._ScanSteps, self._IntegrationTime,
                 value='counts+suppl')
