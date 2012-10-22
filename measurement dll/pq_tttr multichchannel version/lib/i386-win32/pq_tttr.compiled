@@ -1,0 +1,5 @@
+<?xml version="1.0"?>
+<CONFIG>
+  <Compiler Value="C:\lazarus\fpc\2.4.2\bin\i386-win32\fpc.exe" Date="1047028774"/>
+  <Params Value=" -MObjFPC -Scghi -O1 -gl -vewnhi -l &quot;-FiD:\measuring\user\measurement dll\pq_tttr multichchannel version\lib\i386-win32&quot; &quot;-FuD:\measuring\user\measurement dll\pq_tttr multichchannel version\&quot; -Fu. &quot;-FUD:\measuring\user\measurement dll\pq_tttr multichchannel version\lib\i386-win32\&quot; -opq_tttr.dll pq_tttr.pas"/>
+</CONFIG>

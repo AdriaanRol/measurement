@@ -61,6 +61,7 @@ class Ui_Panel(object):
         self.gridLayout.addWidget(self.label_7, 2, 8, 1, 2)
         self.pxtime = QtGui.QSpinBox(Panel)
         self.pxtime.setMinimum(1)
+        self.pxtime.setMaximum(10000)
         self.pxtime.setObjectName("pxtime")
         self.gridLayout.addWidget(self.pxtime, 2, 10, 1, 1)
         self.label_2 = QtGui.QLabel(Panel)
