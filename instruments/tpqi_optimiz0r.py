@@ -8,6 +8,7 @@ from instrument import Instrument
 from analysis import fit, common
 from lib import config
 import time
+import msvcrt
 
 class tpqi_optimiz0r(Instrument):
 
@@ -25,22 +26,8 @@ class tpqi_optimiz0r(Instrument):
         self.add_parameter('read_interval',
                 type=types.FloatType,
                 unit='s',
-                flags=Instrument.FLAG_GETSET)        
-        
-        self.add_parameter('tpqi_per_sec_min',
-                type=types.FloatType,
-                unit='/s',
-                flags=Instrument.FLAG_GETSET)   
-        self.add_parameter('cr_checks_per_sec_min',
-                type=types.FloatType,
-                unit='/s',
-                flags=Instrument.FLAG_GETSET)    
-        self.add_parameter('fraction_failed_min',
-                type=types.FloatType,
-                unit='%',
                 flags=Instrument.FLAG_GETSET)
-        
-        
+
         self.add_parameter('is_running',
                 type=types.BooleanType,
                 flags=Instrument.FLAG_GETSET)
@@ -51,14 +38,54 @@ class tpqi_optimiz0r(Instrument):
         self.add_function('optimize_newfocus_steps')
         self.add_function('optimize_newfocus_steps')
         self.add_function('optimize_gate')
+        self.add_function('set_single_setting')
+        self.add_function('get_single_setting')
         
         self.set_is_running(False)
-        self.set_read_interval(10)
-        self.set_tpqi_per_sec_min(300) #if the tpqi starts per second are more than this, no optimisation is done
-        self.set_cr_checks_per_sec_min(100) #if the number of cr_checks per second on a setup is less than this, no optimisation is done on that setup
-        self.set_fraction_failed_min(0.1) #if the fraction of failed cr checks is less than this, no optimisation is done on that setup
-        
-        
+        self.set_read_interval(60) #s
+        self._settings={ 'nf_wait_time': 0.6, #s
+                            'nf_stepsize' : 0.01, #GHz
+                            'min_setpoint_nf_lt2' : 66.8, #GHz #NOTE
+                            'max_setpoint_nf_lt2' : 67.2, #GHz #NOTE
+                            'min_setpoint_nf_lt1' : 65.7, #GHz #NOTE
+                            'max_setpoint_nf_lt1' : 66.3, #GHz #NOTE
+                            'nf_scan_range' : 0.1,
+
+                            'mat_wait_time' : 1, #s
+                            'mat_stepsize' : 0.02, #GHz
+                            'mat_scan_range' : 0.3, #GHz
+                            'min_setpoint_mat' : 62.3, #GHz #NOTE
+                            'max_setpoint_mat' : 63.1, #GHz #NOTE
+                             
+                            'min_gate_voltage' : 17.5, #V #NOTE
+                            'max_gate_voltage' : 19.5, #V #NOTE  
+                            
+                            'optimize_nf_wait_time' : 20, #s
+                            'optimize_mat_wait_time' : 20, #s
+                            'optimize_gate_wait_time' : 120, #s
+                                
+                            'tpqi_per_sec_min' : 75, # Threshold  #NOTE 
+                            'fraction_failed_min' : 0.9,
+                            'cr_checks_per_sec_min': 100,
+                            
+                            'nf_optimize_threshold_lt1' : 22,#NOTE
+                            'nf_optimize_threshold_lt2' : 5, #NOTE
+                            'mat_optimize_threshold_lt1' : 10, #NOTE
+                            'mat_optimize_threshold_lt2' : 1.8, #NOTE
+
+                            'max_waiting_for_values' : 10, #the program is stopped email sent. in units of 10 sec
+                            'max_waiting_reset_gate' : 6, #the gate is reset to the middelemost value when it is higher than the middle value, when waiting for values longer than this in units of 10 s 
+                            'max_opt_failed' : 10, #program is stopped, email is sent
+
+                            'send_email' : False,
+
+                            'lt1_opt' : True,
+                            'lt2_opt' : True,
+                            'opt_nf'  : True,
+                            'opt_gate' : True,
+
+                            'gate_factor': 2., # Volts per GHz detuned #NOTE
+        }
         # override from config       
         cfg_fn = os.path.abspath(
                 os.path.join(qt.config['ins_cfg_path'], name+'.cfg'))
@@ -98,69 +125,69 @@ class tpqi_optimiz0r(Instrument):
     def do_set_read_interval(self, val):
         self._read_interval = val
         
-    def do_get_tpqi_per_sec_min(self):
-        return self._tpqi_per_sec_min
-
-    def do_set_tpqi_per_sec_min(self, val):
-        self._tpqi_per_sec_min = val
-
-    def do_get_cr_checks_per_sec_min(self):
-        return self._cr_checks_per_sec_min
-
-    def do_set_cr_checks_per_sec_min(self, val):
-        self._cr_checks_per_sec_min = val
-
-    def do_get_fraction_failed_min(self):
-        return self._fraction_failed_min
-
-    def do_set_fraction_failed_min(self, val):
-        self._fraction_failed_min = val    
+    def get_single_setting(self, setting):
+        try:
+            return self._settings[setting]
+        except KeyError:
+            print 'unknown setting', setting
+            return None
+        
+    
+    def _gss(self, setting):
+        return self.get_single_setting(setting)
+        
+    def set_single_setting(self, setting, val):
+        try:
+            cur_val=self._settings[setting]
+            self._settings[setting] = val
+        except KeyError:
+            print 'unknown setting', setting
         
     #------------end get set        
                
     #--------------------------------------- public functions
+
+    def init_freq_settings(self):
+        
+        self._settings['min_setpoint_nf_lt1']=\
+                self._ins_pidnewfocus_lt1.get_setpoint()-0.2
+        self._settings['max_setpoint_nf_lt1']=\
+                self._ins_pidnewfocus_lt1.get_setpoint()+0.2
+
+        self._settings['min_setpoint_nf_lt2']=\
+                self._ins_pidnewfocus.get_setpoint()-0.2
+        self._settings['max_setpoint_nf_lt2']=\
+                self._ins_pidnewfocus.get_setpoint()+0.2
+
+        self._settings['min_setpoint_mat']=\
+                self._ins_pidmatisse.get_setpoint()-0.4
+        self._settings['max_setpoint_mat']=\
+                self._ins_pidmatisse.get_setpoint()+0.4
+
+        self._settings['min_gate_voltage']=\
+                self._ins_adwin.get_gate_modulation_var('gate_voltage')*2.0-1.5
+        self._settings['max_gate_voltage']=\
+                min(self._ins_adwin.get_gate_modulation_var('gate_voltage')*2.0+1.5,20)
+
+
     def start(self,init_only=False,**kw):
     
         #pars init can be changed during start
-        self._par_nf_wait_time = kw.get('nf_wait_time',0.6) #s
-        self._par_nf_stepsize = kw.get('nf_stepsize',0.01) #GHz
-        self._par_min_setpoint_nf_lt2 = kw.get('min_setpoint_nf_lt2',65.) #GHz
-        self._par_max_setpoint_nf_lt2 = kw.get('max_setpoint_nf_lt2',66.) #GHz
-        self._par_min_setpoint_nf_lt1 = kw.get('min_setpoint_nf_lt1',63.) #GHz
-        self._par_max_setpoint_nf_lt1 = kw.get('max_setpoint_nf_lt1',64.) #GHz
-        self._par_nf_scan_range = kw.get('nf_scan_range',0.1)
-
-        self._par_mat_wait_time = kw.get('mat_wait_time',1) #s
-        self._par_mat_stepsize = kw.get('mat_stepsize',0.02) #GHz
-        self._par_mat_scan_range = kw.get('mat_scan_range',0.3) #GHz
-        self._par_min_setpoint_mat = kw.get('min_setpoint_mat',62.) #GHz
-        self._par_max_setpoint_mat = kw.get('max_setpoint_mat',63.) #GHz
+        for key in kw:
+            self.set_single_setting(key,kw[key])
         
-        self._par_min_gate_voltage = kw.get('min_gate_voltage',3.0) #V
-        self._par_max_gate_voltage = kw.get('max_gate_voltage',6.0) #V     
-        
-        self._par_optimize_nf_wait_time = kw.get('nf_wait_time',10) #s
-        self._par_optimize_mat_wait_time = kw.get('mat_wait_time',20) #s
-        self._par_optimize_gate_wait_time = kw.get('gate_wait_time',20) #s
-
-        self._par_nf_optimize_threshold_lt1 = kw.get('nf_threshold_lt1',4)
-        self._par_nf_optimize_threshold_lt2 = kw.get('nf_threshold_lt2',2)
-        self._par_mat_optimize_threshold_lt1 = kw.get('mat_threshold_lt1',4)
-        self._par_mat_optimize_threshold_lt2 = kw.get('mat_threshold_lt2',2)
-
-        self._par_max_waiting_for_values = kw.get('max_waiting_for_values',6) # if zero cr checks are performed for this time, the program is stopped. in units of 10 sec
-    
-        self._lt2_opt_only = kw.get('optimize_lt2_only',False)
-
         self._stop_pressed=False
         self._prev_raw_values=zeros(9)
         self._plt=plt.plot() 
         self._optimize_running=False
         self._wait_index=0
+        self._opt_failed_idx=0
+        self._lt2_pos_opt=False
         self._get_input_values()
         if not(init_only):
             self.set_is_running(True)
-            self._timer=gobject.timeout_add(int(self._read_interval*1e3), self._check_threshold)
+            self._timer=gobject.timeout_add(int(self._read_interval*1e3),\
+                    self._check_threshold)
     
     def stop(self):
         self._stop_pressed=True
@@ -181,22 +208,25 @@ class tpqi_optimiz0r(Instrument):
         dt, cr_checks_lt1, cr_cts_lt1, cr_failed_lt1, cr_checks_lt2,\
                 cr_cts_lt2, cr_failed_lt2, tpqi_starts, tail_cts = self._get_input_values()
 
-        print 'dt, cr_checks_lt1, cr_cts_lt1, cr_failed_lt1, cr_checks_lt2, cr_cts_lt2, cr_failed_lt2, tpqi_starts, tail_cts'
-        print dt, cr_checks_lt1, cr_cts_lt1, cr_failed_lt1, cr_checks_lt2, cr_cts_lt2, cr_failed_lt2, tpqi_starts, tail_cts
+        #print 'dt, cr_checks_lt1, cr_cts_lt1, cr_failed_lt1, cr_checks_lt2, cr_cts_lt2, cr_failed_lt2, tpqi_starts, tail_cts'
+        #print dt, cr_checks_lt1, cr_cts_lt1, cr_failed_lt1, cr_checks_lt2, cr_cts_lt2, cr_failed_lt2, tpqi_starts, tail_cts
+        print 'starts avg' , tpqi_starts/dt , '\n'
 
-        if(tpqi_starts/dt < self._tpqi_per_sec_min):
-            if ((cr_checks_lt1/dt > self._cr_checks_per_sec_min) and \
-                    (cr_failed_lt1/cr_checks_lt1 > self._fraction_failed_min)):
+        if(tpqi_starts/dt < self._gss('tpqi_per_sec_min')):
+            if ((cr_checks_lt1/dt > self._gss('cr_checks_per_sec_min')) and \
+                    (cr_failed_lt1/cr_checks_lt1 > self._gss('fraction_failed_min'))):
                 print 'Optimize LT1'
                 lt1_optimize = True
-            if ((cr_checks_lt2/dt > self._cr_checks_per_sec_min) and \
-                    (cr_failed_lt2/cr_checks_lt2 > self._fraction_failed_min)):
+            if ((cr_checks_lt2/dt > self._gss('cr_checks_per_sec_min')) and \
+                    (cr_failed_lt2/cr_checks_lt2 > self._gss('fraction_failed_min'))):
                 print 'Optimize LT2'
                 lt2_optimize = True
-        if self._lt2_opt_only:lt1_optimize=False
+                
+        if not(self._gss('lt1_opt')):lt1_optimize=False
+        if not(self._gss('lt2_opt')):lt2_optimize=False
         
         if (lt1_optimize or lt2_optimize):    
-            wait_time_after_optimize = self._optimize(lt1_optimize, lt2_optimize)
+            wait_time_after_optimize = self._optimize(lt1_optimize, lt2_optimize,cr_lt1=1.*cr_cts_lt1/cr_checks_lt1,cr_lt2=1.*cr_cts_lt2/cr_checks_lt2)
             self._wait_after_optimize(wait_time_after_optimize)
             #debug
             #self.stop()
@@ -206,13 +236,13 @@ class tpqi_optimiz0r(Instrument):
     def _get_input_values(self):
         self._raw_values=zeros(9)    
         self._raw_values+=[time.time(),
-                         1,#self._ins_adwin_lt1.get_remote_tpqi_control_var('get_noof_cr_checks'),
-                         1,#self._ins_adwin_lt1.get_remote_tpqi_control_var('get_cr_check_counts'),
-                         1,#self._ins_adwin_lt1.get_remote_tpqi_control_var('get_cr_below_threshold_events'),
-                         self._ins_adwin.get_remote_tpqi_control_var('get_noof_cr_checks'),
-                         self._ins_adwin.get_remote_tpqi_control_var('get_cr_check_counts'),
-                         self._ins_adwin.get_remote_tpqi_control_var('get_cr_below_threshold_events'),
-                         self._ins_adwin.get_remote_tpqi_control_var('get_noof_tpqi_starts'),
+                         self._ins_adwin_lt1.get_remote_tpqi_control_var('get_noof_cr_checks') if self._gss('lt1_opt') else 1,
+                         self._ins_adwin_lt1.get_remote_tpqi_control_var('get_cr_check_counts') if self._gss('lt1_opt') else 1,
+                         self._ins_adwin_lt1.get_remote_tpqi_control_var('get_cr_below_threshold_events') if self._gss('lt1_opt') else 1,
+                         self._ins_adwin.get_remote_tpqi_control_var('get_noof_cr_checks') if self._gss('lt2_opt') else 1,
+                         self._ins_adwin.get_remote_tpqi_control_var('get_cr_check_counts') if self._gss('lt2_opt') else 1,
+                         self._ins_adwin.get_remote_tpqi_control_var('get_cr_below_threshold_events') if self._gss('lt2_opt') else 1,
+                         self._ins_adwin.get_remote_tpqi_control_var('get_noof_tpqi_starts') if self._gss('lt2_opt') else 1,
                          1]#self._ins_adwin.get_remote_tpqi_control_var('get_noof_tailcts')]
         
         diff=self._raw_values-self._prev_raw_values
@@ -223,11 +253,15 @@ class tpqi_optimiz0r(Instrument):
         self._prev_raw_values =  array(self._raw_values)
 
         if (cr_checks_lt1 <= 0 and cr_checks_lt2 <= 0 and dt >= 0.2): 
-            print 'no cr checks, waiting 10 s, wait index:' ,  self._wait_index
+            print 'no cr checks, waiting 10 s, press q to quit. wait index:' ,  self._wait_index
             self._wait_index = self._wait_index + 1
             qt.msleep(10) #wait for the next measurement cycle to begin
-            if(self._wait_index > self._par_max_waiting_for_values):
-                print 'Waiting time for cr_checks exceeded, quitting...'
+            if (self._wait_index > self._gss('max_waiting_reset_gate')):
+                self._lt2_pos_opt=True
+            if (self._wait_index > self._gss('max_waiting_for_values')) or \
+                            (not(self.get_is_running())) or \
+                            (msvcrt.kbhit() and msvcrt.getch() == 'q'):
+                self._send_mail('Waiting time for cr_checks exceeded or q pressed')
                 self.stop()
                 return 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0
             else:    
@@ -238,33 +272,62 @@ class tpqi_optimiz0r(Instrument):
         return  dt, cr_checks_lt1, cr_cts_lt1, cr_failed_lt1, cr_checks_lt2, cr_cts_lt2, cr_failed_lt2, tpqi_starts, tail_cts
 
         
-    def _optimize(self,lt1_optimize, lt2_optimize):
+    def _optimize(self,lt1_optimize, lt2_optimize, cr_lt1=100, cr_lt2=100):
         #debug
         #self.stop()
         #return
-        
+        if lt2_optimize and self._lt2_pos_opt:
+            self._lt2_pos_opt=False
+            self.reset_gate()
+            return self._gss('optimize_gate_wait_time')
         #if lt1_optimize:
         #    if(self.optimize_newfocus_steps(1,+1)): return
         #    if(self.optimize_newfocus_steps(1,-1)): return
         #if lt2_optimize:
         #    if(self.optimize_newfocus_steps(2,+1)): return
         #    if(self.optimize_newfocus_steps(2,-1)): return
-        
-        if lt1_optimize:
-             optimum_lt1,optimum_lt2 = self.optimize_newfocus(1)
-             if optimum_lt1 > 0: return self._par_optimize_nf_wait_time
-        if lt2_optimize:
-             optimum_lt1,optimum_lt2 = self.optimize_newfocus(2)
-             if optimum_lt2 > 0: return self._par_optimize_nf_wait_time    
+        if self._gss('opt_nf') and random.random()>0.5:
+            print 'Optimizing NF'
+            if lt2_optimize and cr_lt2>self._gss('mat_optimize_threshold_lt2'):
+                 print 'NF LT2'
+                 optimum_lt1,optimum_lt2 = self.optimize_newfocus(2)
+                 if optimum_lt2 > 0: return self._gss('optimize_nf_wait_time')
+            if lt1_optimize and cr_lt1>self._gss('mat_optimize_threshold_lt1'):
+                 print 'NF LT1'
+                 optimum_lt1,optimum_lt2 = self.optimize_newfocus(1)
+                 #if optimum_lt1 > 0: return self._gss('optimize_nf_wait_time')
+
              
         optimum_lt1,optimum_lt2 = self.optimize_matisse(lt1_optimize, lt2_optimize)
         if ((lt2_optimize) and (optimum_lt2 > 0)):
             self.optimize_gate(optimum_lt2)
-            return self._par_optimize_gate_wait_time
+            return self._gss('optimize_gate_wait_time')
         else:
-            return self._par_optimize_mat_wait_time
+            return self._gss('optimize_mat_wait_time')
+
+        if not((optimum_lt2 > 0) or (optimum_lt1 > 0)): 
+            self._opt_failed_idx+=1
+        else:
+            self._opt_failed_idx=0
+
+        if (self._opt_failed_idx > self._gss('max_opt_failed')): 
+            self.stop()
+            self._send_mail('maximum optimisations failed')
         
-        return self._par_optimize_nf_wait_time
+        return self._gss('optimize_nf_wait_time')
+
+    def _send_mail(self,reason):
+        subject= 'Warning from TPQI/LDE Optimiz0r!'
+        message = 'Warning from TPQI/LDE Optimiz0r: \n'+\
+                      ' Reason: %s'%(reason) + '\n' + \
+                      'Please help me!!!\n xxx LT2'
+            #recipients  = ['B.J.Hensen@tudelft.nl', 'h.bernien@tudelft.nl', 'w.pfaff@tudelft.nl', 'M.S.Blok@tudelft.nl']
+        recipients  = 'B.J.Hensen@tudelft.nl'
+        print message
+        if self._gss('send_email'):
+            print 'Attempting to send email'
+            if qt.instruments['gmailer'].send_email(recipients,subject,message):
+        	    print 'Warning email message sent'
 
     def _wait_after_optimize(self,wait_time):
         gobject.source_remove(self._timer)
@@ -278,13 +341,13 @@ class tpqi_optimiz0r(Instrument):
     
     def optimize_newfocus(self,setup,do_optimize=True,do_plot=True):
         ins_pid = self._ins_pidnewfocus_lt1 if setup==1 else self._ins_pidnewfocus
-        min_setpoint=self._par_min_setpoint_nf_lt1 if setup==1 else self._par_min_setpoint_nf_lt2
-        max_setpoint=self._par_max_setpoint_nf_lt1 if setup==1 else self._par_max_setpoint_nf_lt2
+        min_setpoint=self._gss('min_setpoint_nf_lt1') if setup==1 else self._gss('min_setpoint_nf_lt2')
+        max_setpoint=self._gss('max_setpoint_nf_lt1') if setup==1 else self._gss('max_setpoint_nf_lt2')
         optimum_lt1=-1.0
         optimum_lt2=-1.0
         
         self._get_input_values()
-        qt.msleep(self._par_nf_wait_time)
+        qt.msleep(self._gss('nf_wait_time'))
         dt, cr_checks_lt1, cr_cts_lt1, cr_failed_lt1, cr_checks_lt2,\
                 cr_cts_lt2, cr_failed_lt2, tpqi_starts, tail_cts = self._get_input_values()
         
@@ -296,9 +359,9 @@ class tpqi_optimiz0r(Instrument):
         lt1_cts_per_check, lt2_cts_per_check, tail_cts_per_tpqi =  self.optimize_scan(ins_pid,
                                                                    min_setpoint,
                                                                    max_setpoint,
-                                                                   self._par_nf_scan_range,
-                                                                   self._par_nf_stepsize,
-                                                                   self._par_nf_wait_time)
+                                                                   self._gss('nf_scan_range'),
+                                                                   self._gss('nf_stepsize'),
+                                                                   self._gss('nf_wait_time'))
         if do_plot:
             self._plt.clear()
             if len(lt2_cts_per_check)>0: self._plt=plt.plot(lt2_cts_per_check)
@@ -307,19 +370,19 @@ class tpqi_optimiz0r(Instrument):
 
         if ((setup==1) and do_optimize and (len(lt1_cts_per_check)>4) and \
                 (max(lt1_cts_per_check)[0] >=  initial_cr_cts_per_check_lt1) and\
-                (max(lt1_cts_per_check)[0] >= self._par_nf_optimize_threshold_lt1)):
+                (max(lt1_cts_per_check)[0] >= self._gss('nf_optimize_threshold_lt1'))):
             optimum_lt1=max(lt1_cts_per_check)[1]
             print 'Setting new setpoint newfocus lt1:', optimum_lt1
             ins_pid.set_setpoint(optimum_lt1)
         
         if ((setup==2) and do_optimize and (len(lt2_cts_per_check)>4) and \
                 (max(lt2_cts_per_check)[0] >=  initial_cr_cts_per_check_lt2)) and \
-                (max(lt2_cts_per_check)[0] >= self._par_nf_optimize_threshold_lt2):
+                (max(lt2_cts_per_check)[0] >= self._gss('nf_optimize_threshold_lt2')):
             optimum_lt2=max(lt2_cts_per_check)[1]
             print 'Setting new setpoint newfocus lt2:', optimum_lt2
             ins_pid.set_setpoint(optimum_lt2)
         
-        qt.msleep(self._par_nf_wait_time)
+        qt.msleep(self._gss('nf_wait_time'))
 
         return optimum_lt1, optimum_lt2
 
@@ -328,10 +391,10 @@ class tpqi_optimiz0r(Instrument):
         print 'Optimizing Newfocus LT', setup, 'direction', direction  
         
         ins_pid = self._ins_pidnewfocus_lt1 if setup==1 else self._ins_pidnewfocus
-        min_setpoint=self._par_min_setpoint_nf_lt1 if setup==1 else self._par_min_setpoint_nf_lt2
-        max_setpoint=self._par_max_setpoint_nf_lt1 if setup==1 else self._par_max_setpoint_nf_lt2
+        min_setpoint=self._gss('min_setpoint_nf_lt1') if setup==1 else self._gss('min_setpoint_nf_lt2')
+        max_setpoint=self._gss('max_setpoint_nf_lt1') if setup==1 else self._gss('max_setpoint_nf_lt2')
         self._get_input_values()
-        qt.msleep(self._par_nf_wait_time)
+        qt.msleep(self._gss('nf_wait_time'))
         cr_checks=zeros(3)
         cr_cts=zeros(3)
         cr_failed=zeros(3)
@@ -346,19 +409,19 @@ class tpqi_optimiz0r(Instrument):
             print 'newfocus lt2 optimize up', i
             prev_dt, prev_cr_checks_lt2, prev_cr_cts_lt2, prev_tpqi_starts, \
                     prev_tail_cts = dt, cr_checks[setup], cr_cts[setup], tpqi_starts, tail_cts
-            current_setpoint = current_setpoint + direction*self._par_nf_stepsize
+            current_setpoint = current_setpoint + direction*self._gss('nf_stepsize')
             self.ins_pid.set_setpoint(current_setpoint)
-            qt.msleep(2*self._par_nf_wait_time)
+            qt.msleep(2*self._gss('nf_wait_time'))
             self._get_input_values()
-            qt.msleep(self._par_nf_wait_time)
+            qt.msleep(self._gss('nf_wait_time'))
             dt, cr_checks[1], cr_cts[1], cr_failed[1], cr_checks[2], cr_cts[2],\
                     cr_failed[2], tpqi_starts, tail_cts = self._get_input_values()
-            if ((cr_checks[setup]/dt < self._cr_checks_per_sec_min) or \
+            if ((cr_checks[setup]/dt < self._gss('cr_checks_per_sec_min')) or \
                     (cr_cts[setup]/cr_checks[setup] < prev_cr_cts[setup]/prev_cr_checks[setup]) or \
                     False):#(tail_cts/tpqi_starts < prev_tail_cts/prev_tpqi_starts)): 
                 break 
 
-        current_setpoint = current_setpoint - direction*self._par_nf_stepsize
+        current_setpoint = current_setpoint - direction*self._gss('nf_stepsize')
         ins_pid.set_setpoint(current_setpoint)
         
         if i>1: return True
@@ -403,7 +466,7 @@ class tpqi_optimiz0r(Instrument):
         optimum_lt2=-1.0
         
         self._get_input_values()
-        qt.msleep(self._par_mat_wait_time)
+        qt.msleep(self._gss('mat_wait_time'))
         dt, cr_checks_lt1, cr_cts_lt1, cr_failed_lt1, cr_checks_lt2,\
                 cr_cts_lt2, cr_failed_lt2, tpqi_starts, tail_cts = self._get_input_values()
         
@@ -413,11 +476,11 @@ class tpqi_optimiz0r(Instrument):
         if cr_checks_lt2>0: initial_cr_cts_per_check_lt2=cr_cts_lt2/cr_checks_lt2
         print 'initial values:',initial_cr_cts_per_check_lt1, initial_cr_cts_per_check_lt2
         lt1_cts_per_check, lt2_cts_per_check, tail_cts_per_tpqi =  self.optimize_scan(self._ins_pidmatisse,
-                                                                   self._par_min_setpoint_mat,
-                                                                   self._par_max_setpoint_mat,
-                                                                   self._par_mat_scan_range,
-                                                                   self._par_mat_stepsize,
-                                                                   self._par_mat_wait_time)
+                                                                   self._gss('min_setpoint_mat'),
+                                                                   self._gss('max_setpoint_mat'),
+                                                                   self._gss('mat_scan_range'),
+                                                                   self._gss('mat_stepsize'),
+                                                                   self._gss('mat_wait_time'))
     
         if do_plot:
             self._plt.clear()
@@ -426,7 +489,7 @@ class tpqi_optimiz0r(Instrument):
 
         if ((lt1_optimize) and (len(lt1_cts_per_check)>0) and \
                 (max(lt1_cts_per_check)[0] >=  initial_cr_cts_per_check_lt1) and \
-                (max(lt2_cts_per_check)[0]>= self._par_mat_optimize_threshold_lt1)):
+                (max(lt1_cts_per_check)[0]>= self._gss('mat_optimize_threshold_lt1'))):
             #if self._par_fit:
             #    print 'Fitting not yet implemented'
             #    pass
@@ -438,45 +501,33 @@ class tpqi_optimiz0r(Instrument):
         
         if ((lt2_optimize) and (len(lt2_cts_per_check)>0) and \
                 (max(lt2_cts_per_check)[0] >=  initial_cr_cts_per_check_lt2)) and \
-                (max(lt2_cts_per_check)[0]>= self._par_mat_optimize_threshold_lt2):
+                (max(lt2_cts_per_check)[0]>= self._gss('mat_optimize_threshold_lt2')):
             optimum_lt2=max(lt2_cts_per_check)[1]
         
-        qt.msleep(self._par_mat_wait_time)
+        qt.msleep(self._gss('mat_wait_time'))
 
         return optimum_lt1, optimum_lt2
 
     def optimize_gate(self,optimum_lt2):
-        if self._lt2_opt_only:
+        if not(self._gss('opt_gate')):
             print 'Setting new setpoint matisse (LT2):', optimum_lt2
             self._ins_pidmatisse.set_setpoint(optimum_lt2)
             return
         print 'Optimizing Gate'
-        gate_change = (self._ins_pidmatisse.get_setpoint()-optimum_lt2)/ 0.03 * 0.2 #gate V should be changed approx ~ 0.2 V for every 30 MHz detuning
-        new_gate_voltage = self._ins_adwin.get_gate_modulation_voltage()*2.0 + gate_change
-        if (self._par_min_gate_voltage < new_gate_voltage < self._par_max_gate_voltage):
+        gate_change = (self._ins_pidmatisse.get_setpoint()-optimum_lt2)*self._gss('gate_factor') 
+        new_gate_voltage = self._ins_adwin.get_gate_modulation_var('gate_voltage')*2.0 + gate_change
+        if (self._gss('min_gate_voltage') < new_gate_voltage < self._gss('max_gate_voltage')):
             print'Changeing gate voltage to:',new_gate_voltage, '(',gate_change,')'
-            self._ins_adwin.set_gate_modulation_voltage(new_gate_voltage/2.0)
-           
+            self._ins_adwin.set_gate_modulation_var(gate_voltage=new_gate_voltage/2.0)
+        else: print 'New gate voltage',new_gate_voltage, 'outside range'
+
+    def reset_gate(self):
+        if not(self._gss('opt_gate')):
+            return
+        cur_gate_voltage=self._ins_adwin.get_gate_modulation_var('gate_voltage')*2.0
+        new_gate_voltage= (self._gss('min_gate_voltage')+self._gss('min_gate_voltage'))/2.-0.2     
+        if cur_gate_voltage > new_gate_voltage+0.4:
+            print 'resetting gate voltage to halfway range:', new_gate_voltage, 'V'
+            self._ins_adwin.set_gate_modulation_var(gate_voltage=new_gate_voltage/2.0)
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-           
-
-#things to check: - time.sleep, newfoci up/down, matisse freq scan
-#things to change: give instr wavementer function on startup, only allow for gate/matisse every x mins

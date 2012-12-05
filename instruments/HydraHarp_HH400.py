@@ -503,12 +503,16 @@ class HydraHarp_HH400(Instrument): #1
         if success != 0:
             logging.warning(__name__ + ' : OpenDevice failed, check that HydraHarp software is not running.')
             self.get_ErrorString(success)
+            return False
+        return True
 
     def CloseDevice(self):
         success = self._HH400_win32.HH_CloseDevice(self.DevIdx)
         if success < 0:
             logging.warning(__name__ + ' : error in HH_CloseDevice')
             self.get_ErrorString(success)
+            return False
+        return True
 
     def _do_get_MeasRunning(self):
         running = c_int(0)
@@ -711,6 +715,8 @@ class HydraHarp_HH400(Instrument): #1
                             
         print "Detected events: %d / %d." % (len(ch0_events), len(ch1_events))
 
+        if save_raw:
+            return ch0_events, ch1_events, markers, rawdir
         return ch0_events, ch1_events, markers
 
    

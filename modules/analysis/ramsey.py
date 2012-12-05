@@ -28,7 +28,7 @@ def fit_ramsey_gaussian_decay(g_tau, g_a, *arg):
         y(x) = a + A*exp(-(x/tau)**2) * mod,
 
         where:
-        mod = sum_i(cos(2pi*f_i*x + phi_i) - 1)
+        mod = sum_i(cos(2pi*f_i*x ) - 1)
 
     Initial guesses (in this order):
         g_tau : decay const
@@ -37,7 +37,7 @@ def fit_ramsey_gaussian_decay(g_tau, g_a, *arg):
 
         For the modulation:
         an arbitrary no of tuples, in the form
-        (g_f, g_A, g_phi)[i] = (frequency, Amplitude, phase)[i]
+        (g_f, g_A)[i] = (frequency, Amplitude)[i]
     """
     fitfunc_str = 'y(x) = a + exp(-(x/tau)**2)*('
     no_frqs = len(arg)
@@ -54,22 +54,22 @@ def fit_ramsey_gaussian_decay(g_tau, g_a, *arg):
 
     frqs = []
     amplitudes = []
-    phases = []
+    #phases = []
     for i, m in enumerate(arg):
-        fitfunc_str += 'A%d*cos(2pi*f%d*x + phi%d) + ' % (i, i, i)
+        fitfunc_str += 'A%d*cos(2pi*f%d*x)' % (i, i)
         frqs.append(fit.Parameter(m[0], 'f%d'%i))
-        phases.append(fit.Parameter(m[2], 'phi%d'%i))
+        #phases.append(fit.Parameter(m[2], 'phi%d'%i))
         amplitudes.append(fit.Parameter(m[1], 'A%d'%i))
         p0.append(frqs[i])
         p0.append(amplitudes[i])
-        p0.append(phases[i])
+        #p0.append(phases[i])
     fitfunc_str += ')'
 
     def fitfunc(x):
         prd = exp(-(x/tau())**2)
         mod = 0
         for i in range(no_frqs):
-            mod += amplitudes[i]() * (cos(2*pi*frqs[i]()*x + phases[i]()))
+            mod += amplitudes[i]() * (cos(2*pi*frqs[i]()*x))
         return a() + prd*mod
 
     return p0, fitfunc, fitfunc_str

@@ -1,7 +1,8 @@
 import os, time, sys
 import numpy as np
 import plot
-from analysis import fit, rabi, common, esr, ramsey
+import qt
+from analysis import fit, rabi, common, esr, ramsey,spin_control
 
 """
 Please note that this module is written for qtlab. It is intended for 
@@ -36,13 +37,14 @@ def find_newest_data(datapath, string = '_spin_control'):
     return newest_datapath
 
 
-def rabi_calibration(datapath, fit_data = True, save = True):
+def rabi_calibration(datapath,fit_data = True, save = True,close_fig=True,new_fig=True):
     """ 
     Fits results from a spin_control data using a FFT. 
     Datapath should be a folder that contains the actual measurement results,
     so for example: datapath = 'D:\data\yyyymmdd\hhmmss_spin_control_suffix'
     Flag fit_data if data should be fit.
     Flag save if data should be saved (in the data directory)
+
     """
 
     print 'Analyzing spin control data...'
@@ -69,8 +71,9 @@ def rabi_calibration(datapath, fit_data = True, save = True):
     e = np.load(datapath+'\\'+stats_params_file)
     f_drive = e['mw_drive_freq']
     mwpower = e['mw_power']
-    mw_min_len = e['min_mw_length']
-    mw_max_len = e['max_mw_length']
+    mw_min_len = e['min_sweep_par']
+    mw_max_len = e['max_sweep_par']
+    name=e['sweep_par_name']
     noof_datapoints = e['noof_datapoints']
     e.close()
 
@@ -80,6 +83,7 @@ def rabi_calibration(datapath, fit_data = True, save = True):
     
     g = np.load(datapath+'\\'+spin_ro_file)
     raw_counts = g['counts']
+    SSRO_raw = g['SSRO_counts']
     repetitions = g['sweep_axis']
     t = g['time']
 
@@ -91,12 +95,15 @@ def rabi_calibration(datapath, fit_data = True, save = True):
     mw_len = np.linspace(mw_min_len,mw_max_len,noof_datapoints)
     counts_during_readout = np.sum(raw_counts, axis = 1)
 
+    SSRO = np.zeros(noof_datapoints)
+    SSRO = np.sum(SSRO_raw, axis = 1)
+
     #########################################
     ############ FITTING ####################
     #########################################
     
     if fit_data:
-        FFT = np.fft.fft(counts_during_readout)
+        FFT = np.fft.fft(SSRO)
         N = int(noof_datapoints)
         timestep = (mw_max_len-mw_min_len)/float(noof_datapoints-1)
         freq = np.fft.fftfreq(N,d = timestep)
@@ -104,7 +111,7 @@ def rabi_calibration(datapath, fit_data = True, save = True):
         #Remove offset:
         FFT[freq == 0] = 0
 
-        plot1 = plot.Plot2D(freq*1E3, abs(FFT), 'sb')
+        plot1 = qt.Plot2D(freq*1E3, abs(FFT), 'sb',name='FFT',clear=True)
         plot1.set_xlabel('Frequency (MHz)')
         plot1.set_ylabel('Amplitude')
         plot1.set_plottitle('FFT (offset removed)')
@@ -114,58 +121,74 @@ def rabi_calibration(datapath, fit_data = True, save = True):
             plot1.save_png(os.path.join(datapath, 'figures', 'fft_signal_rabi.png'))
 
         freq_guess = freq[find_nearest(abs(FFT),abs(FFT).max())]
-        amp_guess = (counts_during_readout.max()+counts_during_readout.min())/2.0
-        offset_guess = counts_during_readout.min()+(counts_during_readout.max()+\
-                counts_during_readout.min())/2.0
+        amp_guess = (SSRO.max()+SSRO.min())/2.0
+        offset_guess = SSRO.min()+(SSRO.max()+\
+                SSRO.min())/2.0
         phase_guess = 0
 
         #print 'frequency guess = ',freq_guess
 
 
-    if fit_data:
-        fit_result = fit.fit1d(mw_len, counts_during_readout, rabi.fit_rabi_simple, 
+        fit_result = fit.fit1d(mw_len, SSRO, rabi.fit_rabi_simple, 
                 freq_guess, amp_guess, offset_guess, phase_guess,
                 do_plot = False, ret = True)
-
+        print fit_result
         f = fit_result['params_dict']['f']
         a = fit_result['params_dict']['a']
         A = fit_result['params_dict']['A']
         phi = fit_result['params_dict']['phi']
         x = np.linspace(mw_min_len, mw_max_len, 501)
-
         fit_curve = a + A*np.cos(2*np.pi*(f*x + phi/360))
 
         pi_pulse_len = 0.5*1/f
         pi_2_pulse_len = 0.5*pi_pulse_len
 
-    plot2 = plot.Plot2D(mw_len, counts_during_readout, 'sk', x,fit_curve, '-r')
-    plot2.set_xlabel('MW length (ns)')
-    plot2.set_ylabel('Integrated counts')
-    plot2.set_plottitle('MW length sweep, driving f ='+num2str(f_drive/1E6,1)+\
-            ' MHz, power = '+num2str(mwpower,0)+' dBm')
-    #plt.text(0.1*(mw_max_len+mw_min_len),max(counts_during_readout),datapath)
+    name= spin_ro_file[:len(spin_ro_file)-16]
+    if new_fig:
+        plot2 = qt.Plot2D(mw_len, SSRO, 'sk',
+                title=name, name='MWCal',clear=True)
+        plot2.add(x,fit_curve, '-r',title='fit '+name)
+    else:
+        plot2 = qt.plots['Cal']
+        plot2.add(mw_len, SSRO, 'xk',title=name)
+        plot2.add(x,fit_curve, '-r',title='fit '+name)
+    plot2.set_xlabel(name)
+    plot2.set_ylabel('SSRO (not corrected)')
+    plot2.set_plottitle(str(name) + ' , driving f ='+num2str(f_drive/1E6,1)+\
+            ' MHz, power = '+num2str(mwpower,0)+' dBm'+datapath)
+    
+    #plot2.text(0.1*(mw_max_len+mw_min_len),max(SSRO),datapath)
     if save:
         plot2.save_png(os.path.join(datapath,'figures', 'histogram_integrated'))
     g.close()
+    plot1.clear()
     plot1.quit()
-    plot2.quit()
+    if close_fig:
+        plot2.clear()
+        plot2.quit()
 
     if save:
         #Save a dat file for use in e.g. Origin with the rabi oscillation.
         curr_date = '#'+time.ctime()+'\n'
-        col_names = '#Col0: MW length (ns)\tCol1: Integrated counts\n'
+        col_names = '#Col0: MW length (ns)\tCol1: SSRO\n'
         col_vals = str()
         for k in np.arange(noof_datapoints):
-            col_vals += num2str(mw_len[k],2)+'\t'+num2str(counts_during_readout[k],0)+'\n'
-        fo = open(os.path.join(datapath, 'processed_data', 'mw_pi_calibration_integrated_histogram.dat'), "w")
+            col_vals += num2str(mw_len[k],2)+'\t'+num2str(SSRO[k],0)+'\n'
+        fo = open(os.path.join(datapath, 'processed_data', 'mw_pi_calibration_SSRO.dat'), "w")
         for item in [curr_date, col_names, col_vals]:
             fo.writelines(item)
         fo.close()
+    
+    if 'len' in name:
+        minimum = pi_pulse_len
+        
+    else:
+        minimum=x[find_nearest(fit_curve,fit_curve.min())]
+    
+    rabi_dict={"minimum":minimum,"Amplitude":A,"offset":a, "freq":f,"lowest_meas_value":SSRO.min(),"highest_meas_value":float(SSRO.max())}
+    return rabi_dict
 
-    return pi_pulse_len
-
-
-def esr_calibration(datapath, fit_data = True, save = True, f_dip = 2.858E9):
+def dark_esr_calibration(datapath, fit_data = True, save = True, f_dip = 2.858E9):
 
     ###########################################
     ######## MEASUREMENT SPECS ################
@@ -242,7 +265,9 @@ def esr_calibration(datapath, fit_data = True, save = True, f_dip = 2.858E9):
         fit_curve = a*np.ones(len(x)) - A*fit_curve
 
 
-    plot1 = plot.Plot2D(mw_freq/1E9, counts_during_readout, '-ok', x/1E9, fit_curve, '-r')  
+        plot1 = qt.Plot2D(mw_freq/1E9, counts_during_readout, '-ok', x/1E9, fit_curve, '-r',name='desr',clear=True)
+    else:
+        plot1 = qt.Plot2D(mw_freq/1E9, counts_during_readout, '-ok',name='desr',clear=True)
     plot1.set_xlabel('MW frequency (GHz)')
     plot1.set_ylabel('Integrated counts')
     plot1.set_plottitle('MW frequency sweep, laser parking spot f ='+num2str(f_center/1E6,1)+\
@@ -267,6 +292,76 @@ def esr_calibration(datapath, fit_data = True, save = True, f_dip = 2.858E9):
 
     return x0
 
+def esr_calibration(datapath, fit_data = True, save = True, f_dip = 2.828E9):
+
+    ###########################################
+    ######## MEASUREMENT SPECS ################
+    ###########################################
+    files = os.listdir(datapath)
+    
+    for k in files:
+        if '.npz' in k:
+            data_file = k
+    data = np.load(datapath+'\\'+data_file)
+    
+    mw_freq = data['freq']
+    counts = data['counts']
+    data.close()
+
+    f_dip_guess=f_dip
+    offset_guess = counts.max()
+    dip_depth_guess = offset_guess - counts.min()
+    width_guess = 5e-3
+
+    #########################################
+    ############ FITTING ####################
+    #########################################
+
+
+    if fit_data:
+        
+        fit_result=fit.fit1d(mw_freq/1E9, counts, common.fit_gauss, 
+            offset_guess, dip_depth_guess, f_dip_guess/1E9,width_guess,
+            do_plot = False, do_print = False, newfig = False,ret=True)
+        
+        x0 = fit_result['params_dict']['x0']
+        a = fit_result['params_dict']['a']
+        A = fit_result['params_dict']['A']
+        sigma = fit_result['params_dict']['sigma']
+        #s0 = fit_result[0]['params_dict']['s0']
+
+        x = np.linspace(mw_freq.min(), mw_freq.max(), 501)
+        fit_curve = np.zeros(len(x))
+
+        
+        fit_curve = np.exp(-(((x/1E9)-x0)/sigma)**2)
+        fit_curve = a*np.ones(len(x)) + A*fit_curve
+
+    plot1 = qt.Plot2D(mw_freq/1E9, counts, '-ok', x/1E9, fit_curve, '-r',name='ESR',clear=True) 
+    plot1.set_xlabel('MW frequency (GHz)')
+    plot1.set_ylabel('Integrated counts')
+    plot1.set_plottitle('MW frequency sweep')
+    if save:
+        plot1.save_png(datapath+'\\histogram_integrated.png')
+
+    data.close()
+    plot1.clear()
+    plot1.quit()
+
+    if save:
+        #Save a dat file for use in e.g. Origin with the dark esr data.
+        curr_date = '#'+time.ctime()+'\n'
+        col_names = '#Col0: MW freq (GHz)\tCol1: Integrated counts\n'
+        col_vals = str()
+        for k in range(len(counts)):
+            col_vals += num2str(mw_freq[k]/1E9,10)+'\t'+num2str(counts[k],0)+'\n'
+        fo = open(datapath+'\\mw_f_calibration_integrated_histogram.dat', "w")
+        for item in [curr_date, col_names, col_vals]:
+            fo.writelines(item)
+        fo.close()
+
+    return x0*1E9
+
 def ssro_calibration(datapath, fit_data = True, save = True):
     """
     Returns the optimal read-out length for SSRO.
@@ -281,7 +376,6 @@ def ssro_calibration(datapath, fit_data = True, save = True):
 
     PARAM_REPS = 15
     PARAM_CYCLE_DURATION = 18
-
     def run_single(folder='', ms=0, index=0):
         if folder == "":
             folder = os.getcwd()
@@ -338,15 +432,14 @@ def ssro_calibration(datapath, fit_data = True, save = True):
                         PREFIX+SUFFIX_i+'_fid_vs_ROtime.npz') 
                 f0 = os.path.join(folder,'processed_data',
                         PREFIX+SUFFIX_j+'_fid_vs_ROtime.npz')
-                t,f,ferr,t_max,F_max,plot1 = fidelities(f0,f1)
+                f,plot1  = fidelities(f0,f1)
                 if save:
                     plot1.save_png(os.path.join(folder,'figures','fidelity_vs_rotime.png'))
                     np.savetxt(os.path.join(folder, 'processed_data',
-                    'totalfid-%d_+_%d.dat' % (i-1, i)),(t,f,ferr))
-
+                    'totalfid-%d_+_%d.dat' % (i-1, i)),(f["times"],f["fidelity"],f["f_err"]))
+                plot1.clear()
                 plot1.quit()
-
-        return t_max, F_max
+        return f
                 
     def autoanalyze_single_ssro(rodata, spdata, crdata, save_basepath, 
             binsize=0.131072, reps=1e4, ms=0, closefigs=True, stop=0, 
@@ -464,16 +557,175 @@ def ssro_calibration(datapath, fit_data = True, save = True):
         F_max = max(F)
         t_max = times[F.argmax()]
 
-        plot1 = plot.Plot2D(times, F, 'or', times, fid1, 'og', times, fid0, 'og')
+        plot1 = qt.Plot2D(name='fid',clear=True)
+        plot1.clear()
+        plot1.add(times, F, 'or', title = 'total')
+        plot1.add(times, fid1, 'og',title = 'ms = 1')
+        plot1.add(times, fid0, 'og',title= 'ms = 0')
         plot1.set_plottitle("max. F=%.2f at t=%.2f us" % (F_max, t_max))
         plot1.set_xlabel('Read-out time (us)')
         plot1.set_ylabel('Fidelity')
-        
+        plot1.set_yrange(0.46,1.09)
         print "max. F=%.2f at t=%.2f us" % (F_max, t_max)
+ 
+        f={"times"      : times,
+           "t_max"      : t_max,
+           "fidelity"   : F,
+           "fid0"       : fid0,
+           "fid1"       : fid1,
+           "f_err"      : F_err,
+           "fid0_err"   : fid0_err,
+           "fid1_err"   : fid1_err,
+           "f_max"      : F_max,
+           
+                }
+        return  f, plot1
 
-        return  times, F, F_err, t_max, F_max, plot1
+    fid_dict = run_all(folder = datapath, altern = True)
+    return fid_dict
+def pi_over_two_calibration(datapath, norm,guess,fit_data = True, save = True,close_fig=True,new_fig=True):
+    """ 
+    Datapath should be a folder that contains the actual measurement results,
+    so for example: datapath = 'D:\data\yyyymmdd\hhmmss_spin_control_suffix'
+    Flag fit_data if data should be fit.
+    Flag save if data should be saved (in the data directory)
+    guess =  [a,b] for fit of line a+b*x
+    nrom = [ms0,ms1]
+    """
 
-    t_max, F_max = run_all(folder = datapath, altern = True)
+    print 'Analyzing spin control data...'
 
-    return t_max, F_max
+    # Create directories for saving figures and saving processed data:
+    if not os.path.exists(os.path.join(datapath,'figures')):
+        os.makedirs(os.path.join(datapath,'figures'))
+    if not os.path.exists(os.path.join(datapath,'processed_data')): 
+        os.makedirs(os.path.join(datapath,'processed_data'))
 
+    ###########################################
+    ######## MEASUREMENT SPECS ################
+    ###########################################
+    files = os.listdir(datapath)
+    
+    for k in files:
+        if 'statics_and_parameters.npz' in k:
+            stats_params_file = k
+        if 'Spin_RO.npz' in k:
+            spin_ro_file = k
+        if 'SP_histogram.npz' in k:
+            sp_file = k
+
+    e = np.load(datapath+'\\'+stats_params_file)
+    f_drive = e['mw_drive_freq']
+    mwpower = e['mw_power']
+    mw_min_len = e['min_sweep_par']
+    mw_max_len = e['max_sweep_par']
+    name=e['sweep_par_name']
+    noof_datapoints = e['noof_datapoints']
+    e.close()
+
+    ###########################################
+    ######## SPIN RO  #########################
+    ###########################################
+    
+    g = np.load(datapath+'\\'+spin_ro_file)
+    raw_counts = g['counts']
+    SSRO_raw = g['SSRO_counts']
+    repetitions = g['sweep_axis']
+    t = g['time']
+
+    tot_size = len(repetitions)
+    reps_per_point = tot_size/float(noof_datapoints)
+
+    idx = 0
+    counts_during_readout = np.zeros(noof_datapoints)
+    mw_len = np.linspace(mw_min_len,mw_max_len,noof_datapoints)
+    counts_during_readout = np.sum(raw_counts, axis = 1)
+
+    SSRO_unnorm = np.zeros(noof_datapoints)
+    SSRO_unnorm = np.sum(SSRO_raw, axis = 1)
+
+
+    ## Renormalize
+
+    SSRO = (SSRO_unnorm-norm[1])/(norm[0]-norm[1])
+    #########################################
+    ############ FITTING ####################
+    #########################################
+    
+    if fit_data:
+
+        a_guess=guess[0]
+        b_guess=guess[1]
+
+        #print 'frequency guess = ',freq_guess
+
+
+        fit_result = fit.fit1d(mw_len, SSRO, common.fit_line, 
+                a_guess, b_guess,
+                do_plot = False, ret = True)
+
+        offset = fit_result['params_dict']['a']
+        slope = fit_result['params_dict']['b']
+        x = np.linspace(mw_min_len, mw_max_len, 501)
+        fit_curve = offset + slope*x
+
+        pi_2_pulse_len = (0.5-offset)/slope
+
+    name= spin_ro_file[:len(spin_ro_file)-16]
+    if new_fig:
+        plot2 = qt.Plot2D(mw_len, SSRO, 'sk',
+                title=name, name='Pi_over_2 Cal',clear=True)
+        plot2.add(x,fit_curve, '-r',title='fit '+name)
+    else:
+        plot2 = qt.plots['Cal']
+        plot2.add(mw_len, SSRO, 'xk',title=name)
+        plot2.add(x,fit_curve, '-r',title='fit '+name)
+    plot2.set_xlabel(name)
+    plot2.set_ylabel('Integrated counts')
+    plot2.set_plottitle(str(name) + ' , driving f ='+num2str(f_drive/1E6,1)+\
+            ' MHz, power = '+num2str(mwpower,0)+' dBm')
+    
+    #plt.text(0.1*(mw_max_len+mw_min_len),max(SSRO),datapath)
+    if save:
+        plot2.save_png(os.path.join(datapath,'figures', 'histogram_integrated'))
+    g.close()
+    if close_fig:
+        plot2.quit()
+    print SSRO
+    if save:
+        #Save a dat file for use in e.g. Origin with the rabi oscillation.
+        curr_date = '#'+time.ctime()+'\n'
+        col_names = '#Col0: MW length (ns)\tCol1: Integrated counts\n'
+        col_vals = str()
+        for k in np.arange(noof_datapoints):
+            col_vals += num2str(mw_len[k],2)+'\t'+num2str(counts_during_readout[k],0)+'\n'
+        fo = open(os.path.join(datapath, 'processed_data', 'mw_pi_calibration_integrated_histogram.dat'), "w")
+        for item in [curr_date, col_names, col_vals]:
+            fo.writelines(item)
+        fo.close()
+
+    if save:
+        #Save a dat file for use in e.g. Origin with the rabi oscillation.
+        curr_date = '#'+time.ctime()+'\n'
+        col_names = '#Col0: MW length (ns)\tCol1: SSRO\n'
+        col_vals = str()
+        for k in np.arange(noof_datapoints):
+            col_vals += num2str(mw_len[k],2)+'\t'+str(SSRO_unnorm[k])+'\n'
+        fo = open(os.path.join(datapath, 'processed_data', 'mw_pi_calibration_SSRO_unnorm.dat'), "w")
+        for item in [curr_date, col_names, col_vals]:
+            fo.writelines(item)
+        fo.close()    
+    if save:
+        #Save a dat file for use in e.g. Origin with the rabi oscillation.
+        curr_date = '#'+time.ctime()+'\n'
+        col_names = '#Col0: MW length (ns)\tCol1: SSRO\n'
+        col_vals = str()
+        for k in np.arange(noof_datapoints):
+            col_vals += num2str(mw_len[k],2)+'\t'+str(SSRO[k])+'\n'
+        fo = open(os.path.join(datapath, 'processed_data', 'mw_pi_calibration_SSRO_norm.dat'), "w")
+        for item in [curr_date, col_names, col_vals]:
+            fo.writelines(item)
+        fo.close()   
+
+    pi_over_two_dict={"pi_over_two":pi_2_pulse_len,"slope":slope,"offset":offset}
+    return pi_over_two_dict

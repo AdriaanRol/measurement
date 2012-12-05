@@ -56,7 +56,8 @@ class Measurement:
 
         self.save_filebase = self.mclass # the prefix for all saved
                                          # data
-        self.save_folder = ''
+        _bp = dh.dummy_qtlab_measurement(self.mclass+'_'+self.name)
+        self.save_folder, _tmp = os.path.split(_bp)
         self.dataset_idx = 0
 
         self.measurement_devices = []
@@ -168,7 +169,8 @@ class Measurement:
                 print 'could not create separate folder for supplementals!'
                 supplfolder = self.save_folder
 
-        # auto copy script files to suppl folder
+        # auto copy script files to suppl folderdel pc
+        #
         for i in range(script_save_stack_depth):
             shutil.copy(inspect.stack()[i][1], self.save_folder)
 

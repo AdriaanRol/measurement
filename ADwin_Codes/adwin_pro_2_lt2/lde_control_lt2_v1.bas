@@ -163,9 +163,10 @@ dim RO_steps as long
 
 ' misc
 DIM counter_pattern AS LONG
-DIM DIO_register as Long
+DIM DIO_register AS Long
 DIM PLU_trigger_received AS LONG
 DIM PLU_state AS LONG
+DIM gate_good_phase AS INTEGER
 
 INIT:
   ' general
@@ -234,6 +235,11 @@ INIT:
   counter_pattern     = 2 ^ (counter-1)
 
   ' prepare hardware
+  par_60 = 0
+  par_62 = 0                      'debug par
+  par_63 = 0                      'debug par
+  par_64 = 0                      'debug par
+  
   par_68 = cr_check_count_threshold_probe
   par_69 = 0                      ' cumulative LT1 counts in PSB during lde sequence
   PAR_70 = 0                      ' cumulative counts from probe intervals
@@ -249,12 +255,7 @@ INIT:
   par_61 = 0                      ' number of start ssro triggers to LT1
   par_67 = 0                      ' number of readouts performed
   par_65 = 0                      ' Number of raw edges detected on PLU DI
-  par_60 = 0
-
-  par_62 = 0                      'debug par
-  par_63 = 0                      'debug par
-  par_64 = 0                      'debug par
-  
+    
   P2_DAC(DAC_MODULE, green_aom_channel, 3277*green_off_voltage+32768) ' turn off green
   P2_DAC(DAC_MODULE, ex_aom_channel, 32768)
   P2_DAC(DAC_MODULE, a_aom_channel, 32768)
@@ -270,10 +271,11 @@ INIT:
   ' P2_DIGOUT(DIO_MODULE,6,0)
 
 EVENT:
+  gate_good_phase = par_15*par_18-2*(par_19-1)
+  
   cr_check_count_threshold_prepare = par_75
   cr_check_count_threshold_probe = par_68
   
-
   DIO_register = P2_DIGIN_EDGE(DIO_MODULE,1)
   PLU_trigger_received = ((DIO_register) AND (PLU_success_dio_in_bit))
   if (PLU_trigger_received >0) then

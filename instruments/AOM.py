@@ -26,8 +26,8 @@ from lib import config
 
 class AOM(Instrument):
 
-    def __init__(self, name, use_adwin=qt.instruments['adwin'], 
-            use_pm = qt.instruments['powermeter']):
+    def __init__(self, name, use_adwin='adwin', 
+            use_pm = 'powermeter'):
         Instrument.__init__(self, name)
         
         self.add_parameter('wavelength',
@@ -126,10 +126,16 @@ class AOM(Instrument):
                            flags=Instrument.FLAG_GETSET,
                            minval=0,maxval=31)
         
-        self.ins_adwin=use_adwin
-        self.ins_pm=use_pm
+    #FIXME: this function should be in here to compensate for buffer amplifier offset.
+     #   self.add_parameter('V_zero_power',
+     #                      type=types.FloatType,
+     #                      flags=Instrument.FLAG_GETSET,
+     #                      units='V',
+     #                      minval=0,maxval=10.0)
 
-       
+        self.ins_adwin=qt.instruments[use_adwin]
+        self.ins_pm=qt.instruments[use_pm]
+
         # set defaults
         self._wavelength = 637e-9
         self._pri_controller =  "ADWIN"
@@ -149,6 +155,7 @@ class AOM(Instrument):
         self._sec_cal_k =       6.855
         self._sec_V_max =       1.0
         self._sec_V_min =       0
+        self._V_zero_power =    0.
         self.get_all()
        
         # override from config       
@@ -180,8 +187,10 @@ class AOM(Instrument):
         for param in parlist:
             value = self.get(param)
             self.ins_cfg[param] = value
+    #FIXME: this function should be in here
+    #def set_zero_power(self):
+    #    self.apply_voltage(self.get(param))
 
-    
     def apply_voltage(self, U):
         controller = self.get_cur_controller()
         channel = self.get_channel()

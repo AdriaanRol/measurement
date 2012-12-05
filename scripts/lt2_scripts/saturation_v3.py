@@ -6,10 +6,10 @@ import matplotlib.pyplot as plt
 from numpy import *
 
 #measurement parameters
-name = 'LT2-Sil10-FS-HH'
-steps=35
-max_power=500e-6       #[w]
-counter=1          #number of counter
+name = 'LT2-Sil9-PSB'
+steps=31
+max_power=400e-6       #[w]
+counter=1      #number of counter
 HH_count=False    # counting with the HH, assumes apd on channel 0
 bg_x=2          #delta x position of background [um]
 bg_y=2             #delta y position of background [um]
@@ -67,7 +67,7 @@ x_axis = x/float(steps-1)*max_power*1e6
 
 A, sat = max(y_NV-y_BG), .5*max_power*1e6
 fitres = fit.fit1d(x_axis,y_NV-y_BG, common.fit_saturation, 
-A, sat, do_print=True, do_plot=False, ret=True)
+        A, sat, do_print=True, do_plot=False, ret=True)
 
 dat = qt.Data(name='Saturation_curve_'+name)
 dat.create_file()

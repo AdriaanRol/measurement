@@ -22,9 +22,11 @@ INIT:
   P2_Digprog(DIO_MODULE, 13)      'configure DIO 08:15 as input, all other ports as output
   P2_DIGOUT(DIO_MODULE,AWG_start_DO_channel,0)
   AWG_start_DO_channel = 1
+  'par_60=0
 EVENT:
   trigger_received = ((P2_DIGIN_EDGE(DIO_MODULE,1)) AND (trigger_dio_in_bit))
   IF (trigger_received > 0) THEN ' check whether LT1 is OK
+    'inc(par_60)
     P2_DIGOUT(DIO_MODULE,AWG_start_DO_channel,1)  ' AWG trigger
     CPU_SLEEP(9) ' need >= 20ns pulse width; adwin needs >= 9 as arg, which is 9*10ns
     P2_DIGOUT(DIO_MODULE,AWG_start_DO_channel,0)

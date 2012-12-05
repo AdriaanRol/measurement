@@ -137,3 +137,25 @@ def fit_gauss(g_a, g_A, g_x0, g_sigma):
 
 
     return p0, fitfunc, fitfunc_str
+
+def fit_line(g_a, g_b, *arg):
+    """
+    fitfunction for a line
+        y(x) = a + b*x 
+
+    I.g.:
+        g_a : offset
+        g_b : linear slope
+    """
+
+    fitfunc_str = 'a + b*x' 
+    
+    a = fit.Parameter(g_a, 'a')
+    b = fit.Parameter(g_b, 'b')
+    #xsat = fit.Parameter(g_xsat, 'xsat')
+    p0 = [a, b]
+
+    def fitfunc(x):
+        return a() + b()*x
+
+    return p0, fitfunc, fitfunc_str

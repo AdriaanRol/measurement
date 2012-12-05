@@ -25,7 +25,9 @@ config['adwin_lt2_processes'] = {
                 'set_cnt_dacs' : 1,
                 'set_steps' : 2,
                 'set_px_action' : 3,
-                'get_px_clock' : 4, 
+                'get_px_clock' : 4,
+                'set_phase_locking_on' : 19,
+                'set_gate_good_phase' : 18,
                 },
             'fpar' : {
                 'set_px_time' : 1,
@@ -128,6 +130,7 @@ config['adwin_lt2_processes'] = {
                     'gate_dac' : 12,
                     'modulation_period' : 13,
                     'modulation_on' : 14,
+                    'current_modulation_state' : 15,
                     },
                 'fpar': {
                     'gate_voltage' : 12,
@@ -140,13 +143,16 @@ config['adwin_lt2_processes'] = {
                 'index' : 9,
                 'file' : 'conditional_repump_lt1_and_lt2_tpqi.TB9',
                 'par' : {
-                    'set_noof_tailcts' : 19,
                     'set_green_aom_dac' : 26,
                     'set_repump_duration' : 27, # in units of 1us
                     'set_probe_duration' : 28, # in units of 1us
                     'set_cr_time_limit' : 29, # in units of 1us
                     'set_ex_aom_dac' : 30,
                     'set_a_aom_dac' : 31,
+                    'set_zpl_countrate': 42,
+                    'set_lt2_check_only': 64,
+                    'set_phase_locking_on' : 65,
+                    'set_gate_good_phase' : 67,
                     'set_cr_count_threshold_probe' : 68,
                     'set_cr_count_threshold_prepare' : 75,
                     'set_counter' : 78,
@@ -160,6 +166,8 @@ config['adwin_lt2_processes'] = {
                     'get_noof_triggers_sent' : 80
                     },
                 'fpar' : {
+                    'set_noof_tailcts' : 19,
+                    'set_noof_lasercts' : 22,
                     'set_green_aom_voltage' : 30,
                     'set_ex_aom_voltage' : 31,
                     'set_a_aom_voltage' : 32,
@@ -197,16 +205,21 @@ config['adwin_lt2_processes'] = {
                 'params_long_length' : 25,
                 'params_float' : [
                     ['green_repump_voltage' , 0.8],
-                    ['green_off_voltage'    , 0.0],
+                    ['green_off_voltage'    , 0.07],
                     ['Ex_CR_voltage'        , 0.8],
                     ['A_CR_voltage'         , 0.8],
                     ['Ex_SP_voltage'        , 0.8],
                     ['A_SP_voltage'         , 0.8],
                     ['Ex_RO_voltage'        , 0.8],
-                    ['A_RO_voltage'         , 0.8]
+                    ['A_RO_voltage'         , 0.8],
+                    ['Ex_off_voltage'       , 0.0],
+                    ['A_off_voltage'        , -0.08]
                     ],
                 'params_float_index'  : 21,
                 'params_float_length' : 10,
+                'par' : {
+                    'set_phase_locking_on'      : 19,
+                    'set_gate_good_phase'       : 18,}
                 },
         
         'spincontrol' : {  #with conditional repump, resonant
@@ -238,6 +251,56 @@ config['adwin_lt2_processes'] = {
                 'params_long_length' : 25,
                 'params_float' : [
                     ['green_repump_voltage' , 0.8],
+                    ['green_off_voltage'    , 0.07],
+                    ['Ex_CR_voltage'        , 0.8],
+                    ['A_CR_voltage'         , 0.8],
+                    ['Ex_SP_voltage'        , 0.8],
+                    ['A_SP_voltage'         , 0.8],
+                    ['Ex_RO_voltage'        , 0.8],
+                    ['A_RO_voltage'         , 0.8],
+                    ['Ex_off_voltage'       , 0.0],
+                    ['A_off_voltage'        , -0.08]
+                    ],
+                'params_float_index'  : 21,
+                'params_float_length' : 10,
+                'par' : {
+                    'set_phase_locking_on'      : 19,
+                    'set_gate_good_phase'       : 18,}
+                },
+        'spincontrol_MBI' : {  #with conditional repump, resonant, MBI
+                'index' : 9,
+                'file' : 'MBI_spincontrol_lt2.TB9',
+                'params_long' : [           # keep order!!!!!!!!!!!!!
+                    ['counter_channel'             ,   1],
+                    ['green_laser_DAC_channel'     ,   7],
+                    ['Ex_laser_DAC_channel'        ,   6],
+                    ['A_laser_DAC_channel'         ,   8],
+                    ['AWG_start_DO_channel'        ,   1],
+                    ['AWG_done_DI_channel'         ,   8],
+                    ['send_AWG_start'              ,   0],
+                    ['wait_for_AWG_done'           ,   0],
+                    ['green_repump_duration'       ,   5],
+                    ['CR_duration'                 ,  50],
+                    ['SP_E_duration'                 , 100],
+                    ['SP_filter_duration'          ,   0],
+                    ['sequence_wait_time'          ,   0],
+                    ['wait_after_pulse_duration'   ,   1],
+                    ['CR_preselect'                ,  10],
+                    ['RO_repetitions'              ,1000],
+                    ['RO_duration'                 ,  50],
+                    ['sweep_length'                ,  10],
+                    ['cycle_duration'              , 300],
+                    ['CR_probe'                    ,  10],
+                    ['AWG_event_jump_DO_channel'   ,   6],
+                    ['MBI_duration'                ,   1],
+                    ['wait_for_MBI_pulse'          ,   4],
+                    ['SP_A_duration'               , 300],
+                    ['MBI_threshold'               , 0  ]
+                    ],
+                'params_long_index'  : 20,
+                'params_long_length' : 25,
+                'params_float' : [
+                    ['green_repump_voltage' , 0.8],
                     ['green_off_voltage'    , 0.0],
                     ['Ex_CR_voltage'        , 0.8],
                     ['A_CR_voltage'         , 0.8],
@@ -248,8 +311,59 @@ config['adwin_lt2_processes'] = {
                     ],
                 'params_float_index'  : 21,
                 'params_float_length' : 10,
+                'par' : {
+                    'set_phase_locking_on'      : 19,
+                    'set_gate_good_phase'       : 18,}
                 },
-        
+        'MBI_Multiple_RO' : {  #with conditional repump, resonant, MBI,multiple readout steps
+                'index' : 9,
+                'file' : 'MBI_Multiple_RO_lt2.TB9',
+                'params_long' : [           # keep order!!!!!!!!!!!!!
+                    ['counter_channel'             ,   1],
+                    ['green_laser_DAC_channel'     ,   7],
+                    ['Ex_laser_DAC_channel'        ,   6],
+                    ['A_laser_DAC_channel'         ,   8],
+                    ['AWG_start_DO_channel'        ,   1],
+                    ['AWG_done_DI_channel'         ,   8],
+                    ['send_AWG_start'              ,   0],
+                    ['wait_for_AWG_done'           ,   0],
+                    ['green_repump_duration'       ,   5],
+                    ['CR_duration'                 ,  50],
+                    ['SP_E_duration'                 , 100],
+                    ['SP_filter_duration'          ,   0],
+                    ['sequence_wait_time'          ,   0],
+                    ['wait_after_pulse_duration'   ,   1],
+                    ['CR_preselect'                ,  10],
+                    ['RO_repetitions'              ,1000],
+                    ['RO_duration'                 ,  50],
+                    ['sweep_length'                ,  10],
+                    ['cycle_duration'              , 300],
+                    ['CR_probe'                    ,  10],
+                    ['AWG_event_jump_DO_channel'   ,   6],
+                    ['MBI_duration'                ,   1],
+                    ['wait_for_MBI_pulse'          ,   4],
+                    ['SP_A_duration'               , 300],
+                    ['MBI_threshold'               , 0  ],
+                    ['nr_of_RO_steps'              , 1  ]
+                    ],
+                'params_long_index'  : 20,
+                'params_long_length' : 30,
+                'params_float' : [
+                    ['green_repump_voltage' , 0.8],
+                    ['green_off_voltage'    , 0.0],
+                    ['Ex_CR_voltage'        , 0.8],
+                    ['A_CR_voltage'         , 0.8],
+                    ['Ex_SP_voltage'        , 0.8],
+                    ['A_SP_voltage'         , 0.8],
+                    ['Ex_RO_voltage'        , 0.8],
+                    ['A_RO_voltage'         , 0.8]
+                    ],
+                'params_float_index'  : 21,
+                'params_float_length' : 10,
+                'par' : {
+                    'set_phase_locking_on'      : 19,
+                    'set_gate_good_phase'       : 18,}
+                },        
         'spinmanipulation' : { #oldskool, with green
                 'index' : 9,
                 'file' : 'spinmanipulation_lt2.TB9',
@@ -296,7 +410,7 @@ config['adwin_lt2_processes'] = {
 
         'lde' : {
                 'index' : 9,
-                'file' : 'lde_control_lt2_v1.TB9',
+                'file' : 'lde_control_lt2_v2.TB9',
                 'params_long' : [
                     ('counter_channel'          , 1),
                     ('green_laser_DAC_channel'  , 7),
@@ -334,6 +448,8 @@ config['adwin_lt2_processes'] = {
                 'par' : {
                     'set_CR_preselect'          : 75,
                     'set_CR_probe'              : 68,
+                    'set_phase_locking_on'      : 19,
+                    'set_gate_good_phase'       : 18,
                     'get_seq_LT1_PSB_counts'    : 69,
                     'get_probe_counts'          : 70,
                     'get_below_threshold_events': 71,
@@ -354,6 +470,7 @@ config['adwin_lt2_processes'] = {
                     'SSRO_counts'               : 22,
                     'CR_after_SSRO'             : 23,
                     'PLU_state'                 : 24,
+                    'Gate_state_after_SSRO'     : 25,
                     },
                 },
 
@@ -465,6 +582,19 @@ config['adwin_lt1_processes'] = {
                 'dio_no' : 61,
                 'dio_val' : 62,
                 },
+            },
+
+        'gate_modulation' : {
+            'index' : 7,
+            'file' : 'gate_modulation.TB7',
+            'par' : {
+                'gate_dac' : 12,
+                'modulation_period' : 13,
+                'modulation_on' : 14,
+                },
+            'fpar': {
+                'gate_voltage' : 12,
+                }
             },
                   
 #                'dac_pulse' : {
@@ -583,7 +713,9 @@ config['adwin_lt1_processes'] = {
                     ['Ex_SP_voltage'        , 0.8],
                     ['A_SP_voltage'         , 0.8],
                     ['Ex_RO_voltage'        , 0.8],
-                    ['A_RO_voltage'         , 0.8]
+                    ['A_RO_voltage'         , 0.8],
+                    ['Ex_off_voltage'       , 0.0],
+                    ['A_off_voltage'        , 0.0]
                     ],
                 'params_float_index'  : 21,
                 'params_float_length' : 10,

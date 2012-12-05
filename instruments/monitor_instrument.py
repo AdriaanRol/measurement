@@ -37,6 +37,7 @@ class MonitorInstrument(Instrument):
         self.add_function('start')
         self.add_function('stop')
         self.add_function('manual_update')
+        self.add_function('save_cfg')
         
         self.set_is_running(False)
         self.set_save_data(True)

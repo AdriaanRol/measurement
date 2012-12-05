@@ -18,7 +18,7 @@ For more details, see the functions.
 
 ### imports
 import sys, os, time
-from numpy import *
+#from numpy import *
 import numpy as np
 from matplotlib import pyplot as plt
 from analysis import fit, rabi, common, esr, ramsey
@@ -35,6 +35,36 @@ PARAMS_SUFFIX = 'parameters'
 PARAM_REPS = 15
 PARAM_CYCLE_DURATION = 18
 
+def get_latest_data(string = 'ADwin_SSRO', datapath = ''):
+    meas_folder = r'D:\measuring\data'
+    currdate = time.strftime('%Y%m%d')
+    
+    if datapath == '':
+        df = os.path.join(meas_folder, currdate)
+    else:
+        df = datapath
+    
+    right_dirs = list()
+
+    if os.path.isdir(df):
+        for k in os.listdir(df):
+            if string in k:
+                right_dirs.append(k)
+        
+        if len(right_dirs) > 0:
+            latest_dir = os.path.join(df,right_dirs[len(right_dirs)-1])
+        else:
+            print 'No measurements containing %s in %s'%(string, df)
+        
+        print '\nAnalyzing data in %s'%latest_dir
+
+    else:
+        print 'Folder %s does not exist'%df
+        latest_dir = False
+
+    return latest_dir
+
+
 def run_single(folder='', ms=0, index=0):
     if folder == "":
         folder = os.getcwd()
@@ -47,7 +77,7 @@ def run_single(folder='', ms=0, index=0):
         SUFFIX = str(index)
 
     basepath = os.path.join(folder, PREFIX+SUFFIX)
-    params = load(basepath+'_'+PARAMS_SUFFIX+'.npz')
+    params = np.load(basepath+'_'+PARAMS_SUFFIX+'.npz')
 
     reps    = params['par_long'][PARAM_REPS]
     binsize = params['par_long'][PARAM_CYCLE_DURATION]*.003333
@@ -93,8 +123,7 @@ def run_all(folder='', altern=True):
 
             np.savetxt(folder+'\\'+'totalfid-%d_+_%d.dat' % (i-1, i),(t,f,ferr))
             fig.savefig(folder+'\\'+'totalfid-%d_+_%d.png' % (i-1, i))
-
-
+    
 def autoanalyze_single_ssro(rodata, spdata, crdata, save_basepath, 
         binsize=0.131072, reps=1e4, ms=0, closefigs=True, stop=0, firstbin=0):
     """
@@ -143,8 +172,9 @@ Measurement results:
     fig1 = plt.figure(figsize=(16,12))
 
     ### histogram for photon counts per shot (cpsh)
-    cpsh = sum(rocounts[:,firstbin:lastbin], axis=1) # sum over all columns
-
+    cpsh = np.sum(rocounts[:,firstbin:lastbin], axis=1) # sum over all columns
+    #print cpsh
+    #print max(cpsh)
     ax = plt.subplot(221)
     plt.hist(cpsh, max(cpsh)+1, align='mid', label='counts')
     plt.xlabel('counts/shot')
@@ -155,7 +185,7 @@ Measurement results:
     annotation += "\nmean c.p.sh. = %.2f" % (mean_cpsh)
     info += "\nmean c.p.sh. = %.2f" % (mean_cpsh)
 
-    pzero = len(where(cpsh==0)[0])/float(reps)
+    pzero = len(np.where(cpsh==0)[0])/float(reps)
     annotation += "\np(0 counts) = %.2f" % (pzero)
     info += "\np(0 counts) = %.2f" % (pzero)
 
@@ -164,9 +194,9 @@ Measurement results:
     
     ### spin relaxation during readout
     ro_time = rodata['time'][:lastbin] # create time axis [us]
-    ro_countrate = sum(rocounts[:,:lastbin], axis=0) / (binsize*1e-6*reps) # [Hz]
-    savetxt(save_basepath + '_ro_countrate.dat',
-         array([ro_time, ro_countrate]).transpose())
+    ro_countrate = np.sum(rocounts[:,:lastbin], axis=0) / (binsize*1e-6*reps) # [Hz]
+    np.savetxt(save_basepath + '_ro_countrate.dat',
+         np.array([ro_time, ro_countrate]).transpose())
 
     ax = plt.subplot(222)
     # ax.set_yscale('log') 
@@ -178,7 +208,7 @@ Measurement results:
     ### spin pumping data
 
     # convert counts to Hz
-    sp = array([j/(binsize*1e-6*reps) for j in spdata['counts']]) 
+    sp = np.array([j/(binsize*1e-6*reps) for j in spdata['counts']]) 
     ax = plt.subplot(223)
     if False and len(spdata['counts'])>2:
         offset_guess = spdata['counts'][len(spdata['counts'])-1]
@@ -186,7 +216,8 @@ Measurement results:
         decay_guess = 10
         
 
-        fit_result=fit.fit1d(spdata['time'][2:len(spdata['counts'])-1]/1E3, spdata['counts'][2:len(spdata['counts'])-1], 
+        fit_result=fit.fit1d(spdata['time'][2:len(spdata['counts'])-1]/1E3, 
+                spdata['counts'][2:len(spdata['counts'])-1], 
                 common.fit_exp_decay_with_offset, 
                 offset_guess, init_amp_guess, decay_guess,
                 do_plot = True, do_print = True, newfig = False, ret=True,
@@ -212,23 +243,23 @@ Measurement results:
     # plt.legend()
 
     ### fidelity analysis
-    fid_dat = zeros((0,3))
+    fid_dat = np.zeros((0,3))
 
     for i in range(1,lastbin):
         t = i*binsize
         
         # d: hist of counts, c: counts per shot
-        d = sum(rocounts[:,:i], axis=1)
-        c = sum(d)/float(reps)
+        d = np.sum(rocounts[:,:i], axis=1)
+        c = np.sum(d)/float(reps)
 
         cpsh_vs_ROtime += '%f\t%f\n' % (t, c)
         
         # we get the fidelity from the probability to get zero counts in a
         # shot 
-        pzero = len(where(d==0)[0])/float(reps)
-        pzero_err = sqrt(pzero*(1-pzero)/reps)
+        pzero = len(np.where(d==0)[0])/float(reps)
+        pzero_err = np.sqrt(pzero*(1-pzero)/reps)
         fid = 1-pzero if ms == 0 else pzero # fidelity calc. depends on ms
-        fid_dat = vstack((fid_dat, array([[t, fid, pzero_err]])))
+        fid_dat = np.vstack((fid_dat, np.array([[t, fid, pzero_err]])))
 
     fig2 = plt.figure()
     plt.errorbar(fid_dat[:,0], fid_dat[:,1], fmt='o', yerr=fid_dat[:,2])
@@ -242,9 +273,9 @@ Measurement results:
     infofile.close()
 
     # fidelities
-    savez(os.path.join(save_basepath+'_fid_vs_ROtime'), time=fid_dat[:,0],
+    np.savez(os.path.join(save_basepath+'_fid_vs_ROtime'), time=fid_dat[:,0],
             fid=fid_dat[:,1], fid_error=fid_dat[:,2])
-    savetxt(os.path.join(save_basepath+'_fid_vs_ROtime.dat'), fid_dat)
+    np.savetxt(os.path.join(save_basepath+'_fid_vs_ROtime.dat'), fid_dat)
 
     # counts per shot
     f = open(save_basepath+'_cpsh_vs_ROtime.dat', 'w')
@@ -284,7 +315,7 @@ def fidelities(folder,fid_ms0, fid_ms1):
     fid1 = d_ms1['fid']
     fid1_err = d_ms1['fid_error']
     F = (fid0 + fid1)/2.
-    F_err = sqrt(fid0_err**2 + fid1_err**2)
+    F_err = np.sqrt(fid0_err**2 + fid1_err**2)
     F_max = max(F)
     t_max = times[F.argmax()]
 
@@ -345,17 +376,23 @@ def fidelity_vs_power(folder='',sweep_param='Ex_RO_amplitude'):
     fig = plt.figure()
     plt.plot(pow, maxfid, 'ro', label='max F')
     plt.xlabel('P [nW]')
-    plt.ylabel('max. F')
-    plt.ylim(ymax=1.2*max(maxfid))
+    plt.ylabel('max. F', color = 'r')
+    plt.ylim(0.9*min(maxfid),1)
     plt.title('Maximum SSRO Fidelity and Optimal readout time vs' + sweep_param)
     plt.text(0.01*(max(pow)+min(pow)),1.15*max(maxfid),folder,fontsize='x-small')
     plt.legend()
+    ax = plt.gca()
+    ax.tick_params(axis='y', colors='red')
     
     plt.twinx()
     plt.plot(pow, maxfid_t, 'bo')
-    plt.ylabel('best ro-time')
+    plt.ylabel('best ro-time', color = 'b')
     plt.ylim(ymax=1.2*max(maxfid_t))
+    ax = plt.gca()
+    ax.tick_params(axis='y', colors='blue')
     plt.savefig('fidelity_vs_power.png')
+    
+
 
 def spin_flip_time_vs_MW_freq(folder=''):
     
@@ -560,6 +597,32 @@ def spin_pumping_during_readout_vs_RO_power(folder='',transition='A'):
     plt.legend((tau, A), ("Tau", "Amplitude"),loc='upper right',bbox_to_anchor=(1,1/1.05))
     fig1.savefig(folder+'\\'+'SP_A_and_tau_vs_'+transition+'_power.png')
     
+def get_readout_corr(ro_time, dat_path = ''):
+
+    if dat_path == '':
+        dat_path = os.getcwd()
+
+    d= np.load(dat_path+'\ADwin_SSRO-000_fid_vs_ROtime.npz')
+    time=d['time']
+    idx = find_nearest(time,ro_time)
+    ms0_fid=d['fid'][idx]
+    ms0_error=d['fid_error'][idx]
+    d.close()
+
+    f= np.load(dat_path+'\ADwin_SSRO-001_fid_vs_ROtime.npz')
+    time=f['time']
+    idx = find_nearest(time,ro_time)
+    ms1_fid=f['fid'][idx]
+    ms1_error=f['fid_error'][idx]
+    f.close()
+
+    print 'ms_0 fid', ms0_fid
+    print 'ms_0 error', ms0_error
+
+    print 'ms_1 fid', ms1_fid
+    print 'ms_1 error', ms1_error
+    
+    return (ms0_fid,ms1_fid), (ms0_error,ms1_error)
 
 # helper functions
 def timestamp():

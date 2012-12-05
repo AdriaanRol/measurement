@@ -1,16 +1,76 @@
 import os, time
+import numpy as np
 from numpy import *
 from matplotlib import pyplot as plt
-from analysis import fit, rabi, common, esr, ramsey
+from analysis import fit, rabi, common, esr, ramsey, SE
 
 def num2str(num, precision): 
     return "%0.*f" % (precision, num)
+
+def dec2str(num): 
+    return "%d" % (num)
 
 def find_nearest(array,value):
     idx=(abs(array-value)).argmin()
     return idx
 
-def plot_rabi(datapath, fit_data = True, with_detuning = False, save = True):
+def get_latest_data(string = 'ADwin_SSRO', datapath = ''):
+    meas_folder = r'D:\measuring\data'
+    currdate = time.strftime('%Y%m%d')
+    
+    if datapath == '':
+        df = os.path.join(meas_folder, currdate)
+    else:
+        df = datapath
+    
+    right_dirs = list()
+
+    if os.path.isdir(df):
+        for k in os.listdir(df):
+            if string in k:
+                right_dirs.append(k)
+        
+        if len(right_dirs) > 0:
+            latest_dir = os.path.join(df,right_dirs[len(right_dirs)-1])
+        else:
+            print 'No measurements containing %s in %s'%(string, df)
+        
+        print '\nAnalyzing data in %s'%latest_dir
+
+    else:
+        print 'Folder %s does not exist'%df
+        latest_dir = False
+
+    return latest_dir
+
+def SSRO_correct(SSRO_meas, F0, F1, F0err = 0.01, F1err = 0.01):
+    w1 = SSRO_meas[:2].copy()
+    w1 = w1[::-1]
+    
+    w1total = np.sum(w1)
+    w1 /= float(w1total)
+
+    norm = 1./(F0+F1-1.)
+    w1staterr = np.sqrt(w1*(1.-w1)/float(w1total))
+    
+    w1p0 = w1[1]
+    w1p1 = w1[0]
+
+    w1ms0err = np.sqrt( 
+            (norm**2 * (-w1p1 + F0*(w1p0+w1p1)) * F1err)**2 +\
+            (norm**2 * (w1p0 - F1*(w1p0+w1p1)) * F0err)**2 +\
+            (norm * (F1 - 1) * w1staterr[1])**2 +\
+            (norm * F1 * w1staterr[0])**2
+            )
+    w1ms1err = w1ms0err
+    w1err = np.array([w1ms0err, w1ms1err])
+
+
+    corrmat = 1./(F0*F1 - (1.-F1)*(1.-F0)) * np.array([[F1, F1-1.],[F0-1., F0]])
+    return np.dot(corrmat, w1.reshape(2,1)).reshape(-1), \
+            w1err
+
+def plot_data(datapath,fid=(0.7786,0.9926),fiderr=(4.15e-03,8.57e-04), fit_data = True, title='',with_detuning = False, save = True):
 
     plt.close('all')
     ###########################################
@@ -26,13 +86,21 @@ def plot_rabi(datapath, fit_data = True, with_detuning = False, save = True):
         if 'SP_histogram.npz' in k:
             sp_file = k
 
-    e = load(datapath+'\\'+stats_params_file)
-    f_drive = e['mw_drive_freq']
+    e = np.load(datapath+'\\'+stats_params_file)
     mwpower = e['mw_power']
-    mw_min_len = e['min_mw_length']
-    mw_max_len = e['max_mw_length']
+    par = e['sweep_par']
+    par_min = par.min()
+    par_max=par.max()
+    
+    
+    print par_min*1e-6
     noof_datapoints = e['noof_datapoints']
     noof_reps = e['completed_repetitions']
+    if 'sweep_par_name' in e.keys():
+        sp_name=e['sweep_par_name']
+    else:
+        sp_name='Total free evolution time [ns]'
+
     e.close()
 
     
@@ -40,7 +108,7 @@ def plot_rabi(datapath, fit_data = True, with_detuning = False, save = True):
     ######## SPIN RO  #########################
     ###########################################
     
-    f = load(datapath+'\\'+spin_ro_file)
+    f = np.load(datapath+'\\'+spin_ro_file)
     raw_counts = f['counts']
     SSRO_counts = f['SSRO_counts']
     repetitions = f['sweep_axis']
@@ -51,9 +119,321 @@ def plot_rabi(datapath, fit_data = True, with_detuning = False, save = True):
 
     idx = 0
     counts_during_readout = zeros(noof_datapoints)
-    mw_len = linspace(mw_min_len,mw_max_len,noof_datapoints)
+    par = linspace(par_min,par_max,noof_datapoints)
+    print par
     counts_during_readout = sum(raw_counts, axis = 1)
     SSRO_readout = sum(SSRO_counts, axis = 1)/float(noof_reps)
+    SSRO_readout_corr = zeros(len(SSRO_readout))
+    readout_error = zeros(len(SSRO_readout))
+
+    for i in arange(len(SSRO_readout)):
+        ms0_events = SSRO_readout[i]*noof_reps
+        ms1_events = noof_reps*(1-SSRO_readout[i])
+        corr = SSRO_correct(array([ms1_events,ms0_events]),F0=fid[0],F1=fid[1],F0err=fiderr[0],F1err=fiderr[1])
+        SSRO_readout_corr[i]=corr[0][0]
+        readout_error[i] = corr[1][0]  
+
+    figure1 = plt.figure(1)
+    plt.clf()
+    plt.plot(par,counts_during_readout, 'sk')
+
+    plt.xlabel(sp_name)
+    plt.ylabel('Integrated counts')
+    plt.title(title)
+    plt.text(1.01*par_min,max(counts_during_readout),datapath)
+    if save:
+        figure1.savefig(datapath+'\\histogram_integrated.png')
+
+
+    figure2 = plt.figure(2)
+    plt.clf()
+    plt.plot(par,SSRO_readout, 'sk')
+
+    plt.ylim([0,1])
+    plt.xlabel(sp_name)
+    plt.ylabel('Fraction of events with > 0 counts')
+    plt.title(title)
+    plt.text(1.01*par_min,1.1*max(SSRO_readout),datapath)
+    if save:
+        figure2.savefig(datapath+'\\histogram_integrated_SSRO.png')
+
+    
+    figure3 = plt.figure(3)
+    plt.clf()
+    plt.plot(par,SSRO_readout_corr, 'sk')
+
+    plt.ylim([0,1])
+    plt.xlabel(sp_name)
+    plt.ylabel('P(ms=0), corrected for readout error')
+    plt.title(title)
+    plt.text(1.01*par_min,1.1*max(SSRO_readout_corr),datapath)
+    if save:
+        figure3.savefig(datapath+'\\SSRO_corrected.png')    
+
+    x = 6.0
+    y = 8.0
+
+    figure4 = plt.figure(figsize=(x,y))
+    plt.pcolor(raw_counts, cmap = 'hot', antialiased=False)
+    plt.xlabel('Readout time (us)')
+    plt.ylabel('MW repetition number')
+    plt.title('Total histogram, integrated over repetitions')
+    plt.colorbar()
+    if save:
+        figure4.savefig(datapath+'\\histogram_counts_2d.png')
+
+    f.close()
+    
+
+    ###########################################
+    ######## SPIN PUMPING #####################
+    ###########################################
+    v = np.load(datapath+'\\'+sp_file)
+    sp_counts = v['counts']
+    sp_time = v['time']
+
+    offset_guess = sp_counts[len(sp_counts)-1]
+    init_amp_guess = sp_counts[2]
+    decay_guess = 10
+
+    figure5 = plt.figure()
+    fit.fit1d(sp_time/1E3, sp_counts, common.fit_exp_decay_with_offset, 
+            offset_guess, init_amp_guess, decay_guess,
+            do_plot = True, do_print = True, newfig = False,
+            plot_fitparams_xy = (0.5,0.5))
+    
+    plt.plot(sp_time/1E3,sp_counts,'sg')
+    plt.xlabel('Time ($\mu$s)')
+    plt.ylabel('Integrated counts')
+    plt.title('Spin pumping')
+    v.close()
+    print SSRO_readout
+    if save:
+        figure5.savefig(datapath+'\\spin_pumping.png')
+
+        #Save a dat file for use in e.g. Origin with the rabi oscillation.
+        curr_date = '#'+time.ctime()+'\n'
+        col_names = '#Col0: MW length (ns)\tCol1: Integrated counts\tCol2: SSRO Readout corrected\tCol3:error SSRO Readout Cor\n'
+        col_vals = str()
+        for k in arange(noof_datapoints):
+            col_vals += num2str(par[k],2)+'\t'+str(SSRO_readout[k])+'\t' + str(SSRO_readout_corr[k]) +'\t'+str(readout_error[k]) +'\n'
+        fo = open(datapath+'\\SSRO_readout.dat', "w")
+        for item in [curr_date, col_names, col_vals]:
+            fo.writelines(item)
+        fo.close()
+
+        #Save a dat file for use in e.g. Origin with the rabi oscillation.
+        #curr_date = '#'+time.ctime()+'\n'
+        #col_names = '#Col0: MW length (ns)\tCol1: SSRO corrected\n'
+        #col_vals = str()
+        #for k in arange(noof_datapoints):
+        #    col_vals += num2str(par[k],2)+'\t'+str(SSRO_readout[k])+'\n'
+        #fo = open(datapath+'\\SSRO_readout.dat', "w")
+        #for item in [curr_date, col_names, col_vals]:
+        #    fo.writelines(item)
+        #fo.close()
+
+    return True
+
+
+def plot_data_MBI(datapath,fid=(0.788,0.9862),fiderr=(4.08e-04,1.162e-03), fit_data = True, title='',with_detuning = False, save = True):
+
+    plt.close('all')
+    ###########################################
+    ######## MEASUREMENT SPECS ################
+    ###########################################
+    files = os.listdir(datapath)
+    
+    for k in files:
+        if 'statics_and_parameters.npz' in k:
+            stats_params_file = k
+        if 'Spin_RO.npz' in k:
+            spin_ro_file = k
+        if 'SP_histogram.npz' in k:
+            sp_file = k
+
+    e = np.load(datapath+'\\'+stats_params_file)
+    mwpower = e['mw_power']
+    par = e['sweep_par']
+
+
+    noof_datapoints = len(par)
+    if 'sweep_par_name' in e.keys():
+        print e['sweep_par_name']
+    else:
+        print "Sweep parameter name not defined."
+    
+ 
+    noof_reps = e['completed_repetitions']
+    if 'sweep_par_name' in e.keys():
+        sp_name=e['sweep_par_name']
+    else:
+        sp_name='Total free evolution time [ns]'
+
+    e.close()
+
+    
+    ###########################################
+    ######## SPIN RO  #########################
+    ###########################################
+    
+    f = np.load(datapath+'\\'+spin_ro_file)
+    
+  
+
+    t = f['time']
+
+    idx = 0
+
+    SSRO_readout = f['SSRO_counts']/float(noof_reps)
+    SSRO_readout_corr = zeros(len(SSRO_readout))
+    readout_error = zeros(len(SSRO_readout))
+    print len(SSRO_readout)
+    if len(par) == 1:
+        par = np.linspace(1,20,20)
+    par_min = par.min()
+    par_max = par.max()
+    print len(par)
+    for i in arange(len(SSRO_readout)):
+        ms0_events = SSRO_readout[i]*noof_reps
+        ms1_events = noof_reps*(1-SSRO_readout[i])
+        corr = SSRO_correct(array([ms1_events,ms0_events]),F0=fid[0],F1=fid[1],F0err=fiderr[0],F1err=fiderr[1])
+        SSRO_readout_corr[i]=corr[0][0]
+        readout_error[i] = corr[1][0]  
+
+
+    figure2 = plt.figure(2)
+    plt.clf()
+    plt.plot(par,SSRO_readout, 'sk')
+
+    plt.ylim([0,1])
+    plt.xlabel(sp_name)
+    plt.ylabel('Fraction of events with > 0 counts')
+    plt.title(title)
+    plt.text(1.01*par_min,1.1*max(SSRO_readout),datapath)
+    if save:
+        figure2.savefig(datapath+'\\histogram_integrated_SSRO.png')
+
+    
+    figure3 = plt.figure(3)
+    plt.clf()
+    plt.plot(par,SSRO_readout_corr, 'sk')
+
+    plt.ylim([0,1.2*max(SSRO_readout_corr)])
+    plt.xlabel(sp_name)
+    plt.ylabel('P(ms=0), corrected for readout error')
+    plt.title(title)
+    plt.text(1.01*par_min,1.1*max(SSRO_readout_corr),datapath)
+    if save:
+        figure3.savefig(datapath+'\\SSRO_corrected.png')    
+
+    x = 6.0
+    y = 8.0
+
+    
+
+    ###########################################
+    ######## SPIN PUMPING #####################
+    ###########################################
+    v = np.load(datapath+'\\'+sp_file)
+    sp_counts = v['counts']
+    sp_time = v['time']
+
+    offset_guess = sp_counts[len(sp_counts)-1]
+    init_amp_guess = sp_counts[2]
+    decay_guess = 10
+
+    figure5 = plt.figure()
+    fit.fit1d(sp_time/1E3, sp_counts, common.fit_exp_decay_with_offset, 
+            offset_guess, init_amp_guess, decay_guess,
+            do_plot = True, do_print = True, newfig = False,
+            plot_fitparams_xy = (0.5,0.5))
+    
+    plt.plot(sp_time/1E3,sp_counts,'sg')
+    plt.xlabel('Time ($\mu$s)')
+    plt.ylabel('Integrated counts')
+    plt.title('Spin pumping')
+    v.close()
+    print par
+    if save:
+        figure5.savefig(datapath+'\\spin_pumping.png')
+
+        #Save a dat file for use in e.g. Origin with the rabi oscillation.
+        curr_date = '#'+time.ctime()+'\n'
+        col_names = '#Col0: MW length (ns)\tCol1: Integrated counts\tCol2: SSRO Readout corrected\tCol3:error SSRO Readout Cor\n'
+        col_vals = str()
+        for k in arange(len(par)):
+            col_vals += num2str(par[k],2)+'\t'+str(SSRO_readout[k])+'\t' + str(SSRO_readout_corr[k]) +'\t'+str(readout_error[k]) +'\n'
+        fo = open(datapath+'\\SSRO_readout.dat', "w")
+        for item in [curr_date, col_names, col_vals]:
+            fo.writelines(item)
+        fo.close()
+
+        #Save a dat file for use in e.g. Origin with the rabi oscillation.
+        #curr_date = '#'+time.ctime()+'\n'
+        #col_names = '#Col0: MW length (ns)\tCol1: SSRO corrected\n'
+        #col_vals = str()
+        #for k in arange(noof_datapoints):
+        #    col_vals += num2str(par[k],2)+'\t'+str(SSRO_readout[k])+'\n'
+        #fo = open(datapath+'\\SSRO_readout.dat', "w")
+        #for item in [curr_date, col_names, col_vals]:
+        #    fo.writelines(item)
+        #fo.close()
+
+    return True
+
+
+
+
+def plot_rabi(datapath, fit_data = True, with_detuning = False, save = True, ro_correct=False,fid=(0.7570,0.98589),fiderr=(3.0325e-03,8.337e-04)):
+
+    plt.close('all')
+    ###########################################
+    ######## MEASUREMENT SPECS ################
+    ###########################################
+    files = os.listdir(datapath)
+    
+    for k in files:
+        if 'statics_and_parameters.npz' in k:
+            stats_params_file = k
+        if 'Spin_RO.npz' in k:
+            spin_ro_file = k
+        if 'SP_histogram.npz' in k:
+            sp_file = k
+
+    e = np.load(datapath+'\\'+stats_params_file)
+    f_drive = e['mw_drive_freq']
+    mwpower = e['mw_power']
+    mw_min_len = e['sweep_par'].min()
+    mw_max_len = e['sweep_par'].max()
+    noof_datapoints = e['noof_datapoints']
+    noof_reps = e['completed_repetitions']
+    mw_len = e['sweep_par'] 
+    e.close()
+
+    
+    ###########################################
+    ######## SPIN RO  #########################
+    ###########################################
+    
+    f = np.load(datapath+'\\'+spin_ro_file)
+    raw_counts = f['counts']
+    SSRO_counts = f['SSRO_counts']
+    repetitions = f['sweep_axis']
+    t = f['time']
+
+    tot_size = len(repetitions)
+    reps_per_point = tot_size/float(noof_datapoints)
+
+    idx = 0
+    counts_during_readout = zeros(noof_datapoints)
+    #mw_len = linspace(mw_min_len,mw_max_len,noof_datapoints)
+    
+    counts_during_readout = sum(raw_counts, axis = 1)
+    SSRO_readout = sum(SSRO_counts, axis = 1)/float(noof_reps)
+
+    SSRO_readout_corr = zeros(len(SSRO_readout))
+    readout_error = zeros(len(SSRO_readout))
     
 
     #########################################
@@ -147,7 +527,7 @@ def plot_rabi(datapath, fit_data = True, with_detuning = False, save = True):
     #ax2.plot(mw_len,counts_during_readout, 'sk')
     plt.ylim([0,1])
     plt.xlabel('MW length (ns)')
-    plt.ylabel('P($m_s=0$)')
+    plt.ylabel('Fraction of events N >0')
     plt.title('MW length sweep, driving $f$ ='+num2str(f_drive/1E6,1)+\
             ' MHz, power = '+num2str(mwpower,0)+' dBm')
     plt.text(0.1*(mw_max_len+mw_min_len),max(counts_during_readout),datapath)
@@ -167,12 +547,48 @@ def plot_rabi(datapath, fit_data = True, with_detuning = False, save = True):
         figure4.savefig(datapath+'\\histogram_counts_2d.png')
 
     f.close()
-    
+
+
+    ###########################################
+    ######## RO correct   #####################
+    ###########################################
+
+    if ro_correct:
+
+        for i in arange(len(SSRO_readout)):
+            ms0_events = SSRO_readout[i]*noof_reps
+            ms1_events = noof_reps*(1-SSRO_readout[i])
+            corr = SSRO_correct(array([ms1_events,ms0_events]),F0=fid[0],F1=fid[1],F0err=fiderr[0],F1err=fiderr[1])
+            SSRO_readout_corr[i]=corr[0][0]
+            readout_error[i] = corr[1][0] 
+        
+        figure5=plt.figure()
+
+        amp_guess_corr = (SSRO_readout_corr.max()+SSRO_readout_corr.min())/2.0
+        offset_guess_corr =SSRO_readout_corr.min()+(SSRO_readout_corr.max()+\
+                SSRO_readout_corr.min())/2.0
+        phase_guess = 0
+        if fit_data:
+            [fit_result, p] = fit.fit1d(mw_len, SSRO_readout_corr, rabi.fit_rabi_simple, 
+                    freq_guess, amp_guess_corr, offset_guess_corr, phase_guess,
+                    do_plot = True, do_print = True, newfig = False, ret = True)
+
+        else: plt.plot(mw_len,SSRO_readout_corr,'bo')
+        plt.title('MW length sweep, driving $f$ ='+num2str(f_drive/1E6,1)+\
+                ' MHz, power = '+num2str(mwpower,0)+' dBm')
+        plt.text(0.1*(mw_max_len+mw_min_len),0.9,datapath)
+        plt.xlabel('MW length (ns)')
+        plt.ylabel('Read out corrected P_ms=0')
+        plt.ylim(ymin=0)
+
+        if save:
+            figure5.savefig(datapath+'\\Rabi_SSRO_corrected.png')
+
 
     ###########################################
     ######## SPIN PUMPING #####################
     ###########################################
-    v = load(datapath+'\\'+sp_file)
+    v = np.load(datapath+'\\'+sp_file)
     sp_counts = v['counts']
     sp_time = v['time']
 
@@ -180,7 +596,7 @@ def plot_rabi(datapath, fit_data = True, with_detuning = False, save = True):
     init_amp_guess = sp_counts[2]
     decay_guess = 10
 
-    figure5 = plt.figure()
+    figure6 = plt.figure()
     fit.fit1d(sp_time/1E3, sp_counts, common.fit_exp_decay_with_offset, 
             offset_guess, init_amp_guess, decay_guess,
             do_plot = True, do_print = True, newfig = False,
@@ -192,7 +608,7 @@ def plot_rabi(datapath, fit_data = True, with_detuning = False, save = True):
     plt.title('Spin pumping')
     v.close()
     if save:
-        figure5.savefig(datapath+'\\spin_pumping.png')
+        figure6.savefig(datapath+'\\spin_pumping.png')
 
         #Save a dat file for use in e.g. Origin with the rabi oscillation.
         curr_date = '#'+time.ctime()+'\n'
@@ -207,7 +623,7 @@ def plot_rabi(datapath, fit_data = True, with_detuning = False, save = True):
 
     return True
 
-def plot_dark_esr(datapath, fit_data = True, save = True, f_dip = 2.878E9):
+def plot_dark_esr(datapath, fit_data = True, save = True, f_dip = 2.8286E9):
     plt.close('all')
 
     ###########################################
@@ -223,22 +639,26 @@ def plot_dark_esr(datapath, fit_data = True, save = True, f_dip = 2.878E9):
         if 'SP_histogram.npz' in k:
             sp_file = k
 
-    e = load(datapath+'\\'+stats_params_file)
+    e = np.load(datapath+'\\'+stats_params_file)
     f_center = e['mw_center_freq']
     mwpower = e['mw_power']
     mw_min_freq = e['min_mw_freq']
     mw_max_freq = e['max_mw_freq']
     noof_datapoints = e['noof_datapoints']
+    noof_reps = e['completed_repetitions']
     e.close()
 
     ###########################################
     ######## SPIN RO  #########################
     ###########################################
     
-    f = load(datapath+'\\'+spin_ro_file)
+    f = np.load(datapath+'\\'+spin_ro_file)
     raw_counts = f['counts']
+    SSRO_counts = f['SSRO_counts']
     repetitions = f['sweep_axis']
     t = f['time']
+
+    SSRO_readout = sum(SSRO_counts, axis = 1)/float(noof_reps)
 
     tot_size = len(repetitions)
     reps_per_point = tot_size/float(noof_datapoints)
@@ -247,7 +667,7 @@ def plot_dark_esr(datapath, fit_data = True, save = True, f_dip = 2.878E9):
     counts_during_readout = zeros(noof_datapoints)
     mw_freq = linspace(mw_min_freq,mw_max_freq,noof_datapoints)
     counts_during_readout = sum(raw_counts, axis = 1)
-
+    counts_during_readout = SSRO_readout
     #########################################
     ############ FITTING ####################
     #########################################
@@ -270,8 +690,7 @@ def plot_dark_esr(datapath, fit_data = True, save = True, f_dip = 2.878E9):
         fit_result, p = fit.fit1d(mw_freq/1E9, counts_during_readout, 
                 esr.fit_ESR_gauss, offset_guess, dip_depth_guess, width_guess/1E9,
                 f_dip_guess/1E9, (noof_dips, dip_separation/1E9),
-                do_plot = True, do_print = True, newfig = False, ret = True, 
-                plot_fitonly = True)
+                do_plot = True, do_print = True, newfig = False, ret = True)
 
         center_peak = fit_result['params_dict']['x0']
         splitting = fit_result['params_dict']['s0']
@@ -281,7 +700,7 @@ def plot_dark_esr(datapath, fit_data = True, save = True, f_dip = 2.878E9):
         print '1: f = ', (center_peak + splitting), ' GHz'
 
     plt.xlabel('MW frequency (GHz)')
-    plt.ylabel('Integrated counts')
+    plt.ylabel('Fraction of events N >0')
     plt.title('MW frequency sweep, MW parking spot $f$ ='+num2str(f_center/1E6,1)+\
             ' MHz, power = '+num2str(mwpower,0)+' dBm')
    
@@ -306,7 +725,7 @@ def plot_dark_esr(datapath, fit_data = True, save = True, f_dip = 2.878E9):
     ######## SPIN PUMPING #####################
     ###########################################
 
-    v = load(datapath+'\\'+sp_file)
+    v = np.load(datapath+'\\'+sp_file)
     sp_counts = v['counts']
     sp_time = v['time']
 
@@ -339,9 +758,19 @@ def plot_dark_esr(datapath, fit_data = True, save = True, f_dip = 2.878E9):
             fo.writelines(item)
         fo.close()
 
+        curr_date = '#'+time.ctime()+'\n'
+        col_names = '#Col0: MW length (ns)\tCol1: Integrated counts\n'
+        col_vals = str()
+        for k in arange(noof_datapoints):
+            col_vals += num2str(mw_freq[k]/1E9,10)+'\t'+str(SSRO_readout[k]) +'\n'
+        fo = open(datapath+'\\SSRO_readout.dat', "w")
+        for item in [curr_date, col_names, col_vals]:
+            fo.writelines(item)
+        fo.close()
+
     return True
 
-def plot_ramsey(datapath, fit_data = True, save = True):
+def plot_ramsey(datapath, fid=(0.7611,0.9895),fiderr=(4.264e-03,1.019e-03),fit_data = True, save = True):
 
     plt.close('all')
     ###########################################
@@ -357,12 +786,12 @@ def plot_ramsey(datapath, fit_data = True, save = True):
         if 'SP_histogram.npz' in k:
             sp_file = k
 
-    e = load(datapath+'\\'+stats_params_file)
+    e = np.load(datapath+'\\'+stats_params_file)
     f_drive = e['mw_drive_freq']
     detuning = e['detuning']
     mwpower = e['mw_power']
-    tau_max = e['tau_min']
-    tau_min = e['tau_max']
+    tau_min = e['min_wait_time']
+    tau_max = e['max_wait_time']
     #pi_2_duration = e['pi_2_duration']
     pi_2_duration=25
     noof_datapoints = e['noof_datapoints']
@@ -373,7 +802,7 @@ def plot_ramsey(datapath, fit_data = True, save = True):
     ######## SPIN RO  #########################
     ###########################################
     
-    f = load(datapath+'\\'+spin_ro_file)
+    f = np.load(datapath+'\\'+spin_ro_file)
     raw_counts = f['counts']
     SSRO_counts = f['SSRO_counts']
     repetitions = f['sweep_axis']
@@ -387,14 +816,25 @@ def plot_ramsey(datapath, fit_data = True, save = True):
     tau = linspace(tau_min,tau_max,noof_datapoints)
     counts_during_readout = sum(raw_counts, axis = 1)
     SSRO_readout = sum(SSRO_counts, axis = 1)/float(noof_reps)
+    SSRO_readout_corr = zeros(len(SSRO_readout))
+    readout_error = zeros(len(SSRO_readout))
+    SSRO_uncor=SSRO_readout
+
+    for i in arange(len(SSRO_readout)):
+        ms0_events = SSRO_readout[i]*noof_reps
+        ms1_events = noof_reps*(1-SSRO_readout[i])
+        corr = SSRO_correct(array([ms1_events,ms0_events]),F0=fid[0],F1=fid[1],F0err=fiderr[0],F1err=fiderr[1])
+        SSRO_readout_corr[i]=corr[0][0]
+        readout_error[i] = corr[1][0] 
+    SSRO_readout=SSRO_readout_corr
     #########################################
     ############ FITTING ####################
     #########################################
     print fit_data
     if fit_data:
-        FFT = fft.fft(counts_during_readout)
+        FFT = fft.fft(SSRO_readout)
         N = int(noof_datapoints)
-        timestep = (mw_max_len-mw_min_len)/float(noof_datapoints-1)
+        timestep = (tau_max-tau_min)/float(noof_datapoints-1)
         freq = fft.fftfreq(N,d = timestep)
 
         #Remove offset:
@@ -409,31 +849,31 @@ def plot_ramsey(datapath, fit_data = True, save = True):
         if save:
             figure1.savefig(datapath+'\\fft_signal_rabi.png')
 
-        offset_guess = counts_during_readout.min()+(counts_during_readout.max()+\
-                counts_during_readout.min())/2.0
+        offset_guess = SSRO_readout.min()+(SSRO_readout.max()+\
+                SSRO_readout.min())/2.0
         tau_guess = 1000
         
         #modulations:
         mod_freq_guess = freq[find_nearest(abs(FFT),abs(FFT).max())]
-        mod_amp_guess = (counts_during_readout.max()+counts_during_readout.min())/2.0
+        mod_amp_guess = (SSRO_readout.max()+SSRO_readout.min())/2.0
         mod_phase_guess = 0
 
-        print 'modulation frequency guess = ',freq_guess 
+        print 'modulation frequency guess = ',mod_freq_guess 
         print 'modulation amplitude guess = ',mod_amp_guess
 
     figure2 = plt.figure(2)
         
     if fit_data:
         tau_guess = 200
-        fit.fit1d(tau, counts_during_readout, 
+        fit.fit1d(tau, SSRO_readout, 
                 ramsey.fit_ramsey_gaussian_decay, 
                 tau_guess, offset_guess, 
-                (mod_freq_guess,mod_amp_guess,mod_phase_guess),
+                (mod_freq_guess,mod_amp_guess),
                 do_plot = True, do_print = True, newfig = False)
     print SSRO_readout
     plt.plot(tau,SSRO_readout, 'sk')
     plt.xlabel('\Delta t$ (ns)')
-    plt.ylabel('Integrated counts')
+    plt.ylabel('P(ms=0)')
     plt.title('Ramsey, driving $f$ ='+num2str(f_drive/1E6,1)+\
             ' MHz, power = '+num2str(mwpower,0)+' dBm,\n Detuning = '+\
             num2str(detuning/1E6,0)+' MHz, $\pi/2$ length = '+\
@@ -460,7 +900,7 @@ def plot_ramsey(datapath, fit_data = True, save = True):
     ###########################################
     ######## SPIN PUMPING #####################
     ###########################################
-    v = load(datapath+'\\'+sp_file)
+    v = np.load(datapath+'\\'+sp_file)
     sp_counts = v['counts']
     sp_time = v['time']
 
@@ -480,14 +920,206 @@ def plot_ramsey(datapath, fit_data = True, save = True):
     plt.title('Spin pumping')
     v.close()
     if save:
-        figure4.savefig(datapath+'\\spin_pumping.png')
+        figure4.savefig(datapath+'\\spin_pumping.self.nr_of_shelving_pulsespng')
 
         #Save a dat file for use in e.g. Origin with the rabi oscillation.
         curr_date = '#'+time.ctime()+'\n'
-        col_names = '#Col0: Interpulse delay (ns)\tCol1: Integrated counts\n'
+        col_names = '#Col0: tau (ns)\tCol1: Integrated counts\tCol2: SSRO Readout corrected\tCol3:error SSRO Readout Cor\n'
         col_vals = str()
         for k in arange(noof_datapoints):
-            col_vals += num2str(tau[k],2)+'\t'+num2str(counts_during_readout[k],0)+'\n'
+            col_vals += num2str(tau[k],2)+'\t'+str(SSRO_readout[k])+'\t' + str(SSRO_readout_corr[k]) +'\t'+str(readout_error[k]) +'\n'
+        fo = open(datapath+'\\SSRO_readout.dat', "w")
+        for item in [curr_date, col_names, col_vals]:
+            fo.writelines(item)
+        fo.close()
+
+    return True
+
+def plot_SE(datapath,fid=(0.788,0.991),fiderr=(2.885e-03,6.659e-04),fit_data = True, exp_guess=2.8, nr_of_pulses=1,save = True):
+
+    plt.close('all')
+    ###########################################
+    ######## MEASUREMENT SPECS ################
+    ###########################################
+    files = os.listdir(datapath)
+    
+    for k in files:
+        if 'statics_and_parameters.npz' in k:
+            stats_params_file = k
+        if 'Spin_RO.npz' in k:
+            spin_ro_file = k
+        if 'SP_histogram.npz' in k:
+            sp_file = k
+
+    e = np.load(datapath+'\\'+stats_params_file)
+    f_drive = e['mw_drive_freq']
+    mwpower = e['mw_power']
+    noof_datapoints = e['noof_datapoints']
+    if 'fe_min' in e.keys():
+        tau_max = e['fe_max']/2.
+        tau_min = e['fe_min']/2.
+        if 'free_evol' in e.keys():
+            
+            tau_free_evol = e['free_evol']*1e-3
+        else:
+            tau_free_evol = np.linspace(tau_min,tau_max,noof_datapoints)*2*1e-6
+    else:    
+        if 'max_sweep_par' in e.keys():
+            tau_max = e['max_sweep_par']
+            tau_min = e['min_sweep_par']
+        else:
+            tau_max = e['tau_max']
+            tau_min = e['tau_min']
+
+        tau_free_evol = nr_of_pulses*linspace(tau_min,tau_max,noof_datapoints)*2*1e-6
+    #tau_free_evol=np.linspace(0,4260,11)
+    #tau_free_evol[0]=4
+    noof_reps = e['completed_repetitions']
+    e.close()
+
+    ###########################################
+    ######## SPIN RO  #########################
+    ###########################################
+    
+    f = np.load(datapath+'\\'+spin_ro_file)
+    raw_counts = f['counts']
+    SSRO_counts = f['SSRO_counts']
+    repetitions = f['sweep_axis']
+    t = f['time']
+
+    tot_size = len(repetitions)
+    reps_per_point = tot_size/float(noof_datapoints)
+
+    idx = 0
+    counts_during_readout = zeros(noof_datapoints)
+    counts_during_readout = sum(raw_counts, axis = 1)
+    SSRO_readout = sum(SSRO_counts, axis = 1)/float(noof_reps)
+    SSRO_readout_corr = zeros(len(SSRO_readout))
+    readout_error = zeros(len(SSRO_readout))
+
+    for i in arange(len(SSRO_readout)):
+        ms0_events = SSRO_readout[i]*noof_reps
+        ms1_events = noof_reps*(1-SSRO_readout[i])
+        corr = SSRO_correct(array([ms1_events,ms0_events]),F0=fid[0],F1=fid[1],F0err=fiderr[0],F1err=fiderr[1])
+        SSRO_readout_corr[i]=corr[0][0]
+        readout_error[i] = corr[1][0] 
+
+    #########################################
+    ############ FITTING ####################
+    #########################################
+    #FIXME: write nice fitting routine for SE
+    
+    figure2 = plt.figure(2)
+        
+
+    plt.plot(tau_free_evol,counts_during_readout, 'sk')
+    plt.xlabel('Free evolution time [us]')
+    plt.ylabel('Integrated counts')
+    plt.title('Spin Echo, driving $f$ ='+num2str(f_drive/1E6,1)+\
+            ' MHz')
+    plt.text(0.1*(max(tau_free_evol)+min(tau_free_evol)),max(counts_during_readout),datapath)
+    if save:
+        figure2.savefig(datapath+'\\histogram_integrated.png')
+
+    figure4 = plt.figure(4)
+  
+    plt.plot(tau_free_evol,SSRO_readout, 'sk')
+    plt.xlabel('Free evolution time [us]')
+    plt.ylabel('Fraction of events >0 counts')
+    plt.title('Spin Echo SSRO cor, driving $f$ ='+num2str(f_drive/1E6,1)+\
+            ' MHz')
+    plt.text(0.1*(max(tau_free_evol)+min(tau_free_evol)),max(SSRO_readout),datapath)
+    if save:
+        figure4.savefig(datapath+'\\SSRO_readout.png')    
+
+    figure6 = plt.figure(6)
+        
+    if fit_data:
+        tau_guess = 500
+        offset_guess = SSRO_readout_corr.min()
+        amp_guess=SSRO_readout_corr.max()-offset_guess
+
+        print tau_guess
+        print offset_guess
+        print amp_guess
+        print tau_guess
+        print exp_guess
+        print tau_free_evol
+
+        fitresult=fit.fit1d(tau_free_evol, SSRO_readout_corr, 
+                SE.fit_echo, tau_guess, amp_guess,offset_guess, 
+                exp_guess, do_plot = True, do_print = True, newfig = False)
+        print fitresult
+    plt.errorbar(tau_free_evol,SSRO_readout_corr,fmt='sk',yerr=readout_error)
+    plt.xlabel('Free evolution time [us]')
+    plt.ylabel('P ms=0')
+    plt.title('Spin Echo SSRO cor, driving $f$ ='+num2str(f_drive/1E6,1)+\
+            ' MHz')
+    plt.text(0.1*(max(tau_free_evol)+min(tau_free_evol)),max(SSRO_readout_corr),datapath)
+    if save:
+        figure6.savefig(datapath+'\\SSRO_readout_corr.png')  
+
+
+    x = 6.0
+    y = 8.0
+
+    figure3 = plt.figure(figsize=(x,y))
+    plt.pcolor(raw_counts, cmap = 'hot', antialiased=False)
+    plt.xlabel('Readout time (us)')
+    plt.ylabel('MW repetition number')
+    plt.title('Total histogram, integrated over repetitions')
+    plt.colorbar()
+    if save:
+        figure3.savefig(datapath+'\\histogram_counts_2d.png')
+
+    f.close()
+    
+
+    ###########################################
+    ######## SPIN PUMPING #####################
+    ###########################################
+    v = np.load(datapath+'\\'+sp_file)
+    sp_counts = v['counts']
+    sp_time = v['time']
+
+    offset_guess = sp_counts[len(sp_counts)-1]
+    init_amp_guess = sp_counts[2]
+    decay_guess = 10
+
+    figure5 = plt.figure(5)
+    fit.fit1d(sp_time/1E3, sp_counts, common.fit_exp_decay_with_offset, 
+            offset_guess, init_amp_guess, decay_guess,
+            do_plot = True, do_print = True, newfig = False,
+            plot_fitparams_xy = (0.5,0.5))
+    
+    plt.plot(sp_time/1E3,sp_counts,'sg')
+    plt.xlabel('Time ($\mu$s)')
+    plt.ylabel('Integrated counts')
+    plt.title('Spin pumping')
+    v.close()
+    if save:
+
+        #Save a dat file for use in e.g. Origin with the rabi oscillation.
+        curr_date = '#'+time.ctime()+'\n'
+        col_names = '#Col0: MW length (ns)\tCol1: Integrated counts\tCol2: SSRO Readout corrected\tCol3: error SSRO Readout corrected\n'
+        col_vals = str()
+        for k in arange(noof_datapoints):
+            col_vals += num2str(tau_free_evol[k],2)+'\t'+str(SSRO_readout[k])+'\t' + str(SSRO_readout_corr[k]) +'\t'+str(readout_error[k]) +'\n'
+        fo = open(datapath+'\\SSRO_readout.dat', "w")
+        for item in [curr_date, col_names, col_vals]:
+            fo.writelines(item)
+        fo.close()
+
+
+
+        figure5.savefig(datapath+'\\spin_pumping.png')
+
+        #Save a dat file for use in e.g. Origin with the rabi oscillation.
+        curr_date = '#'+time.ctime()+'\n'
+        col_names = '#Col0: Interpulse delay (ns)\tCol1: Integrated counts\tCol2: SSRO corr\n'
+        col_vals = str()
+        for k in arange(noof_datapoints):
+            col_vals += num2str(tau_free_evol[k],2)+'\t'+num2str(counts_during_readout[k],0)+'\t'+num2str(SSRO_readout_corr[k],2)+'\n'
         fo = open(datapath+'\\integrated_histogram.dat', "w")
         for item in [curr_date, col_names, col_vals]:
             fo.writelines(item)
@@ -505,7 +1137,7 @@ def plot_esmw(datapath, fit_data = True, save = True):
     ###########################################
     files = os.listdir(datapath)
     
-    e = load(datapath+'\\'+suffix+'-1_statics_and_parameters.npz')
+    e = np.load(datapath+'\\'+suffix+'-1_statics_and_parameters.npz')
     f_drive = e['mw_drive_freq']
     mwpower = e['mw_power']
     mw_min_freq = e['min_esmw_freq']
@@ -532,7 +1164,7 @@ def plot_esmw(datapath, fit_data = True, save = True):
     mw_freq = linspace(mw_min_freq,mw_max_freq,noof_datapoints)
     fit_par=[]
     for idx in arange(noof_datapoints):
-        f = load(datapath+'\\'+spin_ro_file[idx])
+        f = np.load(datapath+'\\'+spin_ro_file[idx])
         raw_counts = f['counts']
         repetitions = f['sweep_axis']
         t = f['time']
@@ -587,7 +1219,7 @@ def plot_esmw(datapath, fit_data = True, save = True):
         ###########################################
         ######## SPIN PUMPING #####################
         ###########################################
-        v = load(datapath+'\\'+sp_file[idx])
+        v = np.load(datapath+'\\'+sp_file[idx])
         sp_counts = v['counts']
         sp_time = v['time']
 
@@ -652,7 +1284,7 @@ def plot_esr(datapath, fit_data = True, save = True, f_dip = 2.828E9,msplusone=F
             data_file = k
 
 
-    data = load(datapath+'\\'+data_file)
+    data = np.load(datapath+'\\'+data_file)
     mw_freq = data['freq']
     counts = data['counts']
     data.close()
@@ -704,7 +1336,7 @@ def plot_Pulse_cal(datapath, fit_data = True, save = True):
         if 'SP_histogram.npz' in k:
             sp_file = k
 
-    e = load(datapath+'\\'+stats_params_file)
+    e = np.load(datapath+'\\'+stats_params_file)
     f_drive = e['mw_drive_freq']
     mwpower = e['mw_power']
     min_pulse_nr = e['min_pulse_nr']
@@ -717,7 +1349,7 @@ def plot_Pulse_cal(datapath, fit_data = True, save = True):
     ######## SPIN RO  #########################
     ###########################################
     
-    f = load(datapath+'\\'+spin_ro_file)
+    f = np.load(datapath+'\\'+spin_ro_file)
     raw_counts = f['counts']
     repetitions = f['sweep_axis']
     SSRO_counts = f['SSRO_counts']
@@ -767,7 +1399,7 @@ def plot_Pulse_cal(datapath, fit_data = True, save = True):
     ###########################################
     ######## SPIN PUMPING #####################
     ###########################################
-    v = load(datapath+'\\'+sp_file)
+    v = np.load(datapath+'\\'+sp_file)
     sp_counts = v['counts']
     sp_time = v['time']
 
@@ -818,7 +1450,7 @@ def plot_Pulse_cal_amp(datapath, fit_data = True, save = True):
         if 'SP_histogram.npz' in k:
             sp_file = k
 
-    e = load(datapath+'\\'+stats_params_file)
+    e = np.load(datapath+'\\'+stats_params_file)
     f_drive = e['mw_drive_freq']
     mwpower = e['mw_power']
     min_amp = e['min_pulse_amp']
@@ -831,7 +1463,7 @@ def plot_Pulse_cal_amp(datapath, fit_data = True, save = True):
     ######## SPIN RO  #########################
     ###########################################
     
-    f = load(datapath+'\\'+spin_ro_file)
+    f = np.load(datapath+'\\'+spin_ro_file)
     raw_counts = f['counts']
     repetitions = f['sweep_axis']
     SSRO_counts = f['SSRO_counts']
@@ -881,7 +1513,7 @@ def plot_Pulse_cal_amp(datapath, fit_data = True, save = True):
     ###########################################
     ######## SPIN PUMPING #####################
     ###########################################
-    v = load(datapath+'\\'+sp_file)
+    v = np.load(datapath+'\\'+sp_file)
     sp_counts = v['counts']
     sp_time = v['time']
 
@@ -932,13 +1564,13 @@ def plot_Pulse_cal_time(datapath, fit_data = True, save = True):
         if 'SP_histogram.npz' in k:
             sp_file = k
 
-    e = load(datapath+'\\'+stats_params_file)
+    e = np.load(datapath+'\\'+stats_params_file)
     f_drive = e['mw_drive_freq']
     mwpower = e['mw_power']
     min_amp = e['min_pulse_amp']
     max_amp = e['max_pulse_amp']
-    min_time = e['min_time']
-    max_time = e['max_time']
+    min_time = e['min_sweep_par']
+    max_time = e['max_sweep_par']
     noof_datapoints = e['noof_datapoints']
     noof_reps = e['completed_repetitions']
     e.close()
@@ -947,7 +1579,7 @@ def plot_Pulse_cal_time(datapath, fit_data = True, save = True):
     ######## SPIN RO  #########################
     ###########################################
     
-    f = load(datapath+'\\'+spin_ro_file)
+    f = np.load(datapath+'\\'+spin_ro_file)
     raw_counts = f['counts']
     repetitions = f['sweep_axis']
     SSRO_counts = f['SSRO_counts']
@@ -998,7 +1630,7 @@ def plot_Pulse_cal_time(datapath, fit_data = True, save = True):
     ###########################################
     ######## SPIN PUMPING #####################
     ###########################################
-    v = load(datapath+'\\'+sp_file)
+    v = np.load(datapath+'\\'+sp_file)
     sp_counts = v['counts']
     sp_time = v['time']
 
