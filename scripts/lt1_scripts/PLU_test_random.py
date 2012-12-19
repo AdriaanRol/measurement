@@ -12,8 +12,8 @@ from numpy import random
 pulse_nr = 300
 ch0_delay_time = -30
 #ch0_delay_time=[random.randint(-20,20) for r in range(pulse_nr)]
-ch1_delay_time = -30
-#ch1_delay_time=[random.randint(-20,20) for r in range(pulse_nr)]
+ch1_delay_time = -80
+ch1_delay_time=[random.randint(-400,-80) for r in range(pulse_nr)]
 reset_delay_time = -700
 
 sync_intervals = ones(pulse_nr,dtype=int)*130    
@@ -35,10 +35,10 @@ for i in arange(pulse_nr):
     
     if (i+1)%3==0:sync_intervals[i]=100
     if (i+1)%4==0:sync_intervals[i]=1000
-    if (i+1)%4==0:reset_events[i]=1
+    #if (i+1)%4==0:reset_events[i]=1
     if photon_pulse_nr[i]>0.5:
         if (i+1)%4==0:
-            ch0_events[i-3]=1
+            ch1_events[i-3]=1
             ch0_events[i-2]=1
             events+=1
 
@@ -47,8 +47,8 @@ for i in arange(pulse_nr):
 #    else:
 #        ch1_events[i]=1
 
-#ch0_events[8]=1
-#ch1_events[8]=0
+#ch0_events[8]=0
+#ch1_events[8]=1
 #ch0_events[9]=1
 
 #ch0_events[12]=0
@@ -70,9 +70,9 @@ elt = 'plu_test'
 wait = 'wait'
 elt2 = 'plu_test2'
 
-seq.add_element(elt, repetitions = 1, goto_target = 'wait')
-seq.add_element(wait, repetitions = 1, goto_target = 'elt2')
-seq.add_element(elt2, repetitions = 1)
+seq.add_element(elt, repetitions = 500, goto_target = 'wait')
+seq.add_element(wait, repetitions = 500, goto_target = 'elt2')
+seq.add_element(elt2, repetitions = 500)
 
 last = 'none'
 

@@ -181,7 +181,7 @@ class scan2d_counts(scan):
 
         from measurement.wp_toolbox.qtlab_data import save
         save(self.get_name(), meta, x__x__um=self._x, y__y__um=self._y, 
-        z__counts__Hz=self._data['countrates'])
+        z__counts__Hz=self._data['countrates'], do_plot=False)
 
 
 	# internal functions
