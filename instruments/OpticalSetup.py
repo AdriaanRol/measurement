@@ -6,7 +6,7 @@ import time
 import logging
 from numpy import *
 from qt import *
-from analysis import fit_oldschool as fit
+from analysis.lib.fitting import fit_oldschool as fit
 import matplotlib.pyplot as plt
 
 class OpticalSetup(CyclopeanInstrument):

@@ -10,9 +10,9 @@ from measurement.lib import PQ_measurement_generator_v2 as pqm
 from measurement.lib import ssro_ADwin_class as ssro_ADwin
 from measurement.lib import esr
 from measurement.lib.config import awgchannels_lt2 as awgcfg
-from measurement.lib.sequence import common as commonseq
+from measruement.lib.sequence import common as commonseq
 from measurement.lib.sequence import decoupling_v2 as dec
-from analysis.lib.spin import pulse_calibration_fitandplot_lib, spin_control 
+from analysis.lib.spin import pulse_calibration_fitandplot, spin_control 
 
 
 
@@ -43,15 +43,15 @@ class Decoupling(Measurement):
         self.par['AWG_done_DI_channel'] =          8
         self.par['send_AWG_start'] =               1
         self.par['wait_for_AWG_done'] =            0
-        self.par['green_repump_duration'] =        10
-        self.par['CR_duration'] =                  60
-        self.par['SP_duration'] =                  50
+        self.par['green_repump_duration'] =        12
+        self.par['CR_duration'] =                  250 #NOTE set to 60 for Ey,A1
+        self.par['SP_duration'] =                  350 # NOTE set to 50 for Ey, A1
         self.par['SP_filter_duration'] =           0
         self.par['sequence_wait_time'] =           int(np.ceil(1e-3)+2)
         self.par['wait_after_pulse_duration'] =    1
         self.par['CR_preselect'] =                 1000
 
-        self.par['reps_per_datapoint'] =           1000
+        self.par['reps_per_datapoint'] =           500
         self.par['sweep_length'] =                 int(21)
         self.par['RO_repetitions'] =               int(21*1000)
         self.par['RO_duration'] =                  22
@@ -59,13 +59,13 @@ class Decoupling(Measurement):
         self.par['cycle_duration'] =               300
         self.par['CR_probe'] =                     100
 
-        self.par['green_repump_amplitude'] =       200e-6
+        self.par['green_repump_amplitude'] =       160e-6
         self.par['green_off_amplitude'] =          0e-6
-        self.par['Ex_CR_amplitude'] =              20e-9 #OK
-        self.par['A_CR_amplitude'] =               15e-9 #OK
+        self.par['Ex_CR_amplitude'] =              10e-9 #OK
+        self.par['A_CR_amplitude'] =               13e-9 # NOTE set to 15e-9 for Ey,A1
         self.par['Ex_SP_amplitude'] =              0 
         self.par['A_SP_amplitude'] =               15e-9 #OK: PREPARE IN MS = 0
-        self.par['Ex_RO_amplitude'] =              8e-9 #OK: READOUT MS = 0
+        self.par['Ex_RO_amplitude'] =              9e-9 #OK: READOUT MS = 0
         self.par['A_RO_amplitude'] =               0e-9
 
         self.par['min_sweep_par'] =                  0
@@ -123,7 +123,7 @@ class Decoupling(Measurement):
 
 
 
-    def start_measurement(self,generate_sequence,pulse_dict,lt1=False,ssro_dict={},):
+    def start_measurement(self,generate_sequence,pulse_dict,lt1=False,ssro_dict={},send_sequence_AWG=True):
         # Prepare MW source and counters
         print 'Setting MW freq to '
         print (self.f_drive*1e-9)
@@ -135,14 +135,17 @@ class Decoupling(Measurement):
         self.counters.set_is_running(False)
         
         #Generate sequence and send to AWG
-        sequence = generate_sequence(self.par['sweep_par'],pulse_dict,lt1)
-
+        if send_sequence_AWG:
+            sequence = generate_sequence(self.par['sweep_par'],pulse_dict,lt1)
+        else:
+            sequence=self.sequence
+        #sequence["max_seq_time"]=100000
         self.par['RO_repetitions'] =               int(len(self.par['sweep_par'])*self.par['reps_per_datapoint'])
         self.par['sweep_length'] =                 int(len(self.par['sweep_par']))
-        self.par['sequence_wait_time'] =           int(np.ceil(sequence["max_seq_time"]/1e3)+2)
+        print 'seq max time in start meas'
+        print int(np.ceil(sequence["max_seq_time"])+10)
+        self.par['sequence_wait_time'] =           int(np.ceil(sequence["max_seq_time"])+10)
         
-        self.par['min_sweep_par'] =                self.par['sweep_par'].min()
-        self.par['max_sweep_par'] =                self.par['sweep_par'].max()
         
         self.awg.set_runmode('SEQ')
         self.awg.start()  
@@ -158,7 +161,9 @@ class Decoupling(Measurement):
 
     def spin_control(self,lt1,ssro_dict={}):
         self.par['green_repump_voltage'] = self.ins_green_aom.power_to_voltage(self.par['green_repump_amplitude'])
-        self.par['green_off_voltage'] = 0.01#self.ins_green_aom.power_to_voltage(self.par['green_off_amplitude'])
+        self.par['green_off_voltage'] = 0.08#self.ins_green_aom.power_to_voltage(self.par['green_off_amplitude'])
+        self.par['A_off_voltage'] = -0.08
+        self.par['Ex_off_voltage'] = 0.0
         self.par['Ex_CR_voltage'] = self.ins_E_aom.power_to_voltage(self.par['Ex_CR_amplitude'])
         self.par['A_CR_voltage'] = self.ins_A_aom.power_to_voltage(self.par['A_CR_amplitude'])
         self.par['Ex_SP_voltage'] = self.ins_E_aom.power_to_voltage(self.par['Ex_SP_amplitude'])
@@ -166,6 +171,17 @@ class Decoupling(Measurement):
         self.par['Ex_RO_voltage'] = self.ins_E_aom.power_to_voltage(self.par['Ex_RO_amplitude'])
         self.par['A_RO_voltage'] = self.ins_A_aom.power_to_voltage(self.par['A_RO_amplitude'])
 
+        print 'SP duration'
+        print self.par['SP_duration']
+        print 'max_sp_bins'
+        print self.max_SP_bins
+        print 'sweep_length'
+        print self.par['sweep_length']
+        print 'RO duration'
+        print self.par['RO_duration']
+        print 'max_ro_dim'
+        print self.max_RO_dim
+    
         if  (self.par['SP_duration'] > self.max_SP_bins) or \
             (self.par['sweep_length']*self.par['RO_duration'] > self.max_RO_dim):
                 print ('Error: maximum dimensions exceeded')
@@ -177,7 +193,8 @@ class Decoupling(Measurement):
         if not(lt1):
             self.adwin.set_spincontrol_var(set_phase_locking_on = self.set_phase_locking_on)
             self.adwin.set_spincontrol_var(set_gate_good_phase =  self.set_gate_good_phase)
-
+        print 'seq max time set in ADwin'
+        print self.par['sequence_wait_time']
         self.adwin.start_spincontrol(
             counter_channel = self.par['counter_channel'],
             green_laser_DAC_channel = self.par['green_laser_DAC_channel'],
@@ -200,6 +217,8 @@ class Decoupling(Measurement):
             cycle_duration = self.par['cycle_duration'],
             green_repump_voltage = self.par['green_repump_voltage'],
             green_off_voltage = self.par['green_off_voltage'],
+            A_off_voltage = self.par['A_off_voltage'],
+            Ex_off_voltage = self.par['Ex_off_voltage'],
             Ex_CR_voltage = self.par['Ex_CR_voltage'],
             A_CR_voltage = self.par['A_CR_voltage'],
             Ex_SP_voltage = self.par['Ex_SP_voltage'],
@@ -290,13 +309,14 @@ class Decoupling(Measurement):
         savdat['max_pulse_amp']=self.par['max_sweep_par']
         savdat['min_time'] = self.par['min_sweep_par']
         savdat['max_time'] = self.par['max_sweep_par']
-        savdat['min_sweep_par']=self.par['min_sweep_par']
-        savdat['max_sweep_par']=self.par['max_sweep_par']
+        savdat['min_sweep_par']=self.par['fe_min']
+        savdat['max_sweep_par']=self.par['fe_max']
         savdat['sweep_par_name'] = self.par['sweep_par_name']
         savdat['sweep_par'] = self.par['sweep_par']
         savdat['noof_datapoints'] = self.par['sweep_length']
         savdat['fe_max'] = self.par['fe_max']
         savdat['fe_min'] = self.par['fe_min']
+        savdat['free_evol'] = self.par['free_evol']
         
         self.save_dataset(name='statics_and_parameters', do_plot=False, 
             data = savdat, idx_increment = True)
@@ -310,7 +330,7 @@ class Decoupling(Measurement):
         self.awg.set_runmode('CONT')
         self.adwin.set_simple_counting()
         self.counters.set_is_running(True)
-        self.ins_green_aom.set_power(200e-6)   
+        self.ins_green_aom.set_power(100e-6)   
         self.microwaves.set_status('off')
         self.microwaves.set_iq('off')
         self.microwaves.set_pulm('off')
@@ -356,98 +376,238 @@ def get_datapath():
     datapath = datafolder+date + '/'
     return datapath
 
-def Cal_CORPSE_pulse(m,nr_of_pulses,p_dict,lt1,ssro_dict):        
-    p_dict['nr_of_pulses'] = nr_of_pulses
-    m.par['sweep_par_name'] = 'Amplitude of %d Pi CORPSE pulses' % nr_of_pulses 
-    m.start_measurement(cal.DSC_pulse_amp,p_dict,lt1=lt1,ssro_dict=ssro_dict)
-    
-    dp=get_datapath()
-    path = lde_calibration.find_newest_data(dp,string=m.name)
-    fit_dict = lde_calibration.rabi_calibration(path,new_fig=True,close_fig=True)
-
-    return fit_dict
-
-def XY8(self,m,name,lt1):
+def XY8(RO_dur=48,Ex_p=12e-9,lt1=False,CORPSE_pi=0.577,CORPSE_pi2=0.631,CORPSE=False,MW_freq=2.8286e9,name='Decoupling'):
     datafolder= 'D:/measuring/data/'
-    date = time.strftime('%Y') + time.strftime('%m') + time.strftime('%d')
+    date = dtime.strftime('%Y') + dtime.strftime('%m') + dtime.strftime('%d')
     datapath = datafolder+date + '/'
-    nr_of_datapoints = 11
-    #min_tau =  0.010e3
-    #max_tau =  164.503e3
-    min_tau=55e3
-    max_tau=65e3
-    tau = np.linspace(min_tau,max_tau,nr_of_datapoints)
-    
-    pulse_dict = {
-            "Pi":{"duration": 58., "amplitude": 0.4845},
-                "Pi_2":   {"duration": 29., "amplitude": 0.7},
-                "init_state_pulse": {"duration":29. , "amplitude":0.7,  
-                                "Do_Pulse": False},
-                "time_between_pulses": 10.,
-                "nr_of_XY8_cycles": 1.,
-                "duty_cycle_time": 100.,                             
-                }
-
-    par['sweep_par_name'] = 'Pi Pulse amp'
-    par['nr_of_pulses']=8*pulse_dict['nr_of_XY8_cycles']
-    pulse_dict["duty_cycle_time"] = 100
-    start_measurement(dec.XY8_cycles,tau,pulse_dict,name='Cal_5_Pi_amp')
-
-def XY8_rep_el(nr_of_datapoints,RO_dur=47,Ex_p=9e-9,MW_freq=2.8289e9,lt1=False,ssro_dict={}):
-    datafolder= 'D:/measuring/data/'
-    date = time.strftime('%Y') + time.strftime('%m') + time.strftime('%d')
-    datapath = datafolder+date + '/'
-    
-    name = 'XY8'
+    if CORPSE:
+        name=name+'CORPSE'
     m = Decoupling(name)
     m.setup(lt1)
 
+    # zoomed in SE
+    nr_of_datapoints = 11
+    min_tau =  0.1e3
+    max_tau =  53.9064e3*10
+    tau=np.linspace(0,max_tau,nr_of_datapoints)
+    tau[0]=min_tau
+    
+    
     pulse_dict = {
-            "Pi":{"duration": 50., "amplitude": 0.578},
-                "init_state_pulse": {"duration":25. , "amplitude":0.54},  
+                "Pi":{"amplitude":0.6615,"duration":50.},
+                "init_state_pulse":{"amplitude":.743,"duration":25.},
+                "CORPSE_pi":{"duration": 58., "amplitude":CORPSE_pi},
+                "CORPSE_pi2":{"duration": 58., "amplitude":CORPSE_pi2},
                 "time_between_pulses": 10.,
-                "nr_of_XY8_cycles": 1.,
-                "duty_cycle_time": 100.,  
-                "tau_el_length":tau_el_len,
-                "rep_elements":True,
+                "time_between_CORPSE":10.,
+                "nr_of_XY8_cycles": 1/8.,
+                "duty_cycle_time": 100.,                             
                 }
+    m.par['sweep_par'] = tau
+    m.par['sweep_par_name'] = 'tau [ns]'
+    m.par['sweep_length'] = len(tau)
+    m.par['RO_duration'] = RO_dur
+    m.par['Ex_RO_amplitude'] = Ex_p
+    fe_min = pulse_dict['nr_of_XY8_cycles']*16*min_tau
+    fe_max = pulse_dict['nr_of_XY8_cycles']*16*max_tau
+    m.par['fe_max'] = max_tau#fe_max*1e-6
+    m.par['fe_min'] = min_tau#fe_min*1e-6
+    m.par['free_evol'] = tau*16*pulse_dict['nr_of_XY8_cycles']
+    m.sequence={}
+    m.sequence['max_seq_time'] = 20645
+    m.f_drive=MW_freq
+
+    m.par['nr_of_pulses']=8*pulse_dict['nr_of_XY8_cycles']
+    if CORPSE:
+        m.start_measurement(dec.DEC_CORPSE,pulse_dict,lt1=lt1,send_sequence_AWG=True)
+    else:
+        m.start_measurement(dec.XY8_cycles,pulse_dict,lt1=lt1)
+
+def XY8_rep_el(RO_dur=48,Ex_p=11.5e-9,MW_freq=2.8291e9,lt1=False,ssro_dict={},CORPSE=False,name='XY8'):
+    datafolder= 'D:/measuring/data/'
+    date = dtime.strftime('%Y') + dtime.strftime('%m') + dtime.strftime('%d')
+    datapath = datafolder+date + '/'
+    
+    name = name
+    m = Decoupling(name)
+    m.setup(lt1)
+
+    
 
     # Determine tau
-    tau_el_len = .525e4
-    tau_el_len_us = tau_el_len*1e3
-    tau_rep_min=0     # maxtau in units of tau_len
-    tau_rep_max=200     # maxtau in units of tau_len
-    tau_rep = np.linspace(tau_rep_min,tau_rep_max,nr_of_datapoints)
-    tau_rep[0]=1
-        
+    tau_el_len = 53.7239e3/11/3
+    tau_el_len = 1628
+    #tau_el_len = 2e3
+    #tau_el_len_us = tau_el_len*1e3
+
+    #tau_rep_min=0     # maxtau in units of tau_len
+    #tau_rep_max=25     # maxtau in units of tau_len
+    #tau_rep = np.linspace(tau_rep_min,tau_rep_max,nr_of_datapoints)
+    #tau_rep[0]=1
+    
+    #tau_rep=np.array([1./500.,1,2,3,4])
+    #tau_rep=np.array([1,1,2,3,4,5,6,7,8,10,13,15,17,20,30,40,50,60,70,75]) #XY4
+    #tau_rep=np.array([1,1,2,3,4,5,6,7,8,10,11,12,13,14,15,16,17,18,19,20]) #XY16
+    #tau_rep=np.array([1,1,2,3,4,5,6,7,8,9,10]) #XY32
+    #tau_rep=np.array([1,1,2,3,4,5,6,7,8,9,10]) #XY64
+    
+    #on revivals
+    #tau_rep=np.array([1/500.,1,2,3,4,5,6,7,8,9]) #XY4
+    #tau_rep=np.array( [1/500.,1,2,3,4,5,6]) #XY8
+    #tau_rep=np.array([33./500,31,32,33,34,35]) #XY16
+    tau_rep=np.array([1/3.,1/3.])*3 #XY32
+    #tau_rep=np.array([11/500.,1])*3 #XY64
+    #tau_rep=np.array([11/500.,11*20]) #XY64
+    #tau_rep=np.array([11./500.,50*11]) #XY16-pairs
+    #tau_rep = np.linspace (0,15,16)
+    #tau_rep[0] = 11./500
+    
     m.par['sweep_par'] = tau_rep
     m.par['sweep_length'] = len(tau_rep)
     m.par['RO_duration'] = RO_dur
     m.par['Ex_RO_amplitude'] = Ex_p
     m.f_drive=MW_freq
-        
-    p_dict['nr_of_pulses'] = nr_of_pulses
-    fe_min = pulse_dict['nr_of_XY8_cycles']*16*tau_el_len*tau_rep[0]
-    fe_max = pulse_dict['nr_of_XY8_cycles']*16*tau_rep_max*tau_el_len
-    print fe_min
-    print fe_max
-    m.par['fe_max'] = fe_max
-    m.par['fe_min'] = fe_min
-    m.par['sweep_par_name'] = 'Free evolution time'
+    pulse_dict = {
+        "Pi":{"duration": 0*50., "amplitude": 0*0.40514},
+        "CORPSE_pi":{"duration": 58., "amplitude":0.484},
+        "CORPSE_pi2":{"duration": 58., "amplitude":0.498},
+        "init_state_pulse": {"duration":50. , "amplitude":0.40514},  
+            "time_between_pulses": 10.,
+            "nr_of_XY8_cycles": 4/8.,
+            "duty_cycle_time": 100.,  
+            "tau_el_length":tau_el_len,
+            "final_tau":50.,
+            "time_between_CORPSE":20.,
+            }    
+    
+    m.par['free_evol'] = pulse_dict['nr_of_XY8_cycles']*16*tau_el_len*tau_rep
+    m.par['free_evol'][0]=1*pulse_dict['nr_of_XY8_cycles']*16
+    print m.par['free_evol']
+    m.par['fe_max'] = m.par['free_evol'].max()*1e-6
+    m.par['fe_min'] = m.par['free_evol'].min()*1e-6
+    m.par['sweep_par_name'] = 'Free evolution time (ms)'
     m.par['nr_of_pulses']=8*pulse_dict['nr_of_XY8_cycles']
     pulse_dict["duty_cycle_time"] = 100
-    
-    m.start_measurement(dec.XY8_cycles_multiple_elements,pulse_dict,lt1=lt1,ssro_dict=ssro_dict)
+    m.sequence={}
+    m.sequence["max_seq_time"]=100000
+    if CORPSE:
+        m.start_measurement(dec.XY8_cycles_multiple_elements_CORPSE,pulse_dict,lt1=lt1,ssro_dict=ssro_dict)
+    else:
+        m.start_measurement(dec.XY8_cycles_multiple_elements,pulse_dict,lt1=lt1,ssro_dict=ssro_dict,send_sequence_AWG=False)
     
     dp=get_datapath()
     path = lde_calibration.find_newest_data(dp,string=m.name)
-    lde_calibration.plot_data(path,new_fig=True,close_fig=True)    
+    spin_control.plot_SE(path)    
     
     #min_tau =  0.010e3
     #max_tau =  164.503e3
     
+def XY8_rep_el_tau(RO_dur=48,Ex_p=11.5e-9,MW_freq=2.8291e9,lt1=False,ssro_dict={},name='XY8'):
+    datafolder= 'D:/measuring/data/'
+    date = dtime.strftime('%Y') + dtime.strftime('%m') + dtime.strftime('%d')
+    datapath = datafolder+date + '/'
     
+    name = name
+    m = Decoupling(name)
+    m.setup(lt1)
+
+    
+
+    # Determine tau
+    tau_el_len = 53.9064e3/11/3
+    tau_el_len = np.round_(np.linspace(1578,1658,20)/4)*4
+    tau_el_len[0] = 500./33.
+    tau_rep_el = 33*3
+    
+    m.par['sweep_par'] = tau_el_len
+    m.par['sweep_length'] = len(tau_el_len)
+    m.par['RO_duration'] = RO_dur
+    m.par['Ex_RO_amplitude'] = Ex_p
+    m.f_drive=MW_freq
+    pulse_dict = {
+        "Pi":{"duration": 50., "amplitude": 0.4028},
+        "init_state_pulse": {"duration":25. , "amplitude":0.452},  
+            "time_between_pulses": 10.,
+            "nr_of_XY8_cycles": 32/8.,
+            "duty_cycle_time": 100.,  
+            "final_tau":50.,
+            "tau_rep_el":tau_rep_el,
+            }    
+    
+    m.par['free_evol'] = pulse_dict['nr_of_XY8_cycles']*16*tau_rep_el*tau_el_len
+    m.par['free_evol'][0]=1*pulse_dict['nr_of_XY8_cycles']*16
+    print m.par['free_evol']
+    m.par['fe_max'] = m.par['free_evol'].max()*1e-6
+    m.par['fe_min'] = m.par['free_evol'].min()*1e-6
+    m.par['sweep_par_name'] = 'Free evolution time (ms)'
+    m.par['nr_of_pulses']=8*pulse_dict['nr_of_XY8_cycles']
+    pulse_dict["duty_cycle_time"] = 100
+    m.sequence={}
+    m.sequence["max_seq_time"]=10506
+
+    m.start_measurement(dec.XY8_cycles_multiple_elements_tau,pulse_dict,lt1=lt1,ssro_dict=ssro_dict,send_sequence_AWG=False)
+    
+    dp=get_datapath()
+    path = lde_calibration.find_newest_data(dp,string=m.name)
+    spin_control.plot_SE(path)    
+    
+    #min_tau =  0.010e3
+    #max_tau =  164.503e3
   
+def XY8_rep_el_final_tau(RO_dur=48,Ex_p=11.5e-9,MW_freq=2.8291e9,lt1=False,ssro_dict={},CORPSE=False,name='XY8'):
+    datafolder= 'D:/measuring/data/'
+    date = dtime.strftime('%Y') + dtime.strftime('%m') + dtime.strftime('%d')
+    datapath = datafolder+date + '/'
+    
+    name = name
+    m = Decoupling(name)
+    m.setup(lt1)
+
+    
+
+    # Determine tau
+    tau_el_len = 75
+    final_tau=np.linspace(0,100,11)
+
+    m.par['sweep_par'] = final_tau
+    m.par['sweep_length'] = len(final_tau)
+    m.par['RO_duration'] = RO_dur
+    m.par['Ex_RO_amplitude'] = Ex_p
+    m.f_drive=MW_freq
+    pulse_dict = {
+        "Pi":{"duration": 50., "amplitude": 0*0.4028},
+        "CORPSE_pi":{"duration": 58., "amplitude":0.484},
+        "CORPSE_pi2":{"duration": 58., "amplitude":0.498},
+        "init_state_pulse": {"duration":25. , "amplitude":0*0.429},  
+            "time_between_pulses": 10.,
+            "nr_of_XY8_cycles": 64/8.,
+            "duty_cycle_time": 100.,  
+            "tau_el_length":tau_el_len,
+            "final_tau":final_tau,
+            "tau_sweep":1,
+            "time_between_CORPSE":20.,
+            }    
+    
+    m.par['free_evol'] = final_tau
+    print m.par['free_evol']
+    m.par['fe_max'] = m.par['sweep_par'].max()
+    m.par['fe_min'] = m.par['sweep_par'].min()
+    m.par['sweep_par_name'] = 'final tau (ns)'
+    m.par['nr_of_pulses']=8*pulse_dict['nr_of_XY8_cycles']
+    pulse_dict["duty_cycle_time"] = 100
+    m.sequence={}
+    m.sequence["max_seq_time"]=17205
+    if CORPSE:
+        m.start_measurement(dec.XY8_cycles_multiple_elements_CORPSE,pulse_dict,lt1=lt1,ssro_dict=ssro_dict)
+    else:
+        m.start_measurement(dec.XY8_cycles_sweep_final_tau,pulse_dict,lt1=lt1,ssro_dict=ssro_dict,send_sequence_AWG=True)
+    
+    dp=get_datapath()
+    path = lde_calibration.find_newest_data(dp,string=m.name)
+    spin_control.plot_SE(path)    
+    
+    #min_tau =  0.010e3
+    #max_tau =  164.503e3  
     
 if __name__ == '__main__':
     XY8_rep_el()

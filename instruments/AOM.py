@@ -12,7 +12,7 @@
 
 from instrument import Instrument
 from numpy import *
-from analysis import fit, common
+from analysis.lib.fitting import fit, common
 import os,sys,time
 import qt
 import types

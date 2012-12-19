@@ -5,7 +5,7 @@ import gobject
 import qt
 import plot as plt
 from instrument import Instrument
-from analysis import fit, common
+from analysis.lib.fitting import fit, common
 from lib import config
 import time
 import msvcrt

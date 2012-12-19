@@ -9,12 +9,12 @@ import ctypes
 import inspect
 import time
 import msvcrt
-import measurement.measurement as meas
-from measurement.AWG_HW_sequencer_v2 import Sequence
-import measurement.PQ_measurement_generator_v2 as pqm
-from analysis import spin_control as sc
-from measurement.config import awgchannels_lt2 as awgcfg
-from measurement.sequence import common as commonseq
+from measurement.lib import measurement.measurement as meas
+from measurement.lib.AWG_HW_sequencer_v2 import Sequence
+import measurement.lib.PQ_measurement_generator_v2 as pqm
+from analysis.lib.spin import spin_control as sc
+from measurement.lib.config import awgchannels_lt2 as awgcfg
+from measurement.lib.sequence import common as commonseq
 
 
 name = 'SIL9_LT2_slow_rabi'

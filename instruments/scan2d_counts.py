@@ -179,7 +179,7 @@ class scan2d_counts(scan):
         CyclopeanInstrument.save(self, meta)
 	
 
-        from wp_toolbox.qtlab_data import save
+        from measurement.wp_toolbox.qtlab_data import save
         save(self.get_name(), meta, x__x__um=self._x, y__y__um=self._y, 
         z__counts__Hz=self._data['countrates'])
 

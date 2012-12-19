@@ -16,7 +16,7 @@ from numpy import array
 from numpy import zeros
 import threading
 
-from wp_toolbox import fit
+from analysis.lib.fitting import fit,common
 import qt
 
 #class OptimizeProcess(threading.Thread):
@@ -263,13 +263,12 @@ class optimize1d_counts(CyclopeanInstrument):
         ret = True
         
         if self._gaussian_fit:
-            gaussian_fit = fit.fit_gaussian_with_offset(p, cr, p[i], 
-                    array(cr).max(), .5, array(cr).min())
-            
-            if gaussian_fit != False:
+            gaussian_fit = fit.fit1d(p, cr,common.fit_gauss, array(cr).min() , 
+                    array(cr).max(), p[i],.5,do_print=False,do_plot=False,ret=True)
+            if gaussian_fit['success'] != False:
                 self.set_data('fit', gaussian_fit['fitdata'])
-                self._fit_result = gaussian_fit['params']
-                self._fit_error = gaussian_fit['error']
+                self._fit_result = [gaussian_fit['params'][1],gaussian_fit['params'][2],gaussian_fit['params'][3],gaussian_fit['params'][0]]
+                self._fit_error = [gaussian_fit['error'][1],gaussian_fit['error'][2],gaussian_fit['error'][3],gaussian_fit['error'][0]]
                 self._opt_pos = self._fit_result[0]
                 ret = True
                 print '(%s) optimize succeeded!' % self.get_name()

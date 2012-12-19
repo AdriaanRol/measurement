@@ -4,14 +4,14 @@ import ctypes
 import inspect
 import time
 import msvcrt
-import measurement.measurement as meas
+from measurement.lib import measurement as meas
 
-from measurement.AWG_HW_sequencer_v2 import Sequence
-import measurement.PQ_measurement_generator_v2 as pqm
+from measurement.lib.AWG_HW_sequencer_v2 import Sequence
+import measurement.lib.PQ_measurement_generator_v2 as pqm
 
-from measurement.config import awgchannels_lt2 as awgcfg
-from measurement.sequence import common as commonseq
-from measurement.config import experiment_lt2 as exp
+from measurement.lib.config import awgchannels_lt2 as awgcfg
+from measurement.lib.sequence import common as commonseq
+from measurement.lib.config import experiment_lt2 as exp
 
 f_mw    = 2.818E9
 f_start = 2.824E9           #start frequency in Hz

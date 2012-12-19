@@ -7,25 +7,25 @@ import numpy as np
 
 
 #measurment name
-mname='laserscan_SIL2_'
+mname='laserscan_SIL10'
 
 # measurement parameters
-start_v = 1.5# 2.5#
-stop_v = 0.# 1.0#-.2#
+start_v = 1.# 2.5#
+stop_v = -0.5# 1.0#-.2#
 steps = 3001
 pxtime = 15  #ms
-green_during = 0.5e-6
+green_during = 0.1e-6
 green_before = 200e-6
 red_during= 5e-9
 f_offset = 470400 # GHz
-mw = True # True
+mw = True
 amp = True
-mw_power = -12
-mw_frq = 2.8286e9  #2.8286e9 #Lt2   2.8241e9  #LT1
+mw_power = -10
+mw_frq = 2.82863e9  #2.8286e9 #Lt2   2.8241e9  #LT1
 LT2 = True
 reps = 1
 
-gate_phase_locking=1 #has no effect if measuring LT1 #SO LEAVE IT AT 1
+gate_phase_locking=0 #has no effect if measuring LT1 #SO LEAVE IT AT 1
 good_phase=-1
 
 # end measurement parameters
@@ -164,7 +164,8 @@ def laserscan(dataname=mname,
     # go manually to initial position
     ins_adwin.set_dac_voltage(('newfocus_frq',start_v))
     qt.msleep(1)
-
+    
+    print 'starting scan'
     ins_laser_scan.start_scan()
     qt.msleep(1)
     timer_id=gobject.timeout_add(abort_check_time,check_for_abort,ins_laser_scan)
@@ -232,7 +233,7 @@ def laserscan(dataname=mname,
 
     if plot_strain_lines:        
         try:
-            from analysis import nvlevels
+            from analysis.lib.nv import nvlevels
             Ey_line=float(raw_input('Ey line?')) #GHz
             Ex_line=float(raw_input('Ex line?')) #GHz
             lx,ly=nvlevels.get_ES_ExEy_plottable(Ex_line,Ey_line,max(d.get_data()[:,2]))
