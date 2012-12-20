@@ -524,8 +524,8 @@ EVENT:
           
           old_counts = 0
         ELSE 
-          'IF ((timer = RO_duration) OR (P2_CNT_READ(CTR_MODULE, counter_channel) > 0)) THEN
-          IF (timer = RO_duration) THEN
+          IF ((timer = RO_duration) OR (P2_CNT_READ(CTR_MODULE, counter_channel) > 0)) THEN
+          'IF (timer = RO_duration) THEN
             P2_DAC(DAC_MODULE, Ex_laser_DAC_channel, 32768) ' turn off Ex laser
             P2_DAC(DAC_MODULE, A_laser_DAC_channel, 32768) ' turn off A laser
             

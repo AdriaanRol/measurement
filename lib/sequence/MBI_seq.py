@@ -191,6 +191,112 @@ def RF_sweep(m,seq):
 
     return seq_wait_time
 
+
+
+def MW_sweep (m, seq):
+   
+    
+    MBIcfg=exp.MBIprotocol
+    pulsescfg = exp.pulses    ####
+
+    # vars for the channel names
+    
+    chan_mw_pm = 'MW_pulsemod' #is connected to ch1m1
+
+    if exp.lt1:
+        chan_mwI = 'MW_Imod_lt1'
+        chan_mwQ = 'MW_Qmod_lt1'
+    else:
+        chan_mwI = 'MW_Imod'
+        chan_mwQ = 'MW_Qmod'
+        chan_RF  = 'RF'
+ 
+    if exp.lt1:
+        MW_pulse_mod_risetime = 10
+    else:
+        MW_pulse_mod_risetime = 10
+    ####
+    RO_steps_for_dp=1
+    for i in np.arange(m.nr_of_datapoints):
+        MBI_element(seq,el_name='MBI_pulse'+str(i),freq=m.MBI_mod_freq[i], 
+               jump_target='spin_control_'+str(i)+'RO_step_0',
+               goto_target='MBI_pulse'+str(i))
+
+        for k in np.arange(RO_steps_for_dp):
+            el_name = 'spin_control_'+str(i)+'RO_step_'+str(k)
+            if k == RO_steps_for_dp-1:
+                m.reps=1
+            else:
+                m.reps=RO_steps_for_dp-1
+            if (k==0) or (k==RO_steps_for_dp-1):
+                if (i == m.nr_of_datapoints-1) and (k==RO_steps_for_dp-1):
+                    seq.add_element(name = el_name, 
+                    trigger_wait = True, goto_target = 'MBI_pulse0')
+                elif (m.reps==1) :
+                    seq.add_element(name = el_name,
+                        trigger_wait = True)
+                else:
+                    seq.add_element(name = el_name, event_jump_target='spin_control_'+str(i)+'RO_step_'+str(RO_steps_for_dp-1),
+                            goto_target='spin_control_'+str(i)+'RO_step_'+str(k), trigger_wait = True)
+                if m.do_shelv_pulse:
+                    last = shelving_pulse(seq,'shelving_pulse',m.MBI_mod_freq[i],el_name)
+
+                for j in np.arange(m.nr_of_MW_pulses):
+
+                    if (j ==0) and (m.do_shelv_pulse == False):
+                        seq.add_pulse('wait'+str(j), channel = chan_mw_pm, element = el_name,
+                            start = 0, duration = MBIcfg['wait_time_before_MBI_pulse'], amplitude = 0)
+                    else:
+                        seq.add_pulse('wait'+str(j), channel = chan_mw_pm, element = el_name,
+                            start = 0, duration = 20, start_reference=last,link_start_to='end',amplitude = 0)
+                    if (k==RO_steps_for_dp-1):
+                        seq.add_pulse('MW_pulse_I'+str(j),channel=chan_mwI,element=el_name,start=0,
+                            start_reference= 'wait'+str(j),link_start_to='end',
+                            duration=m.MW_pulse_len[i], amplitude = m.MW_pulse_amp[i],
+                            shape='sine',envelope='erf',frequency=m.MW_mod_freq[i])
+                        seq.add_pulse('MW_pulse_Q'+str(j),channel=chan_mwQ,element=el_name,start=0,
+                            start_reference= 'wait'+str(j),link_start_to='end',
+                            duration=m.MW_pulse_len[i], amplitude = m.MW_pulse_amp[i],
+                            shape='sine',envelope='erf',frequency=m.MW_mod_freq[i])
+                        seq.add_pulse('MW_pulse_mod'+str(j),channel=chan_mw_pm,element=el_name,
+                            start=-MW_pulse_mod_risetime, duration = 2*MW_pulse_mod_risetime,
+                            start_reference='MW_pulse_I'+str(j),link_start_to='start',
+                            duration_reference='MW_pulse_I'+str(j),link_duration_to='duration', amplitude=2.0)
+                        last= 'MW_pulse_I'+str(j)
+                    else:
+                        seq.add_pulse('MW_pulse_I'+str(j),channel=chan_mwI,element=el_name,start=0,
+                            start_reference= 'wait'+str(j),link_start_to='end',
+                            duration=m.MW1_pulse_len[i], amplitude = m.MW1_pulse_amp[i],
+                            shape='sine',envelope='erf',frequency=m.MW1_mod_freq[i])
+                        seq.add_pulse('MW_pulse_Q'+str(j),channel=chan_mwQ,element=el_name,start=0,
+                            start_reference= 'wait'+str(j),link_start_to='end',
+                            duration=m.MW1_pulse_len[i], amplitude = m.MW1_pulse_amp[i],
+                            shape='sine',envelope='erf',frequency=m.MW1_mod_freq[i])
+                        seq.add_pulse('MW_pulse_mod'+str(j),channel=chan_mw_pm,element=el_name,
+                            start=-MW_pulse_mod_risetime, duration = 2*MW_pulse_mod_risetime,
+                            start_reference='MW_pulse_I'+str(j),link_start_to='start',
+                            duration_reference='MW_pulse_I'+str(j),link_duration_to='duration', amplitude=2.0)
+                        last= 'MW_pulse_I'+str(j)
+
+
+                seq.add_pulse('final_wait', channel = chan_mwI, element = el_name,
+                        start = 0, duration =MBIcfg['wait_time_before_MBI_pulse'], amplitude = 0, start_reference = last,
+                        link_start_to = 'end', shape = 'rectangular')
+        
+        if m.do_incr_RO_steps:
+            RO_steps_for_dp = RO_steps_for_dp + m.incr_RO_steps
+        else:
+            RO_steps_for_dp = m.nr_of_RO_steps
+        
+    sequence_wait_time = (2*m.MBIdic['wait_time_before_MBI_pulse']+ 
+                           m.nr_of_MW_pulses*(m.MW_pulse_len.max()+20)+1000)/1000
+  
+    return sequence_wait_time
+
+
+
+
+
 def Nucl_Ramsey(m,seq):
    
     

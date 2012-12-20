@@ -70,6 +70,7 @@ class MBI(Measurement):
         self.A_final_RO_amplitude = self.ssrodic['A_RO_amplitude']
         self.final_RO_duration= self.ssrodic['RO_duration']
         self.RO_duration= self.ssrodic['RO_duration']
+        self.wait_after_RO = self.ssrodic['wait_after_pulse_duration']
         
         self.par = {}
         
@@ -154,116 +155,6 @@ class MBI(Measurement):
             self.end_measurement()
         else:
             print 'Measurement aborted'
-
-
-
-
-        
-    def generate_MW_sweep_sequence(self,do_program=True, lt1 = False):
-        seq = Sequence('spin_control')
-        
-        ####
-        #FIXME: make this a function of the measurement class
-        awgcfg.configure_sequence(seq,'mw_weak_meas')
-        # vars for the channel names
-        chan_mw_pm = 'MW_pulsemod' #is connected to ch1m1
-   
-        if exp.lt1:
-            chan_mwI = 'MW_Imod_lt1'
-            chan_mwQ = 'MW_Qmod_lt1'
-        else:
-            chan_mwI = 'MW_Imod'
-            chan_mwQ = 'MW_Qmod'
-            chan_RF  = 'RF'
-     
-        if exp.lt1:
-            MW_pulse_mod_risetime = 10
-        else:
-            MW_pulse_mod_risetime = 10
-        ####
-        RO_steps_for_dp=1
-        for i in np.arange(self.nr_of_datapoints):
-            MBIseq.MBI_element(seq,el_name='MBI_pulse'+str(i),freq=self.MBI_mod_freq[i], 
-                   jump_target='spin_control_'+str(i)+'RO_step_0',
-                   goto_target='MBI_pulse'+str(i))
-
-            for k in np.arange(RO_steps_for_dp):
-                el_name = 'spin_control_'+str(i)+'RO_step_'+str(k)
-                if k == RO_steps_for_dp-1:
-                    self.reps=1
-                else:
-                    self.reps=RO_steps_for_dp-1
-                if (k==0) or (k==RO_steps_for_dp-1):
-                    if (i == self.nr_of_datapoints-1) and (k==RO_steps_for_dp-1):
-                        seq.add_element(name = el_name, 
-                        trigger_wait = True, goto_target = 'MBI_pulse0')
-                    elif (self.reps==1) :
-                        seq.add_element(name = el_name,
-                            trigger_wait = True)
-                    else:
-                        seq.add_element(name = el_name, event_jump_target='spin_control_'+str(i)+'RO_step_'+str(RO_steps_for_dp-1),
-                                goto_target='spin_control_'+str(i)+'RO_step_'+str(k), trigger_wait = True)
-                    if self.do_shelv_pulse:
-                        last = MBIseq.shelving_pulse(seq,'shelving_pulse',self.MBI_mod_freq[i],el_name)
-
-                    for j in np.arange(self.nr_of_MW_pulses):
-
-                        if (j ==0) and (self.do_shelv_pulse == False):
-                            seq.add_pulse('wait'+str(j), channel = chan_mw_pm, element = el_name,
-                                start = 0, duration = self.MBIdic['wait_time_before_MBI_pulse'], amplitude = 0)
-                        else:
-                            seq.add_pulse('wait'+str(j), channel = chan_mw_pm, element = el_name,
-                                start = 0, duration = 20, start_reference=last,link_start_to='end',amplitude = 0)
-                        if (k==RO_steps_for_dp-1):
-                            seq.add_pulse('MW_pulse_I'+str(j),channel=chan_mwI,element=el_name,start=0,
-                                start_reference= 'wait'+str(j),link_start_to='end',
-                                duration=self.MW_pulse_len[i], amplitude = self.MW_pulse_amp[i],
-                                shape='sine',envelope='erf',frequency=self.MW_mod_freq[i])
-                            seq.add_pulse('MW_pulse_Q'+str(j),channel=chan_mwQ,element=el_name,start=0,
-                                start_reference= 'wait'+str(j),link_start_to='end',
-                                duration=self.MW_pulse_len[i], amplitude = self.MW_pulse_amp[i],
-                                shape='sine',envelope='erf',frequency=self.MW_mod_freq[i])
-                            seq.add_pulse('MW_pulse_mod'+str(j),channel=chan_mw_pm,element=el_name,
-                                start=-MW_pulse_mod_risetime, duration = 2*MW_pulse_mod_risetime,
-                                start_reference='MW_pulse_I'+str(j),link_start_to='start',
-                                duration_reference='MW_pulse_I'+str(j),link_duration_to='duration', amplitude=2.0)
-                            last= 'MW_pulse_I'+str(j)
-                        else:
-                            seq.add_pulse('MW_pulse_I'+str(j),channel=chan_mwI,element=el_name,start=0,
-                                start_reference= 'wait'+str(j),link_start_to='end',
-                                duration=self.MW1_pulse_len[i], amplitude = self.MW1_pulse_amp[i],
-                                shape='sine',envelope='erf',frequency=self.MW1_mod_freq[i])
-                            seq.add_pulse('MW_pulse_Q'+str(j),channel=chan_mwQ,element=el_name,start=0,
-                                start_reference= 'wait'+str(j),link_start_to='end',
-                                duration=self.MW1_pulse_len[i], amplitude = self.MW1_pulse_amp[i],
-                                shape='sine',envelope='erf',frequency=self.MW1_mod_freq[i])
-                            seq.add_pulse('MW_pulse_mod'+str(j),channel=chan_mw_pm,element=el_name,
-                                start=-MW_pulse_mod_risetime, duration = 2*MW_pulse_mod_risetime,
-                                start_reference='MW_pulse_I'+str(j),link_start_to='start',
-                                duration_reference='MW_pulse_I'+str(j),link_duration_to='duration', amplitude=2.0)
-                            last= 'MW_pulse_I'+str(j)
-
-
-                    seq.add_pulse('final_wait', channel = chan_mwI, element = el_name,
-                            start = 0, duration =self.MBIdic['wait_time_before_MBI_pulse'], amplitude = 0, start_reference = last,
-                            link_start_to = 'end', shape = 'rectangular')
-            
-            if self.do_incr_RO_steps:
-                RO_steps_for_dp = RO_steps_for_dp + self.incr_RO_steps
-            else:
-                RO_steps_for_dp = self.nr_of_RO_steps
-            
-        self.par['sequence_wait_time'] = (2*self.MBIdic['wait_time_before_MBI_pulse']+ 
-                                        self.nr_of_MW_pulses*(self.MW_pulse_len.max()+20)+1000)/1000
-        seq.set_instrument(self.awg)
-        seq.set_clock(1e9)
-        seq.set_send_waveforms(do_program)
-        seq.set_send_sequence(do_program)
-        seq.set_program_channels(True)
-        seq.set_start_sequence(False)
-        
-        seq.force_HW_sequencing(True)
-        seq.send_sequence()
    
     def generate_sequence(self,gen_seq_func,do_program=True,lt1=False):
         seq = Sequence('spin_control')
@@ -590,7 +481,8 @@ def sweep_MW_len (lt1 = False, name = 'SIL9_lt2_sweep_MW_len', min_len = 10, max
     m.par['sweep_par_name'] = 'MW pulse length (ns)'
     m.par['RO_repetitions'] = int(len(m.par['sweep_par'])*reps_per_datap)
 
-    m.start_measurement (m.generate_MW_sweep_sequence)
+#    m.start_measurement (m.generate_MW_sweep_sequence)
+    m.start_measurement (MBIseq.MW_sweep)
     dp = get_datapath()
     path = lde_calibration.find_newest_data (dp, string=name)
     spin_control.plot_data_MBI(path)
@@ -639,7 +531,7 @@ def sweep_nr_of_cycle_steps (lt1 = False, name = 'SIL9_lt2_multiple_pump_cycles'
     m.par['sweep_par_name'] = 'Pump cycles'
     m.par['RO_repetitions'] = int(len(m.par['sweep_par'])*reps_per_datap)
     
-    m.start_measurement(m.generate_MW_sweep_sequence)
+    m.start_measurement(MBIseq.MW_sweep)
     dp = get_datapath()
     path = lde_calibration.find_newest_data (dp, string=name)
     spin_control.plot_data_MBI(path)
@@ -669,7 +561,7 @@ def sweep_RF_amp (lt1 = False, name = 'SIL9_lt2_sweep_RF_amp', min_amp = 0., max
     m.par['sweep_par_name'] = 'RF amplitude (V)'
     m.par['RO_repetitions'] = int(len(m.par['sweep_par'])*reps_per_datap)
 
-    m.start_measurement (m.generate_RF_sweep_sequence)
+    m.start_measurement (MBIseq.RF_sweep)
     dp = get_datapath()
     path = lde_calibration.find_newest_data (dp, string=name)
     spin_control.plot_data_MBI(path)
@@ -729,11 +621,11 @@ def nuclear_ramsey (lt1 = False, name = 'SIL9_lt2_N_ramsey',nr_of_datapoints = 2
 
     m.MBI_mod_freq = get_freq(m,init_line)
     m.RO_mod_freq = get_freq(m,RO_line)
-    m.MW_mod_freq = get_freq(m,init_line)*np.ones(nr_of_datapoints)
+    m.MW_mod_freq = (get_freq(m,init_line))*np.ones(nr_of_datapoints)
     m.MW_pulse_len = m.pulsedic['shelving_len']*np.ones(nr_of_datapoints)
     m.MW_pulse_amp = m.pulsedic['shelving_amp']*np.ones(nr_of_datapoints)
     m.do_MW_pulse_after_RF=True
-    m.RO_duration = 7
+    m.RO_duration =12
 
 
     m.wait_after_RO = 50+(m.pulsedic['RF_pi2_len']/1000)

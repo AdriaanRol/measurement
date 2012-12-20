@@ -27,8 +27,8 @@ sil9 = {
 
 
 pulses ={
-        'shelving_len':         140.,
-        'shelving_amp':         0.6,
+        'shelving_len':         105.,
+        'shelving_amp':         0.95,
         'RF_pi_len':            48000,
         'RF_pi2_len':           24000,
         'RF_pi_amp':            .8,

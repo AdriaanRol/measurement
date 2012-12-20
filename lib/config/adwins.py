@@ -601,7 +601,7 @@ config['adwin_lt1_processes'] = {
             'fpar': {
                 'gate_voltage' : 12,
                 },
-        
+            },
         'gate_modulation' :  {
             'index' : 7, 
             'file' : 'gate_modulation.TB7',
@@ -786,9 +786,5 @@ config['adwin_lt1_processes'] = {
                     'SSRO_counts'               : 22,
                     'CR_after_SSRO'             : 23,
                     },
-                },
-
-                
+                },       
         }
-
-
