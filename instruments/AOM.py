@@ -139,7 +139,7 @@ class AOM(Instrument):
         self._pri_cal_a =       0.823
         self._pri_cal_xc =      0.588
         self._pri_cal_k =       6.855
-        self._pri_V_max =       1.0
+        self._pri_V_max =       8.0
         self._pri_V_min =       0
         self._switchable =      False
         self._switch_DO =       16
