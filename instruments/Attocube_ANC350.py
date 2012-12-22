@@ -1,7 +1,5 @@
 from ctypes import *
 import os
-from instrument_plugins._Spectrum_M2i2030.errors import errors as _spcm_errors
-from instrument_plugins._Spectrum_M2i2030.regs import regs as _spcm_regs
 from instrument import Instrument
 import pickle
 from time import sleep, time
@@ -41,8 +39,8 @@ class Attocube_ANC350(Instrument): #1
     def _load_dll(self): #3
         print __name__ +' : Loading hvpositionerv2.dll'
         path = os.getcwd()
-        os.chdir('D:\\qtlab_cyclops\\instrument_plugins\\user_instruments\\attocube_ANC350')
-        self._attodll = windll.LoadLibrary('hvpositionerv2.dll')
+        os.chdir(os.path.split(qt.config['anc350_dll'])[0])
+        self._attodll = windll.LoadLibrary(qt.config['anc350_dll'])
         os.chdir(path)
         #self._wlmData.GetWavelengthNum.restype = c_double
         #self._wlmData.GetFrequencyNum.restype = c_double
