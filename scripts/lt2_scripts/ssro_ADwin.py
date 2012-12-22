@@ -18,6 +18,7 @@ if lt1:
     physical_adwin=qt.instruments['physical_adwin_lt1']
     ctr_channel=2
 else:
+    print 'im here'
     ins_green_aom=qt.instruments['GreenAOM']
     ins_E_aom=qt.instruments['MatisseAOM']
     ins_A_aom=qt.instruments['NewfocusAOM']
@@ -25,58 +26,7 @@ else:
     counters=qt.instruments['counters']
     physical_adwin=qt.instruments['physical_adwin']
     ctr_channel=1
-
-par = {}
-par['counter_channel'] =              ctr_channel
-par['green_laser_DAC_channel'] =      adwin.get_dac_channels()['green_aom']
-par['Ex_laser_DAC_channel'] =         adwin.get_dac_channels()['matisse_aom']
-par['A_laser_DAC_channel'] =          adwin.get_dac_channels()['newfocus_aom']
-par['AWG_start_DO_channel'] =         1
-par['AWG_done_DI_channel'] =          8
-par['send_AWG_start'] =               0
-par['wait_for_AWG_done'] =            0
-par['green_repump_duration'] =        10
-par['CR_duration'] =                  50
-par['SP_duration'] =                  150
-par['SP_filter_duration'] =           0
-par['sequence_wait_time'] =           1
-par['wait_after_pulse_duration'] =    1
-par['CR_preselect'] =                 100
-par['SSRO_repetitions'] =             20000
-par['SSRO_duration'] =                50 #NOTE CHANGED THIS FOR MORE CR CHECKS
-par['SSRO_stop_after_first_photon'] = 0
-par['cycle_duration'] =               300
-
-par['green_repump_amplitude'] =       200e-6
-par['green_off_amplitude'] =          0e-6
-par['Ex_CR_amplitude'] =              10e-9
-par['A_CR_amplitude'] =               15e-9
-par['Ex_SP_amplitude'] =              0e-9
-par['A_SP_amplitude'] =               5e-9
-par['Ex_RO_amplitude'] =              5e-9 #
-par['A_RO_amplitude'] =               0e-9
-
-ins_green_aom.set_power(0.)
-ins_E_aom.set_power(0.)
-ins_A_aom.set_power(0.)
-ins_green_aom.set_cur_controller('ADWIN')
-ins_E_aom.set_cur_controller('ADWIN')
-ins_A_aom.set_cur_controller('ADWIN')
-ins_green_aom.set_power(0.)
-ins_E_aom.set_power(0.)
-ins_A_aom.set_power(0.)
-
-par['green_repump_voltage'] = ins_green_aom.power_to_voltage(par['green_repump_amplitude'])
-par['green_off_voltage'] = ins_green_aom.power_to_voltage(par['green_off_amplitude'])
-par['Ex_CR_voltage'] = ins_E_aom.power_to_voltage(par['Ex_CR_amplitude'])
-par['A_CR_voltage'] = ins_A_aom.power_to_voltage(par['A_CR_amplitude'])
-par['Ex_SP_voltage'] = ins_E_aom.power_to_voltage(par['Ex_SP_amplitude'])
-par['A_SP_voltage'] = ins_A_aom.power_to_voltage(par['A_SP_amplitude'])
-par['Ex_RO_voltage'] = ins_E_aom.power_to_voltage(par['Ex_RO_amplitude'])
-par['A_RO_voltage'] = ins_A_aom.power_to_voltage(par['A_RO_amplitude'])
-
-
-###########################################################
+    ###########################################################
 ##
 ##  hardcoded in ADwin program (adjust there if necessary!)
 ##
@@ -88,6 +38,59 @@ max_SSRO_dim = 1000000
 ##
 ###########################################################
 
+def init():
+    par = {}
+    par['counter_channel'] =              ctr_channel
+    par['green_laser_DAC_channel'] =      adwin.get_dac_channels()['green_aom']
+    par['Ex_laser_DAC_channel'] =         adwin.get_dac_channels()['matisse_aom']
+    par['A_laser_DAC_channel'] =          adwin.get_dac_channels()['newfocus_aom']
+    par['AWG_start_DO_channel'] =         1
+    par['AWG_done_DI_channel'] =          8
+    par['send_AWG_start'] =               0
+    par['wait_for_AWG_done'] =            0
+    par['green_repump_duration'] =        10
+    par['CR_duration'] =                  80
+    par['SP_duration'] =                  250
+    par['SP_filter_duration'] =           0
+    par['sequence_wait_time'] =           1
+    par['wait_after_pulse_duration'] =    3
+    par['CR_preselect'] =                 15
+    par['SSRO_repetitions'] =             10000
+    par['SSRO_duration'] =                100 #NOTE this times reps must not exceed 1E6
+    par['SSRO_stop_after_first_photon'] = 0
+    par['cycle_duration'] =               300
+
+    par['green_repump_amplitude'] =       200e-6
+    par['green_off_amplitude'] =          0e-6
+    par['Ex_CR_amplitude'] =              10e-9
+    par['A_CR_amplitude'] =               15e-9
+    par['Ex_SP_amplitude'] =              0e-9
+    par['A_SP_amplitude'] =               15e-9
+    par['Ex_RO_amplitude'] =              5e-9 #
+    par['A_RO_amplitude'] =               0e-9
+
+    ins_green_aom.set_power(0.)
+    ins_E_aom.set_power(0.)
+    ins_A_aom.set_power(0.)
+    ins_green_aom.set_cur_controller('ADWIN')
+    ins_E_aom.set_cur_controller('ADWIN')
+    ins_A_aom.set_cur_controller('ADWIN')
+    ins_green_aom.set_power(0.)
+    ins_E_aom.set_power(0.)
+    ins_A_aom.set_power(0.)
+
+    par['green_repump_voltage'] = ins_green_aom.power_to_voltage(par['green_repump_amplitude'])
+    par['green_off_voltage'] = ins_green_aom.power_to_voltage(par['green_off_amplitude'])
+    par['Ex_CR_voltage'] = ins_E_aom.power_to_voltage(par['Ex_CR_amplitude'])
+    par['A_CR_voltage'] = ins_A_aom.power_to_voltage(par['A_CR_amplitude'])
+    par['Ex_SP_voltage'] = ins_E_aom.power_to_voltage(par['Ex_SP_amplitude'])
+    par['A_SP_voltage'] = ins_A_aom.power_to_voltage(par['A_SP_amplitude'])
+    par['Ex_RO_voltage'] = ins_E_aom.power_to_voltage(par['Ex_RO_amplitude'])
+    par['A_RO_voltage'] = ins_A_aom.power_to_voltage(par['A_RO_amplitude'])
+
+
+
+    return par
 
 def ssro(name, data, par):
     par['green_repump_voltage'] = ins_green_aom.power_to_voltage(par['green_repump_amplitude'])
@@ -175,7 +178,6 @@ def ssro(name, data, par):
     stat_str += '# total repumps: %s\n'%(statistics[0])
     stat_str += '# total repump counts: %s\n'%(statistics[1])
     stat_str += '# failed CR: %s\n'%(statistics[2])
-
     data.save()
     savdat={}
     savdat['repetitions']=repetitions
@@ -391,7 +393,6 @@ def ssro_vs_Ex_CR_power(name, data, par, min_Ex_CR_power,
 def ssro_init(name, data, par, do_ms0 = True, do_ms1 = True, 
         A_SP_init_amplitude     = 5e-9,
         Ex_SP_init_amplitude    = 5e-9):
-
     if do_ms0:
         par['A_SP_amplitude']  = A_SP_init_amplitude
         par['Ex_SP_amplitude'] = 0.
@@ -413,18 +414,17 @@ def end_measurement():
 
     
 
-def main():
+def main(par):
 
-    name = 'SIL2_LT1_multimode'
+    name = 'SIL2_LT1'
     qt.instruments['counters'].set_is_running(False)
     data = meas.Measurement(name,'ADwin_SSRO')
-
     #ssro_vs_SP_amplitude(name,data,par,min_power=2, max_power = 20, 
     #        steps = 10, reps_per_point = 5000)
-    #ssro_vs_Ex_amplitude(name, data, par, 1, 25, 13, 5000, do_ms1=False)
+    #ssro_vs_Ex_amplitude(name, data, par, 2, 30, 15, 10000, do_ms1=True)
     #ssro_vs_Ex_amplitude(name, data, par, 1, 21, 10, 5000)
     #ssro_vs_A_amplitude(name, data, par, 1, 25, 13, 5000)
-    ssro_init(name,data,par, A_SP_init_amplitude = 15e-9, Ex_SP_init_amplitude = 5e-9)
+    ssro_init(name,data,par, A_SP_init_amplitude = 15e-9, Ex_SP_init_amplitude = 15e-9, do_ms0=True,do_ms1 = True)
     #ssro_vs_SP_duration(name,data,par,sp_power=25e-9, max_duration = 10, 
     #        stepsize = 1, reps_per_point = 5000)
     #ssro_vs_CR_duration(name, data, par, 20, 100, 5, 5000)
@@ -449,5 +449,6 @@ def main():
 if __name__ == '__main__':
     #counters_lt1.set_is_running(False)
     #counters.set_is_running(False)
-    main()
+    par=init()
+    main(par)
 

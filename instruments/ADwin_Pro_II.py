@@ -14,8 +14,9 @@ from qt import *
 from numpy import *
 from data import Data
 
+#FIXME: should not be hardcoded!!!
 adwin_path = 'c:\\adwin'
-program_path = 'D:\\measuring\\user\\ADwin_Codes'
+program_path = 'D:\\measuring\\measurement\\ADwin_Codes'
 
 class ADwin_Pro_II(Instrument): #1
     '''

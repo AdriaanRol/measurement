@@ -7,6 +7,8 @@ from cyclopean_instrument import CyclopeanInstrument
 import types
 import logging
 
+from measurement.wp_setup import state,control
+
 class setup_controller(CyclopeanInstrument):
     def __init__(self, name, use={}):
         CyclopeanInstrument.__init__(self, name, tags=[], use=use)
@@ -28,17 +30,14 @@ class setup_controller(CyclopeanInstrument):
         self.add_function('get_control_variable')
 
     def do_get_keyword(self):
-        from wp_setup import state
         return state.info['keyword']
 
 
     def do_set_keyword(self, val):
-        from wp_setup import state
         state.info['keyword'] = val
 
 
     def set_control_variable(self, var_name, val):
-        from wp_setup import control
         l = logging.getLogger('experiment')
         try:
             setattr(control, var_name, val)
@@ -48,7 +47,6 @@ class setup_controller(CyclopeanInstrument):
             return
 
     def get_control_variable(self, var_name):
-        from wp_setup import control
         try:
             return getattr(control, var_name)
         except:

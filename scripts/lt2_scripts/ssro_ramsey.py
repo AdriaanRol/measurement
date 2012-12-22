@@ -17,24 +17,24 @@ from measurement.config import awgchannels_lt2 as awgcfg
 from measurement.sequence import common as commonseq
 
 
-name = 'SIL9_lt2'
+name = 'SIL2_lt1'
 
-nr_of_datapoints =              1     #max nr_of_datapoints should be < 10000
-repetitions_per_datapoint =     500    
+nr_of_datapoints =              101     #max nr_of_datapoints should be < 10000
+repetitions_per_datapoint =     750    
 min_wait_time =                 10      #in ns
-max_wait_time =                 300010    #in ns
+max_wait_time =                 3010    #in ns
 pi_pulse_length =               50      #in ns
 pi_2_pulse_length =             25      #in ns
-f_drive =                       2.8578E9#in Hz
-detuning=                       0       #in Hz
-mwpower_lt1 =                   0       #in dBm
-mwpower_lt2 =                   20       #in dBm
+f_drive =                       2.8236E9#in Hz
+detuning=                       5e6       #in Hz
+mwpower_lt1 =                   20       #in dBm
+mwpower_lt2 =                   0       #in dBm
 f_mw =                          f_drive - detuning
-amplitude_ssbmod =              0.7     #do not exceed 0.8, weird stuff happens: ask Wolfgang 
+amplitude_ssbmod =              0.617     #do not exceed 0.8, weird stuff happens: ask Wolfgang 
 
 
 tau = np.linspace(min_wait_time,max_wait_time,nr_of_datapoints)
-lt1 = False
+lt1 = True
 
 awg = qt.instruments['AWG']
 temp = qt.instruments['temperature_lt1']
@@ -46,10 +46,10 @@ if lt1:
     adwin=qt.instruments['adwin_lt1']
     counters=qt.instruments['counters_lt1']
     physical_adwin=qt.instruments['physical_adwin_lt1']
-    microwaves = qt.instruments['SMB_100_lt1']
-    microwaves.set_status('off')
+    microwaves = qt.instruments['SMB100_lt1']
     ctr_channel=2
     mwpower = mwpower_lt1
+    microwaves.set_status('off')
 else:
     ins_green_aom=qt.instruments['GreenAOM']
     ins_E_aom=qt.instruments['MatisseAOM']
@@ -77,25 +77,25 @@ par['AWG_done_DI_channel'] =          8
 par['send_AWG_start'] =               1
 par['wait_for_AWG_done'] =            0
 par['green_repump_duration'] =        10
-par['CR_duration'] =                  100
+par['CR_duration'] =                  60
 par['SP_duration'] =                  50
 par['SP_filter_duration'] =           0
 par['sequence_wait_time'] =           int(ceil((max_wait_time+pi_pulse_length+2*pi_2_pulse_length)/1e3)+1)
 par['wait_after_pulse_duration'] =    1
 par['CR_preselect'] =                 1000
 par['RO_repetitions'] =               int(nr_of_datapoints*repetitions_per_datapoint)
-par['RO_duration'] =                  26
+par['RO_duration'] =                  13
 par['sweep_length'] =                 int(nr_of_datapoints)
 par['cycle_duration'] =               300
 par['CR_probe'] =                     100
 
 par['green_repump_amplitude'] =       200e-6
 par['green_off_amplitude'] =          0e-6
-par['Ex_CR_amplitude'] =              10e-9 #OK
+par['Ex_CR_amplitude'] =              20e-9 #OK
 par['A_CR_amplitude'] =               15e-9 #OK
 par['Ex_SP_amplitude'] =              0e-9
 par['A_SP_amplitude'] =               15e-9 #OK: PREPARE IN MS = 0
-par['Ex_RO_amplitude'] =              5e-9 #OK: READOUT MS = 0
+par['Ex_RO_amplitude'] =              12e-9 #OK: READOUT MS = 0
 par['A_RO_amplitude'] =               0e-9
 
 
@@ -130,14 +130,16 @@ def generate_sequence(do_program=True):
     if lt1:
         chan_mwI = 'MW_Imod_lt1'
         chan_mwQ = 'MW_Qmod_lt1'
+        chan_mw_pm = 'MW_pulsemod_lt1' #is connected to ch3m2
     else:
-        chan_mwI = 'MW_Imod'
-        chan_mwQ = 'MW_Qmod'
+        chan_mwI = 'MW_Imod' #ch1
+        chan_mwQ = 'MW_Qmod' #ch3
+        chan_mw_pm = 'MW_pulsemod' #is connected to 
     
     if lt1:
-        MW_pulse_mod_risetime = 2
+        MW_pulse_mod_risetime = 10
     else:
-        MW_pulse_mod_risetime = 6
+        MW_pulse_mod_risetime = 10
 
     for i in np.arange(nr_of_datapoints):
         if i == nr_of_datapoints-1:
@@ -391,6 +393,8 @@ def spin_control(name, data, par):
     savdat['mw_power']=mwpower
     savdat['min_wait_time']=min_wait_time
     savdat['max_wait_time']=max_wait_time
+    savdat['min_sweep_par'] = min_wait_time
+    savdat['max_sweep_par'] = max_wait_time
     savdat['noof_datapoints']=nr_of_datapoints
     savdat['pi_2_duration']=pi_2_pulse_length
     
@@ -470,12 +474,12 @@ def power_and_mw_ok():
 def main():
     if power_and_mw_ok():
         counters.set_is_running(False)
-        generate_sequence_SE()
+        generate_sequence()
         awg.set_runmode('SEQ')
         awg.start()  
         while awg.get_state() != 'Waiting for trigger':
             qt.msleep(1)
-        data = meas.Measurement(name,'spin_echo')
+        data = meas.Measurement(name,'ramsey')
         microwaves.set_status('on')
         spin_control(name,data,par)
         end_measurement()

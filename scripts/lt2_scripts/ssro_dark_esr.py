@@ -4,25 +4,28 @@ import ctypes
 import inspect
 import time
 import msvcrt
-import measurement.measurement as meas
+from measurement.lib import measurement as meas
 
-from measurement.AWG_HW_sequencer_v2 import Sequence
-import measurement.PQ_measurement_generator_v2 as pqm
+from measurement.lib.AWG_HW_sequencer_v2 import Sequence
+import measurement.lib.PQ_measurement_generator_v2 as pqm
 
-from measurement.config import awgchannels_lt2 as awgcfg
-from measurement.sequence import common as commonseq
+from measurement.lib.config import awgchannels_lt2 as awgcfg
+from measurement.lib.sequence import common as commonseq
+from measurement.lib.config import experiment_lt2 as exp
 
-f_mw    = 2.82E9
-f_start = 2.823E9           #start frequency in Hz
-f_stop = 2.836E9            #stop frequency in Hz
-pi_pulse_length = 98      #length of MW pi pulse
-mwpower_lt1 = 20           #in dBm
-mwpower_lt2 = 15            #in dBm
-nr_of_datapoints = 71       #max nr_of_datapoints*repetitions_per_datapoint should be < 20000
-repetitions_per_datapoint = 2000 
-amplitude_ssbmod = 0.8
+f_mw    = 2.818E9
+f_start = 2.824E9           #start frequency in Hz
+f_stop = 2.834E9            #stop frequency in Hz
+#pi_pulse_length = exp.MBIprotocol['MBI_pulse_len']      #length of MW pi pulse
+pi_pulse_length = 1665.7
+mwpower_lt1 = -10        #in dBm
+mwpower_lt2 = 20            #in dBm
+nr_of_datapoints = 101       #max nr_of_datapoints*repetitions_per_datapoint should be < 20000
+repetitions_per_datapoint = 1000 
+#amplitude_ssbmod = exp.MBIprotocol['MBI_pulse_amp']
+amplitude_ssbmod = 0.05
 mwfreq = np.linspace(f_start,f_stop,nr_of_datapoints)
-lt1 = True
+lt1 = False
 
 awg = qt.instruments['AWG']
 
@@ -31,7 +34,7 @@ if lt1:
     ins_E_aom=qt.instruments['MatisseAOM_lt1']
     ins_A_aom=qt.instruments['NewfocusAOM_lt1']
     adwin=qt.instruments['adwin_lt1']
-    counters=qt.instruments['counters_lt1']
+    counterz=qt.instruments['counters_lt1']
     physical_adwin=qt.instruments['physical_adwin_lt1']
     microwaves = qt.instruments['SMB100_lt1']
     ctr_channel=2
@@ -41,7 +44,7 @@ else:
     ins_E_aom=qt.instruments['MatisseAOM']
     ins_A_aom=qt.instruments['NewfocusAOM']
     adwin=qt.instruments['adwin']
-    counters=qt.instruments['counters']
+    counterz=qt.instruments['counters']
     physical_adwin=qt.instruments['physical_adwin']
     microwaves = qt.instruments['SMB100']
     ctr_channel=1
@@ -51,7 +54,12 @@ microwaves.set_iq('on')
 microwaves.set_frequency(f_mw)
 microwaves.set_pulm('on')
 microwaves.set_power(mwpower)
+##############Gate Stuff########
+set_phase_locking_on=0
+set_gate_good_phase=-1
 
+
+ssrodic=exp.ssroprotocol
 
 par = {}
 par['counter_channel'] =              ctr_channel
@@ -62,27 +70,27 @@ par['AWG_start_DO_channel'] =         1
 par['AWG_done_DI_channel'] =          8
 par['send_AWG_start'] =               1
 par['wait_for_AWG_done'] =            0
-par['green_repump_duration'] =        6
-par['CR_duration'] =                  100
-par['SP_duration'] =                  250
+par['green_repump_duration'] =        ssrodic['green_repump_duration']
+par['CR_duration'] =                  ssrodic['CR_duration'] #NOTE 60 for readout A1
+par['SP_duration'] =                  ssrodic['SP_A_duration']
 par['SP_filter_duration'] =           0
 par['sequence_wait_time'] =           int(ceil(pi_pulse_length/1e3)+1)
 par['wait_after_pulse_duration'] =    1
 par['CR_preselect'] =                 1000
 par['RO_repetitions'] =               int(nr_of_datapoints*repetitions_per_datapoint)
-par['RO_duration'] =                  25
+par['RO_duration'] =                  ssrodic['RO_duration']
 par['sweep_length'] =                 int(nr_of_datapoints)
 par['cycle_duration'] =               300
 par['CR_probe'] =                     100
 
-par['green_repump_amplitude'] =       200e-6
+par['green_repump_amplitude'] =       160e-6
 par['green_off_amplitude'] =          0e-6
-par['Ex_CR_amplitude'] =              10e-9 #OK
-par['A_CR_amplitude'] =               15e-9 #OK
-par['Ex_SP_amplitude'] =              0e-9
-par['A_SP_amplitude'] =               15e-9 #OK: PREPARE IN MS = 0
-par['Ex_RO_amplitude'] =              5e-9 #OK: READOUT MS = 0
-par['A_RO_amplitude'] =               0e-9
+par['Ex_CR_amplitude'] =              ssrodic['Ex_CR_amplitude'] #OK
+par['A_CR_amplitude'] =               ssrodic['A_CR_amplitude'] #NOTE 15 for readout A1
+par['Ex_SP_amplitude'] =              0
+par['A_SP_amplitude'] =               ssrodic['A_SP_amplitude'] #OK: PREPARE IN MS = 0
+par['Ex_RO_amplitude'] =              ssrodic['Ex_RO_amplitude'] #OK: READOUT MS = 0
+par['A_RO_amplitude'] =               0
 
 
 
@@ -125,14 +133,16 @@ def generate_sequence(fstart = f_start-f_mw, fstop = f_stop-f_mw, steps = nr_of_
     awgcfg.configure_sequence(seq,'mw')
     
     # vars for the channel names
-    chan_mw_pm = 'MW_pulsemod' #is connected to ch1m1
+    
 
     if lt1:
         chan_mwI = 'MW_Imod_lt1'
         chan_mwQ = 'MW_Qmod_lt1'
+        chan_mw_pm = 'MW_pulsemod_lt1' #is connected to ch3m2
     else:
         chan_mwI = 'MW_Imod'
         chan_mwQ = 'MW_Qmod'
+        chan_mw_pm = 'MW_pulsemod' #is connected to ch1m1
 
     # in this version we keep the center frequency and sweep the
     # modulation frequency
@@ -209,6 +219,10 @@ def dark_esr(name, data, par):
     #print 'SP E amplitude: %s'%par['Ex_SP_voltage']
     #print 'SP A amplitude: %s'%par['A_SP_voltage']
 
+    if not(lt1):
+        adwin.set_spincontrol_var(set_phase_locking_on = set_phase_locking_on)
+        adwin.set_spincontrol_var(set_gate_good_phase =  set_gate_good_phase)
+
     adwin.start_spincontrol(load = True, stop_processes=['counter'],
         counter_channel = par['counter_channel'],
         green_laser_DAC_channel = par['green_laser_DAC_channel'],
@@ -269,6 +283,10 @@ def dark_esr(name, data, par):
     RO_data   = physical_adwin.Get_Data_Long(25,1,
                     sweep_length * par['RO_duration'])
     RO_data = reshape(RO_data,(sweep_length,par['RO_duration']))
+    # SSRO_data contains adwin decisions for the spin
+    SSRO_data   = physical_adwin.Get_Data_Long(27,1,
+                    sweep_length * par['RO_duration'])
+    SSRO_data = reshape(SSRO_data,(sweep_length,par['RO_duration']))
     statistics = physical_adwin.Get_Data_Long(26,1,10)
 
     sweep_index = arange(sweep_length)
@@ -290,6 +308,7 @@ def dark_esr(name, data, par):
     savdat['time']=ro_time
     savdat['sweep_axis']=sweep_index
     savdat['counts']=RO_data
+    savdat['SSRO_counts']=SSRO_data
     data.save_dataset(name='Spin_RO', do_plot=False, 
         data = savdat, idx_increment = False)
     savdat={}
@@ -322,8 +341,8 @@ def end_measurement():
     awg.stop()
     awg.set_runmode('CONT')
     adwin.set_simple_counting()
-    counters.set_is_running(1)
-    ins_green_aom.set_power(200e-6)   
+    counterz.set_is_running(1)
+    ins_green_aom.set_power(150e-6)   
     microwaves.set_status('off')
     microwaves.set_iq('off')
     microwaves.set_pulm('off')
@@ -353,7 +372,7 @@ def main():
             end_measurement()
             break
 
-    name = 'SIL2_lt1'
+    name = 'SIL9_lt2'
     data = meas.Measurement(name,'dark_esr')
     microwaves.set_status('on')
     dark_esr(name,data,par)

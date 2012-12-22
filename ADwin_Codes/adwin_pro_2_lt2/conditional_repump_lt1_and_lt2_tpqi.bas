@@ -9,6 +9,7 @@
 ' Optimize                       = Yes
 ' Optimize_Level                 = 1
 ' Info_Last_Save                 = TUD276629  TUD276629\localadmin
+' Bookmarks                      = 30,75,120,127,199,203,261,271
 '<Header End>
 ' only DIO 1-24 are connected to breakout box (no 0, 25-31)
 
@@ -24,7 +25,6 @@ DIM DATA_7[max_hist_cts] as long       ' histogram of counts during 1st CR after
 DIM DATA_8[max_hist_cts] as long       ' histogram of counts during CR (all attempts)
 DIM i as long
 DIM cr_prepared as long                 ' set to 1 if both NVs are prepared, reset to 0 after first CR.
-DIM cr_lt2_prepared as long             ' set to 1 if LT2 NV is prepared, reset to 0 after first CR.
 
 #DEFINE count_psb_during_tpqi 0         'can be switched off for process-time reduction
 #DEFINE LT1_PSB_counter 3
@@ -48,10 +48,10 @@ dim cr_check_count_threshold_prepare as long    ' initial C&R threshold after re
 dim cr_check_count_threshold_probe as long      ' C&R threshold for probe after sequence (lt2)
 dim current_cr_check_step as long
 dim current_cr_check_counts as long
-#DEFINE wait_before_tpqi 2
 
 dim is_cr_lt1_check_running as integer
 dim is_cr_lt1_OK, was_cr_lt1_OK as integer
+dim lt2_check_only as integer
 
 dim cr_time_limit_steps as long                 ' how long (in pr. cycles) before forcing C&R check
 dim current_cr_time_limit_step as long
@@ -61,6 +61,7 @@ dim repump_steps as long
 dim current_repump_step as long
 
 dim is_tpqi_running as integer
+dim gate_good_phase as integer
 
 #DEFINE trigger_dio_in_bit 256      'par_32 later maybe as a variable
 #DEFINE trigger_dio_out 16          'par_33 later maybe as a variable
@@ -93,6 +94,7 @@ INIT:
   current_cr_check_step = 0
   current_cr_check_counts = 0
   is_cr_lt1_check_running = 0
+  lt2_check_only= par_64
   
   cr_time_limit_steps = PAR_29 ' in multiples of processor cycles. should be a multiple of the AWG tpqi sequence time
   current_cr_time_limit_step = 0
@@ -104,12 +106,15 @@ INIT:
   is_tpqi_running = 0
   is_cr_lt1_OK = 0
   
+  'par_65 = 0                      ' turn phase locking on, 1 is on
+  par_66 = 0                      ' counts repumps
+  'par_67 = 0                      ' which phase to lock on
   par_69 = 0                      ' cumulative LT1 counts in PSB during tpqi sequence
   PAR_70 = 0                      ' cumulative counts from probe intervals
   PAR_71 = 0                      ' below CR threshold events
   PAR_72 = 0                      ' number of CR checks performed (lt2)
-  par_73 = 0                      ' number of tpqi starts
-  par_74 = 0                      ' number of tpqi runs interrupted
+  par_73 = 0                      ' number of cr prepared
+  par_74 = 0                      ' number of tpqi-start triggers sent
   par_76 = 0                      ' cumulative counts during repumping
   par_77 = 0                      ' number of OK signals from LT1
   par_79 = 0                      ' cumulative LT2 counts in PSB during tpqi sequence
@@ -127,7 +132,11 @@ EVENT:
   cr_check_count_threshold_prepare = par_75
   cr_check_count_threshold_probe = par_68
   do_cr_check = do_cr_lt1_check or do_cr_lt2_check
-   
+
+  'par_65: set to 1 if phase locking is necessary
+  'par67: set to 1 for positive frequency shifts
+  '       set to -1 for negative frequency shifts
+  gate_good_phase=Par_15*Par_67-(2*(par_65-1))
   if (do_cr_check > 0) then
     if ((is_cr_lt1_check_running = 0) and (do_cr_lt1_check > 0)) then
       Inc(Par_80)
@@ -137,63 +146,62 @@ EVENT:
     
     if (do_cr_lt2_check > 0) then
       if (current_cr_check_step = 1) then
-     
+        
+        'XXX debug --------
+        'P2_DAC(DAC_MODULE, 4, 3277*1+32768)
+        '-----------
+        
         P2_CNT_ENABLE(CTR_MODULE, 0000b)
         P2_CNT_CLEAR(CTR_MODULE,  1111b) ' clear counter
         P2_CNT_ENABLE(CTR_MODULE, 1111b) ' enable counter
-        
-        if (cr_prepared = 1) then
-          P2_DAC(DAC_MODULE, ex_aom_channel, 3277*ex_aom_voltage+32768) ' turn on the Ex laser
-          P2_DAC(DAC_MODULE, a_aom_channel, 3277*0+32768)
-        else
-          P2_DAC(DAC_MODULE, ex_aom_channel, 3277*ex_aom_voltage+32768) ' turn on the Ex and A1 lasers
-          P2_DAC(DAC_MODULE, a_aom_channel, 3277*a_aom_voltage+32768)
-        endif
+              
+        P2_DAC(DAC_MODULE, ex_aom_channel, 3277*ex_aom_voltage+32768) ' turn on the red lasers
+        P2_DAC(DAC_MODULE, a_aom_channel, 3277*a_aom_voltage+32768)
       endif
       
       current_cr_check_step = current_cr_check_step + 1
       
       if (current_cr_check_step > cr_check_steps+1) then
         P2_CNT_LATCH(CTR_MODULE, 1111b)
-        current_cr_check_counts = P2_CNT_READ_LATCH(CTR_MODULE, counter)        
-        par_70 = par_70 + current_cr_check_counts
-        Inc(par_72)
+        current_cr_check_counts = P2_CNT_READ_LATCH(CTR_MODULE, counter)
+        if (gate_good_phase > 0) then          
+          par_70 = par_70 + current_cr_check_counts
+          Inc(par_72)
+        endif
         
         P2_CNT_ENABLE(CTR_MODULE, 0000b)
         P2_CNT_CLEAR(CTR_MODULE,  1111b) ' clear counter
+       
+        'XXX debug --------
+        'P2_DAC(DAC_MODULE, 4, 32768)
+        '-----------
 
         do_cr_lt2_check = 0
-        
-        if (cr_lt2_prepared = 1) then
+        if (cr_prepared = 1) then
+          if (current_cr_check_counts < max_hist_cts) then
+            Inc(DATA_7[current_cr_check_counts+1])
+          endif
           if (current_cr_check_counts < cr_check_count_threshold_probe) then
             do_repump = 1
             Inc(par_71)
-            cr_lt2_prepared = 0
+            cr_prepared = 0
           else  
             P2_DAC(DAC_MODULE, ex_aom_channel, 32768) ' turn off the red lasers
             P2_DAC(DAC_MODULE, a_aom_channel, 32768)
           endif
         else
+          if (current_cr_check_counts < max_hist_cts) then
+            Inc(DATA_8[current_cr_check_counts+1])
+          endif
           if (current_cr_check_counts < cr_check_count_threshold_prepare) then
             do_repump = 1
             Inc(par_71)
           else  
             P2_DAC(DAC_MODULE, ex_aom_channel, 32768) ' turn off the red lasers
             P2_DAC(DAC_MODULE, a_aom_channel, 32768)
-            cr_lt2_prepared = 1
+            cr_prepared = 1
           endif
-        endif
-        
-        if (cr_prepared = 1) then
-          if (current_cr_check_counts < max_hist_cts) then
-            Inc(DATA_7[current_cr_check_counts+1])
-          endif
-          cr_prepared = 0
-        endif
-        
-        if (current_cr_check_counts < max_hist_cts) then
-          Inc(DATA_8[current_cr_check_counts+1])
-        endif
+        endif     
         
         current_cr_check_step = 0
         current_cr_check_counts = 0
@@ -205,7 +213,7 @@ EVENT:
     if (((is_cr_lt1_check_running=1) and (do_cr_lt1_check=1))) then
       was_cr_lt1_OK = is_cr_lt1_OK
       is_cr_lt1_OK = ((P2_DIGIN_LONG(DIO_MODULE)) AND (trigger_dio_in_bit)) ' check whether LT1 is OK   
-      if ((was_cr_lt1_OK = 0) and (is_cr_lt1_OK > 0)) then
+      if (((was_cr_lt1_OK = 0) and (is_cr_lt1_OK > 0)) OR (lt2_check_only>0)) then
         do_cr_lt1_check = 0
         is_cr_lt1_check_running = 0
         P2_DIGOUT(DIO_MODULE,trigger_dio_out,0) ' remover HI-trigger for lt1
@@ -229,7 +237,7 @@ EVENT:
     
     current_repump_step = current_repump_step + 1
     if (current_repump_step > repump_steps) then
-      
+      inc(par_66)
       P2_DAC(DAC_MODULE, green_aom_channel, 3277*green_aom_off_voltage+32768) ' turn off green
       
       P2_CNT_LATCH(CTR_MODULE, 1111b)
@@ -243,32 +251,29 @@ EVENT:
   endif
 
   if (is_tpqi_running=1) then
-    if (current_cr_time_limit_step=wait_before_tpqi-1) then
-      P2_DIGOUT(DIO_MODULE,5,0) ' PLU reset off
-    ENDIF
-    
-    if (current_cr_time_limit_step=wait_before_tpqi) then
+    if (current_cr_time_limit_step=0) then
       if (count_psb_during_tpqi>0) then
         P2_CNT_ENABLE(CTR_MODULE, 0000b)
         P2_CNT_CLEAR(CTR_MODULE,  1111b) ' clear counter
         P2_CNT_ENABLE(CTR_MODULE, 1111b) ' enable counter
       endif
-          
-      P2_DIGOUT(DIO_MODULE,6,1)  ' AWG event jump (should be to tpqi sequence element)
-      CPU_SLEEP(9)               ' need >= 20ns pulse width; adwin needs >= 9 as arg, which is 9*10ns
-      P2_DIGOUT(DIO_MODULE,6,0)
-      
-      
+
+      if (gate_good_phase>0) then
+        P2_DIGOUT(DIO_MODULE,6,1)  ' AWG event jump (should be to tpqi sequence element)
+        CPU_SLEEP(9)               ' need >= 20ns pulse width; adwin needs >= 9 as arg, which is 9*10ns
+        P2_DIGOUT(DIO_MODULE,6,0)
+        Inc(par_74)
+      endif
+
     endif
     
     current_cr_time_limit_step = current_cr_time_limit_step + 1
     
-    if (current_cr_time_limit_step > (cr_time_limit_steps+wait_before_tpqi)) then
-      P2_DIGOUT(DIO_MODULE,5,1)  ' PLU reset on
+    if (current_cr_time_limit_step > cr_time_limit_steps) then
       is_tpqi_running = 0
       do_cr_lt2_check = 1
       do_cr_lt1_check = 1
-      Inc(par_74)
+      
       if (count_psb_during_tpqi>0) then
         P2_CNT_LATCH(CTR_MODULE, 1111b)
         par_79 = par_79 + P2_CNT_READ_LATCH(CTR_MODULE, counter)

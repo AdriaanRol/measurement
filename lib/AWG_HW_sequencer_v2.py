@@ -566,6 +566,8 @@ class Sequence:
             if (self.elements[element_index]['pulses'][pulse_index]['start_reference'] == ''):
                 start = self.elements[element_index]['pulses'][pulse_index]['start']
             else:
+                
+                
                 if self.elements[element_index]['pulses'][pulse_index]['link_start_to'] == 'start':
                     start = self.elements[element_index]['pulses'][pulse_index]['start'] + \
                             self.start_index(self.elements[element_index]['pulses']\
@@ -829,6 +831,7 @@ class Sequence:
         # and send to the AWG
         
         element_time_offset = 0.
+        max_seq_length = 0          # in steps
         for i, element in enumerate(self.elements):
 
 ### special feature for opt09 AWG #############################################
@@ -854,6 +857,8 @@ class Sequence:
             # FIXME t0 should be more flexible, could maybe link that to other
             # elements, etc.
             length, offset = self.element_length_and_offset(i)
+            if length > max_seq_length:
+                max_seq_length = length 
             waveforms = self._init_waveforms(AWG_channels, length)
             for j, pulse in enumerate(element['pulses']):
                 self._add_pulse(element, offset, pulse, waveforms, 
@@ -876,7 +881,9 @@ class Sequence:
                     length/self.clock*1e6)
             
             self.element_lengths[element['name']] = length/self.clock
-            
+                    
+           
+
             # send the waveform to the AWG
             if (self.send_waveforms == True) and \
                     ((self.update_element == 'all') or \
@@ -884,6 +891,7 @@ class Sequence:
                 
                 for j in [ j for j in range(4) if AWG_channels[j] ]:
                     n = element['name']+'_ch%d'%(j+1)
+                   
                     self.AWG.send_waveform(waveforms[j][0],
                             waveforms[j][1], waveforms[j][2], n, self.clock)
                     self.AWG.import_waveform_file(n, n)
@@ -946,13 +954,13 @@ class Sequence:
                 self.AWG.set_sqel_goto_state(sequence_element_counter, '1')
                 self.AWG.set_sqel_goto_target_index(sequence_element_counter, 
                         goto_index)
-
         if self.start_sequence:
             self.AWG.start()
-
         print 'Sequence generation finished in %.2f seconds.' % (time.time()-\
                 generation_start)
+        #print 'Max seq length: %d us.' %(max_seq_length/self.clock*1e6)
         print ''
+        return max_seq_length/self.clock*1e6        # us
 
     # we initialize the waveforms for all used channels
     # will all be set to a default voltage, specified for each channel
@@ -963,12 +971,12 @@ class Sequence:
             waveforms[j] = [ zeros(length, dtype = float), 
                     zeros(length, dtype = float), 
                     zeros(length, dtype = float)]
-       
+             
             for chan in self.channels:
                 AWG_chan_idx, AWG_subchan_idx = self._AWG_chan_indices(chan)
                 if j == AWG_chan_idx:
                     waveforms[j][AWG_subchan_idx] += chan['default_voltage']
-
+            
         return waveforms
 
     ### move this up to tools for sake of organisation?
@@ -1040,9 +1048,9 @@ class Sequence:
                 pulse['element_phase'] else 0
         samples = eidx-sidx
         duration = samples/self.clock
-
+        if pulse['duration'] < 0 :
+            print 'ERROR: pulse ', pulse['name'], 'in element',pulse['element'],'has duration', pulse['duration'] 
         # print "pulse '%s' has offset %d (=%.3f us)" % (pulse['name'], sidx+of, stime*1e6)
-
         p = Pulse(pulse, samples, stime, self.clock)
         waveforms[AWG_chan_idx][AWG_subchan_idx][sidx:eidx] += p.wform()
         return waveforms

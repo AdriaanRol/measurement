@@ -97,7 +97,6 @@ DIM SP_duration AS LONG
 DIM SP_filter_duration AS LONG
 DIM sequence_wait_time AS LONG
 DIM wait_after_pulse_duration AS LONG
-DIM CR_preselect AS LONG
 DIM SSRO_repetitions AS LONG
 DIM SSRO_duration AS LONG
 DIM SSRO_stop_after_first_photon AS LONG
@@ -125,6 +124,10 @@ DIM AWG_done_DI_pattern AS LONG
 DIM counts, old_counts AS LONG
 DIM first AS LONG
 
+DIM current_cr_threshold AS LONG
+DIM CR_probe AS LONG
+DIM CR_preselect AS LONG
+
 INIT:
   counter_channel              = DATA_20[1]
   green_laser_DAC_channel      = DATA_20[2]
@@ -145,6 +148,7 @@ INIT:
   SSRO_duration                = DATA_20[17]
   SSRO_stop_after_first_photon = DATA_20[18]
   cycle_duration               = DATA_20[19]
+  CR_probe                     = DATA_20[20]
   
   green_repump_voltage         = DATA_21[1]
   green_off_voltage            = DATA_21[2]
@@ -205,11 +209,15 @@ INIT:
   PAR_71 = 0                      ' below CR threshold events
   PAR_72 = 0                      ' number of CR checks performed (lt1)
   Par_75 = CR_preselect
+  Par_68 = CR_probe
   par_76 = 0                      ' cumulative counts during repumping
   Par_80 = 0                      ' cumulative counts in PSB when not CR chekging or repummping 
   
+  current_cr_threshold = CR_preselect
+  
 EVENT:
   CR_preselect                 = PAR_75
+  CR_probe                     = PAR_68
   'PAR_22 = mode
   'PAR_23 = PAR_23 + 1
   'PAR_24 = timer
@@ -233,6 +241,7 @@ EVENT:
             mode = 1
             timer = -1
             wait_after_pulse = wait_after_pulse_duration
+            current_cr_threshold = CR_preselect
           ENDIF
         ENDIF
       CASE 1    ' Ex/A laser CR check
@@ -249,11 +258,13 @@ EVENT:
             counts = CNT_READ(counter_channel)
             CNT_ENABLE(0)
             PAR_70 = PAR_70 + counts
+            
             IF (first > 0) THEN ' first CR after SSRO sequence
               DATA_23[repetition_counter] = counts
               first = 0
             ENDIF
-            IF (counts < CR_preselect) THEN
+            
+            IF (counts < current_cr_threshold) THEN
               mode = 0
               CR_failed = CR_failed + 1
               PAR_71 = CR_failed
@@ -261,7 +272,9 @@ EVENT:
             ELSE
               mode = 2
               DATA_22[repetition_counter+1] = counts  ' CR before next SSRO sequence
+              current_cr_threshold = CR_probe
             ENDIF
+            
             timer = -1
             wait_after_pulse = wait_after_pulse_duration
           ENDIF

@@ -23,12 +23,17 @@ DIM modulator AS Float
 INIT:
   modulator=1.0
 EVENT:
+  if (Par_13 >0)then
+    modulation_period = Par_13
+  else
+    modulation_period = 1  
+  endif  
   PROCESSDELAY = modulation_period * 300000
   modulation_on=Par_14
   
   gate_channel = Par_12
   gate_voltage = FPar_12
-  modulation_period = Par_13
+  
   
   P2_DAC(DAC_MODULE,gate_channel,gate_voltage*modulator*3277+32768)
   if (modulation_on > 0) then
@@ -36,4 +41,5 @@ EVENT:
   else
     modulator = 1.0
   endif
+  Par_15 = modulator
  

@@ -23,6 +23,7 @@ DIM PxTime, StepSize AS FLOAT
 ' what to do for each pixel; 
 ' 1=counting, 0=nothing, 2=counting + record supplemental data per px from fpar2 3=read counters from par45-48 (for use with resonant counting);
 DIM PxAction AS INTEGER
+dim gate_good_phase as integer
 
 ' The numbers of the involved DACs (adwin only has 8)
 DIM DATA_200[8] AS INTEGER
@@ -52,7 +53,11 @@ DIM DATA_14[100000] AS LONG
 ' supplemental data; used when PxAction is set to 2
 DIM DATA_15[100000] AS FLOAT
 
-
+dim timer as integer
+dim counter1 as integer
+dim counter2 as integer
+dim counter3 as integer
+dim counter4 as integer
 INIT:
   
   CurrentStep = 1
@@ -66,8 +71,8 @@ INIT:
   PxTime = FPAR_1
   PxAction = PAR_3
    
-  'Processtime is in units of clockcycles for pixeltime in ms
-  PROCESSDELAY = PxTime * 300000    
+  'Processtime is in units of clockcycles for pixeltime in msXXXXXXXXXXXXXXXXXXXXXXX
+  PROCESSDELAY = PxTime * 3000    
   
   FOR i = 1 TO NoOfDACs
     DACVoltage = DATA_199[i]
@@ -108,74 +113,101 @@ INIT:
     Par_49 = 1
     Par_50 = 0                                                            'tell resonant counting process to sum its data into par 45-48
   ENDIF
-    
- 
+  'par_65 = 1                      ' turn phase locking off 1 is off
+  'par_67 = 0                      ' which phase to lock on
+  
+  timer = -1
+  counter1=0
+  counter2=0
+  counter3=0
+  counter4=0
+  
 EVENT:
-
-  IF ((PxAction = 1) OR (PxAction = 2)) THEN
-    ' DEBUG FPar_23 = 42.0
-    ' Read out counters 1, 2 and 3 and reset them
-   
-    P2_CNT_LATCH(CTR_Module,111b)                                         'latch counters
-    DATA_11[CurrentStep] = P2_CNT_READ_LATCH(CTR_Module,1)                 'read latch A of counter 1
-    DATA_12[CurrentStep] = P2_CNT_READ_LATCH(CTR_Module,2)                 'read latch A of counter 2
-    DATA_13[CurrentStep] = P2_CNT_READ_LATCH(CTR_Module,3)                 'read latch A of counter 3
-    DATA_14[CurrentStep] = P2_CNT_READ_LATCH(CTR_Module,4)                 'read latch A of counter 4
+  gate_good_phase=Par_15*Par_18-(2*(par_19-1))
+  par_66=gate_good_phase
+  if (gate_good_phase>0) then
+    Inc(timer)
+    P2_CNT_LATCH(CTR_Module,111b)  
+    counter1=counter1+P2_CNT_READ_LATCH(CTR_Module,1)                 'read latch A of counter 1
+    counter2=counter2+P2_CNT_READ_LATCH(CTR_Module,2)                 'read latch A of counter 2
+    counter3=counter3+P2_CNT_READ_LATCH(CTR_Module,3)                 'read latch A of counter 3
+    counter4=counter4+P2_CNT_READ_LATCH(CTR_Module,4)                 'read latch A of counter 4
     P2_CNT_ENABLE(CTR_Module,000b)                                        'Stop counters
     P2_CNT_CLEAR(CTR_Module,111b)                                         'Clear counters
     P2_CNT_ENABLE(CTR_Module,111b)                                        'Start counters again
     
-    
-  ENDIF
-  IF (PxAction = 2) THEN
-    ' DEBUG FPar_24 = 42.0
-    DATA_15[CurrentStep] = FPar_2
-  ENDIF
-  IF (PxAction = 3) THEN
-    ' DEBUG FPar_24 = 42.0
-    DATA_11[CurrentStep] = Par_45                                         'read counts from par (resonant counting ctr1)
-    DATA_12[CurrentStep] = Par_46                                         'read counts from par (resonant counting ctr2)
-    DATA_13[CurrentStep] = Par_47                                         'read counts from par (resonant counting ctr3)
-    DATA_14[CurrentStep] = Par_48                                          'read counts from par (resonant counting ctr4)
-    Par_45 = 0                                                             'clear counts from par
-    Par_46 = 0 
-    Par_47 = 0 
-    Par_48 = 0
-    Par_50 = 0
-  ENDIF
+    if (timer >= 100) then
+      IF ((PxAction = 1) OR (PxAction = 2)) THEN
+        ' DEBUG FPar_23 = 42.0
+        ' Read out counters 1, 2 and 3 and reset them
+   
+        'latch counters
+        DATA_11[CurrentStep] = counter1 
+        DATA_12[CurrentStep] = counter2 
+        DATA_13[CurrentStep] = counter3 
+        DATA_14[CurrentStep] = counter4
+        counter1=0
+        counter2=0
+        counter3=0
+        counter4=0
+      ENDIF
+      IF (PxAction = 2) THEN
+        ' DEBUG FPar_24 = 42.0
+        DATA_15[CurrentStep] = FPar_2
+      ENDIF
+      IF (PxAction = 3) THEN
+        ' DEBUG FPar_24 = 42.0
+        DATA_11[CurrentStep] = Par_45                                         'read counts from par (resonant counting ctr1)
+        DATA_12[CurrentStep] = Par_46                                         'read counts from par (resonant counting ctr2)
+        DATA_13[CurrentStep] = Par_47                                         'read counts from par (resonant counting ctr3)
+        DATA_14[CurrentStep] = Par_48                                          'read counts from par (resonant counting ctr4)
+        Par_45 = 0                                                             'clear counts from par
+        Par_46 = 0 
+        Par_47 = 0 
+        Par_48 = 0
+        Par_50 = 0
+      ENDIF
   
-  ' Set the voltage on all involved DACs
-  FOR i = 1 TO NoOfDACs
-    'Increase DAC voltage by one step (first value will be neglected)
-    DACVoltage = DATA_199[i] + (CurrentStep - 1) * DATA_197[i]
-    FPar_7 = DATA_199[i]
-    FPar_8 = CurrentStep-1
-    FPar_9 = DATA_197[i]   
-    DACBinaryVoltage = DACVoltage * 3276.8 + 32768
-    P2_DAC(DAC_Module,DATA_200[i], DACBinaryVoltage)
-    DATA_1[DATA_200[i]]   = DACVoltage
-    FPar_5 = DACVoltage
+      ' Set the voltage on all involved DACs
+      FOR i = 1 TO NoOfDACs
+        'Increase DAC voltage by one step (first value will be neglected)
+        DACVoltage = DATA_199[i] + (CurrentStep - 1) * DATA_197[i]
+        FPar_7 = DATA_199[i]
+        FPar_8 = CurrentStep-1
+        FPar_9 = DATA_197[i]   
+        DACBinaryVoltage = DACVoltage * 3276.8 + 32768
+        P2_DAC(DAC_Module,DATA_200[i], DACBinaryVoltage)
+        DATA_1[DATA_200[i]]   = DACVoltage
+        FPar_5 = DACVoltage
 
-  NEXT i
+      NEXT i
 
-  inc(CurrentStep)
+      inc(CurrentStep)
     
-  IF (CurrentStep > NoOfSteps + 1) THEN                     ' Stop when end of line is reached
-    'FOR i = 1 TO NoOfDACs
-    '  DACVoltage = (DATA_199[i])
-    '  DACBinaryVoltage = DACVoltage * 3276.8 + 32768        ' Go back to start of the line
-    '  P2_DAC(DAC_Module,DATA_200[i], DACBinaryVoltage)
-    '  DATA_1[DATA_200[i]]   = DACVoltage
-    '
-    'NEXT i
-    IF (PxAction = 3) THEN
-      Par_49 = 0                                            'tell resonant counting process to stop summing its data into par 45-48
-    ENDIF
-    END                                                     'End program
-  ENDIF
+      IF (CurrentStep > NoOfSteps + 1) THEN                     ' Stop when end of line is reached
+        'FOR i = 1 TO NoOfDACs
+        '  DACVoltage = (DATA_199[i])
+        '  DACBinaryVoltage = DACVoltage * 3276.8 + 32768        ' Go back to start of the line
+        '  P2_DAC(DAC_Module,DATA_200[i], DACBinaryVoltage)
+        '  DATA_1[DATA_200[i]]   = DACVoltage
+        '
+        'NEXT i
+        END                                                     'End program
+      ENDIF
   
-  ' update the pixel clock; put after the line end check so we have a maximum
-  ' that corresponds to the number of steps
-  Par_4 = CurrentStep - 1
+      ' update the pixel clock; put after the line end check so we have a maximum
+      ' that corresponds to the number of steps
+      Par_4 = CurrentStep - 1
+      timer = 0
+    endif
+  else
+    P2_CNT_ENABLE(CTR_Module,000b)                                        'Stop counters
+    P2_CNT_CLEAR(CTR_Module,111b)                                         'Clear counters
+    P2_CNT_ENABLE(CTR_Module,111b)                                        'Start counters again
+  endif
   
+  
+
+    
 FINISH:  
+  Par_49 = 0  'tell resonant counting process to stop summing its data into par 45-48  

@@ -6,10 +6,10 @@ import msvcrt
 # from measurement.AWG_HW_sequencer_v2 import Sequence
 
 name='ESR_SIL10'
-start_f =   2.82
-stop_f  =   2.99
+start_f =   2.80
+stop_f  =   2.86
 steps   =   151
-MW_power =  20
+MW_power =  -12
 int_time = 30 # ms
 channel = 0
 reps = 50

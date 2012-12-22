@@ -218,7 +218,7 @@ class laser_scan(Instrument):
         self._voltages  = linspace(self._StartVoltage, self._StopVoltage,
                 self._ScanSteps)
 
-        gobject.timeout_add(self._IntegrationTime/2,
+        gobject.timeout_add(int(self._IntegrationTime/4.),
                 self._update_wm_frequency)
         gobject.timeout_add(self._data_update_interval,
                 self._update_data)

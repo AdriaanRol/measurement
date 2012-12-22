@@ -9,6 +9,17 @@ import ctypes
 import inspect
 import time as dtime
 import msvcrt
+<<<<<<< HEAD
+from measurement.lib.measurement import Measurement
+from measurement.lib.AWG_HW_sequencer_v2 import Sequence
+from measurement.lib import PQ_measurement_generator_v2 as pqm
+from measurement.lib import ssro_ADwin_class as ssro_ADwin
+from measurement.lib import esr
+from measurement.lib.config import awgchannels_lt2 as awgcfg
+from measurement.lib.sequence import common as commonseq
+from measurement.lib.sequence import mwseq_calibration as cal
+from analysis.lib.spin import pulse_calibration_fitandplot_lib, spin_control 
+=======
 from measurement import Measurement
 from AWG_HW_sequencer_v2 import Sequence
 import PQ_measurement_generator_v2 as pqm
@@ -18,6 +29,7 @@ from config import awgchannels_lt2 as awgcfg
 from sequence import common as commonseq
 from sequence import mwseq_calibration as cal
 from analysis import lde_calibration, spin_control 
+>>>>>>> 54c8270ec6ded7035f530c75005cf8bbd74414e7
 
 
 
@@ -36,8 +48,13 @@ class PulseCalibration(Measurement):
 ##
 ###########################################################
 
+<<<<<<< HEAD
+        
+        self.set_phase_locking_on = 1
+=======
 
         self.set_phase_locking_on = 0
+>>>>>>> 54c8270ec6ded7035f530c75005cf8bbd74414e7
         self.set_gate_good_phase = -1
 
         self.f_drive            =                   2.828e9
@@ -48,22 +65,44 @@ class PulseCalibration(Measurement):
         self.par['AWG_done_DI_channel'] =          8
         self.par['send_AWG_start'] =               1
         self.par['wait_for_AWG_done'] =            0
+<<<<<<< HEAD
+        self.par['green_repump_duration'] =        12
+        self.par['CR_duration'] =                  250 # NOTE set to 60 for Ey, A1
+        self.par['SP_duration'] =                  350 
+=======
         self.par['green_repump_duration'] =        10
         self.par['CR_duration'] =                  60
         self.par['SP_duration'] =                  50
+>>>>>>> 54c8270ec6ded7035f530c75005cf8bbd74414e7
         self.par['SP_filter_duration'] =           0
         self.par['sequence_wait_time'] =           int(np.ceil(1e-3)+2)
         self.par['wait_after_pulse_duration'] =    1
         self.par['CR_preselect'] =                 1000
 
+<<<<<<< HEAD
+        self.par['reps_per_datapoint'] =           1500
+        self.par['sweep_length'] =                 int(21)
+        self.par['RO_repetitions'] =               int(21*1500)
+        self.par['RO_duration'] =                  17
+=======
         self.par['reps_per_datapoint'] =           1000
         self.par['sweep_length'] =                 int(21)
         self.par['RO_repetitions'] =               int(21*1000)
         self.par['RO_duration'] =                  22
+>>>>>>> 54c8270ec6ded7035f530c75005cf8bbd74414e7
 
         self.par['cycle_duration'] =               300
         self.par['CR_probe'] =                     100
 
+<<<<<<< HEAD
+        self.par['green_repump_amplitude'] =       160e-6
+        self.par['green_off_amplitude'] =          0e-6
+        self.par['Ex_CR_amplitude'] =              10e-9 #OK
+        self.par['A_CR_amplitude'] =               13e-9 #NOTE set to 15 for A1
+        self.par['Ex_SP_amplitude'] =              0#15e-9 
+        self.par['A_SP_amplitude'] =               15e-9 #OK: PREPARE IN MS = 0
+        self.par['Ex_RO_amplitude'] =              9e-9 #OK: READOUT MS = 0
+=======
         self.par['green_repump_amplitude'] =       200e-6
         self.par['green_off_amplitude'] =          0e-6
         self.par['Ex_CR_amplitude'] =              20e-9 #OK
@@ -71,6 +110,7 @@ class PulseCalibration(Measurement):
         self.par['Ex_SP_amplitude'] =              0 
         self.par['A_SP_amplitude'] =               15e-9 #OK: PREPARE IN MS = 0
         self.par['Ex_RO_amplitude'] =              8e-9 #OK: READOUT MS = 0
+>>>>>>> 54c8270ec6ded7035f530c75005cf8bbd74414e7
         self.par['A_RO_amplitude'] =               0e-9
 
         self.par['min_sweep_par'] =                  0
@@ -79,10 +119,20 @@ class PulseCalibration(Measurement):
         self.par['sweep_par']   =                  np.linspace(1,21,21)
 
 
+<<<<<<< HEAD
+    def setup(self,lt1=False,phase_locking=0):
+        self.mwpower_lt1 =               20              #in dBm
+        self.mwpower_lt2 =               20              #in dBm
+        if phase_locking:
+            self.set_phase_locking_on = 1
+        else:
+            self.set_phase_locking_on = 0
+=======
     def setup(self,lt1=False):
         self.mwpower_lt1 =               20               #in dBm
         self.mwpower_lt2 =               20              #in dBm
 
+>>>>>>> 54c8270ec6ded7035f530c75005cf8bbd74414e7
         if lt1:
             self.ins_green_aom=qt.instruments['GreenAOM_lt1']
             self.ins_E_aom=qt.instruments['MatisseAOM_lt1']
@@ -108,8 +158,13 @@ class PulseCalibration(Measurement):
             self.mwpower = self.mwpower_lt2
             self.microwaves.set_status('off')
 
+<<<<<<< HEAD
+        self.awg = qt.instruments['AWG']
+        self.temp = qt.instruments['temperature_lt1']
+=======
         awg = qt.instruments['AWG']
         temp = qt.instruments['temperature_lt1']
+>>>>>>> 54c8270ec6ded7035f530c75005cf8bbd74414e7
         
         self.par['counter_channel'] =              self.ctr_channel
         self.par['green_laser_DAC_channel'] =      self.adwin.get_dac_channels()['green_aom']
@@ -140,6 +195,20 @@ class PulseCalibration(Measurement):
         self.counters.set_is_running(False)
         
         #Generate sequence and send to AWG
+<<<<<<< HEAD
+        sequence = generate_sequence(self.par['sweep_par'],pulse_dict,lt1)
+
+        self.par['RO_repetitions'] =               int(len(self.par['sweep_par'])*self.par['reps_per_datapoint'])
+        self.par['sweep_length'] =                 int(len(self.par['sweep_par']))
+        self.par['sequence_wait_time'] =           int(np.ceil(sequence["max_seq_time"]/1e3)+2)
+        
+        self.par['min_sweep_par'] =                self.par['sweep_par'].min()
+        self.par['max_sweep_par'] =                self.par['sweep_par'].max()
+        
+        self.awg.set_runmode('SEQ')
+        self.awg.start()  
+        while self.awg.get_state() != 'Waiting for trigger':
+=======
         sequence = generate_sequence(sweep_param,pulse_dict,lt1)
 
         self.par['RO_repetitions'] =               int(len(self.sweep_param)*self.par['reps_per_datapoint'])
@@ -152,6 +221,7 @@ class PulseCalibration(Measurement):
         awg.set_runmode('SEQ')
         awg.start()  
         while awg.get_state() != 'Waiting for trigger':
+>>>>>>> 54c8270ec6ded7035f530c75005cf8bbd74414e7
             qt.msleep(1)
 
         self.microwaves.set_status('on')
@@ -183,6 +253,13 @@ class PulseCalibration(Measurement):
             self.adwin.set_spincontrol_var(set_phase_locking_on = self.set_phase_locking_on)
             self.adwin.set_spincontrol_var(set_gate_good_phase =  self.set_gate_good_phase)
 
+<<<<<<< HEAD
+        if lt1:
+            self.adwin_lt2.start_check_trigger_from_lt1(stop_processes=['counter'])
+            qt.msleep(1)
+
+=======
+>>>>>>> 54c8270ec6ded7035f530c75005cf8bbd74414e7
         self.adwin.start_spincontrol(
             counter_channel = self.par['counter_channel'],
             green_laser_DAC_channel = self.par['green_laser_DAC_channel'],
@@ -203,6 +280,10 @@ class PulseCalibration(Measurement):
             RO_duration = self.par['RO_duration'],
             sweep_length = self.par['sweep_length'],
             cycle_duration = self.par['cycle_duration'],
+<<<<<<< HEAD
+            CR_probe = self.par['CR_probe'],
+=======
+>>>>>>> 54c8270ec6ded7035f530c75005cf8bbd74414e7
             green_repump_voltage = self.par['green_repump_voltage'],
             green_off_voltage = self.par['green_off_voltage'],
             Ex_CR_voltage = self.par['Ex_CR_voltage'],
@@ -212,8 +293,12 @@ class PulseCalibration(Measurement):
             Ex_RO_voltage = self.par['Ex_RO_voltage'],
             A_RO_voltage = self.par['A_RO_voltage'])
 
+<<<<<<< HEAD
+
+=======
         if lt1:
             self.adwin_lt2.start_check_trigger_from_lt1()
+>>>>>>> 54c8270ec6ded7035f530c75005cf8bbd74414e7
             
 
         CR_counts = 0
@@ -309,11 +394,19 @@ class PulseCalibration(Measurement):
         return 
 
     def end_measurement(self):
+<<<<<<< HEAD
+        self.awg.stop()
+        self.awg.set_runmode('CONT')
+        self.adwin.set_simple_counting()
+        self.counters.set_is_running(True)
+        self.ins_green_aom.set_power(100e-6)   
+=======
         awg.stop()
         awg.set_runmode('CONT')
         self.adwin.set_simple_counting()
         self.counters.set_is_running(True)
         self.ins_green_aom.set_power(200e-6)   
+>>>>>>> 54c8270ec6ded7035f530c75005cf8bbd74414e7
         self.microwaves.set_status('off')
         self.microwaves.set_iq('off')
         self.microwaves.set_pulm('off')
@@ -352,6 +445,9 @@ class PulseCalibration(Measurement):
            
         return ret
 
+<<<<<<< HEAD
+       
+=======
     def SE_cal_tau2(self,m,name,lt1,ssro_dict={}):
         datafolder= 'D:/measuring/data/'
         date = dtime.strftime('%Y') + dtime.strftime('%m') + dtime.strftime('%d')
@@ -377,6 +473,7 @@ class PulseCalibration(Measurement):
         
         SE_cal=PulseCalibration(name='SE_sweep_tau2')
         self.start_measurement(SE_cal,cal.SE_DSC,tau,pulse_dict,lt1=lt1,ssro_dict=ssro_dict,name='Single_Pi_amp')
+>>>>>>> 54c8270ec6ded7035f530c75005cf8bbd74414e7
 
     def SE_cal_phase(self,m,name,lt1):
         datafolder= 'D:/measuring/data/'
@@ -436,6 +533,8 @@ class PulseCalibration(Measurement):
 
         
         self.start_measurement(SE_cal,cal.SE_DSC_check_sweep_first_pi_over_two,np.array(amp),pulse_dict,lt1=lt1,ssro_dict=ssro_dict,name='SE_cal_pi_over_two')
+<<<<<<< HEAD
+=======
     
     def Calibrate_pi(self,m,name,lt1,ssro_dict={}):
         datafolder= 'D:/measuring/data/'
@@ -524,6 +623,7 @@ class PulseCalibration(Measurement):
 
         return Cal_dict
 
+>>>>>>> 54c8270ec6ded7035f530c75005cf8bbd74414e7
 
 #FIXME: should be external function
 #Calibrate will be deleted from this scrips soon!
@@ -533,7 +633,11 @@ class PulseCalibration(Measurement):
 
 
 
+<<<<<<< HEAD
+def Cal_regular_pi_pulse(m,nr_of_pulses,p_dict,lt1,ssro_dict):
+=======
 def Cal_regular_pi_pulse(m,nr_of_pulses,p_dict,lt1,ssro_dict={}):
+>>>>>>> 54c8270ec6ded7035f530c75005cf8bbd74414e7
 
     m.par['sweep_par_name'] = 'Amplitude of %d Pi pulses' % nr_of_pulses 
     p_dict['nr_of_pulses'] = nr_of_pulses
@@ -541,6 +645,17 @@ def Cal_regular_pi_pulse(m,nr_of_pulses,p_dict,lt1,ssro_dict={}):
     
     
     dp=get_datapath()
+<<<<<<< HEAD
+    name=m.name
+    path = lde_calibration.find_newest_data(dp,string=name)
+    fit_dict = lde_calibration.rabi_calibration(path,close_fig=True)
+    
+    return fit_dict
+    
+def Cal_regular_pitwo_pulse(m,p_dict,readout,fit_guess,lt1,ssro_dict):
+    
+    p_dict['nr_of_pulses']=1.
+=======
     path = lde_calibration.find_newest_data(dp,string=m.name())
     fit_dict = lde_calibration.rabi_calibration(path,close_fig=True)
     
@@ -549,11 +664,26 @@ def Cal_regular_pi_pulse(m,nr_of_pulses,p_dict,lt1,ssro_dict={}):
     
 def Cal_regular_pi2_pulse(m,p_dict,[ms0,ms1],[a,b],lt1,ssro_dict={}):
     pulse_dict['nr_of_pulses']=1.
+>>>>>>> 54c8270ec6ded7035f530c75005cf8bbd74414e7
     m.par['sweep_par_name'] = 'Amplitude of Pi/2'
     m.start_measurement(cal.Pi_Pulse_amp,p_dict,lt1=lt1,ssro_dict=ssro_dict)
     
     
     dp=get_datapath()
+<<<<<<< HEAD
+    path = lde_calibration.find_newest_data(dp,string=m.name)
+    fit_dict = lde_calibration.pi_over_two_calibration(path,readout,fit_guess,new_fig=True,close_fig=True)
+
+    return fit_dict
+
+def Cal_CORPSE_pulse(m,nr_of_pulses,p_dict,lt1,ssro_dict):        
+    p_dict['nr_of_pulses'] = nr_of_pulses
+    m.par['sweep_par_name'] = 'Amplitude of %d Pi CORPSE pulses' % nr_of_pulses 
+    m.start_measurement(cal.DSC_pulse_amp,p_dict,lt1=lt1,ssro_dict=ssro_dict)
+    
+    dp=get_datapath()
+    path = lde_calibration.find_newest_data(dp,string=m.name)
+=======
     path = lde_calibration.find_newest_data(dp,string=m.name())
     fit_dict = lde_calibration.pi_over_two_calibration(path,[ms0_readout,ms1_readout],[a,b],new_fig=True,close_fig=True)
 
@@ -566,11 +696,101 @@ def Cal_CORPSE_pulse(m,nr_of_pulses,p_dict,lt1,ssro_dict={}):
     
     dp=get_datapath()
     path = lde_calibration.find_newest_data(dp,string=m.name())
+>>>>>>> 54c8270ec6ded7035f530c75005cf8bbd74414e7
     fit_dict = lde_calibration.rabi_calibration(path,new_fig=True,close_fig=True)
 
     return fit_dict
 
    
+<<<<<<< HEAD
+def Cal_CORPSE_pitwo(m,p_dict,readout,fit_guess,lt1,ssro_dict):
+    p_dict['nr_of_pulses']=1.
+    m.par['sweep_par_name'] = 'Amplitude of Pi/2 CORPSE'
+    m.start_measurement(cal.DSC_pi_over_two_pulse_amp,p_dict,lt1=lt1,ssro_dict=ssro_dict)
+    
+    dp=get_datapath()
+    path = lde_calibration.find_newest_data(dp,string=m.name)
+    fit_dict = lde_calibration.pi_over_two_calibration(path,readout,fit_guess,new_fig=True,close_fig=True)
+
+    return fit_dict
+
+def cal_SE(f_drive,piamp,pi2amp,RO_dur=20,Ex_p=6e-9,lt1=False,ssro_dict={}):
+    name='Cal_SE_tau2'
+    m = PulseCalibration(name)
+    m.setup(lt1)
+    m.par['sweep_length']=61.
+    m.par['reps_per_datapoint'] = 2000.
+    p_dict = {"Pi":{  "duration": 58., 
+                      "amplitude":0.595
+                          },
+
+              "init_state_pulse": {"duration":0., 
+                            "amplitude":0.,  
+                            "Do_Pulse": False},
+
+              "time_between_pulses": 10.,
+              "time_between_CORPSE":10., 
+              "duty_cycle_time": 100.,
+              "tau1": 272.,
+              "CORPSE":{"pi":piamp,"pi_over_two":pi2amp},
+             }
+    taumin= 20.
+    taumax = 6020.
+    nr_of_datapoints = m.par['sweep_length']
+    tau=np.linspace(taumin,taumax,41)
+    m.par['sweep_par'] = tau
+    m.f_drive=f_drive
+    m.par['RO_duration'] = RO_dur
+    m.par['Ex_RO_amplitude'] = Ex_p
+    
+    m.start_measurement(cal.SE_DSC,p_dict,lt1=lt1,ssro_dict=ssro_dict)
+    
+def cal_SE_regular(f_drive,piamp,pi2amp,RO_dur=20,Ex_p=6e-9,lt1=False,ssro_dict={},phase_locking=1):
+    """
+    Calibration function for a spin echo measurement with regular pulses. Arguments:
+    *   f_drive: Frequency in Hz (ex: 2.828E9)
+    *   piamp, pi2amp: Amplitude of the pi and pi/2 pulse obtained from pulse calibration
+    *   RO_dur: SSRO duration for each datapoint in us (ex: 20)
+    *   Ex_p: SSRO read-out power in W (ex: 12e-9)
+    *   lt1: True or False 
+    """
+    name='Cal_SE_regular_tau2'
+    m = PulseCalibration(name)
+    m.setup(lt1)
+    m.par['sweep_length']=41.
+    m.par['reps_per_datapoint'] = 2000.
+    p_dict = {"Pi":{  "duration": 50., 
+                      "amplitude": piamp
+                          },
+              "Pi_over_2":{ "duration": 25.,
+                  "amplitude": pi2amp},
+              "tau1": 232.,
+             "duty_cycle_time": 100.,
+             }
+    taumin= 15.
+    taumax = 3070.
+    nr_of_datapoints = m.par['sweep_length']
+    tau=np.linspace(taumin,taumax,41)
+    m.par['sweep_par'] = tau
+    m.f_drive=f_drive
+    m.par['RO_duration'] = RO_dur
+    m.par['Ex_RO_amplitude'] = Ex_p
+    
+    m.start_measurement(cal.SE_regular,p_dict,lt1=lt1,ssro_dict=ssro_dict,phase_locking=phase_locking)
+
+    
+    #name='Calibrate_SE'
+    #calibrate = PulseCalibration(name)
+    #calibrate.setup(lt1)
+    #calibrate.f_drive    =  2.82877e9
+    #if lt1:
+    #    calibrate.f_drive    =  2.82835e9 + 557.e3
+    #calibrate.nr_of_datapoints = 41
+    #calibrate.repetitions_per_datapoint = 2500
+    #cal_dict=calibrate.SE_cal_tau2(calibrate,name,lt1,ssro_dict)
+    #return cal_dict
+
+=======
 def Cal_CORPSE_pi2(m,p_dict,[ms0,ms1],[a,b],lt1,ssro_dict={})
     pulse_dict['nr_of_pulses']=1.
     m.par['sweep_par_name'] = 'Amplitude of Pi/2 CORPSE'
@@ -582,6 +802,7 @@ def Cal_CORPSE_pi2(m,p_dict,[ms0,ms1],[a,b],lt1,ssro_dict={})
 
     return fit_dict
 
+>>>>>>> 54c8270ec6ded7035f530c75005cf8bbd74414e7
 ##Other usefull functions to calibrate
 def get_datapath():
     datafolder= 'D:/measuring/data/'
@@ -601,7 +822,11 @@ def Cal_SSRO(filename,lt1):
   
     ssro_ADwin.ssro_ADwin_Cal(lt1=lt1)
     
+<<<<<<< HEAD
+    dp = get_datapath()
+=======
     dp = self.get_datapath()
+>>>>>>> 54c8270ec6ded7035f530c75005cf8bbd74414e7
     path = lde_calibration.find_newest_data(dp,string='ADwin_SSRO')
     ssro_dict=lde_calibration.ssro_calibration(path)
     
@@ -609,12 +834,22 @@ def Cal_SSRO(filename,lt1):
 
 def Cal_ESR(lt1):
     
+<<<<<<< HEAD
+    f_fit = esr.measure_esr(lt1=lt1)
+
+    #dp = get_datapath()
+    #path = lde_calibration.find_newest_data(dp,string='ESR')
+    
+    #f_fit=lde_calibration.esr_calibration(path) #FIXME f_dip needs to be an argument
+    
+=======
     #FIXME: Uncomment this line (debug only!)
     #esr.measure_esr(lt1=lt1)
 
     dp = self.get_datapath()
     path = lde_calibration.find_newest_data(dp,string='ESR')
     f_fit=lde_calibration.esr_calibration(path)
+>>>>>>> 54c8270ec6ded7035f530c75005cf8bbd74414e7
     #if lt1:
     #    f_fit=2.82878e9 # WE measured this more accurate
     #else:
@@ -626,9 +861,15 @@ def Cal_ESR(lt1):
     return f_fit
 
 #these are the functions you actually call:
+<<<<<<< HEAD
+def Cal_N_pi(pulse_amp,N_pulse,pulse_axis="x",RO_dur=48,Ex_p=11.5e-9,lt1=False,ESR=2.82891e9,SSRO=False,ssro_dict={}):
+        p_dict = {
+                    "Pi":{  "duration": 50., 
+=======
 def Cal_all_CORPSE(nr_of_datapoints,lt1=False,ESR=None,SSRO=False):
         p_dict = {
                     "Pi":{  "duration": 58., 
+>>>>>>> 54c8270ec6ded7035f530c75005cf8bbd74414e7
                             "amplitude":0.4845
                           },
 
@@ -636,7 +877,172 @@ def Cal_all_CORPSE(nr_of_datapoints,lt1=False,ESR=None,SSRO=False):
                             "amplitude":0.,  
                             "Do_Pulse": False},
 
+<<<<<<< HEAD
+                    "time_between_pulses": 15.,
+
+                    "duty_cycle_time": 5000.,
+                    "pulse_axis": "x",
+                     }
+        
+        if ESR:
+            ESR_dict={}
+            ESR_dict['freq'] = ESR
+        else:    
+            ESR_dict={}
+            ESR_dict['freq'] = Cal_ESR(lt1)
+        f_drive = ESR_dict['freq']
+        name = str(N_pulse)+'_pi_pulses'
+        m = PulseCalibration(name)
+        m.setup(lt1)
+        
+        m.par['sweep_par'] = pulse_amp
+        m.par['sweep_length'] = len(pulse_amp)
+        m.par['RO_duration'] = RO_dur
+        m.par['Ex_RO_amplitude'] = Ex_p
+        m.f_drive=f_drive
+
+        Pi_dict = Cal_regular_pi_pulse(m,N_pulse,p_dict,lt1,ssro_dict)
+        print 'Pi-pulse amp:'
+        print Pi_dict['minimum']
+def Cal_all_regular(nr_of_datapoints,RO_dur=48,Ex_p=11.5e-9,lt1=True,ESR=None,
+        SSRO=False,cal_five=True,cal_pi2=True, pi_duration=790,phase_locking=0):
+    """
+    Calibration function for regular pulses. Arguments:
+    *   nr_of_datapoints: # of datapoints for each calibration measurement (ex: 21)
+    *   RO_dur: SSRO duration for each datapoint in us (ex: 20)
+    *   Ex_p: SSRO read-out power in W (ex: 12e-9)
+    *   lt1: True or False 
+    *   ESR: frequency of the microwaves. If not specified an ESR will be
+        performed to find the frequency. Frequency in Hz (ex: 2.82E9)
+    *   cal_five: True or False (for better calibration of the pi pulse)
+    *   cal_pi2: True or False (for calibration of the pi/2 pulse)
+    """
+
+    p_dict = {
+                "Pi":{  "duration": pi_duration,    # this will be the time of a pi pulse on which we calibrate!
+                        "amplitude":0.4845
+                      },
+
+                "init_state_pulse": {"duration":0., 
+                        "amplitude":0.,  
+                        "Do_Pulse": False},
+
+                "time_between_pulses": 15.,
+
+                "duty_cycle_time": 5000.,
+                "pulse_axis": "X",
+                 }
+    five_Pi_dict = {}
+    pi2_dict = {}
+    ## Calibrate SSRO
+    p_dict["freq"]= 50E6
+    p_dict["do_env"]= False
+    p_dict["shape"]= 'rectangular'
+    if SSRO:
+        ssro_dict = Cal_SSRO(str(lt1),lt1)
+    else:
+        ssro_dict={}
+
+
+    ## Calibrate ESR
+
+    if ESR:
+        ESR_dict={}
+        ESR_dict['freq'] = ESR
+    else:    
+        ESR_dict={}
+        ESR_dict['freq'] = Cal_ESR(lt1)
+    
+    f_drive=ESR_dict['freq']
+    
+    
+    ##Calibrate single Pi pulse
+
+    name = 'Cal_Single_Pi'
+    m = PulseCalibration(name)
+    m.setup(lt1,phase_locking=phase_locking)
+
+    min_pulse_amp =             0
+    max_pulse_amp =             0.8
+    m.par['sweep_par'] = np.linspace(min_pulse_amp,max_pulse_amp,nr_of_datapoints)
+    m.par['sweep_length'] = nr_of_datapoints
+    m.par['RO_duration'] = RO_dur
+    m.par['Ex_RO_amplitude'] = Ex_p
+    m.f_drive=f_drive
+
+    Pi_dict = Cal_regular_pi_pulse(m,1,p_dict,lt1,ssro_dict)
+    ms0_readout = float(Pi_dict["highest_meas_value"])
+    print 'highest_meas_value for pi2 cal', ms0_readout
+    ms1_readout = 7.                                  # NOTE NOTE NOTE This is the ms=-1 readout value, important!!!!!!!!!!!!!!!
+     ## Calibrate 5 Pi Pulses
+    if cal_five:
+        name = 'Cal_5_Pi'
+        m = PulseCalibration(name)
+        m.setup(lt1,phase_locking=phase_locking)
+
+        nr_of_pulses= 5.
+        fit_amp=Pi_dict["minimum"]
+        min_pulse_amp=fit_amp-0.2
+        max_pulse_amp=fit_amp+0.07
+        
+        m.par['sweep_par'] = np.linspace(min_pulse_amp,max_pulse_amp,nr_of_datapoints)
+        m.par['sweep_length'] = nr_of_datapoints
+        m.par['RO_duration'] = RO_dur
+        m.par['Ex_RO_amplitude'] = Ex_p
+        m.f_drive=f_drive
+
+        five_Pi_dict = Cal_regular_pi_pulse(m,nr_of_pulses,p_dict,lt1,ssro_dict)
+    if cal_pi2:
+        name = 'Cal_Pi2'
+        m = PulseCalibration(name)
+        m.setup(lt1,phase_locking=phase_locking)
+
+        min_pulse_amp =fit_amp - 0.1
+        max_pulse_amp = fit_amp + 0.1
+        m.par['sweep_par'] = np.linspace(min_pulse_amp,max_pulse_amp,nr_of_datapoints)
+        m.par['sweep_length'] = nr_of_datapoints
+        m.par['RO_duration'] = RO_dur
+        m.par['Ex_RO_amplitude'] = Ex_p
+        m.f_drive=f_drive
+        p_dict['Pi']['duration'] = int(pi_duration/2)      # determines the lentgh of a pi/2 pulse!!!
+
+        b= 2*np.pi*Pi_dict["Amplitude"]*Pi_dict["freq"]
+        a = Pi_dict["offset"]+Pi_dict["Amplitude"]
+        pi2_dict = Cal_regular_pitwo_pulse(m,p_dict,[ms0_readout,ms1_readout],[a,b],lt1,ssro_dict={})
+
+        print 'ms0_readout:'
+        print ms0_readout
+        print 'ms1_readout:'
+        print ms1_readout
+
+        print 'CORPSE Pi amp :'
+        print five_Pi_dict['minimum']
+        print 'CORPSE Pi/2 amp :'
+        print pi2_dict['pi_over_two']
+
+    Cal_dict={"SSRO":ssro_dict,
+              "ESR":{"freq":f_drive},
+              "MW":Pi_dict,
+              "MW_five_pi":five_Pi_dict,
+              "MW_pi_over_two":pi2_dict
+               }
+
+    return Cal_dict
+
+def Cal_all_CORPSE(nr_of_datapoints,RO_dur=47,Ex_p=9e-9,lt1=False,ESR=None,SSRO=False):
+        p_dict = {
+                    "Pi":{  "duration": 58.,        # this determines the rabi frequency of the single pulses that make up one CORPSE pulse
+                            "amplitude":0.4845
+                          },
+
+                    "init_state_pulse": {"duration":0., 
+                            "amplitude":0.,  
+                            "Do_Pulse": False},
+
+                    "time_between_pulses": 50.,
+=======
                     "time_between_pulses": 10.,
+>>>>>>> 54c8270ec6ded7035f530c75005cf8bbd74414e7
 
                     "duty_cycle_time": 100.,
                      }
@@ -644,7 +1050,11 @@ def Cal_all_CORPSE(nr_of_datapoints,lt1=False,ESR=None,SSRO=False):
         ## Calibrate SSRO
 
         if SSRO:
+<<<<<<< HEAD
+            ssro_dict = Cal_SSRO(str(lt1),lt1)
+=======
             ssro_dict = Cal_SSRO(lt1)
+>>>>>>> 54c8270ec6ded7035f530c75005cf8bbd74414e7
         else:
             ssro_dict={}
 
@@ -665,30 +1075,66 @@ def Cal_all_CORPSE(nr_of_datapoints,lt1=False,ESR=None,SSRO=False):
 
         name = 'Cal_Single_Pi'
         m = PulseCalibration(name)
+<<<<<<< HEAD
+        m.setup(lt1)
+
+=======
         
+>>>>>>> 54c8270ec6ded7035f530c75005cf8bbd74414e7
         min_pulse_amp =             0.0
         max_pulse_amp =             0.85
         m.par['sweep_par'] = np.linspace(min_pulse_amp,max_pulse_amp,nr_of_datapoints)
         m.par['sweep_length'] = nr_of_datapoints
+<<<<<<< HEAD
+        m.par['RO_duration'] = RO_dur
+        m.par['Ex_RO_amplitude'] = Ex_p
+        m.f_drive=f_drive
+
+        Pi_dict = Cal_regular_pi_pulse(m,1,p_dict,lt1,ssro_dict)
+        ms0_readout = float(Pi_dict["highest_meas_value"])
+=======
         m.f_drive=f_drive
 
         Pi_dict = Cal_regular_pi_pulse(m,p_dict,lt1,ssro_dict)
         ms0_readout = Pi_dict["Amplitude"] + Pi_dict["offset"]
+>>>>>>> 54c8270ec6ded7035f530c75005cf8bbd74414e7
 
 
         ## Cal 1 CORPSE
 
         name = 'Cal_CORPSE_1_Pi'
         m = PulseCalibration(name)
+<<<<<<< HEAD
+        m.setup(lt1)
+
+        nr_of_pulses=1.
+        p_dict["time_between_CORPSE"] = 10.
+=======
         
         nr_of_pulses=1.
         pulse_dict["time_between_CORPSE"] = 10.
+>>>>>>> 54c8270ec6ded7035f530c75005cf8bbd74414e7
         fit_amp = Pi_dict["minimum"]
         min_pulse_amp=fit_amp-0.15
         max_pulse_amp=fit_amp+0.15
         
         m.par['sweep_par'] = np.linspace(min_pulse_amp,max_pulse_amp,nr_of_datapoints)
         m.par['sweep_length'] = nr_of_datapoints
+<<<<<<< HEAD
+        m.par['RO_duration'] = RO_dur
+        m.par['Ex_RO_amplitude'] = Ex_p
+        m.f_drive=f_drive
+        
+        CORPSE_Pi_dict = Cal_CORPSE_pulse(m,nr_of_pulses,p_dict,lt1,ssro_dict)
+        #ms1_readout = CORPSE_Pi_dict["lowest_meas_value"]   ## THIS NUMBER DETERMINES THE pi/2 pulse largely!!!!!!
+        ms1_readout = 10. 
+
+        ## Calibrate 5 CORPSE
+
+        name = 'Cal_CORPSE_5_Pi'
+        m = PulseCalibration(name)
+        m.setup(lt1)
+=======
         m.f_drive=f_drive
         
 
@@ -701,14 +1147,24 @@ def Cal_all_CORPSE(nr_of_datapoints,lt1=False,ESR=None,SSRO=False):
 
         name = 'Cal_CORPSE_5_Pi'
         m = PulseCalibration(name)
+>>>>>>> 54c8270ec6ded7035f530c75005cf8bbd74414e7
 
         nr_of_pulses= 5.
         fit_amp=CORPSE_Pi_dict["minimum"]
         min_pulse_amp=fit_amp-0.1
+<<<<<<< HEAD
+        max_pulse_amp=fit_amp+0.075
+        
+        m.par['sweep_par'] = np.linspace(min_pulse_amp,max_pulse_amp,nr_of_datapoints)
+        m.par['sweep_length'] = nr_of_datapoints
+        m.par['RO_duration'] = RO_dur
+        m.par['Ex_RO_amplitude'] = Ex_p
+=======
         max_pulse_amp=fit_amp+0.1
         
         m.par['sweep_par'] = np.linspace(min_pulse_amp,max_pulse_amp,nr_of_datapoints)
         m.par['sweep_length'] = nr_of_datapoints
+>>>>>>> 54c8270ec6ded7035f530c75005cf8bbd74414e7
         m.f_drive=f_drive
 
         CORPSE_5_Pi_dict = Cal_CORPSE_pulse(m,nr_of_pulses,p_dict,lt1,ssro_dict)
@@ -717,6 +1173,10 @@ def Cal_all_CORPSE(nr_of_datapoints,lt1=False,ESR=None,SSRO=False):
 
         name = 'Cal_CORPSE_Pi2'
         m = PulseCalibration(name)
+<<<<<<< HEAD
+        m.setup(lt1)
+=======
+>>>>>>> 54c8270ec6ded7035f530c75005cf8bbd74414e7
 
         nr_of_pulses= 5.
         fit_amp=CORPSE_5_Pi_dict["minimum"]
@@ -725,12 +1185,24 @@ def Cal_all_CORPSE(nr_of_datapoints,lt1=False,ESR=None,SSRO=False):
         #if lt1:
         #    min_pulse_amp = fit_amp - 0.12
         #    max_pulse_amp = fit_amp + 0.1
+<<<<<<< HEAD
+        m.par['sweep_par'] = np.linspace(min_pulse_amp,max_pulse_amp,nr_of_datapoints)
+        m.par['RO_duration'] = RO_dur
+        m.par['Ex_RO_amplitude'] = Ex_p
+        m.f_drive=f_drive
+
+        b= 2*np.pi*Pi_dict["Amplitude"]*Pi_dict["freq"]
+        a = Pi_dict["offset"]+Pi_dict["Amplitude"]
+        CORPSE_pi2_dict = Cal_CORPSE_pitwo(m,p_dict,[ms0_readout,ms1_readout],[a,b],lt1,ssro_dict={})
+        
+=======
         m.par['sweep_par'] = np.linspace(min_pulse_amp,max_pulse_amp,self.nr_of_datapoints)
 
         b= 2*np.pi*Pi_dict["Amplitude"]*Pi_dict["freq"]
         a = Pi_dict["offset"]+Pi_dict["Amplitude"]
    
         CORPSE_pi2_dict = lde_calibration.pi_over_two_calibration(m,p_dict,[ms0_readout,ms1_readout],[a,b],lt1,ssro_dict={})        
+>>>>>>> 54c8270ec6ded7035f530c75005cf8bbd74414e7
     
         print 'ms0_readout:'
         print ms0_readout
@@ -740,18 +1212,29 @@ def Cal_all_CORPSE(nr_of_datapoints,lt1=False,ESR=None,SSRO=False):
         print 'CORPSE Pi amp :'
         print CORPSE_5_Pi_dict['minimum']
         print 'CORPSE Pi/2 amp :'
+<<<<<<< HEAD
+        print CORPSE_pi2_dict['pi_over_two']
+
+        Cal_dict={"SSRO":ssro_dict,
+                  "ESR":{"freq":f_drive},
+                  "MW":Pi_dict,
+                  "MW_CORPSE":CORPSE_Pi_dict,
+=======
         print CORPSE_Pi2_dict['minimum']
 
         Cal_dict={"SSRO":ssro_dict,
                   "ESR":{"freq":f_fit},
                   "MW":rabi_dict,
                   "MW_CORPSE":CORPSE_dict,
+>>>>>>> 54c8270ec6ded7035f530c75005cf8bbd74414e7
                   "MW_Five_CORPSE": CORPSE_5_Pi_dict ,
                   "MW_CORPSE_pi_over_two":CORPSE_pi2_dict
                    }
 
         return Cal_dict
 
+<<<<<<< HEAD
+=======
 def cal_pi(lt1=True):
     name='Calibrate_pi'
     calibrate = PulseCalibration(name)
@@ -772,6 +1255,7 @@ def cal_SE(lt1=False,ssro_dict={}):
     cal_dict=calibrate.SE_cal_tau2(calibrate,name,lt1,ssro_dict)
     return cal_dict
 
+>>>>>>> 54c8270ec6ded7035f530c75005cf8bbd74414e7
 def cal_SE_phase(lt1=False):
     name='Calibrate_SE_phase'
     calibrate = PulseCalibration(name)

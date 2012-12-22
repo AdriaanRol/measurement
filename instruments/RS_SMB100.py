@@ -15,6 +15,11 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+#
+# 2012/09
+# modification by Wolfgang Pfaff <wolfgangpfff@gmail.com>:
+# added parameter max_cw_power: can not be surpassed if pulse-modulation is
+# turned off.
 
 from instrument import Instrument
 import visa
@@ -34,7 +39,7 @@ class RS_SMB100(Instrument):
         reset=<bool>)
     '''
 
-    def __init__(self, name, address, reset=False):
+    def __init__(self, name, address, reset=False, max_cw_pwr=-5):
         '''
         Initializes the RS_SMB100, and communicates with the wrapper.
 
@@ -58,31 +63,48 @@ class RS_SMB100(Instrument):
             minval=9e3, maxval=40e9,
             units='Hz', format='%.04e',
             tags=['sweep'])
+        
         self.add_parameter('power', type=types.FloatType,
             flags=Instrument.FLAG_GETSET | Instrument.FLAG_GET_AFTER_SET,
             minval=-30, maxval=30, units='dBm',
             tags=['sweep'])
+        
         self.add_parameter('status', type=types.StringType,
             flags=Instrument.FLAG_GETSET | Instrument.FLAG_GET_AFTER_SET)
+        
         self.add_parameter('pulm', type=types.StringType,
             flags=Instrument.FLAG_GETSET | Instrument.FLAG_GET_AFTER_SET)
+        
         self.add_parameter('iq', type=types.StringType,
             flags=Instrument.FLAG_GETSET | Instrument.FLAG_GET_AFTER_SET)
+        
         self.add_parameter('sweep_frequency_start', type=types.FloatType,
             flags=Instrument.FLAG_SET,
             minval=9e3, maxval=40e9,
             units='Hz', format='%.04e',
             tags=['sweep'])
+        
         self.add_parameter('sweep_frequency_stop', type=types.FloatType,
             flags=Instrument.FLAG_SET,
             minval=9e3, maxval=40e9,
             units='Hz', format='%.04e',
             tags=['sweep'])
+        
         self.add_parameter('sweep_frequency_step', type=types.FloatType,
             flags=Instrument.FLAG_SET,
             minval=1, maxval=1e9,
             units='Hz', format='%.04e',
             tags=['sweep'])
+        
+        self.add_parameter('max_cw_pwr',
+                type=types.FloatType,
+                flags=Instrument.FLAG_GETSET,
+                minval=-30, maxval=30, units='dBm')
+
+
+        # can be different from device to device, set by argument
+        self.set_max_cw_pwr(max_cw_pwr)
+
 
         self.add_function('reset')
         self.add_function('reset_sweep')
@@ -207,9 +229,7 @@ class RS_SMB100(Instrument):
         if tmp_iq:
             self.set_iq('off')
             sleep(0.1)
-            # self.set_iq(tmp_iq)
-        
-        
+            # self.set_iq(tmp_iq)        
         
     def _do_get_frequency(self):
         '''
@@ -300,7 +320,25 @@ class RS_SMB100(Instrument):
             None
         '''
         logging.debug(__name__ + ' : setting power to %s dBm' % power)
+        
+        if self.get_status() == 'on' and self.get_pulm() == 'off' and power > self.get_max_cw_pwr():
+            logging.warning(__name__ + ' : power exceeds max cw power; power not set.')
+            raise ValueError('power exceeds max cw power')
+            
+
         self._visainstrument.write('SOUR:POW %e' % power)
+
+    def _do_set_max_cw_pwr(self, pwr):
+        self._max_cw_pwr = pwr
+        if self.get_power() > pwr and self.get_pulm() == 'off' and self.get_status() == 'on':  
+            self.set_status('off')
+            logging.warning(__name__ + ' : power exceeds max cw power; RF off')
+            raise ValueError('power exceeds max cw power')
+
+        return
+
+    def _do_get_max_cw_pwr(self):
+        return self._max_cw_pwr
 
     def _do_get_status(self):
         '''
@@ -333,6 +371,11 @@ class RS_SMB100(Instrument):
             None
         '''
         logging.debug(__name__ + ' : setting status to "%s"' % status)
+        
+        if status == 'on' and self.get_pulm() == 'off' and self.get_power() > self.get_max_cw_pwr():
+            logging.warning(__name__ + ' : power exceeds max cw power; status not set to on.')
+            raise ValueError('power exceeds max cw power')        
+        
         if status.upper() in ('ON', 'OFF'):
             status = status.upper()
         else:
@@ -390,6 +433,11 @@ class RS_SMB100(Instrument):
             None
         '''
         logging.debug(__name__ + ' : setting external pulse modulation to "%s"' % pulm)
+        
+        if self.get_status() == 'on' and pulm == 'off' and self.get_power() > self.get_max_cw_pwr():
+            logging.warning(__name__ + ' : power exceeds max cw power; pulm status not set.')
+            raise ValueError('power exceeds max cw power')
+        
         if pulm.upper() in ('ON', 'OFF'):
             pulm = pulm.upper()
         else:

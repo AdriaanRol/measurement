@@ -33,15 +33,14 @@ dim trigger_dio_in, trigger_dio_out as integer
 
 dim was_triggered, is_triggered as integer
 dim do_cr_check as integer
-dim cr_check_steps as long                      ' how long to check, in units of process cycles (lt1)
-dim cr_check_count_threshold_prepare as long    ' initial C&R threshold after repump (lt1)
-dim cr_check_count_threshold_probe as long      ' C&R threshold for probe after sequence (lt1)
+dim cr_check_steps as long                      ' how long to check, in units of process cycles (lt2)
+dim cr_check_count_threshold as long            ' C&R threshold for checking (lt2)
 dim current_cr_check_step as long
 dim current_cr_check_counts as long
 
 dim is_idle_counter_running as integer          ' keeps track of the counter that runs when no cr check or repump
 
-dim do_repump as integer                        ' whether we need to apply a green pulse (lt1)
+dim do_repump as integer                        ' whether we need to apply a green pulse (lt2)
 dim repump_steps as long
 dim current_repump_step as long
 
@@ -72,18 +71,18 @@ init:
   
   do_cr_check = 0
   cr_check_steps = par_28
-  cr_check_count_threshold_probe = par_68
-  cr_check_count_threshold_prepare = par_75
+  cr_check_count_threshold = par_75
   current_cr_check_step = 0
   current_cr_check_counts = 0
   
   do_repump = 0
   repump_steps = par_27
   current_repump_step = 0
-  cr_prepared = 0
   
   is_triggered = 0
   is_idle_counter_running = 0
+  
+  par_66 = 0                      ' number of repumps
   
   PAR_70 = 0                      ' cumulative counts from probe intervals
   PAR_71 = 0                      ' below CR threshold events
@@ -106,8 +105,7 @@ init:
   DIGOUT(trigger_dio_out, 0)
   
 event:
-  cr_check_count_threshold_probe = par_68
-  cr_check_count_threshold_prepare = par_75
+  cr_check_count_threshold = par_75
   
   was_triggered = is_triggered
   is_triggered = DIGIN(trigger_dio_in)
@@ -156,37 +154,23 @@ event:
           DATA_7[current_cr_check_counts+1] = DATA_7[current_cr_check_counts+1] + 1
         endif
         cr_prepared = 0
-        if (current_cr_check_counts < cr_check_count_threshold_probe) then
-          do_repump = 1
-          par_71 = par_71 + 1
-        else
-          'XXX
-          DAC(ex_aom_channel, 32768) ' turn off the red lasers
-          DAC(a_aom_channel, 32768)
-        
-          DIGOUT(trigger_dio_out, 1)
-          par_77 = par_77 + 1
-          cr_prepared = 1
-        endif
-      else
-        if (current_cr_check_counts < cr_check_count_threshold_prepare) then
-          do_repump = 1
-          par_71 = par_71 + 1
-        else
-          'XXX
-          DAC(ex_aom_channel, 32768) ' turn off the red lasers
-          DAC(a_aom_channel, 32768)
-        
-          DIGOUT(trigger_dio_out, 1)
-          par_77 = par_77 + 1
-          cr_prepared = 1
-        endif
       endif
-      
       if (current_cr_check_counts < max_hist_cts) then
         DATA_8[current_cr_check_counts+1] = DATA_8[current_cr_check_counts+1] + 1
       endif
             
+      if (current_cr_check_counts < cr_check_count_threshold) then
+        do_repump = 1
+        par_71 = par_71 + 1
+      else
+        'XXX
+        DAC(ex_aom_channel, 32768) ' turn off the red lasers
+        DAC(a_aom_channel, 32768)
+        
+        DIGOUT(trigger_dio_out, 1)
+        par_77 = par_77 + 1
+        cr_prepared = 1
+      endif
 
       current_cr_check_step = 0
       current_cr_check_counts = 0
@@ -206,7 +190,7 @@ event:
     
     current_repump_step = current_repump_step + 1
     if (current_repump_step > repump_steps) then
-      
+      inc(par_66)
       DAC(green_aom_channel, 32768) ' turn off green
       
       CNT_LATCH(1111b)

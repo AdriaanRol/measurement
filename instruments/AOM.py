@@ -12,7 +12,7 @@
 
 from instrument import Instrument
 from numpy import *
-from analysis import fit, common
+from analysis.lib.fitting import fit, common
 import os,sys,time
 import qt
 import types
@@ -27,7 +27,8 @@ from lib import config
 class AOM(Instrument):
 
     def __init__(self, name, use_adwin='adwin', 
-            use_pm='powermeter'):
+            use_pm = 'powermeter'):
+
         Instrument.__init__(self, name)
         
         self.add_parameter('wavelength',
@@ -126,10 +127,10 @@ class AOM(Instrument):
                            flags=Instrument.FLAG_GETSET,
                            minval=0,maxval=31)
         
+
         self._ins_adwin=qt.instruments[use_adwin]
         self._ins_pm=qt.instruments[use_pm]
 
-       
         # set defaults
         self._wavelength = 637e-9
         self._pri_controller =  "ADWIN"
@@ -149,6 +150,7 @@ class AOM(Instrument):
         self._sec_cal_k =       6.855
         self._sec_V_max =       1.0
         self._sec_V_min =       0
+        self._V_zero_power =    0.
         self.get_all()
        
         # override from config       
@@ -181,7 +183,6 @@ class AOM(Instrument):
             value = self.get(param)
             self._ins_cfg[param] = value
 
-    
     def apply_voltage(self, U):
         controller = self.get_cur_controller()
         channel = self.get_channel()

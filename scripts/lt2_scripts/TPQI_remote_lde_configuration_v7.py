@@ -39,7 +39,7 @@ ins_green_aom_lt2.set_power(0)
 
 qt.msleep(0.1)
 # configure conditional repumping
-time_limit = 50 #in Adwin_proII processor cycles # in units of 1us
+#time_limit = 50 #in Adwin_proII processor cycles # in units of 1us
 
 # Measurement time
 #
@@ -47,55 +47,58 @@ time_limit = 50 #in Adwin_proII processor cycles # in units of 1us
 # measurement time to 0, so no need to change that anywhere else. it also
 # makes sure that the hydraharp is not initialized such that the HH software
 # can be used independently. 
-debug_mode = False
-par_meas_time = 1/10. #measurement time in minutes
-par_reps = 2
+debug_mode = True
+par_meas_time = 5#measurement time in minutes
+par_reps = 1
 raw = True              # if the raw events are to be saved
-polarizations = ['perpendicular', 'parallel']
+polarizations = ['perpendicular']#, 'parallel']
 
 lt1_rempump_duration = 10 # in units of 1us
 lt1_probe_duration = 50 # in units of 1us
 lt1_cnt_threshold_prepare = 0 #NOTE
-lt1_cnt_threshold_probe = 0 #NOTE
+lt1_cnt_threshold_probe = 0#NOTE
 lt1_counter = 2
 lt1_green_power = 200e-6
 lt1_ex_cr_power = 10e-9
 lt1_a_cr_power = 15e-9
 
 lt2_rempump_duration = 10 # in units of 1us
-lt2_probe_duration = 50 # in units of 1us
+lt2_probe_duration = 80 # in units of 1us
 lt2_cnt_threshold_prepare = 15 #NOTE
-lt2_cnt_threshold_probe = 15 #NOTE
+lt2_cnt_threshold_probe = 10 #NOTE
 lt2_counter = 1
-lt2_green_power = 200e-6
+lt2_green_power = 300e-6
 lt2_green_aom_voltage_zero = 0.00 #voltage with minimum AOM leakage
-lt2_ex_cr_power = 10e-9
+lt2_ex_cr_power = 20e-9
 lt2_a_cr_power = 15e-9
+lt2_good_phase_gate = 1
+lt2_phase_locking_off=1
 
 #configure optimisation
 par_opt_lt1_green_power = 200e-6
 par_opt_lt2_green_power = 200e-6
-par_opt_min_cnts_lt1 = 0 #NOTE
-par_opt_min_cnts_lt2 = 0 #NOTE
+par_opt_min_cnts_lt1 = 20 #NOTE
+par_opt_min_cnts_lt2 = 20 #NOTE
 par_opt_counter_lt1 = 1     # 2 for PSB and 1 for ZPL
 par_opt_counter_lt2 = 2     # 1 for PSB and 2 for ZPL
 par_zpl_cts_break = 250000
 par_check_redpower = 0.4 #voltage of eom-aom
 
 # configure pulses and sequence
-par_sp_duration = 5000 #5000
+par_sp_duration = 10000          
 par_sp_power = 15e-9         
 par_pre_rabi_syncs =  10
-par_rabi_reps = 100
-par_post_rabi_syncs =  10
+par_rabi_reps = 100             #noof pulses in the sequence
+par_post_rabi_syncs =  10       
+par_elt_reps = 1              #noof spin pump & sequence reps before CR check
 
 par_eom_start = 40
 par_eom_off_duration = 100
-par_eom_pulse_duration = 2
+par_eom_pulse_duration = 8
 par_eom_pulse_offset = 0
 pulse_start = par_eom_start + par_eom_off_duration/2 + par_eom_pulse_offset
 
-par_aom_start = pulse_start - 35 - 56 #subtract aom rise time
+par_aom_start = pulse_start - 35 - 86 #+ 20#subtract aom rise time
 par_aom_duration = 2*23+par_eom_pulse_duration #30
 
 par_eom_off_amplitude = -.25
@@ -103,7 +106,7 @@ par_eom_pulse_amplitude = 1.2
 par_eom_overshoot_duration1 = 10
 par_eom_overshoot1 = -0.03
 par_eom_overshoot_duration2 = 5
-par_eom_overshoot2 = -0.02
+par_eom_overshoot2 = -0.03
 
 par_eom_aom_amplitude = 1.0
 
@@ -112,16 +115,15 @@ par_rabi_cycle_duration = 2*par_eom_off_duration
 # Configure hydraharp
 par_binsize_T3 = 8     # resolution of recorded data in HH 1ps*2**binsize_T3
 par_binsize_sync=0     # bintime = 1ps * 2**(binsize_T3 + binsize_sync)
-par_range_sync=4*130    # bins
+par_range_sync=4*par_eom_off_duration*2    # bins
 par_binsize_g2=0       # bintime = 1ps * 2**(binsize_g2 + binsize_T3)
 par_range_g2=4*1000    # bins
-par_sync_period = 130  # ns
-par_max_pulses = 300
-### end config
+par_sync_period = par_eom_off_duration*2  # ns
+par_max_pulses = par_rabi_reps
 
 # region of interest settings
-par_laser_end_ch0 = 150#259     # last bin of laser pulse ch0
-par_laser_end_ch1 = 153#262
+par_laser_end_ch0 = 190 #NOTE     # last bin of laser pulse ch0
+par_laser_end_ch1 = 218 #NOTE
 par_tail_roi = 156          # how many bins the tail is long
 
 ins_newfocus_aom_lt1.set_cur_controller('ADWIN')
@@ -147,8 +149,6 @@ par_sp_voltage = qt.instruments['NewfocusAOM_lt1'].power_to_voltage(
 ins_newfocus_aom_lt1.set_cur_controller('ADWIN')
 ins_newfocus_aom_lt2.set_cur_controller('ADWIN')
 
-
-
 def generate_sequence(do_program=True):
     seq = Sequence('tpqi_remote')
     
@@ -163,7 +163,8 @@ def generate_sequence(do_program=True):
             LDE = {chan_eom_aom: {'high': par_eom_aom_amplitude}, 
                 chan_alasers: {'high': par_sp_voltage}})
 
-    seq.add_element('optical_rabi', goto_target = 'idle')#'optical_rabi',event_jump_target='idle')
+    seq.add_element('optical_rabi', goto_target = 'idle', 
+            repetitions = par_elt_reps)#'optical_rabi',event_jump_target='idle')
 
     seq.add_pulse('spinpumping',chan_alasers, 'optical_rabi', 
             start = 0, duration = par_sp_duration)
@@ -288,6 +289,8 @@ def generate_sequence(do_program=True):
     seq.force_HW_sequencing(True)
     seq.send_sequence()
 
+    return seq
+
 
 def optimize():
     awg.set_runmode('CONT')
@@ -345,7 +348,7 @@ def flip_waveplate_lt1():
 
 
 
-def measurement_cycle(hh_measurement_time, save_raw):
+def measurement_cycle(hh_measurement_time, save_raw, adwin_wait_time):
     awg.set_runmode('SEQ')
     awg.start()    
     
@@ -359,12 +362,15 @@ def measurement_cycle(hh_measurement_time, save_raw):
             set_green_aom_voltage=lt1_green_aom_voltage,
             set_ex_aom_voltage=lt1_ex_aom_voltage,
             set_a_aom_voltage=lt1_a_aom_voltage,
+            set_green_aom_dac=adwin_lt1.get_dac_channels()['green_aom'],
+            set_ex_aom_dac=adwin_lt1.get_dac_channels()['matisse_aom'],
+            set_a_aom_dac=adwin_lt1.get_dac_channels()['newfocus_aom'],
             )
     adwin_lt2.start_remote_tpqi_control(load = True, 
             stop_processes = ['counter'],
             set_repump_duration=lt2_rempump_duration,
             set_probe_duration=lt2_probe_duration,
-            set_cr_time_limit=time_limit,
+            set_cr_time_limit=adwin_wait_time,
             set_cr_count_threshold_probe=lt2_cnt_threshold_probe,
             set_cr_count_threshold_prepare=lt2_cnt_threshold_prepare,
             set_counter=lt2_counter,
@@ -372,6 +378,11 @@ def measurement_cycle(hh_measurement_time, save_raw):
             set_green_aom_voltage_zero=lt2_green_aom_voltage_zero,
             set_ex_aom_voltage=lt2_ex_aom_voltage,
             set_a_aom_voltage=lt2_a_aom_voltage, 
+            set_green_aom_dac=adwin_lt2.get_dac_channels()['green_aom'],
+            set_ex_aom_dac=adwin_lt2.get_dac_channels()['matisse_aom'],
+            set_a_aom_dac=adwin_lt2.get_dac_channels()['newfocus_aom'],
+            set_gate_good_phase=lt2_good_phase_gate,
+            set_phase_locking_off=lt2_phase_locking_off,
             )
 
     
@@ -416,6 +427,9 @@ def save_and_plot_data(data,histogram,histogram_summed,
 
     adpars_lt1 = adwin_lt1.get_remote_tpqi_control_var('par')
     adpars_lt2 = adwin_lt2.get_remote_tpqi_control_var('par')
+
+    gate_fpars = adwin_lt2.get_gate_modulation_var('fpar')
+    gate_pars = adwin_lt2.get_gate_modulation_var('par')
     
     sync = 2**(par_binsize_sync+par_binsize_T3) * arange(par_range_sync) / 1e3 #sync axis in ns
     dt = 2**(par_binsize_g2+par_binsize_T3) * \
@@ -449,7 +463,9 @@ def save_and_plot_data(data,histogram,histogram_summed,
             cr_hist_LT2_first=cr_hist_LT2_first,
             cr_hist_LT2_total=cr_hist_LT2_total,
             adwin_lt1_pars = adpars_lt1,
-            adwin_lt2_pars = adpars_lt2)
+            adwin_lt2_pars = adpars_lt2,
+            gate_fpars = gate_fpars,
+            gate_pars = gate_pars)
 
     #Plot Data
     do_plot=not(debug_mode)
@@ -472,7 +488,7 @@ def initialize_hh():
     hharp.calibrate()
     hharp.set_Binning(par_binsize_T3)
 
-def print_save_cr_check_info(cr_stats,rep_nr):
+def print_save_cr_check_info(cr_stats,rep_nr,wp_flips):
  
     qt.msleep(1)
 
@@ -504,7 +520,7 @@ def print_save_cr_check_info(cr_stats,rep_nr):
     cr_stats.add_data_point(rep_nr,lt1_cnts_below,lt1_cr_checks,
                             lt2_cnts_below,lt2_cr_checks,TPQI_starts,lt1_repump_cts,
                             lt2_repump_cts,lt1_triggers_received,lt2_triggers_sent,
-                            lt1_oks_sent,lt2_oks_received)
+                            lt1_oks_sent,lt2_oks_received,wp_flips)
 
 
 
@@ -526,8 +542,11 @@ def main():
     if not debug_mode:
         initialize_hh()
 
-    generate_sequence()
-
+    seq = generate_sequence()
+    #wait at least three idle sequences extra
+    adwin_wait_time = int(seq.element_lengths['optical_rabi']*par_elt_reps*1E6 \
+            + 3*seq.element_lengths['idle']*1E6) 
+    
     # configure measurement
     repetitions = par_reps
 
@@ -548,8 +567,10 @@ def main():
     cr_stats.add_value('lt2_triggers_sent')
     cr_stats.add_value('lt1_oks_sent')
     cr_stats.add_value('lt2_oks_received')
+    cr_stats.add_value('wp_flips')
     cr_stats.create_file()
 
+    wp_flips=0
 
     histogram_summed= {}
     hist_roi_summed = {}
@@ -566,20 +587,26 @@ def main():
             elif kb_char == "c" : skip_opt=True
 
         for pol in polarizations:
-            print 'Starting measurement cycle_'+pol+'_', idx, 'current time:',\
+            print '\n##############################################################'
+            print '##### Starting measurement cycle_'+pol+'_', idx, 'current time:',\
                     time.strftime('%H:%M',time.localtime())
+            print '##############################################################'
 
             if raw:
-                save_raw = os.path.join(qt.config['datadir'], strftime('%Y%m%d'), \
-                strftime('%H%M%S')+'_interference_'+pol+'_rawdata'+ '%.3d' % idx)
+                save_raw = os.path.join(qt.config['datadir'], time.strftime('%Y%m%d'), \
+                time.strftime('%H%M%S')+'_interference_'+pol+'_rawdata'+ '%.3d' % idx)
                 if not os.path.isdir(save_raw):
                     os.makedirs(save_raw)
+            else: 
+                save_raw = r''
+
 
                     
             [histogram,hist_ch0,hist_ch1,hist_ch1_long,hist_roi] = \
-                    measurement_cycle(hh_measurement_time, save_raw)
+                    measurement_cycle(hh_measurement_time, 
+                            save_raw, adwin_wait_time)
 
-            print_save_cr_check_info(cr_stats,idx)    
+            print_save_cr_check_info(cr_stats,idx,wp_flips)    
 
             if not debug_mode:
                 histogram_summed[pol] += histogram
@@ -597,10 +624,15 @@ def main():
 
             if (len(polarizations)>1):
                 flip_waveplate_lt1()
+                wp_flips+=1
             
             if not(debug_mode) and not(skip_opt):
-                if not optimize(): break
-                print 'Optimisation step_'+pol+'_', idx, ' completed'
+                if not optimize(): 
+                    print 'Break after polarization '+pol
+                    print 'CHECK WAVEPLATE STATUS!!!'
+                    break
+                else:
+                    print 'Optimisation step_'+pol+'_', idx, ' completed'
 
         
 
