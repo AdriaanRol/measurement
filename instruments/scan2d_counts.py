@@ -10,6 +10,7 @@ from scan import scan
 import types
 from numpy import *
 import qt
+import hdf5_data as h5
 
 class scan2d_counts(scan):
     def __init__(self, name, linescan, mos, xdim='x', ydim='y', counters=None):
@@ -177,11 +178,13 @@ class scan2d_counts(scan):
     # overloading save function
     def save(self, meta=""):
         CyclopeanInstrument.save(self, meta)
-	
-
-        from measurement.wp_toolbox.qtlab_data import save
-        save(self.get_name(), meta, x__x__um=self._x, y__y__um=self._y, 
-        z__counts__Hz=self._data['countrates'], do_plot=False)
+        
+        # NOTE a test of hdf5 data
+        dat = h5.HDF5Data(name=self.get_name())
+        dat.create_dataset('x', data=self._x)
+        dat.create_dataset('y', data=self._y)
+        dat.create_dataset('countrate', data=self._data['countrates'])
+        dat.close()
 
 
 	# internal functions
