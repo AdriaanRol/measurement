@@ -45,7 +45,7 @@ class MeasurementParameter(object):
         self.value = self.verify(value)
         
     def __call__(self):
-        return self._value
+        return self.value
 
     def __repr__(self):
         ret = 'MeasurementParameter %s' % self.key
@@ -119,7 +119,7 @@ class MeasurementParameters(object):
         self.parameters = {}
 
     def __getitem__(self, key):
-        return self.parameters[key]
+        return self.parameters[key]()
 
     def __setitem__(self, key, value):
         if self.parameters.has_key(key):
@@ -171,7 +171,7 @@ class MeasurementParameters(object):
 
 # TODO see how that goes with all the hdf5 elements as members
 # maybe better to use them only locally in functions; also this might result
-# in data loss; try to close/re-open all the time.
+# in data loss; try maybe to close/re-open all the time.
 class Measurement:
     """
     Implements some common tasks such as data creation, so they need not be 
@@ -189,12 +189,12 @@ class Measurement:
         self.params = MeasurementParameters()
         self.h5data = h5.HDF5Data(name=self.mprefix+'_'+self.name)
         self.h5datapath = self.h5data.filepath()
-        self.h5base = '/'+self.name
+        self.h5base = '/'+self.name+'/'
         self.h5basegroup = self.h5data.create_group(self.name)
         self.datafolder = self.h5data.folder()
 
     def save_stack(self, depth=2):
-        sdir = os.path.join(self.h5datapath, self.STACK_DIR)
+        sdir = os.path.join(self.datafolder, self.STACK_DIR)
         if not os.path.isdir(sdir):
             os.makedirs(sdir)
         
@@ -202,16 +202,34 @@ class Measurement:
             shutil.copy(inspect.stack()[i][1], sdir)
 
     def add_file(self, filepath):
-        fdir = os.path.join(self.h5datapath, self.STACK_DIR)
+        fdir = os.path.join(self.datafolder, self.STACK_DIR)
         if not os.path.isdir(fdir):
             os.makedirs(fdir)
         
-        shutil.copy(filepath, fdir+'/')       
+        shutil.copy(filepath, fdir+'/')
 
     def save_params(self):
         params = self.params.to_dict()
         for k in params:
             self.h5basegroup.attrs[k] = params[k]
+    
+    def review_params(self):
+        print 
+        print 'Measurement Parameters:'
+        print '-'*78
+        print self.params
+
+        happy = None
+        while happy == None:
+            happy = raw_input('Happy with these settings? (y/n) ')
+            if happy not in ['y','Y','n','N']:
+                happy = None
+                print 'Try again...'
+
+        if happy in ['y','Y']:
+            return True
+        else:
+            return False
     
     def finish(self):
         self.h5data.close()
