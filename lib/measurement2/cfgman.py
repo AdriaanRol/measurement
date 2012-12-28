@@ -59,7 +59,7 @@ class ConfigManager:
         prefix = self.name + '_'
         self.configs[name] = config.Config(
                 os.path.join(self.path,
-                    prefix+name+self.fileext))
+                    prefix+self.fileext))
 
     def remove_cfg(self, name):
         del self.configs[name]
