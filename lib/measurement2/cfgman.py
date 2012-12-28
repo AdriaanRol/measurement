@@ -56,9 +56,10 @@ class ConfigManager:
         return self.configs.keys()
 
     def add_cfg(self, name):
+        prefix = self.name + '_'
         self.configs[name] = config.Config(
                 os.path.join(self.path,
-                    self.name+'_'+name+self.fileext))
+                    prefix+name+self.fileext))
 
     def remove_cfg(self, name):
         del self.configs[name]
