@@ -13,6 +13,7 @@ also be facilitated by an OO approach like this one.
 
 import sys,os,time,shutil,inspect
 import logging
+import msvcrt
 
 import numpy as np
 
@@ -144,20 +145,22 @@ class MeasurementParameters(object):
     def add(self, param):
         self.parameters[param.key] = param
 
-    def from_dict(self, param_dict):
+    def from_dict(self, param_dict, add_new=True):
         """
         Set many parameters at once from a dictionary. Assumes that the
         dictionary has the form {name : value, }.
         This method leaves parameters that are not contained in 
         param_dict unaffected. If a parameter is already existing, its
-        value will be overwritten, if not, it will be created without any
-        options (type, max/min, etc).
+        value will be overwritten. If not, it will be created without any
+        options (type, max/min, etc) if add_new is True, or ignored if add_new
+        is False.
         """
         for k in param_dict:
             if k in self.parameters:
                 self.parameters[key].set(param_dict[k])
             else:
-                self.new(k, param_dict[k])
+                if add_new:
+                    self.new(k, param_dict[k])
         
         return True
 
@@ -182,6 +185,7 @@ class Measurement:
     
     STACK_DIR = 'stack'
     FILES_DIR = 'files'
+    CFG_DIR = 'files/cfg'
 
     def __init__(self, name):
         self.name = name
@@ -194,6 +198,18 @@ class Measurement:
         self.datafolder = self.h5data.folder()
 
     def save_stack(self, depth=2):
+        '''
+        save stack files, i.e. exectuted scripts, classes and so forth,
+        into the subfolder specified by STACK_DIR.
+        the depth specifies how many files are saved:
+        - 1 is only the executing script,
+        - 2 adds the module that it imports that contains the measurement
+          class,
+        - 3 the module that is imported by the module in step 2 (the more
+          basic class), and so forth.
+        the desired value of depth depends therefore on the way the code is
+        organized and how much is supposed to be saved.
+        '''
         sdir = os.path.join(self.datafolder, self.STACK_DIR)
         if not os.path.isdir(sdir):
             os.makedirs(sdir)
@@ -202,18 +218,45 @@ class Measurement:
             shutil.copy(inspect.stack()[i][1], sdir)
 
     def add_file(self, filepath):
-        fdir = os.path.join(self.datafolder, self.STACK_DIR)
+        '''
+        save a file along the data. will be put into FILES_DIR
+        '''
+        fdir = os.path.join(self.datafolder, self.FILES_DIR)
         if not os.path.isdir(fdir):
             os.makedirs(fdir)
         
         shutil.copy(filepath, fdir+'/')
 
     def save_params(self):
+        '''
+        adds all measurement params contained in self.params as attributes
+        to the basis data group of the hdf5 data object
+        '''
         params = self.params.to_dict()
         for k in params:
             self.h5basegroup.attrs[k] = params[k]
+
+    def save_cfg_files(self):
+        try:
+            cfgman = qt.cfgman
+        except:
+            print logging.warning('Could not find ConfigManager qt.cfgman')
+            return
+        
+        fdir = fdir = os.path.join(self.datafolder, self.CFG_DIR)
+        if not os.path.isdir(fdir):
+            os.makedirs(fdir)
+        
+        for k in cfgman.keys():
+            fp = cfgman[k]._filename
+            shutil.copy(fn, fdir)
+
     
     def review_params(self):
+        '''
+        prints a summary of all measurement params and asks for confirmation.
+        if confirmed, returns True, otherwise False
+        '''
         print 
         print 'Measurement Parameters:'
         print '-'*78
@@ -232,6 +275,9 @@ class Measurement:
             return False
     
     def finish(self):
+        '''
+        closes the hd5 data object
+        '''
         self.h5data.close()
 
 
