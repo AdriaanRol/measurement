@@ -14,6 +14,7 @@ also be facilitated by an OO approach like this one.
 import sys,os,time,shutil,inspect
 import logging
 import msvcrt
+import gobject
 
 import numpy as np
 
@@ -187,6 +188,8 @@ class Measurement:
     FILES_DIR = 'files'
     CFG_DIR = 'files/cfg'
 
+    keystroke_monitor_interval = 1000 # [ms]
+
     def __init__(self, name):
         self.name = name
         self.dataset_idx = 0
@@ -196,6 +199,7 @@ class Measurement:
         self.h5base = '/'+self.name+'/'
         self.h5basegroup = self.h5data.create_group(self.name)
         self.datafolder = self.h5data.folder()
+        self.keystroke_monitors = {}
 
     def save_stack(self, depth=2):
         '''
@@ -279,6 +283,33 @@ class Measurement:
         closes the hd5 data object
         '''
         self.h5data.close()
+
+    # TODO - have monitors react only to certain keys
+    def start_keystroke_monitor(self, name):
+        self.keystroke_monitors[name] = {}
+        self.keystroke_monitors[name]['key'] = ''
+        self.keystroke_monitors[name]['running'] = True
+        self.keystroke_monitors[name]['timer_id'] = \
+                gobject.timeout_add(self.keystroke_monitor_interval,
+                        self._keystroke_check, name)
+
+    def _keystroke_check(self, name):
+        if not self.keystroke_monitors[name]['running']:
+            return False
+        
+        if msvcrt.kbhit():
+            c = msvcrt.getch()
+            self.keystroke_monitors[name]['key'] = c
+
+        return True
+
+    def keystroke(self, name):
+        return self.keystroke_monitors[name]['key']
+
+    def stop_keystroke_monitor(self, name):
+        self.keystroke_monitors[name]['running'] = False
+        qt.msleep(2*self.keystroke_monitor_interval)
+        del self.keystrok_monitors[name]
 
 
 class AdwinControlledMeasurement(Measurement):
