@@ -309,7 +309,7 @@ class Measurement:
     def stop_keystroke_monitor(self, name):
         self.keystroke_monitors[name]['running'] = False
         qt.msleep(2*self.keystroke_monitor_interval)
-        del self.keystrok_monitors[name]
+        del self.keystroke_monitors[name]
 
 
 class AdwinControlledMeasurement(Measurement):
