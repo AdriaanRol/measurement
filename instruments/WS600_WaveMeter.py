@@ -42,6 +42,12 @@ class WS600_WaveMeter(Instrument): #1
         self.add_parameter('frequency', flags = Instrument.FLAG_GET, type=types.FloatType,units='THz',format = '%.6f')
         self.add_parameter('integration_time', flags = Instrument.FLAG_GETSET, type=types.IntType, minval = 0, maxval = 9999, units = 'ms')
         self.add_parameter('active_channel', flags = Instrument.FLAG_GETSET, type=types.IntType)
+        
+        
+        self.add_function('get_channel_frequency')
+        self.add_function('get_channel_wavelength')        
+        
+        
         self._ref_freq = 470.400
         self._last_valid = [self._ref_freq, self._ref_freq, self._ref_freq, self._ref_freq]
         self.set_active_channel(1)
@@ -117,4 +123,16 @@ class WS600_WaveMeter(Instrument): #1
 
     def do_get_temperature(self):
         return self.Get_Temperature()
+
+    def get_channel_frequency(self, channel):
+        Frequency = self._wlmData.GetFrequencyNum(channel,c_double(0))
+        if Frequency != 0:
+            self._last_valid[channel-1] = Frequency
+        else:
+            Frequency = self._last_valid[channel-1]
+        return Frequency
+
+    def get_channel_wavelength(self, channel):
+        Wavelength = self._wlmData.GetWavelengthNum(channel, c_double(0))
+        return Wavelength
 
