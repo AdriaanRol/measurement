@@ -139,7 +139,7 @@ class AOM(Instrument):
         self._pri_cal_a =       0.823
         self._pri_cal_xc =      0.588
         self._pri_cal_k =       6.855
-        self._pri_V_max =       1.0
+        self._pri_V_max =       8.0
         self._pri_V_min =       0
         self._switchable =      False
         self._switch_DO =       16
@@ -278,7 +278,7 @@ class AOM(Instrument):
         #x= x*(V_max-V_min)/float(steps-1)+V_min 
         a, xc, k = copysign(max(y), V_max + V_min), copysign(.5, V_max + V_min), copysign(5., V_max + V_min)
         fitres = fit.fit1d(x,y, common.fit_AOM_powerdependence, 
-                a, xc, k, do_print=True, do_plot=False, ret=True)
+                a, xc, k, do_print=True, ret=True)
      
         fd = zeros(len(x))        
         if type(fitres) != type(False):
@@ -286,7 +286,7 @@ class AOM(Instrument):
             self.set_cal_a(p1['a'])
             self.set_cal_xc(p1['xc'])
             self.set_cal_k(p1['k'])
-            fd = fitres['fitdata']
+            fd = fitres['fitfunc'](x)
         else:
             print 'could not fit calibration curve!'
         

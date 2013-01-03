@@ -12,7 +12,11 @@ class laser_scan(Instrument):
     
     _data_update_interval = 100
     
-    def __init__(self, name, address=None):
+    def __init__(self, name, address=None,
+            laser='NewfocusLaser', adwin='adwin',
+            wavemeter='wavemeter', physical_adwin='physical_adwin',
+            counters='counters'):
+        
         Instrument.__init__(self, name, tags=['measure', 'virtual'])
 
         self._counter_was_running = False
@@ -60,7 +64,6 @@ class laser_scan(Instrument):
                            type=types.IntType,
                            flags=Instrument.FLAG_GETSET,
                            minval=1,maxval=5)
-
         self.add_parameter('FrequencyAveraging',
                            type=types.IntType,
                            flags=Instrument.FLAG_GETSET,
@@ -118,13 +121,11 @@ class laser_scan(Instrument):
         self._voltages  = linspace(self._StartVoltage, self._StopVoltage,
                 self._ScanSteps)
         
-        self._adwin = qt.instruments['adwin']
-        self._counters = qt.instruments['counters']
-        self._physical_adwin = qt.instruments['physical_adwin']
-        self._ins_Laser = qt.instruments['NewfocusLaser']
-        self._ins_Wavemeter = qt.instruments['wavemeter']
-        self._ins_Setup = qt.instruments['TheSetup']
-
+        self._adwin = qt.instruments[adwin]
+        self._counters = qt.instruments[counters]
+        self._physical_adwin = qt.instruments[physical_adwin]
+        self._ins_Laser = qt.instruments[laser]
+        self._ins_Wavemeter = qt.instruments[wavemeter]
     
     def do_get_TraceFinished(self):
         return self._trace_finished

@@ -46,7 +46,7 @@ class optimiz0r(Instrument):
                     'nr_of_points' : 99,
 #                    'pixel_time' : 50,
                     },
-                'order' : ['z','y','x'],
+                'zyx' : ['z','y','x'],
                 'xyonly':['y','x'],
                 },
             }
@@ -62,18 +62,23 @@ class optimiz0r(Instrument):
 
         self.mos = mos_ins
        
-    def optimize(self, cycles=1, cnt=1, int_time=50, order='order'):
+    def optimize(self, cycles=1, cnt=1, int_time=50, dims=[], order='zyx'):
         for c in range(cycles):
-            for d in self.dimensions[order]:
+           
+            if len(dims) == 0:
+                dims = self.dimensions[order]
+
+            for d in dims:
                 position_before_opt = getattr(self.mos, 'get_'+d)()*1E3
-                self.opt1d_ins.run(dimension=d,counter = cnt, pixel_time=int_time, **self.dimensions[d])
+                self.opt1d_ins.run(dimension=d,counter = cnt, 
+                        pixel_time=int_time, **self.dimensions[d])
                 position_after_opt = getattr(self.mos, 'get_'+d)()*1E3
 
-                print "Position changed %d nm"%(position_after_opt-position_before_opt)
+                print "Position changed %d nm" % \
+                        (position_after_opt-position_before_opt)
                 
                 if msvcrt.kbhit():
                     kb_char=msvcrt.getch()
                     if kb_char == "q" : break
-                
                 qt.msleep(1)
     

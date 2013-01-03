@@ -6,20 +6,20 @@ import msvcrt
 
 
 # measurement parameters
-start_v = 0.5
-stop_v = -0.5
+start_v = 0.
+stop_v = -2
 steps = 2001
 pxtime = 50  #ms
 do_smooth = True
-green_during = 0.0e-6
+green_during = .0e-6
 green_before = 200e-6
-red_during= 3e-9
-f_offset = 470400 # GHz
+red_during= 5e-9
+f_offset = 470400# GHz
 mw = True
 amp = True
 mw_power = -10
-mw_frq = 2.8285e9 #2.878e9
-dataname = 'Laserscan_SIL2_LT1_'+str(int(red_during*1E9))+'nW'+'_mw_'+str(mw)+'_'+str(int(green_during*1E6))+'uW_green'
+mw_frq = 2.855e9 #2.878e9
+dataname = 'Laserscan_SIL3_LT1_'+str(int(red_during*1E9))+'nW'+'_mw_'+str(mw)+'_'+str(int(green_during*1E6))+'uW_green'
 
 # end measurement parameters
 
@@ -28,8 +28,6 @@ dataname = 'Laserscan_SIL2_LT1_'+str(int(red_during*1E9))+'nW'+'_mw_'+str(mw)+'_
 ins_adwin = qt.instruments['adwin']
 ins_laser_scan = qt.instruments['laser_scan']
 ins_mw = qt.instruments['SMB100']
-
-
 
 def power_ok():
     ret = True
@@ -114,6 +112,8 @@ def laserscan(ins_laser_scan = ins_laser_scan):
     p_c = qt.Plot2D(d, 'bO', name='counts', coorddim=1, valdim=2, clear=True)
 
     # go manually to initial position
+    ins_adwin.set_dac_voltage(('newfocus_frq',start_v))
+    qt.msleep(1)
     ins_adwin.set_dac_voltage(('newfocus_frq',start_v))
     qt.msleep(1)
 
