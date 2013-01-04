@@ -6,20 +6,20 @@ import msvcrt
 
 
 # measurement parameters
-start_v = 0.
-stop_v = -2
+start_v = -1.
+stop_v = -2.7
 steps = 2001
 pxtime = 50  #ms
 do_smooth = True
 green_during = .0e-6
-green_before = 200e-6
-red_during= 5e-9
+green_before = 100e-6
+red_during= 10e-9
 f_offset = 470400# GHz
 mw = True
 amp = True
-mw_power = -10
-mw_frq = 2.855e9 #2.878e9
-dataname = 'Laserscan_SIL3_LT1_'+str(int(red_during*1E9))+'nW'+'_mw_'+str(mw)+'_'+str(int(green_during*1E6))+'uW_green'
+mw_power = -8
+mw_frq = 2.862e9 #2.878e9
+dataname = 'Laserscan_SIL3_LT1_rotated_waveplate'+str(int(red_during*1E9))+'nW'+'_mw_'+str(mw)+'_'+str(int(green_during*1E6))+'uW_green'
 
 # end measurement parameters
 
