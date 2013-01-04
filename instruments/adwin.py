@@ -35,6 +35,7 @@ class adwin(Instrument):
 
         # tools
         self.add_function('get_process_status')
+        self.add_function('process_path')
 
         # automatically generate process functions
         self._make_process_tools(self.processes)
@@ -81,6 +82,11 @@ class adwin(Instrument):
         
         if 'init_data' in self.processes:
             self.start_init_data(load=True)
+    
+    
+    def process_path(self, procname):
+        pfile = self.processes[procname]['file']
+        return os.path.join(self.process_dir, pfile)
     
     # automatic creation of process management/access tools from the 
     # process dictionary
