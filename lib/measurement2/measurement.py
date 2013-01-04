@@ -15,6 +15,7 @@ import sys,os,time,shutil,inspect
 import logging
 import msvcrt
 import gobject
+import pprint
 
 import numpy as np
 
@@ -201,6 +202,8 @@ class Measurement:
         self.datafolder = self.h5data.folder()
         self.keystroke_monitors = {}
 
+        # self.h5data.flush()
+
     def save_stack(self, depth=2):
         '''
         save stack files, i.e. exectuted scripts, classes and so forth,
@@ -217,6 +220,8 @@ class Measurement:
         sdir = os.path.join(self.datafolder, self.STACK_DIR)
         if not os.path.isdir(sdir):
             os.makedirs(sdir)
+        
+        # pprint.pprint(inspect.stack())
         
         for i in range(depth):
             shutil.copy(inspect.stack()[i][1], sdir)
@@ -239,6 +244,8 @@ class Measurement:
         params = self.params.to_dict()
         for k in params:
             self.h5basegroup.attrs[k] = params[k]
+        
+        self.h5data.flush()
 
     def save_cfg_files(self):
         try:
@@ -308,7 +315,7 @@ class Measurement:
 
     def stop_keystroke_monitor(self, name):
         self.keystroke_monitors[name]['running'] = False
-        qt.msleep(2*self.keystroke_monitor_interval)
+        qt.msleep(2*self.keystroke_monitor_interval/1e3)
         del self.keystroke_monitors[name]
 
 
@@ -322,20 +329,76 @@ class AdwinControlledMeasurement(Measurement):
         self.adwin = adwin
         self.adwin_process = ''
         self.adwin_process_params = MeasurementParameters('AdwinParameters')
-        self.adwin_process_data = []
 
-    def start_adwin_process(self):
+    def start_adwin_process(self, load=True, stop_processes=[]):
         proc = getattr(self.adwin, 'start_'+self.adwin_process)
-        proc(**self.adwin_process_params.to_dict())
+        proc(load=load, stop_processes=stop_processes,
+                **self.adwin_process_params.to_dict())
 
-    def save_adwin_data(self):
-        grp = h5.DataGroup('AdwinProcessData', self.h5data, 
+    def stop_adwin_process(self):
+        func = getattr(self.adwin, 'stop_'+self.adwin_process)
+        return func()
+
+    def save_adwin_data(self, name, variables):
+        
+        grp = h5.DataGroup(name, self.h5data, 
                 base=self.h5base)
-        getfunc = getattr(self.adwin, 'get_'+self.adwin_process+'_var')
-        for d in self.adwin_process_data:
-            grp.add(d, data=getfunc(d))
+        
+        for v in variables:
+            name = v if type(v) == str else v[0]
+            data = self.adwin_var(v)
+            if data != None:
+                grp.add(name,data=data)
 
         params = self.adwin_process_params.to_dict()
         for k in params:
-            grp.attrs[k] = params[k]
+            grp.group.attrs[k] = params[k]
+
+        self.h5data.flush()
+
+    def adwin_process_running(self):
+        func = getattr(self.adwin, 'is_'+self.adwin_process+'_running')
+        return func()
+
+    def adwin_var(self, var):
+        v = var
+        getfunc = getattr(self.adwin, 'get_'+self.adwin_process+'_var')
+        
+        if type(v) == str:
+                return getfunc(v)
+        elif type(v) == tuple:
+            if len(v) == 2:
+                return getfunc(v[0], length=v[1])
+            elif len(v) == 3:
+                return getfunc(v[0], start=v[1], length=v[2])
+            else:
+                logging.warning('Cannot interpret variable tuple, ignore: %s' % \
+                        str(v))
+        else:
+            logging.warning('Cannot interpret variable, ignore: %s' % \
+                    str(v))
+        return None
+
+    def adwin_process_filepath(self):
+        return self.adwin.process_path(self.adwin_process)
+
+    def adwin_process_src_filepath(self):
+        binpath = self.adwin_process_filepath()
+        srcpath = os.path.splitext(binpath)[0] + '.bas'
+        if not os.path.exists(srcpath):
+            return None
+        else:
+            return srcpath
+
+    def save_stack(self, depth=3):
+        Measurement.save_stack(self, depth=depth)
+
+        sdir = os.path.join(self.datafolder, self.STACK_DIR)
+        adsrc = self.adwin_process_src_filepath()
+        if adsrc != None:
+            shutil.copy(adsrc, sdir)
+
+
+        
+    
 
