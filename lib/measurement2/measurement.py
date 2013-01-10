@@ -11,6 +11,7 @@ e.g. by just introducing another outer parameter sweep, which can
 also be facilitated by an OO approach like this one.
 """
 
+### imports
 import sys,os,time,shutil,inspect
 import logging
 import msvcrt
@@ -21,6 +22,9 @@ import numpy as np
 
 import qt
 import hdf5_data as h5
+
+from .. import AWG_HW_sequencer_v2
+Sequence = AWG_HW_sequencer_v2.Sequence
 
 # FIXME type checking of max/min vals?
 # FIXME how to check after updating type,max/minval?
@@ -201,6 +205,8 @@ class Measurement:
         self.h5basegroup = self.h5data.create_group(self.name)
         self.datafolder = self.h5data.folder()
         self.keystroke_monitors = {}
+        
+        self.params['measurement_type'] = self.mprefix
 
         # self.h5data.flush()
 
@@ -260,7 +266,7 @@ class Measurement:
         
         for k in cfgman.keys():
             fp = cfgman[k]._filename
-            shutil.copy(fn, fdir)
+            shutil.copy(fp, fdir)
 
     
     def review_params(self):
@@ -399,6 +405,17 @@ class AdwinControlledMeasurement(Measurement):
             shutil.copy(adsrc, sdir)
 
 
-        
+class SequencerMeasurement(Measurement):
+    
+    mprefix = 'SequencerMeasurement'
+
+    def __init__(self, name, awg):
+        Measurement.__init__(self, name)
+
+        self.awg = awg
+        self.seq = Sequence(name)
+
+
+
     
 

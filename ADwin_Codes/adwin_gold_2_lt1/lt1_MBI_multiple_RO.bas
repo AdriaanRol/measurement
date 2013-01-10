@@ -87,6 +87,7 @@ DIM DATA_26[max_stat] AS LONG AT EM_LOCAL         ' statistics
 DIM DATA_27[max_RO_dim] AS LONG AT DRAM_EXTERN    ' SSRO counts
 DIM DATA_28[max_SP_bins] AS LONG AT EM_LOCAL      ' SP2 counts
 
+
 DIM counter_channel AS LONG
 DIM green_laser_DAC_channel AS LONG
 DIM Ex_laser_DAC_channel AS LONG
@@ -110,6 +111,11 @@ DIM sweep_length AS LONG
 DIM wait_for_MBI_pulse AS LONG
 DIM SP_A_duration AS LONG
 DIM MBI_threshold AS LONG
+DIM nr_of_RO_steps AS LONG
+DIM do_incr_RO_steps AS LONG
+DIM incr_RO_steps AS LONG
+DIM wait_after_RO_pulse_duration AS LONG
+DIM final_RO_duration AS LONG
 
 DIM green_repump_voltage AS FLOAT
 DIM green_off_voltage AS FLOAT
@@ -119,6 +125,8 @@ DIM Ex_SP_voltage AS FLOAT
 DIM A_SP_voltage AS FLOAT
 DIM Ex_RO_voltage AS FLOAT
 DIM A_RO_voltage AS FLOAT
+DIM Ex_final_RO_voltage AS FLOAT
+DIM A_final_RO_voltage AS FLOAT
 
 DIM timer, mode, i AS LONG
 DIM aux_timer AS LONG
@@ -137,6 +145,7 @@ DIM sweep_index AS LONG
 DIM gate_good_phase AS INTEGER
 DIM stop_MBI AS LONG
 DIM MBI_starts AS LONG
+DIM RO_cntr AS LONG
 
 
 DIM current_cr_threshold AS LONG
@@ -170,6 +179,11 @@ INIT:
   wait_for_MBI_pulse           = DATA_20[23]
   SP_A_duration                = DATA_20[24]
   MBI_threshold                = DATA_20[25]
+  nr_of_RO_steps               = DATA_20[26]
+  do_incr_RO_steps             = DATA_20[27]
+  incr_RO_steps                = DATA_20[28]
+  wait_after_RO_pulse_duration = DATA_20[29]
+  final_RO_duration            = DATA_20[30]
   
   green_repump_voltage         = DATA_21[1]
   green_off_voltage            = DATA_21[2]
@@ -179,6 +193,8 @@ INIT:
   A_SP_voltage                 = DATA_21[6]
   Ex_RO_voltage                = DATA_21[7]
   A_RO_voltage                 = DATA_21[8]
+  Ex_final_RO_voltage          = DATA_21[9]
+  A_final_RO_voltage           = DATA_21[10]
   
   DATA_22[1] = 0
   DATA_23[1] = 0
@@ -202,6 +218,7 @@ INIT:
   FOR i = 1 TO max_SP_bins
     DATA_28[i] = 0
   NEXT i
+  
   AWG_done_DI_pattern = 2 ^ AWG_done_DI_channel
   counter_pattern     = 2 ^ (counter_channel-1)
   
@@ -214,6 +231,10 @@ INIT:
   first               = 0
   wait_after_pulse    = 0
   stop_MBI            = wait_for_MBI_pulse + MBI_duration
+  RO_cntr             = 0
+  IF (do_incr_RO_steps =1) THEN
+    nr_of_RO_steps = 1
+  ENDIF  
     
   P2_DAC(DAC_MODULE, green_laser_DAC_channel, 3277*green_off_voltage+32768) ' turn off green
   P2_DAC(DAC_MODULE, Ex_laser_DAC_channel, 32768) ' turn off Ex laser
@@ -236,6 +257,9 @@ INIT:
   PAR_25 = 0
   
   PAR_60 = 0                      ' dummy par!!!
+  PAR_61 = 0                      ' dummy par!!!
+  PAR_62 = 0                      ' dummy par!!!
+  PAR_63 = 0                      ' dummy par!!!
   par_68 = CR_probe
   PAR_70 = 0                      ' cumulative counts from probe intervals
   PAR_71 = 0                      ' below CR threshold events
@@ -244,9 +268,10 @@ INIT:
   PAR_74 = 0                      'MBI failed              
   par_75 = CR_preselect
   par_76 = 0                      ' cumulative counts during repumping
-  PAR_77 = 0        
+  PAR_77 = 0                      ' debug
   PAR_78 = 0                      ' MBI starts
   par_79 = 0                      ' cumulative LT2 counts in PSB during ssro sequence
+  PAR_80 = 0                      ' RO_cntr
   
   current_cr_threshold = CR_preselect
   cr_counts = 0
@@ -255,6 +280,7 @@ EVENT:
   gate_good_phase = par_15*par_18-2*(par_19-1)
   CR_preselect = PAR_75
   CR_probe = PAR_68
+  PAR_77 = mode
   
   'PAR_22 = mode
   'PAR_23 = PAR_23 + 1
@@ -306,8 +332,11 @@ EVENT:
             ENDIF
             IF (cr_counts < current_cr_threshold) THEN
               mode = 0
-              INC(CR_failed)
-              PAR_71 = CR_failed
+              if (current_cr_threshold < 999) THEN
+                INC(CR_failed)
+                PAR_71 = CR_failed
+              ENDIF
+              
               'PAR_25 = CR_preselect
               'PAR_26 = counts
             ELSE
@@ -380,8 +409,8 @@ EVENT:
         IF (timer = wait_for_MBI_pulse) THEN
           P2_CNT_CLEAR(CTR_MODULE,  counter_pattern)    'clear counter
           P2_CNT_ENABLE(CTR_MODULE, counter_pattern)	  'turn on counter
-          P2_DAC(DAC_MODULE, Ex_laser_DAC_channel, 3277*Ex_RO_voltage+32768) ' turn on Ex laser
-          P2_DAC(DAC_MODULE, A_laser_DAC_channel, 3277*A_RO_voltage+32768) ' turn on A laser
+          P2_DAC(DAC_MODULE, Ex_laser_DAC_channel, 3277*Ex_final_RO_voltage+32768) ' turn on Ex laser
+          P2_DAC(DAC_MODULE, A_laser_DAC_channel, 3277*A_final_RO_voltage+32768) ' turn on A laser
           old_counts = 0
         ELSE 
           IF (timer = stop_MBI) THEN
@@ -409,6 +438,7 @@ EVENT:
             ' In principle we can allready check for counts here!
           ENDIF
         ENDIF
+        
       CASE 5    ' Ex or A laser spin pumping
         IF (timer = 0) THEN
           P2_DAC(DAC_MODULE, A_laser_DAC_channel, 3277*A_SP_voltage+32768)   ' turn on A laser
@@ -438,6 +468,15 @@ EVENT:
           aux_timer = 0
           AWG_done = 0
         ELSE 
+     
+          
+          IF((timer=1)AND(nr_of_RO_steps-RO_cntr=2))THEN
+            inc(PAR_79)
+            P2_DIGOUT(DIO_MODULE,AWG_event_jump_DO_channel,1)  ' AWG trigger
+            CPU_SLEEP(9)               ' need >= 20ns pulse width; adwin needs >= 9 as arg, which is 9*10ns
+            P2_DIGOUT(DIO_MODULE,AWG_event_jump_DO_channel,0)
+          ENDIF
+          
           IF (wait_for_AWG_done > 0) THEN 
             IF (AWG_done = 0) THEN
               IF (((P2_DIGIN_LONG(DIO_MODULE)) AND (AWG_done_DI_pattern)) > 0) THEN
@@ -472,11 +511,21 @@ EVENT:
         IF (timer = 0) THEN
           P2_CNT_CLEAR(CTR_MODULE,  counter_pattern)    'clear counter
           P2_CNT_ENABLE(CTR_MODULE, counter_pattern)	  'turn on counter
-          P2_DAC(DAC_MODULE, Ex_laser_DAC_channel, 3277*Ex_RO_voltage+32768) ' turn on Ex laser
-          P2_DAC(DAC_MODULE, A_laser_DAC_channel, 3277*A_RO_voltage+32768) ' turn on A laser
+          IF (RO_cntr=nr_of_RO_steps-1) THEN
+            P2_DAC(DAC_MODULE, Ex_laser_DAC_channel, 3277*Ex_final_RO_voltage+32768) ' turn on Ex laser
+            P2_DAC(DAC_MODULE, A_laser_DAC_channel, 3277*A_final_RO_voltage+32768) ' turn on A laser
+            RO_duration=final_RO_duration
+          ELSE
+            P2_DAC(DAC_MODULE, Ex_laser_DAC_channel, 3277*Ex_RO_voltage+32768) ' turn on Ex laser
+            P2_DAC(DAC_MODULE, A_laser_DAC_channel, 3277*A_RO_voltage+32768) ' turn on A laser
+            RO_duration=DATA_20[17]
+          ENDIF
+            
+          
           old_counts = 0
         ELSE 
-          IF (timer = RO_duration) THEN
+          IF ((timer = RO_duration) OR (P2_CNT_READ(CTR_MODULE, counter_channel) > 0)) THEN
+            'IF (timer = RO_duration) THEN
             P2_DAC(DAC_MODULE, Ex_laser_DAC_channel, 32768) ' turn off Ex laser
             P2_DAC(DAC_MODULE, A_laser_DAC_channel, 32768) ' turn off A laser
             
@@ -484,32 +533,57 @@ EVENT:
             
             counts = P2_CNT_READ(CTR_MODULE, counter_channel) - old_counts
             old_counts = counts
+            
+            i = sweep_length*RO_cntr+sweep_index+1
             IF (P2_CNT_READ(CTR_MODULE, counter_channel) > 0) THEN
-              DATA_27[i] = DATA_27[i] + 1
+              
+              IF (RO_cntr=nr_of_RO_steps-1) THEN
+                DATA_27[sweep_index+1] = DATA_27[sweep_index+1] + 1
+                
+                
+              ENDIF
+              'DATA_29[i] = DATA_29[i]+1  
+              
             ENDIF
+            inc(RO_cntr)
+
+
             
-            PAR_79 = PAR_79 + counts
-            i = RO_duration*(1+sweep_index)
-            DATA_25[i] = DATA_25[i] + counts
+            
+            wait_after_pulse = wait_after_RO_pulse_duration
             P2_CNT_ENABLE(CTR_MODULE, 0)
-            mode = 1
-            timer = -1
-            wait_after_pulse = wait_after_pulse_duration
-            repetition_counter = repetition_counter + 1
-            Par_73 = repetition_counter
-            INC(sweep_index)
-            IF (sweep_index = sweep_length) THEN
-              sweep_index = 0
+
+            IF (RO_cntr=nr_of_RO_steps) THEN
+              mode = 1
+              timer = -1
+              
+              repetition_counter = repetition_counter + 1
+              Par_73 = repetition_counter
+              IF (do_incr_RO_steps =1)THEN
+                nr_of_RO_steps = nr_of_RO_steps + incr_RO_steps
+              ENDIF
+              
+              INC(sweep_index)
+              IF (sweep_index = sweep_length) THEN
+                sweep_index = 0
+                IF (do_incr_RO_steps =1)THEN
+                  nr_of_RO_steps=1
+                ENDIF
+               
+              ENDIF
+            
+              IF (repetition_counter = RO_repetitions) THEN
+                END
+              ENDIF
+              first = 1
+              RO_cntr=0
+            ELSE
+              mode = 5
+              timer=-1
             ENDIF
             
-            IF (repetition_counter = RO_repetitions) THEN
-              END
-            ENDIF
-            first = 1
           ELSE
             counts = P2_CNT_READ(CTR_MODULE, counter_channel)
-            i = timer + RO_duration * sweep_index
-            DATA_25[i] = DATA_25[i] + counts - old_counts
             old_counts = counts
           ENDIF
         ENDIF

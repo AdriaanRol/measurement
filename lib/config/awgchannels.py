@@ -37,6 +37,21 @@ config['mw'] = {
             },
         }
 
+config['rf'] = {
+        'RF' : {
+            'AWG_channel' : 'ch1',
+            'high' : 2.0,
+            'low' : -2.0,
+            'cable_delay' : 120, }
+        }
+
+config['adwin'] = {
+        'adwin_sync' : {
+            'AWG_channel' : 'ch3m2',
+            'high': 2.0,
+            'cable_delay' : 0, },
+        }
+
 ### DEPRECATED!
 ### For newer scripts this is now in the config manager
 def configure_sequence(sequence, *use, **use_modified):

@@ -36,7 +36,8 @@ class AdwinSSRO(m2.AdwinControlledMeasurement):
     def run(self):
         
         # get adwin params
-        for key,_val in adwins_cfg.config['adwin_lt1_processes']['singleshot']['params_long']:
+        for key,_val in adwins_cfg.config['adwin_lt1_processes']\
+                ['singleshot']['params_long']:
             self.adwin_process_params[key] = self.params[key]
 
         self.adwin_process_params['Ex_CR_voltage'] = \
@@ -96,7 +97,7 @@ class AdwinSSRO(m2.AdwinControlledMeasurement):
         print('completed %s / %s readout repetitions' % \
                 (reps_completed, self.params['SSRO_repetitions']))
         
-    def save_run(self, name='ssro'):
+    def save(self, name='ssro'):
         reps = self.adwin_var('completed_reps')
         self.save_adwin_data(name,
                 [   ('CR_before', reps),
@@ -113,8 +114,8 @@ class AdwinSSRO(m2.AdwinControlledMeasurement):
         m2.AdwinControlledMeasurement.finish(self)
 
 
-def test():
-    m = AdwinSSRO('Test', qt.instruments['adwin'])
+def calibration(name):
+    m = AdwinSSRO(name, qt.instruments['adwin'])
     m.green_aom = qt.instruments['GreenAOM']
     m.E_aom = qt.instruments['MatisseAOM']
     m.A_aom = qt.instruments['NewfocusAOM']
@@ -123,21 +124,34 @@ def test():
     
     m.params['SSRO_repetitions'] = 5000
     m.params['SSRO_duration'] = 100
-    m.params['CR_preselect'] = 0
-    m.params['CR_probe'] = 20
+    m.params['CR_preselect'] = 30
+    m.params['CR_probe'] = 30
+    
+    # ms = 0 calibration
+    m.params['A_SP_amplitude'] = 5e-9
+    m.params['Ex_SP_amplitude'] = 0.
+    m.params['A_RO_amplitude'] = 0.
+    m.params['Ex_RO_ampltude'] = 3e-9    
     
     m.run()
-    m.save_run('test_ssro')
+    m.save('ms0')
+
+    # ms = 1 calibration
+    m.params['A_SP_amplitude'] = 0
+    m.params['Ex_SP_amplitude'] = 3e-9
+    m.params['A_RO_amplitude'] = 0.
+    m.params['Ex_RO_ampltude'] = 3e-9
+
+    m.run()
+    m.save('ms1')
+
     m.save_params()
     m.save_stack()
+    m.save_cfg_files()
     
     m.finish()
 
-
-def main():
-    test()
-
-
-if __name__ == '__main__':
-    main()
         
+#### script section
+calibration('SIL3')
+
