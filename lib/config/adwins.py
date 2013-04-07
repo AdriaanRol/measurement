@@ -572,7 +572,9 @@ config['adwin_lt1_dacs'] = {
         }
 
 config['adwin_lt1_dios'] = {
-
+        'awg_event' : 6,
+        'awg_trigger' : 0,
+        'awg_ch3m2' : 9,
         }
 
 config['adwin_lt1_processes'] = {
@@ -728,6 +730,12 @@ config['adwin_lt1_processes'] = {
         'singleshot' : {
                 'index' : 9,
                 'file' : 'singleshot_lt1.TB9',
+                'par' : {
+                    'completed_reps' : 73,
+                    'total_CR_counts' : 70,
+                    'CR_threshold' : 25,
+                    'last_CR_counts' : 26,
+                    },
                 'params_long' : [
                     ['counter_channel'             ,   1],
                     ['green_laser_DAC_channel'     ,   7],
@@ -747,7 +755,8 @@ config['adwin_lt1_processes'] = {
                     ['SSRO_repetitions'            ,1000],
                     ['SSRO_duration'               ,  50],
                     ['SSRO_stop_after_first_photon',   0],
-                    ['cycle_duration'              , 300]
+                    ['cycle_duration'              , 300],
+                    ['CR_probe'                    ,  10]
                     ],
                 'params_long_index'  : 20,
                 'params_long_length' : 25,
@@ -763,11 +772,26 @@ config['adwin_lt1_processes'] = {
                     ],
                 'params_float_index'  : 21,
                 'params_float_length' : 10,
+                'data_long' : {
+                    'CR_before' : 22,
+                    'CR_after' : 23,
+                    'SP_hist' : 24,
+                    'RO_data' : 25,
+                    'statistics' : 26,
+                    },                    
                 },
 
         'spincontrol' : {  #with conditional repump, resonant
                 'index' : 9,
                 'file' : 'spincontrol_lt1.TB9',
+                'par' : {
+                    'completed_reps' : 73,
+                    'total_CR_counts' : 70,
+                    'CR_threshold' : 25,
+                    # 'last_CR_counts' : 26,
+                    'CR_preselect' : 75,
+                    'CR_probe' : 68,
+                    },
                 'params_long' : [           # keep order!!!!!!!!!!!!!
                     ['counter_channel'             ,   1],
                     ['green_laser_DAC_channel'     ,   7],
@@ -806,6 +830,14 @@ config['adwin_lt1_processes'] = {
                     ],
                 'params_float_index'  : 21,
                 'params_float_length' : 10,
+                'data_long' : {
+                    'CR_before' : 22,
+                    'CR_after' : 23,
+                    'SP_hist' : 24,
+                    'RO_data' : 25,
+                    'statistics' : 26,
+                    'ssro_results' : 27,
+                    },
                 },
 
         'lde' : {

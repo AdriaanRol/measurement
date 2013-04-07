@@ -6,7 +6,7 @@ name='ESR_SIL3_LT1'
 start_f = 2.83 #   2.853 #2.85 #  #in GHz
 stop_f  = 2.91 #   2.864 #2.905 #   #in GHz
 steps   = 161
-mw_power = -10  #in dBm
+mw_power = -8  #in dBm
 int_time = 30       #in ms
 reps = 5
 
