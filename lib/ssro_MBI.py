@@ -138,7 +138,8 @@ class MBI(Measurement):
         #self.par['sequence_wait_time'] =            self.sequence_wait_time
         
 
-        if self.power_and_mw_ok():
+        #if self.power_and_mw_ok():
+        if (True==True):
             #start AWG
             self.awg.set_runmode('SEQ')
             self.awg.start()  
@@ -202,7 +203,7 @@ class MBI(Measurement):
         
         print "SEQ_WAIT_TIME: "+str(self.par['sequence_wait_time'])+"us"
         print "Sweep parameter:" +str(self.par['sweep_par'])
-
+        
         self.adwin.start_MBI_Multiple_RO(
             counter_channel = self.hardwaredic['counter_channel'],
             green_laser_DAC_channel = self.par['green_laser_DAC_channel'],
@@ -286,6 +287,12 @@ class MBI(Measurement):
         CR_after  = self.physical_adwin.Get_Data_Long(23,1,1)
         SP_hist   = self.physical_adwin.Get_Data_Long(24,1,self.ssrodic['SP_A_duration'])
         SSRO_data   = self.physical_adwin.Get_Data_Long(27,1,sweep_length)
+        SSRO_weak_data   = self.physical_adwin.Get_Data_Long(28,1,sweep_length)
+        SSRO_cond_data   = self.physical_adwin.Get_Data_Long(29,1,sweep_length)
+        data_00   = self.physical_adwin.Get_Data_Long(30,1,sweep_length)
+        data_01   = self.physical_adwin.Get_Data_Long(31,1,sweep_length)
+        data_10   = self.physical_adwin.Get_Data_Long(32,1,sweep_length)
+        data_11   = self.physical_adwin.Get_Data_Long(33,1,sweep_length)
         #SSRO_data = np.reshape(SSRO_data,(sweep_length,self.par['RO_duration']))
         statistics = self.physical_adwin.Get_Data_Long(26,1,10)
 
@@ -311,6 +318,18 @@ class MBI(Measurement):
         #FIXME: sweep_axis doesnt do anything useful ?
         savdat['SSRO_counts']=SSRO_data
         data.save_dataset(name='Spin_RO', do_plot=False, 
+             data = savdat, idx_increment = False)
+        savdat['SSRO_weak_counts']=SSRO_weak_data
+        data.save_dataset(name='weak_Spin_RO', do_plot=False, 
+             data = savdat, idx_increment = False)
+        savdat['SSRO_cond_counts']=SSRO_cond_data
+        data.save_dataset(name='cond_Spin_RO', do_plot=False, 
+             data = savdat, idx_increment = False)
+        savdat['00']=data_00
+        savdat['01']=data_01
+        savdat['10']=data_10
+        savdat['11']=data_11
+        data.save_dataset(name='correlations_Spin_RO', do_plot=False, 
              data = savdat, idx_increment = False)
         savdat={}
         savdat['par_long']=par_long
@@ -410,47 +429,119 @@ def get_freq(m,line):
         f = (m.sildic['MW_freq_center']-m.sildic['MW_source_freq']+
                           m.sildic['hf_splitting'])
 
-    else:
+    elif line == '0':
         f=(m.sildic['MW_freq_center']-m.sildic['MW_source_freq'])
+    elif line == '0+1':
+        f=(m.sildic['MW_freq_center']-m.sildic['MW_source_freq']+
+                          m.sildic['hf_splitting']/2.)
+    elif line == '0-1':
+        f=(m.sildic['MW_freq_center']-m.sildic['MW_source_freq']-
+                     m.sildic['hf_splitting']/2.)    
+    else:
+        f=line
     return f
-
-def sweep_MW_amp (lt1 = False, name = 'SIL9_lt2_sweep_MW_amp', min_amp = 0.6, max_amp = 1.2, MW_len=140,nr_of_MW_pulses=1,nr_of_datapoints = 21,reps=500,RO_reps=1,do_shel=False,init_line='-1',RO_line='-1'):
+def sweep_MW_freq (lt1 = False, name = 'SIL9_lt2_sweep_MW_freq', min_fr = 2.8245E9-exp.sil9['MW_source_freq'], max_fr = 2.8335E9-exp.sil9['MW_source_freq'],nr_of_MW_pulses=1,nr_of_datapoints = 21,reps=500,RO_reps=1,do_shel=False,init_line='-1',RO_line='-1'):
     datafolder= 'D:/measuring/data/'
     date = dtime.strftime('%Y') + dtime.strftime('%m') + dtime.strftime('%d')
     datapath = datafolder+date + '/'
     
     m = MBI(name)
     m.setup (lt1)
-    reload(MBIseq)
 
     reps_per_datap = reps
     m.nr_of_datapoints = nr_of_datapoints
     m.nr_of_RO_steps = RO_reps
-
-    #set sweep parameter
-    MW_amp=np.linspace(min_amp,max_amp,nr_of_datapoints)
-    m.MW_pulse_amp = MW_amp
+    print m.nr_of_RO_steps
+    MW_fr=np.linspace(min_fr,max_fr,nr_of_datapoints)
+    source=exp.sil9['MW_source_freq']
+    center=exp.sil9['MW_freq_center']
+    hf=exp.sil9['hf_splitting']
+    '''
+    MW_f=[]
+    MW_f.append(2.8245E9-source)
+    MW_f.append(2.825E9-source)
+    for i in np.arange(7):
+        MW_f.append(center-source-hf-0.75E6+i*.2143E6)
+  
+    for i in np.arange(7):
+        MW_f.append(center-source-0.75E6+i*.2143E6)
+      
+    for i in np.arange(7):
+        MW_f.append(center-source+hf-0.75E6+i*.2143E6)
+    MW_f.append(2.8325E9-source)
+    MW_f.append(2.8335E9-source)    
+    MW_fr=np.linspace(0,1,len(MW_f))
+    for j in np.arange(len(MW_f)):
+        MW_fr[j] = MW_f[j]
+    nr_of_datapoints = len(MW_fr)
     
-    # other measurement variables
-    m.nr_of_MW_pulses = nr_of_MW_pulses    
-    m.MW_pulse_len = MW_len*np.ones(nr_of_datapoints)
-    #m.MW_pulse_len = np.linspace (0., 400., RO_reps)
-    m.do_shelv_pulse = do_shel
+    m.nr_of_datapoints = nr_of_datapoints
+    '''
+    m.do_shelv_pulse = do_shel*np.ones(RO_reps)
     m.do_incr_RO_steps = 0
-    
-    m.MBI_mod_freq = get_freq(m,init_line)*np.ones(nr_of_datapoints)
-    m.MW_mod_freq = get_freq(m,RO_line)*np.ones(nr_of_datapoints)
-    print 'init on mI = ', init_line, m.MBI_mod_freq
-    print 'RO on mI = ', RO_line, m.MW_mod_freq
 
-    m.par['sweep_par'] = MW_amp
-    m.par['sweep_par_name'] = 'MW pulse amplitude (V)'
-    m.par['RO_repetitions'] = int(len(m.par['sweep_par'])*reps_per_datap)
+    m.MWdic={} 
+    m.MWdic['nr_of_MW_pulses'] = nr_of_MW_pulses*np.ones(nr_of_datapoints)
+    m.MWdic['MW_pulse_amp'] =exp.MBIprotocol['MBI_pulse_amp']*np.ones(nr_of_datapoints)
+    m.MWdic['MW_pulse_len'] = exp.MBIprotocol['MBI_pulse_len']*np.ones(nr_of_datapoints)
+    m.MWdic['MW_mod_freq'] = MW_fr
+    m.MWdic['time_between_pulses'] = 0.
+    m.MWdic['phase']=90.
+    m.MBI_mod_freq = get_freq(m,init_line)*np.ones(nr_of_datapoints)
     
-    m.start_measurement(m.generate_MW_sweep_sequence)
+    print 'init on mI = ', init_line, m.MBI_mod_freq
+    print 'RO on mI = ', RO_line, m.MWdic['MW_mod_freq']
+    
+    m.par['sweep_par'] = (MW_fr+exp.sil9['MW_source_freq'])*1e-9
+    m.par['sweep_par_name'] = 'MW frequency (GHz)'
+    m.par['RO_repetitions'] = int(len(m.par['sweep_par'])*reps_per_datap)
+
+#    m.start_measurement (m.generate_MW_sweep_sequence)
+    m.load_MWseq_func=MBIseq.add_N_MW_pulses
+    m.start_measurement (MBIseq.MW_sweep)
     dp = get_datapath()
     path = lde_calibration.find_newest_data (dp, string=name)
     spin_control.plot_data_MBI(path)
+def sweep_MW_amp (lt1 = False, name = 'SIL9_lt2_sweep_MW_amp', min_amp = 0.6, max_amp = 1.2, MW_len=140,
+        nr_of_MW_pulses=1,nr_of_datapoints = 21,reps=500,RO_reps=1,do_shel=False,init_line='-1',RO_line='-1'):
+    datafolder= 'D:/measuring/data/'
+    date = dtime.strftime('%Y') + dtime.strftime('%m') + dtime.strftime('%d')
+    datapath = datafolder+date + '/'
+    
+    m = MBI(name)
+    m.setup (lt1)
+
+    reps_per_datap = reps
+    m.nr_of_datapoints = nr_of_datapoints
+    m.nr_of_RO_steps = RO_reps
+    MW_amp=np.linspace(min_amp,max_amp,nr_of_datapoints)
+
+    m.do_shelv_pulse = do_shel*np.ones(RO_reps)
+    m.do_incr_RO_steps = 0
+
+    m.MWdic={} 
+    m.MWdic['nr_of_MW_pulses'] = nr_of_MW_pulses*np.ones(nr_of_datapoints)
+    m.MWdic['MW_pulse_amp'] = MW_amp
+    m.MWdic['MW_pulse_len'] = MW_len*np.ones(nr_of_datapoints)
+    m.MWdic['MW_mod_freq'] = get_freq(m,RO_line)*np.ones(nr_of_datapoints)
+    m.MWdic['time_between_pulses'] = 20.
+    m.MWdic['phase']=90.
+    m.MBI_mod_freq = get_freq(m,init_line)*np.ones(nr_of_datapoints)
+    
+    print 'init on mI = ', init_line, m.MBI_mod_freq
+    print 'RO on mI = ', RO_line, m.MWdic['MW_mod_freq']
+    
+    m.par['sweep_par'] = MW_amp
+    m.par['sweep_par_name'] = 'MW amp (V)'
+    m.par['RO_repetitions'] = int(len(m.par['sweep_par'])*reps_per_datap)
+
+#    m.start_measurement (m.generate_MW_sweep_sequence)
+    m.load_MWseq_func=MBIseq.add_N_MW_pulses
+    m.start_measurement (MBIseq.MW_sweep)
+    dp = get_datapath()
+    path = lde_calibration.find_newest_data (dp, string=name)
+    spin_control.plot_data_MBI(path)
+
 
 def sweep_MW_len (lt1 = False, name = 'SIL9_lt2_sweep_MW_len', min_len = 10, max_len = 200, MW_amp=0.5,nr_of_MW_pulses=1,nr_of_datapoints = 21,reps=500,RO_reps=1,do_shel=False,init_line='-1',RO_line='-1'):
     datafolder= 'D:/measuring/data/'
@@ -465,28 +556,189 @@ def sweep_MW_len (lt1 = False, name = 'SIL9_lt2_sweep_MW_len', min_len = 10, max
     m.nr_of_RO_steps = RO_reps
     print m.nr_of_RO_steps
     MW_len=np.linspace(min_len,max_len,nr_of_datapoints)
-    m.nr_of_MW_pulses = nr_of_MW_pulses
-    m.do_shelv_pulse = do_shel
+
+    m.do_shelv_pulse = do_shel*np.ones(RO_reps)
     m.do_incr_RO_steps = 0
 
-    m.MW_pulse_amp = MW_amp*np.ones(nr_of_datapoints)
-    m.MW_pulse_len = MW_len
-
+    m.MWdic={} 
+    m.MWdic['nr_of_MW_pulses'] = nr_of_MW_pulses*np.ones(nr_of_datapoints)
+    m.MWdic['MW_pulse_amp'] = MW_amp*np.ones(nr_of_datapoints)
+    m.MWdic['MW_pulse_len'] = MW_len
+    m.MWdic['MW_mod_freq'] = get_freq(m,RO_line)*np.ones(nr_of_datapoints)
+    m.MWdic['time_between_pulses'] = 0.
+    m.MWdic['phase']=90.
     m.MBI_mod_freq = get_freq(m,init_line)*np.ones(nr_of_datapoints)
-    m.MW_mod_freq = get_freq(m,RO_line)*np.ones(nr_of_datapoints)
+    
     print 'init on mI = ', init_line, m.MBI_mod_freq
-    print 'RO on mI = ', RO_line, m.MW_mod_freq
+    print 'RO on mI = ', RO_line, m.MWdic['MW_mod_freq']
     
     m.par['sweep_par'] = MW_len
     m.par['sweep_par_name'] = 'MW pulse length (ns)'
     m.par['RO_repetitions'] = int(len(m.par['sweep_par'])*reps_per_datap)
 
 #    m.start_measurement (m.generate_MW_sweep_sequence)
+    m.load_MWseq_func=MBIseq.add_N_MW_pulses
     m.start_measurement (MBIseq.MW_sweep)
     dp = get_datapath()
     path = lde_calibration.find_newest_data (dp, string=name)
     spin_control.plot_data_MBI(path)
 
+def CORPSE_rotation(lt1 = False, name = 'SIL9_lt2_CORPSE_rotation', min_sweep = 0, max_sweep = 0.5, CORPSE_amp=0.6,nr_of_pulses=1,nr_of_datapoints = 21,reps=500,RO_reps=1,do_shel=True,init_line='-1',CORPSE_line='0-1'):
+    datafolder= 'D:/measuring/data/'
+    date = dtime.strftime('%Y') + dtime.strftime('%m') + dtime.strftime('%d')
+    datapath = datafolder+date + '/'
+    
+    m = MBI(name)
+    m.setup (lt1)
+
+    reps_per_datap = reps
+    m.nr_of_datapoints = nr_of_datapoints
+    m.nr_of_RO_steps = RO_reps
+    print m.nr_of_RO_steps
+    sweep_par=np.linspace(min_sweep,max_sweep,nr_of_datapoints)
+    theta = 90.
+    m.do_shelv_pulse = do_shel*np.ones(RO_reps)
+    m.do_incr_RO_steps = 0
+
+    m.MWdic={} 
+    m.MWdic['nr_of_CORPSE_pulses'] = nr_of_pulses*np.ones(nr_of_datapoints)
+    m.MWdic['CORPSE_amp'] = sweep_par
+    m.MWdic['theta'] = 90.*np.ones(nr_of_datapoints)
+    m.MWdic['finalwait_dur']=2000.*np.ones(nr_of_datapoints) #MBIcfg['wait_time_before_MBI_pulse']
+    #.MWdic['CORPSE_amp'] = CORPSE_amp
+    #m.MWdic['theta'] = 180*np.ones(nr_of_datapoints)
+    m.MWdic['freq'] = get_freq(m,CORPSE_line)*np.ones(nr_of_datapoints)
+    m.MWdic['CORPSE_frabi']=m.pulsedic['CORPSE_nsel_frabi']*np.ones(nr_of_datapoints)
+        
+
+    m.MBI_mod_freq = get_freq(m,init_line)*np.ones(nr_of_datapoints)
+    
+    print 'init on mI = ', init_line, m.MBI_mod_freq
+    print 'RO on mI = ', CORPSE_line, m.MWdic['freq']
+    
+    m.par['sweep_par'] = sweep_par
+    m.par['sweep_par_name'] = 'CORPSE amp [V]'
+    m.par['RO_repetitions'] = int(len(m.par['sweep_par'])*reps_per_datap)
+
+#    m.start_measurement (m.generate_MW_sweep_sequence)
+    m.load_MWseq_func=MBIseq.add_N_CORPSE_pulses
+    m.start_measurement (MBIseq.MW_sweep)
+    dp = get_datapath()
+    path = lde_calibration.find_newest_data (dp, string=name)
+    spin_control.plot_data_MBI(path)
+
+def ramsey(lt1 = False, name = 'SIL9_lt2_ramsey', min_tau = 10, max_tau = 360, CORPSE_amp=0.623,CORPSE_frabi=5.6e-3,nr_of_pulses=1,nr_of_datapoints = 21,reps=500,RO_reps=1,do_shel=False,init_line='-1',MW_line='-1'):
+    datafolder= 'D:/measuring/data/'
+    date = dtime.strftime('%Y') + dtime.strftime('%m') + dtime.strftime('%d')
+    datapath = datafolder+date + '/'
+    
+    m = MBI(name)
+    m.setup (lt1)
+
+    reps_per_datap = reps
+    m.nr_of_datapoints = nr_of_datapoints
+    m.nr_of_RO_steps = RO_reps
+    print m.nr_of_RO_steps
+    tau=np.linspace(min_tau,max_tau,nr_of_datapoints)
+    #theta = 
+    m.do_shelv_pulse = do_shel*np.ones(RO_reps)
+    m.do_incr_RO_steps = 0
+
+    m.MWdic={} 
+    m.MWdic['nr_of_MW_pulses'] = 1*np.ones(nr_of_datapoints)
+    m.MWdic['MW_pulse_amp'] = m.pulsedic['pi2_amp']*np.ones(nr_of_datapoints)
+    m.MWdic['MW_pulse_len'] = m.pulsedic['pi2_len']*np.ones(nr_of_datapoints)
+    m.MWdic['tau'] = tau*np.ones(nr_of_datapoints)
+    m.MWdic['weak'] = True
+    m.MWdic['phase']=90*np.ones(nr_of_datapoints)
+    m.MWdic['finalwait_dur']=2000.*np.ones(nr_of_datapoints) #MBIcfg['wait_time_before_MBI_pulse']
+    m.MWdic['MW_mod_freq'] = get_freq(m,MW_line)*np.ones(nr_of_datapoints)  
+    m.MBI_mod_freq = get_freq(m,init_line)*np.ones(nr_of_datapoints)
+    
+    #RF
+    m.MWdic['RF_pulse_amp'] = m.pulsedic['RF_pi2_amp']*np.ones(nr_of_datapoints)
+    m.MWdic['RF_pulse_len'] = m.pulsedic['RF_pi2_len']*np.ones(nr_of_datapoints)
+    m.MWdic['RF_freq'] = exp.sil9['mI_m1_freq']*np.ones(nr_of_datapoints)
+
+
+    print 'init on mI = ', init_line, m.MBI_mod_freq
+    print 'RO on mI = ', MW_line, m.MWdic['MW_mod_freq']
+    
+    m.par['sweep_par'] = tau
+    m.par['sweep_par_name'] = 'phase [degree]'
+    m.par['RO_repetitions'] = int(len(m.par['sweep_par'])*reps_per_datap)
+
+#    m.start_measurement (m.generate_MW_sweep_sequence)
+    m.load_MWseq_func=MBIseq.ramsey
+    m.start_measurement (MBIseq.MW_sweep)
+    dp = get_datapath()
+    path = lde_calibration.find_newest_data (dp, string=name)
+    spin_control.plot_data_MBI(path)
+
+def CORPSE_ramsey(lt1 = False, name = 'SIL9_lt2_CORPSE_ramsey', min_tau = 0, max_tau = 2,nr_of_pulses=1,nr_of_datapoints = 3,reps=500,RO_reps=1,do_shel=True,RF_init_line='-1',CORPSE_line='0-1'):
+    datafolder= 'D:/measuring/data/'
+    date = dtime.strftime('%Y') + dtime.strftime('%m') + dtime.strftime('%d')
+    datapath = datafolder+date + '/'
+    
+    m = MBI(name)
+    m.setup (lt1)
+
+    reps_per_datap = reps
+    m.nr_of_datapoints = nr_of_datapoints
+    m.nr_of_RO_steps = RO_reps
+    print m.nr_of_RO_steps
+    tau=np.linspace(min_tau,max_tau,nr_of_datapoints)
+    #theta = 
+    m.do_shelv_pulse = do_shel*np.ones(RO_reps)
+    m.do_incr_RO_steps = 0
+
+    m.MWdic={} 
+    m.MWdic['CORPSE_amp'] = m.pulsedic['CORPSE_nsel_amp']*np.ones(nr_of_datapoints)
+    m.MWdic['CORPSE_frabi']=m.pulsedic['CORPSE_nsel_frabi']*np.ones(nr_of_datapoints)
+    m.MWdic['tau'] = tau#1.*np.ones(nr_of_datapoints) 
+    m.MWdic['phase']=90.*np.ones(nr_of_datapoints) 
+    m.MWdic['finalwait_dur']=2000.*np.ones(nr_of_datapoints) #MBIcfg['wait_time_before_MBI_pulse']
+    m.MWdic['freq'] = get_freq(m,CORPSE_line)*np.ones(nr_of_datapoints)
+
+    m.MWdic['weak'] = True
+    
+    #RF 2 (RO basis for second readout)
+    m.MWdic['RF2_pulse_amp'] = 0*m.pulsedic['RF_pi2_amp']*np.ones(nr_of_datapoints)
+    m.MWdic['RF2_pulse_len'] = m.pulsedic['RF_pi2_len']*np.ones(nr_of_datapoints)
+
+    m.MWdic['RF_pulse_len'] =1* m.pulsedic['RF_pi_len']*np.ones(nr_of_datapoints)
+    if RF_init_line=='0':
+        amp=1
+    else:
+        amp=0
+    m.MWdic['RF_pulse_amp'] = amp*m.pulsedic['RF_pi_amp']*np.ones(nr_of_datapoints)#0*np.ones(nr_of_datapoints)
+    m.MWdic['RF_phase'] = 0*np.ones(nr_of_datapoints)
+    m.MWdic['RF_freq'] = exp.sil9['mI_m1_freq']*np.ones(nr_of_datapoints)
+    m.MWdic['RF2_freq'] = exp.sil9['mI_m1_freq']*np.ones(nr_of_datapoints)
+    m.MWdic['RF2_phase'] = 0*np.ones(nr_of_datapoints)
+
+    #m.MWdic['RF3_pulse_amp'] = 0*m.pulsedic['RF_pi2_amp']*np.ones(nr_of_datapoints)
+    m.MWdic['RF3_pulse_len'] = m.pulsedic['RF_pi2_len']*np.ones(nr_of_datapoints)
+    m.MWdic['RF3_freq'] = exp.sil9['mI_m1_freq']*np.ones(nr_of_datapoints)
+    m.MWdic['RF3_phase'] = 0*np.ones(nr_of_datapoints)
+    m.MBI_mod_freq = get_freq(m,'-1')*np.ones(nr_of_datapoints)
+    
+    print 'init on mI = ', '-1', m.MBI_mod_freq
+    print 'RO on mI = ', CORPSE_line, m.MWdic['freq']
+    
+    m.par['sweep_par'] = tau
+    m.par['sweep_par_name'] = 'tau (ns)'
+    m.par['RO_repetitions'] = int(len(m.par['sweep_par'])*reps_per_datap)
+
+#    m.start_measurement (m.generate_MW_sweep_sequence)
+    m.load_MWseq_func=MBIseq.ramsey_CORPSE
+    m.start_measurement (MBIseq.MW_sweep)
+    dp = get_datapath()
+    path = lde_calibration.find_newest_data (dp, string=name)
+    spin_control.plot_data_MBI(path)
+
+
+#TODO method below only works with old MBIseq file (MBI_seq_oldstyle.py)
 def sweep_nr_of_cycle_steps (lt1 = False, name = 'SIL9_lt2_multiple_pump_cycles', RO_incr = 5, nr_of_MW_pulses=1,nr_of_datapoints = 21,reps=500,RO_reps=1,do_shel=False,init_line='-1',RO_line='-1'):
     datafolder= 'D:/measuring/data/'
     date = dtime.strftime('%Y') + dtime.strftime('%m') + dtime.strftime('%d')
@@ -510,21 +762,32 @@ def sweep_nr_of_cycle_steps (lt1 = False, name = 'SIL9_lt2_multiple_pump_cycles'
     
     
     # other measurement variables
+ #   m.MWdic={}
+#################
+#    m.MWdic['nr_of_MW_pulses'] = nr_of_MW_pulses*np.ones(nr_of_datapoints)
+#    m.MWdic['MW_pulse_amp'] = m.pulsedic['pi2pi_amp']*np.ones(nr_of_datapoints)
+#    m.MWdic['MW_pulse_len'] = m.pulsedic['pi2pi_len']*np.ones(nr_of_datapoints)
+#    m.MWdic['tau'] = tau*np.ones(nr_of_datapoints)
+#    m.MWdic['weak'] = True
+#    m.MWdic['phase']=90*np.ones(nr_of_datapoints)
+#    m.MWdic['finalwait_dur']=2000.*np.ones(nr_of_datapoints) #MBIcfg['wait_time_before_MBI_pulse']
+#    m.MWdic['MW_mod_freq'] = get_freq(m,MW_line)*np.ones(nr_of_datapoints)  
+#    m.MBI_mod_freq = get_freq(m,init_line)*np.ones(nr_of_datapoints)
+################
     m.nr_of_MW_pulses = nr_of_MW_pulses    
     m.MW_pulse_len = np.ones(nr_of_datapoints)*m.pulsedic['pi2pi_len']
     m.MW_pulse_amp = np.ones(nr_of_datapoints)*m.pulsedic['pi2pi_amp']
-    m.MW_pulse_len = np.ones(nr_of_datapoints)*m.pulsedic['pi2pi_len']
-    m.MW_pulse_amp = np.ones(nr_of_datapoints)*m.pulsedic['pi2pi_amp']
-    m.MW1_pulse_len = np.ones(nr_of_datapoints)*120
-    m.MW1_pulse_amp = np.ones(nr_of_datapoints)*0.8
-    m.do_shelv_pulse = do_shel
+    m.MW1_pulse_len = np.ones(nr_of_datapoints)*105
+    m.MW1_pulse_amp = np.ones(nr_of_datapoints)*0.95
+    m.do_shelv_pulse = do_shel*np.ones(RO_reps)
     
     m.MBI_mod_freq = get_freq(m,init_line)*np.ones(nr_of_datapoints)
     m.MW_mod_freq = get_freq(m,RO_line)*np.ones(nr_of_datapoints)
-    m.MW1_mod_freq = get_freq(m,'0')*np.ones(nr_of_datapoints)
+    m.MW1_mod_freq = get_freq(m,init_line)*np.ones(nr_of_datapoints)
     print 'init on mI = ', init_line, m.MBI_mod_freq
     print 'RO on mI = ', RO_line, m.MW_mod_freq
-    
+     
+
     sp = np.linspace(1,1+((nr_of_datapoints-1)*RO_incr),nr_of_datapoints)
     print sp
     m.par['sweep_par'] = sp
@@ -536,7 +799,7 @@ def sweep_nr_of_cycle_steps (lt1 = False, name = 'SIL9_lt2_multiple_pump_cycles'
     path = lde_calibration.find_newest_data (dp, string=name)
     spin_control.plot_data_MBI(path)
 
-def sweep_RF_amp (lt1 = False, name = 'SIL9_lt2_sweep_RF_amp', min_amp = 0., max_amp = 0.200, RF_len=0.5,nr_of_datapoints = 21,reps=500,init_line='-1',RO_line='-1'):
+def sweep_RF_amp (lt1 = False, name = 'SIL9_lt2_sweep_RF_amp', min_amp = 0., max_amp = 0.200, RF_len=0.5,nr_of_datapoints = 21,reps=500,init_line='-1',RO_line='0-1'):
     datafolder= 'D:/measuring/data/'
     date = dtime.strftime('%Y') + dtime.strftime('%m') + dtime.strftime('%d')
     datapath = datafolder+date + '/'
@@ -557,6 +820,12 @@ def sweep_RF_amp (lt1 = False, name = 'SIL9_lt2_sweep_RF_amp', min_amp = 0., max
     m.RF_pulse_len = RF_len*np.ones(nr_of_datapoints)
     m.RF_pulse_amp = RF_amp
     m.RF_freq = RF_freq*np.ones(nr_of_datapoints)
+
+    m.CORPSE_frabi = m.pulsedic['CORPSE_nsel_frabi']
+    m.CORPSE_amp = m.pulsedic['CORPSE_nsel_amp']
+    m.RO_freq = get_freq(m,RO_line)
+    m.projective_ramsey_time=210
+
     m.par['sweep_par'] = RF_amp
     m.par['sweep_par_name'] = 'RF amplitude (V)'
     m.par['RO_repetitions'] = int(len(m.par['sweep_par'])*reps_per_datap)
@@ -567,7 +836,7 @@ def sweep_RF_amp (lt1 = False, name = 'SIL9_lt2_sweep_RF_amp', min_amp = 0., max
     spin_control.plot_data_MBI(path)
 
 
-def sweep_RF_len (lt1 = False, name = 'SIL9_lt2_sweep_RF_len', min_len = 0., max_len = 50000, RF_amp=0.1,nr_of_datapoints = 21,reps=500,init_line='-1',RO_line='-1'):
+def sweep_RF_len (lt1 = False, name = 'SIL9_lt2_sweep_RF_len', min_len = 0., max_len = 50000, RF_amp=0.1,nr_of_datapoints = 21,reps=500,do_shelv=True,init_line='-1',RO_line='0-1',RF_line='mI-1'):
     datafolder= 'D:/measuring/data/'
     date = dtime.strftime('%Y') + dtime.strftime('%m') + dtime.strftime('%d')
     datapath = datafolder+date + '/'
@@ -582,13 +851,22 @@ def sweep_RF_len (lt1 = False, name = 'SIL9_lt2_sweep_RF_len', min_len = 0., max
     RF_freq = m.sildic['mI_m1_freq']
     m.do_incr_RO_steps = 0.
     m.incr_RO_steps=1.
-
+    m.do_shel=do_shelv
     m.MBI_mod_freq = get_freq(m,init_line)
-    m.RO_mod_freq = get_freq(m,RO_line)
+
     m.MW_mod_freq = get_freq(m,init_line)
+    m.CORPSE_frabi = m.pulsedic['CORPSE_nsel_frabi']
+    m.CORPSE_amp = m.pulsedic['CORPSE_nsel_amp']
+    m.RO_freq = get_freq(m,RO_line)
+    m.projective_ramsey_time=210
 
     m.RF_pulse_amp = RF_amp*np.ones(nr_of_datapoints)
     m.RF_pulse_len = RF_len
+    if (RF_line == 'mI-1'):
+        RF_freq = RF_freq
+    else:
+        RF_freq = RF_line
+    m.projective_ramsey_time=210
     m.RF_freq = RF_freq*np.ones(nr_of_datapoints)
     m.par['sweep_par'] = RF_len*1e-3
     m.par['sweep_par_name'] = 'RF pulse length (us)'
@@ -617,7 +895,7 @@ def nuclear_ramsey (lt1 = False, name = 'SIL9_lt2_N_ramsey',nr_of_datapoints = 2
     m.incr_RO_steps=1.
     m.nr_of_RO_steps = 2.
     m.Ex_RO_amplitude = m.ssrodic['Ex_RO_amplitude']
-
+    m.Ex_RO_amplitude = 8e-9
 
     m.MBI_mod_freq = get_freq(m,init_line)
     m.RO_mod_freq = get_freq(m,RO_line)
@@ -625,10 +903,10 @@ def nuclear_ramsey (lt1 = False, name = 'SIL9_lt2_N_ramsey',nr_of_datapoints = 2
     m.MW_pulse_len = m.pulsedic['shelving_len']*np.ones(nr_of_datapoints)
     m.MW_pulse_amp = m.pulsedic['shelving_amp']*np.ones(nr_of_datapoints)
     m.do_MW_pulse_after_RF=True
-    m.RO_duration =12
+    m.RO_duration =2
 
 
-    m.wait_after_RO = 50+(m.pulsedic['RF_pi2_len']/1000)
+    m.wait_after_RO = 100+(m.pulsedic['RF_pi2_len']/1000)
     m.rep_wait_el = 25 + m.ssrodic['RO_duration']
     m.RF_freq = RF_freq*np.ones(nr_of_datapoints)
     m.par['sweep_par'] = m.RF_phase
@@ -640,7 +918,7 @@ def nuclear_ramsey (lt1 = False, name = 'SIL9_lt2_N_ramsey',nr_of_datapoints = 2
     path = lde_calibration.find_newest_data (dp, string=name)
     spin_control.plot_data_MBI(path)
 
-def nmr (lt1 = False, name = 'SIL9_lt2_nmr', min_freq = 2.743e6, max_freq = 2.78e6, nr_of_datapoints = 21,reps=500,init_line='+1',RO_line='+1'):
+def nmr (lt1 = False, name = 'SIL9_lt2_nmr', min_freq = 2.743e6, max_freq = 2.78e6, nr_of_datapoints = 21,reps=500,do_shel=True,init_line='+1',RO_line='+1'):
     datafolder= 'D:/measuring/data/'
     date = dtime.strftime('%Y') + dtime.strftime('%m') + dtime.strftime('%d')
     datapath = datafolder+date + '/'
@@ -664,11 +942,12 @@ def nmr (lt1 = False, name = 'SIL9_lt2_nmr', min_freq = 2.743e6, max_freq = 2.78
     m.RF_pulse_amp = RF_amp*np.ones(nr_of_datapoints)
     m.RF_pulse_len = RF_len*np.ones(nr_of_datapoints)
     m.RF_freq = RF_freq
+    m.do_shel = do_shel
     m.par['sweep_par'] = RF_freq*1e-6
     m.par['sweep_par_name'] = 'RF frequency (MHz)'
     m.par['RO_repetitions'] = int(len(m.par['sweep_par'])*reps_per_datap)
 
-    m.start_measurement (MBI_seq.RF_sweep)
+    m.start_measurement (MBIseq.RF_sweep)
     dp = get_datapath()
     path = lde_calibration.find_newest_data (dp, string=name)
     spin_control.plot_data_MBI(path)

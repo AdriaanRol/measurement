@@ -64,7 +64,7 @@
 ' Data_22[1]                 CR counts before sequence
 ' Data_23[1]                 CR counts after sequence
 ' Data_24[SP_duration]                 time dependence SP
-' Data_25[RO_duration]                 spin readout
+
 ' Data_26[...]                         statistics
 '   1   repumps
 '   2   CR_failed
@@ -83,15 +83,20 @@ DIM DATA_21[10] AS FLOAT                          ' float parameters
 DIM DATA_22[1] AS LONG AT EM_LOCAL                ' CR counts before sequence
 DIM DATA_23[1] AS LONG AT EM_LOCAL                ' CR counts after sequence
 DIM DATA_24[max_SP_bins] AS LONG AT EM_LOCAL      ' SP counts
-DIM DATA_25[max_RO_dim] AS LONG AT DRAM_EXTERN    ' RO counts
+
 DIM DATA_26[max_stat] AS LONG AT EM_LOCAL         ' statistics
-DIM DATA_27[max_RO_dim] AS LONG AT DRAM_EXTERN    ' SSRO last counts
-DIM DATA_28[max_RO_dim] AS LONG AT DRAM_EXTERN      ' SSRO counts
-DIM DATA_29[max_RO_dim] AS LONG AT DRAM_EXTERN      ' cond SSRO counts
-DIM DATA_30[max_sweep_len] AS LONG AT DRAM_EXTERN      ' 00
-DIM DATA_31[max_sweep_len] AS LONG AT DRAM_EXTERN      ' 01
-DIM DATA_32[max_sweep_len] AS LONG AT DRAM_EXTERN      ' 10
-DIM DATA_33[max_sweep_len] AS LONG AT DRAM_EXTERN      ' 11
+
+
+
+DIM DATA_30[max_sweep_len] AS LONG AT DRAM_EXTERN      ' SN
+DIM DATA_31[max_sweep_len] AS LONG AT DRAM_EXTERN      ' FS
+DIM DATA_32[max_sweep_len] AS LONG AT DRAM_EXTERN      ' FF
+
+DIM DATA_35[max_sweep_len] AS LONG AT DRAM_EXTERN      ' FinalRO SN
+DIM DATA_36[max_sweep_len] AS LONG AT DRAM_EXTERN      ' FinalRP SF
+DIM DATA_37[max_sweep_len] AS LONG AT DRAM_EXTERN      ' FinalRO FF
+
+
 
 
 DIM counter_channel AS LONG
@@ -117,11 +122,9 @@ DIM sweep_length AS LONG
 DIM wait_for_MBI_pulse AS LONG
 DIM SP_A_duration AS LONG
 DIM MBI_threshold AS LONG
-DIM nr_of_RO_steps AS LONG
-DIM do_incr_RO_steps AS LONG
-DIM incr_RO_steps AS LONG
 DIM wait_after_RO_pulse_duration AS LONG
 DIM final_RO_duration AS LONG
+DIM wait_before_final_SP AS LONG
 
 DIM green_repump_voltage AS FLOAT
 DIM green_off_voltage AS FLOAT
@@ -152,7 +155,10 @@ DIM gate_good_phase AS INTEGER
 DIM stop_MBI AS LONG
 DIM MBI_starts AS LONG
 DIM RO_cntr AS LONG
-DIM weak_meas_cnt AS LONG
+DIM second_RO_click AS LONG
+DIM final_RO AS LONG
+DIM next_RO_is_final AS LONG
+
 
 DIM current_cr_threshold AS LONG
 DIM CR_probe AS LONG
@@ -185,11 +191,9 @@ INIT:
   wait_for_MBI_pulse           = DATA_20[23]
   SP_A_duration                = DATA_20[24]
   MBI_threshold                = DATA_20[25]
-  nr_of_RO_steps               = DATA_20[26]
-  do_incr_RO_steps             = DATA_20[27]
-  incr_RO_steps                = DATA_20[28]
-  wait_after_RO_pulse_duration = DATA_20[29]
-  final_RO_duration            = DATA_20[30]
+  wait_after_RO_pulse_duration = DATA_20[26]
+  final_RO_duration            = DATA_20[27]
+  wait_before_final_SP         = DATA_20[28]
   
   green_repump_voltage         = DATA_21[1]
   green_off_voltage            = DATA_21[2]
@@ -209,23 +213,10 @@ INIT:
     DATA_24[i] = 0
   NEXT i
   
-  FOR i = 1 TO max_RO_dim
-    DATA_25[i] = 0
-  NEXT i
+
   
   FOR i = 1 TO max_stat
     DATA_26[i] = 0
-  NEXT i
-  
-  FOR i = 1 to max_RO_dim
-    DATA_27[i] = 0
-  NEXT i
-  
-  FOR i = 1 TO max_RO_dim
-    DATA_28[i] = 0
-  NEXT i
-  FOR i = 1 TO max_RO_dim
-    DATA_29[i] = 0
   NEXT i
   FOR i = 1 TO max_sweep_len
     DATA_30[i] = 0
@@ -237,7 +228,13 @@ INIT:
     DATA_32[i] = 0
   NEXT i
   FOR i = 1 TO max_sweep_len
-    DATA_33[i] = 0
+    DATA_35[i] = 0
+  NEXT i
+  FOR i = 1 TO max_sweep_len
+    DATA_36[i] = 0
+  NEXT i
+  FOR i = 1 TO max_sweep_len
+    DATA_37[i] = 0
   NEXT i
   
   AWG_done_DI_pattern = 2 ^ AWG_done_DI_channel
@@ -253,11 +250,11 @@ INIT:
   wait_after_pulse    = 0
   stop_MBI            = wait_for_MBI_pulse + MBI_duration
   RO_cntr             = 0
-  weak_meas_cnt       =0
-  IF (do_incr_RO_steps =1) THEN
-    nr_of_RO_steps = 1
-  ENDIF  
-    
+  final_RO            = 0 'boolean to check if we are doing final RO
+  second_RO_click      = 0 ' boolean telling us if we get a click in second RO (given first has no click)
+  next_RO_is_final = 0
+
+
   P2_DAC(DAC_MODULE, green_laser_DAC_channel, 3277*green_off_voltage+32768) ' turn off green
   P2_DAC(DAC_MODULE, Ex_laser_DAC_channel, 32768) ' turn off Ex laser
   P2_DAC(DAC_MODULE, A_laser_DAC_channel, 32768) ' turn off Ex laser
@@ -282,6 +279,8 @@ INIT:
   PAR_61 = 0                      ' dummy par!!!
   PAR_62 = 0                      ' dummy par!!!
   PAR_63 = 0                      ' dummy par!!!
+  PAR_64 = 0                      ' dummy par!!!
+  PAR_65 = 0                      ' dummy par!!!
   par_68 = CR_probe
   PAR_70 = 0                      ' cumulative counts from probe intervals
   PAR_71 = 0                      ' below CR threshold events
@@ -489,16 +488,7 @@ EVENT:
           ENDIF
           aux_timer = 0
           AWG_done = 0
-        ELSE 
-     
-          
-          IF((timer=1)AND(nr_of_RO_steps-RO_cntr=2))THEN
-            inc(PAR_79)
-            P2_DIGOUT(DIO_MODULE,AWG_event_jump_DO_channel,1)  ' AWG trigger
-            CPU_SLEEP(9)               ' need >= 20ns pulse width; adwin needs >= 9 as arg, which is 9*10ns
-            P2_DIGOUT(DIO_MODULE,AWG_event_jump_DO_channel,0)
-          ENDIF
-          
+        ELSE           
           IF (wait_for_AWG_done > 0) THEN 
             IF (AWG_done = 0) THEN
               IF (((P2_DIGIN_LONG(DIO_MODULE)) AND (AWG_done_DI_pattern)) > 0) THEN
@@ -530,10 +520,12 @@ EVENT:
         ENDIF
       
       CASE 7    ' spin readout
+        PAR_63 = RO_duration
+        PAR_64=timer
         IF (timer = 0) THEN
           P2_CNT_CLEAR(CTR_MODULE,  counter_pattern)    'clear counter
           P2_CNT_ENABLE(CTR_MODULE, counter_pattern)	  'turn on counter
-          IF (RO_cntr=nr_of_RO_steps-1) THEN
+          IF (final_RO=1) THEN
             P2_DAC(DAC_MODULE, Ex_laser_DAC_channel, 3277*Ex_final_RO_voltage+32768) ' turn on Ex laser
             P2_DAC(DAC_MODULE, A_laser_DAC_channel, 3277*A_final_RO_voltage+32768) ' turn on A laser
             RO_duration=final_RO_duration
@@ -556,59 +548,64 @@ EVENT:
             counts = P2_CNT_READ(CTR_MODULE, counter_channel) - old_counts
             old_counts = counts
             
-            i = sweep_length*RO_cntr+sweep_index+1
-            IF (P2_CNT_READ(CTR_MODULE, counter_channel) > 0) THEN
-              
-              IF (RO_cntr=nr_of_RO_steps-1) THEN
-                DATA_27[sweep_index+1] = DATA_27[sweep_index+1] + 1
-                IF (weak_meas_cnt=1) THEN
-                  DATA_29[sweep_index+1] = DATA_29[sweep_index+1] + 1
-                  DATA_33[sweep_index+1]=DATA_33[sweep_index+1]+1
-                ELSE 
-                  DATA_31[sweep_index+1]=DATA_31[sweep_index+1]+1                  
-                ENDIF
-                
-              ELSE  
-                DATA_28[sweep_index+1] = DATA_28[sweep_index+1] + 1
-                weak_meas_cnt=1
-              ENDIF
-              'DATA_29[i] = DATA_29[i]+1  
-            ELSE
-              IF (RO_cntr=nr_of_RO_steps-1) THEN
-                IF (weak_meas_cnt=1) THEN  
-                  DATA_32[sweep_index+1]=DATA_32[sweep_index+1]+1 
-                ELSE
-                  DATA_30[sweep_index+1]=DATA_30[sweep_index+1]+1 
-                ENDIF
-                
+            PAR_61=RO_cntr
+            IF (RO_cntr=0) THEN
+              IF (P2_CNT_READ(CTR_MODULE, counter_channel) > 0) THEN
+                inc(PAR_79)
+                P2_DIGOUT(DIO_MODULE,AWG_event_jump_DO_channel,1)  ' AWG trigger
+                CPU_SLEEP(9)               ' need >= 20ns pulse width; adwin needs >= 9 as arg, which is 9*10ns
+                P2_DIGOUT(DIO_MODULE,AWG_event_jump_DO_channel,0)
+
+                next_RO_is_final=1
+                DATA_30[sweep_index+1] = DATA_30[sweep_index+1] + 1
+                           
               ENDIF
               
+              
+                                    
             ENDIF
-            inc(RO_cntr)
-
-
+            IF (RO_cntr=1) THEN
+              IF(final_RO=1)THEN
+                IF (P2_CNT_READ(CTR_MODULE, counter_channel) > 0) THEN
+                  DATA_35[sweep_index+1] = DATA_35[sweep_index+1] + 1
+                ENDIF                
+              ELSE
+                IF (P2_CNT_READ(CTR_MODULE, counter_channel) > 0) THEN
+                  DATA_31[sweep_index+1] = DATA_31[sweep_index+1] + 1
+                  second_RO_click=1
+                ELSE
+                  DATA_32[sweep_index+1] = DATA_32[sweep_index+1] + 1  
+                ENDIF
+                next_RO_is_final=1
+              ENDIF
+            ENDIF
+            IF(RO_cntr=2)THEN
+              INC(PAR_62)
+              IF (P2_CNT_READ(CTR_MODULE, counter_channel) > 0) THEN               
+                IF (second_RO_click=1)THEN
+                  DATA_36[sweep_index+1] = DATA_36[sweep_index+1] + 1
+                ELSE
+                  DATA_37[sweep_index+1] = DATA_37[sweep_index+1] + 1
+                ENDIF
+              ENDIF
+              next_RO_is_final=1
+            ENDIF
             
-            
+            mode=6  
+            send_AWG_start=0
+            inc(RO_cntr)                      
             wait_after_pulse = wait_after_RO_pulse_duration
-            P2_CNT_ENABLE(CTR_MODULE, 0)
-
-            IF (RO_cntr=nr_of_RO_steps) THEN
+            P2_CNT_ENABLE(CTR_MODULE, 0)            
+            timer = -1
+            IF (final_RO=1) THEN
               mode = 1
-              timer = -1
-              weak_meas_cnt=0
+              send_AWG_start=1
               repetition_counter = repetition_counter + 1
               Par_73 = repetition_counter
-              IF (do_incr_RO_steps =1)THEN
-                nr_of_RO_steps = nr_of_RO_steps + incr_RO_steps
-              ENDIF
               
               INC(sweep_index)
               IF (sweep_index = sweep_length) THEN
-                sweep_index = 0
-                IF (do_incr_RO_steps =1)THEN
-                  nr_of_RO_steps=1
-                ENDIF
-               
+                sweep_index = 0              
               ENDIF
             
               IF (repetition_counter = RO_repetitions) THEN
@@ -616,18 +613,21 @@ EVENT:
               ENDIF
               first = 1
               RO_cntr=0
-            ELSE
-              mode = 5
-              timer=-1
+              second_RO_click =0
+              final_RO=0
+              next_RO_is_final=0
+            ENDIF
+            IF(next_RO_is_final=1)THEN
+              final_RO=1
+              mode=5
+              wait_after_pulse = wait_before_final_SP
             ENDIF
             
           ELSE
             counts = P2_CNT_READ(CTR_MODULE, counter_channel)
             old_counts = counts
           ENDIF
-        ENDIF
-        
-      
+        ENDIF      
     ENDSELECT
     
     timer = timer + 1

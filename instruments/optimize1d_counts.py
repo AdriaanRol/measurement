@@ -222,9 +222,8 @@ class optimize1d_counts(CyclopeanInstrument):
         print '(%s) run optimize...' % self._dimension
 	    
         dimname=self._dimension
-
         self._opt_pos = getattr(self._mos, 'get_'+self._dimension)()
-
+    
         l = self._scan_length
         self._x0, self._x1 = self._opt_pos - l/2, self._opt_pos + l/2
         self._linescan.set_dimensions([self._dimension])

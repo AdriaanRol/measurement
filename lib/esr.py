@@ -42,7 +42,7 @@ class ESRMeasurement(Measurement):
             self.MW_power = self.mw_power_lt2
             name='ESR_SIL9_LT2'
             self.start_f = 2.815 #   2.853 #2.85 #  #in GHz
-            self.stop_f  = 2.835#   2.864 #2.905 #   #in GHz
+            self.stop_f  = 2.845#   2.864 #2.905 #   #in GHz
             self.steps   =   41
         
 #generate list of frequencies

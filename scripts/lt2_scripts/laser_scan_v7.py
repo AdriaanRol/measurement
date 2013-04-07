@@ -7,11 +7,11 @@ import numpy as np
 
 
 #measurment name
-mname='laserscan_SIL10'
+mname='laserscan_SIL9'
 
 # measurement parameters
-start_v = 1.# 2.5#
-stop_v = -0.5# 1.0#-.2#
+start_v = 0.5# 2.5#
+stop_v = -1.# 1.0#-.2#
 steps = 3001
 pxtime = 15  #ms
 green_during = 0.1e-6
@@ -21,9 +21,15 @@ f_offset = 470400 # GHz
 mw = True
 amp = True
 mw_power = -10
-mw_frq = 2.82863e9  #2.8286e9 #Lt2   2.8241e9  #LT1
+mw_frq = 2.829027e9  #2.8286e9 #Lt2   2.8241e9  #LT1
 LT2 = True
 reps = 1
+
+#Gate:
+gate_voltage_during=0
+gate_voltage_after=0
+
+mname=mname+'_gateduring_'+str(gate_voltage_during)
 
 gate_phase_locking=0 #has no effect if measuring LT1 #SO LEAVE IT AT 1
 good_phase=-1
@@ -139,7 +145,7 @@ def laserscan(dataname=mname,
 
     ins_newfocus.set_power(red_during)
     ins_green.set_power(green_during)
-    
+    ins_adwin.set_dac_voltage(('gate',gate_voltage_during))
     #make sure microwaves are off 
     ins_mw.set_status('off')
 
@@ -252,6 +258,7 @@ def laserscan(dataname=mname,
         ins_adwin.set_linescan_var(set_phase_locking_on=0,
            set_gate_good_phase=0)
     ins_newfocus.set_power(0)
+    ins_adwin.set_dac_voltage(('gate',gate_voltage_after))
     ins_green.set_power(green_before)
 
 

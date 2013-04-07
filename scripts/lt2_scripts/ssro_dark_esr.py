@@ -13,17 +13,17 @@ from measurement.lib.config import awgchannels_lt2 as awgcfg
 from measurement.lib.sequence import common as commonseq
 from measurement.lib.config import experiment_lt2 as exp
 
-f_mw    = 2.818E9
-f_start = 2.824E9           #start frequency in Hz
-f_stop = 2.834E9            #stop frequency in Hz
-#pi_pulse_length = exp.MBIprotocol['MBI_pulse_len']      #length of MW pi pulse
-pi_pulse_length = 1665.7
+f_mw    = exp.sil9['MW_source_freq']
+f_start = 2.8245E9           #start frequency in Hz
+f_stop = 2.8335E9            #stop frequency in Hz
+pi_pulse_length = exp.MBIprotocol['MBI_pulse_len']      #length of MW pi pulse
+#pi_pulse_length = 2200
 mwpower_lt1 = -10        #in dBm
 mwpower_lt2 = 20            #in dBm
 nr_of_datapoints = 101       #max nr_of_datapoints*repetitions_per_datapoint should be < 20000
 repetitions_per_datapoint = 1000 
-#amplitude_ssbmod = exp.MBIprotocol['MBI_pulse_amp']
-amplitude_ssbmod = 0.05
+amplitude_ssbmod = exp.MBIprotocol['MBI_pulse_amp']
+#amplitude_ssbmod = 0.015
 mwfreq = np.linspace(f_start,f_stop,nr_of_datapoints)
 lt1 = False
 
@@ -176,6 +176,11 @@ def generate_sequence(fstart = f_start-f_mw, fstop = f_stop-f_mw, steps = nr_of_
                 start = 0, duration = 100, amplitude = 0)
         
         seq.add_pulse(name = 'mwburst', channel = chan_mwI, 
+            element = ename, start = 0, duration = pipulse,
+            frequency = f_mod, shape = 'cosine', 
+            amplitude = amplitude_ssbmod, link_start_to = 'end',
+            start_reference = 'wait')
+        seq.add_pulse(name = 'mwburstQ', channel = chan_mwQ, 
             element = ename, start = 0, duration = pipulse,
             frequency = f_mod, shape = 'sine', 
             amplitude = amplitude_ssbmod, link_start_to = 'end',

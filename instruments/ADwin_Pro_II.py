@@ -122,7 +122,6 @@ class ADwin_Pro_II(Instrument): #1
 
     def Set_Data_Long(self, data=numpy.array, index=numpy.int32, 
             start=numpy.int32, count=numpy.int32):
-        
         ErrorMsg=c_int32(0)
         success = self._adwin32.e_Set_Data(data.ctypes.data,2,index,start,
                 count, self._address,ctypes.byref(ErrorMsg))

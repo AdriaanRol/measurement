@@ -24,7 +24,7 @@ class SpinPumping(Measurement):
         self.par['send_AWG_start'] =               1
         self.par['wait_for_AWG_done'] =            0
         self.par['green_repump_duration'] =        10
-        self.par['CR_duration'] =                  100 #NOTE set to 60 for Ey,A1
+        self.par['CR_duration'] =                  150 #NOTE set to 60 for Ey,A1
         self.par['SP_duration'] =                  250 # NOTE set to 50 for Ey, A1
         self.par['SP_filter_duration'] =           0
         self.par['sequence_wait_time'] =           int(np.ceil(1e-3)+2)
@@ -37,13 +37,13 @@ class SpinPumping(Measurement):
         self.par['RO_duration'] =                  35
 
         self.par['cycle_duration'] =               300
-        self.par['CR_probe'] =                     100
+        self.par['CR_probe'] =                     150
 
         self.par['green_repump_amplitude'] =       200e-6
         self.par['green_off_amplitude'] =          0e-6
         self.par['Ex_CR_amplitude'] =              15e-9 #OK
         self.par['A_CR_amplitude'] =               200e-9 # NOTE set to 15e-9 for Ey,A1
-        self.par['Ex_SP_amplitude'] =              5e-9 
+        self.par['Ex_SP_amplitude'] =              10e-9 
         self.par['A_SP_amplitude'] =               0e-9 #OK: PREPARE IN MS = 0
         self.par['Ex_RO_amplitude'] =              5e-9 #OK: READOUT MS = 0
         self.par['A_RO_amplitude'] =               0e-9
@@ -90,12 +90,12 @@ class SpinPumping(Measurement):
         self.ins_E_aom.set_power(0.)
         self.ins_A_aom.set_power(0.)
 
-    def start_measurement(self,generate_sequence,lt1=False,ssro_dict={}):
+    def start_measurement(self,generate_sequence,sp_amp,lt1=False,ssro_dict={}):
        
         self.counters.set_is_running(False)
         
         #Generate sequence and send to AWG
-        sequence = generate_sequence(self.par['sweep_par'])
+        sequence = generate_sequence(self.par['sweep_par'], sp_amp)
 
         #sequence["max_seq_time"]=100000
         self.par['RO_repetitions'] =               int(len(self.par['sweep_par'])*self.par['reps_per_datapoint'])
@@ -272,7 +272,7 @@ class SpinPumping(Measurement):
         self.ins_A_aom.set_power(0)
 
 
-def SP_seq(sweep_param, SP_duration = 40000, do_program=True):
+def SP_seq(sweep_param, sp_amp, do_program=True):
     '''
     This sequence consists of single pulse on the Newfocus AW|G channel
                 }
@@ -287,7 +287,7 @@ def SP_seq(sweep_param, SP_duration = 40000, do_program=True):
       
     chan_alaser = 'AOM_Newfocus'
     awgcfg.configure_sequence(seq,'hydraharp', 
-            optical_rabi = {chan_alaser: { 'high' :  sweep_param[0]}})
+            optical_rabi = {chan_alaser: { 'high' :  sp_amp}})
     nr_of_datapoints = len(sweep_param)
     measure_singlet=False
     print sweep_param
@@ -313,9 +313,9 @@ def SP_seq(sweep_param, SP_duration = 40000, do_program=True):
                 start = 0, duration = 500, amplitude=0, )
         
         seq.add_pulse('spinpumping', chan_alaser, el_name, 
-                start = 0, duration = SP_duration,
+                start = 0, duration = sweep_param[i],
                 start_reference='initialdelay',
-                link_start_to='end', amplitude=sweep_param[i])
+                link_start_to='end', amplitude=1)
         seq.add_pulse('singletdelay', chan_alaser, el_name,
                 start = 0, duration = 1000, start_reference='spinpumping',
                 link_start_to='end', amplitude=0, )
@@ -323,7 +323,7 @@ def SP_seq(sweep_param, SP_duration = 40000, do_program=True):
 
             seq.add_pulse('singletpumping', chan_alaser, el_name,
                     start = 0, duration = 10000, start_reference='singletdelay',
-                    link_start_to='end', amplitude=sweep_param[i])
+                    link_start_to='end', amplitude=1)
             seq.add_pulse('finaldelay', chan_alaser, el_name,
                     start = 0, duration = 500, start_reference='singletpumping',
                     link_start_to='end', amplitude=0, )
@@ -345,31 +345,40 @@ def SP_seq(sweep_param, SP_duration = 40000, do_program=True):
 
 
 
-def main(lt1=False, name='spinpumping_1500nW', ssro_dict={}):
+def main(lt1=False, name='spinpumping_FB',sp_power=8000e-9, ssro_dict={}):
+    name=name+'_'+str(sp_power)
+
     m = SpinPumping(name)
     m.setup(lt1)
 
     
     
-    nr_of_datapoints=1
-    sp_min_power=1500e-9
-    #sp_max_power=30e-9
-    m.ins_A_aom.set_cur_controller('AWG')
-    sp_min_amp=m.ins_A_aom.power_to_voltage(sp_min_power)
-    #sp_max_amp=m.ins_A_aom.power_to_voltage(sp_max_power)
-    m.ins_A_aom.set_cur_controller('ADWIN')
-    #sp_amp=np.linspace(sp_min_amp,sp_max_amp,nr_of_datapoints)
-    sp_amp=np.array([sp_min_amp])
-    m.par['sweep_par_name'] = 'SP_power'
-    m.par['fe_max'] = sp_min_power
-    m.par['fe_min'] = sp_min_power
-    m.par['sweep_par'] = sp_amp
-    m.par['sweep_length'] = len(sp_amp)
-    #m.par['RO_duration'] = 26
-    m.par['Ex_RO_amplitude'] = 12e-9
-    m.par['reps_per_datapoint'] = 100000
+    nr_of_datapoints=5
+    sp_min_duration=1000 #ns
+    sp_max_duration=5000 #ns
+    
 
-    m.start_measurement(SP_seq,lt1=lt1,ssro_dict=ssro_dict)
+    
+    m.ins_A_aom.set_cur_controller('AWG')
+    sp_amp=m.ins_A_aom.power_to_voltage(sp_power)
+    m.ins_A_aom.set_cur_controller('ADWIN')
+    
+    sp_duration=np.linspace(sp_min_duration,sp_max_duration,nr_of_datapoints)
+
+    m.par['sweep_par_name'] = 'SP_duration'
+    m.par['fe_max'] = sp_min_duration
+    m.par['fe_min'] = sp_max_duration
+    m.par['sweep_par'] = sp_duration
+    m.par['sweep_length'] = len(sp_duration)
+    
+    
+    m.par['RO_duration'] = 40
+    m.par['Ex_RO_amplitude'] = 15e-9
+    
+    
+    m.par['reps_per_datapoint'] = 10000
+
+    m.start_measurement(SP_seq,sp_amp,lt1=lt1,ssro_dict=ssro_dict)
 
 if __name__ == '__main__':
     main(lt1=False)

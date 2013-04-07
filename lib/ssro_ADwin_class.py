@@ -11,13 +11,8 @@ import inspect
 import time
 import msvcrt
 from measurement import Measurement
-import shutil
-<<<<<<< HEAD
 from analysis.lib.ssro import ssro_adwin as ssro_analyse
 from config import experiment_lt2 as expdict
-=======
-
->>>>>>> 54c8270ec6ded7035f530c75005cf8bbd74414e7
 
 
 lt1=False
@@ -36,16 +31,10 @@ class ssroADwinMeasurement(Measurement):
     ##
         self.max_repetitions = 20000
         self.max_SP_bins = 500
-<<<<<<< HEAD
         self.max_SSRO_dim = 3500000
         self.d = expdict.ssroprotocol
     def setup(self,lt1,phase_lock):
-=======
-        self.max_SSRO_dim = 1000000
         
-    def setup(self,lt1):
->>>>>>> 54c8270ec6ded7035f530c75005cf8bbd74414e7
-
         if lt1:
             self.ins_green_aom=qt.instruments['GreenAOM_lt1']
             self.ins_E_aom=qt.instruments['MatisseAOM_lt1']
@@ -62,25 +51,17 @@ class ssroADwinMeasurement(Measurement):
             self.counters=qt.instruments['counters']
             self.physical_adwin=qt.instruments['physical_adwin']
             self.ctr_channel=1
-<<<<<<< HEAD
         if phase_lock:
             self.set_phase_locking_on = 1
             self.set_gate_good_phase = -1
         else:
             self.set_phase_locking_on = 0
             self.set_gate_good_phase = -1
-=======
-
-        self.set_phase_locking_on = 1
-        self.set_gate_good_phase = -1
-
->>>>>>> 54c8270ec6ded7035f530c75005cf8bbd74414e7
         if lt1:
             self.lt1 = True
         else:
             self.lt1 = False
 
-<<<<<<< HEAD
         self.par = {}
         self.par['counter_channel'] =              self.ctr_channel
         self.par['green_laser_DAC_channel'] =      self.adwin.get_dac_channels()['green_aom']
@@ -106,41 +87,11 @@ class ssroADwinMeasurement(Measurement):
         self.par['green_off_amplitude'] =          self.d['green_off_amplitude']
         self.par['Ex_CR_amplitude'] =              self.d['Ex_CR_amplitude']
         self.par['A_CR_amplitude'] =               self.d['A_CR_amplitude']
-        self.par['Ex_SP_amplitude'] =              0e-9
+        self.par['Ex_SP_amplitude'] =              self.d['Ex_SP_amplitude']
         self.par['A_SP_amplitude'] =               self.d['A_SP_amplitude']
         self.par['Ex_RO_amplitude'] =              self.d['Ex_RO_amplitude']
-        self.par['A_RO_amplitude'] =               0e-9
-=======
-        par = {}
-        par['counter_channel'] =              self.ctr_channel
-        par['green_laser_DAC_channel'] =      self.adwin.get_dac_channels()['green_aom']
-        par['Ex_laser_DAC_channel'] =         self.adwin.get_dac_channels()['matisse_aom']
-        par['A_laser_DAC_channel'] =          self.adwin.get_dac_channels()['newfocus_aom']
-        par['AWG_start_DO_channel'] =         1
-        par['AWG_done_DI_channel'] =          8
-        par['send_AWG_start'] =               0
-        par['wait_for_AWG_done'] =            0
-        par['green_repump_duration'] =        10
-        par['CR_duration'] =                  60
-        par['SP_duration'] =                  250
-        par['SP_filter_duration'] =           0
-        par['sequence_wait_time'] =           1
-        par['wait_after_pulse_duration'] =    3
-        par['CR_preselect'] =                 15
-        par['SSRO_repetitions'] =             20000
-        par['SSRO_duration'] =                50 #NOTE this times reps must not exceed 1E6
-        par['SSRO_stop_after_first_photon'] = 0
-        par['cycle_duration'] =               300
+        self.par['A_RO_amplitude'] =               self.d['A_RO_amplitude']
 
-        par['green_repump_amplitude'] =       200e-6
-        par['green_off_amplitude'] =          0e-6
-        par['Ex_CR_amplitude'] =              20e-9
-        par['A_CR_amplitude'] =               15e-9
-        par['Ex_SP_amplitude'] =              0e-9
-        par['A_SP_amplitude'] =               15e-9
-        par['Ex_RO_amplitude'] =              11e-9 #
-        par['A_RO_amplitude'] =               0e-9
->>>>>>> 54c8270ec6ded7035f530c75005cf8bbd74414e7
 
         self.ins_green_aom.set_power(0.)
         self.ins_E_aom.set_power(0.)
@@ -152,7 +103,6 @@ class ssroADwinMeasurement(Measurement):
         self.ins_E_aom.set_power(0.)
         self.ins_A_aom.set_power(0.)
 
-<<<<<<< HEAD
         self.par['green_repump_voltage'] = self.ins_green_aom.power_to_voltage(self.par['green_repump_amplitude'])
         self.par['green_off_voltage'] = self.ins_green_aom.power_to_voltage(self.par['green_off_amplitude'])
         self.par['Ex_CR_voltage'] = self.ins_E_aom.power_to_voltage(self.par['Ex_CR_amplitude'])
@@ -182,38 +132,6 @@ class ssroADwinMeasurement(Measurement):
 
         #print 'SP E amplitude: %s'%self.par['Ex_SP_voltage']
         #print 'SP A amplitude: %s'%self.par['A_SP_voltage']
-=======
-        par['green_repump_voltage'] = self.ins_green_aom.power_to_voltage(par['green_repump_amplitude'])
-        par['green_off_voltage'] = self.ins_green_aom.power_to_voltage(par['green_off_amplitude'])
-        par['Ex_CR_voltage'] = self.ins_E_aom.power_to_voltage(par['Ex_CR_amplitude'])
-        par['A_CR_voltage'] = self.ins_A_aom.power_to_voltage(par['A_CR_amplitude'])
-        par['Ex_SP_voltage'] = self.ins_E_aom.power_to_voltage(par['Ex_SP_amplitude'])
-        par['A_SP_voltage'] = self.ins_A_aom.power_to_voltage(par['A_SP_amplitude'])
-        par['Ex_RO_voltage'] = self.ins_E_aom.power_to_voltage(par['Ex_RO_amplitude'])
-        par['A_RO_voltage'] = self.ins_A_aom.power_to_voltage(par['A_RO_amplitude'])
-        return par
-
-    def ssro(self,name, data, par):
-        
-        par['green_repump_voltage'] = self.ins_green_aom.power_to_voltage(par['green_repump_amplitude'])
-        par['green_off_voltage'] = 0.0
-        par['Ex_CR_voltage'] = self.ins_E_aom.power_to_voltage(par['Ex_CR_amplitude'])
-        par['A_CR_voltage'] = self.ins_A_aom.power_to_voltage(par['A_CR_amplitude'])
-        par['Ex_SP_voltage'] = self.ins_E_aom.power_to_voltage(par['Ex_SP_amplitude'])
-        par['A_SP_voltage'] = self.ins_A_aom.power_to_voltage(par['A_SP_amplitude'])
-        par['Ex_RO_voltage'] = self.ins_E_aom.power_to_voltage(par['Ex_RO_amplitude'])
-        par['A_RO_voltage'] = self.ins_A_aom.power_to_voltage(par['A_RO_amplitude'])
-
-
-        if (par['SSRO_repetitions'] > self.max_repetitions) or \
-            (par['SP_duration'] > self.max_SP_bins) or \
-            (par['SSRO_repetitions'] * par['SSRO_duration'] > self.max_SSRO_dim):
-                print ('Error: maximum dimensions exceeded')
-                return(-1)
-
-        #print 'SP E amplitude: %s'%par['Ex_SP_voltage']
-        #print 'SP A amplitude: %s'%par['A_SP_voltage']
->>>>>>> 54c8270ec6ded7035f530c75005cf8bbd74414e7
 
         if not(self.lt1):
             self.adwin.set_spincontrol_var(set_phase_locking_on = self.set_phase_locking_on)
@@ -221,7 +139,6 @@ class ssroADwinMeasurement(Measurement):
 
         self.adwin.start_singleshot(
                 load=True, stop_processes=['counter'],
-<<<<<<< HEAD
                 counter_channel = self.par['counter_channel'],
                 green_laser_DAC_channel = self.par['green_laser_DAC_channel'],
                 Ex_laser_DAC_channel = self.par['Ex_laser_DAC_channel'],
@@ -249,35 +166,7 @@ class ssroADwinMeasurement(Measurement):
                 A_SP_voltage = self.par['A_SP_voltage'],
                 Ex_RO_voltage = self.par['Ex_RO_voltage'],
                 A_RO_voltage = self.par['A_RO_voltage'])
-=======
-                counter_channel = par['counter_channel'],
-                green_laser_DAC_channel = par['green_laser_DAC_channel'],
-                Ex_laser_DAC_channel = par['Ex_laser_DAC_channel'],
-                A_laser_DAC_channel = par['A_laser_DAC_channel'],
-                AWG_start_DO_channel = par['AWG_start_DO_channel'],
-                AWG_done_DI_channel = par['AWG_done_DI_channel'],
-                send_AWG_start = par['send_AWG_start'],
-                wait_for_AWG_done = par['wait_for_AWG_done'],
-                green_repump_duration = par['green_repump_duration'],
-                CR_duration = par['CR_duration'],
-                SP_duration = par['SP_duration'],
-                SP_filter_duration = par['SP_filter_duration'],
-                sequence_wait_time = par['sequence_wait_time'],
-                wait_after_pulse_duration = par['wait_after_pulse_duration'],
-                CR_preselect = par['CR_preselect'],
-                SSRO_repetitions = par['SSRO_repetitions'],
-                SSRO_duration = par['SSRO_duration'],
-                SSRO_stop_after_first_photon = par['SSRO_stop_after_first_photon'],
-                cycle_duration = par['cycle_duration'],
-                green_repump_voltage = par['green_repump_voltage'],
-                green_off_voltage = par['green_off_voltage'],
-                Ex_CR_voltage = par['Ex_CR_voltage'],
-                A_CR_voltage = par['A_CR_voltage'],
-                Ex_SP_voltage = par['Ex_SP_voltage'],
-                A_SP_voltage = par['A_SP_voltage'],
-                Ex_RO_voltage = par['Ex_RO_voltage'],
-                A_RO_voltage = par['A_RO_voltage'])
->>>>>>> 54c8270ec6ded7035f530c75005cf8bbd74414e7
+
 
         qt.msleep(1)
 
@@ -287,18 +176,14 @@ class ssroADwinMeasurement(Measurement):
             CR_counts = self.physical_adwin.Get_Par(70) - CR_counts
             cts = self.physical_adwin.Get_Par(26)
             trh = self.physical_adwin.Get_Par(25)
-<<<<<<< HEAD
             print('completed %s / %s readout repetitions, %s CR counts/s'%(reps_completed,self.par['SSRO_repetitions'], CR_counts))
-=======
-            print('completed %s / %s readout repetitions, %s CR counts/s'%(reps_completed,par['SSRO_repetitions'], CR_counts))
->>>>>>> 54c8270ec6ded7035f530c75005cf8bbd74414e7
+
             print('threshold: %s cts, last CR check: %s cts'%(trh,cts))
             if (msvcrt.kbhit() and (msvcrt.getch() == 'q')): break
             qt.msleep(1)
         self.physical_adwin.Stop_Process(9)
         
         reps_completed      = self.physical_adwin.Get_Par(73)
-<<<<<<< HEAD
         print('completed %s / %s readout repetitions'%(reps_completed,self.par['SSRO_repetitions']))
         if not(self.lt1):
             self.adwin.set_spincontrol_var(set_phase_locking_on = 0)
@@ -316,23 +201,6 @@ class ssroADwinMeasurement(Measurement):
         repetitions = np.arange(reps_completed)
         sp_time = np.arange(self.par['SP_duration'])*self.par['cycle_duration']*3.333
         ssro_time = np.arange(self.par['SSRO_duration'])*self.par['cycle_duration']*3.333
-=======
-        print('completed %s / %s readout repetitions'%(reps_completed,par['SSRO_repetitions']))
-
-        par_long   = self.physical_adwin.Get_Data_Long(20,1,25)
-        par_float  = self.physical_adwin.Get_Data_Float(20,1,10)
-        CR_before = self.physical_adwin.Get_Data_Long(22,1,reps_completed)
-        CR_after  = self.physical_adwin.Get_Data_Long(23,1,reps_completed)
-        SP_hist   = self.physical_adwin.Get_Data_Long(24,1,par['SP_duration'])
-        RO_data   = self.physical_adwin.Get_Data_Long(25,1,
-                        reps_completed * par['SSRO_duration'])
-        RO_data = np.reshape(RO_data,(reps_completed,par['SSRO_duration']))
-        statistics = self.physical_adwin.Get_Data_Long(26,1,10)
-
-        repetitions = np.arange(reps_completed)
-        sp_time = np.arange(par['SP_duration'])*par['cycle_duration']*3.333
-        ssro_time = np.arange(par['SSRO_duration'])*par['cycle_duration']*3.333
->>>>>>> 54c8270ec6ded7035f530c75005cf8bbd74414e7
 
         stat_str = ''
         stat_str += '# successful repetitions: %s\n'%(reps_completed)
@@ -362,7 +230,6 @@ class ssroADwinMeasurement(Measurement):
         data.save_dataset(name='Spin_RO', do_plot=False, 
             data = savdat, idx_increment = False)
         savdat={}
-<<<<<<< HEAD
         savdat['par_long']=self.par_long
         savdat['par_float']=self.par_float
         data.save_dataset(name='parameters', do_plot=False, 
@@ -373,24 +240,12 @@ class ssroADwinMeasurement(Measurement):
         return 
         
     def ssro_vs_Ex_amplitude(self,name, data, min_power, max_power, steps, reps_per_point, do_ms0 = True, do_ms1=True):
-=======
-        savdat['par_long']=par_long
-        savdat['par_float']=par_float
-        data.save_dataset(name='parameters', do_plot=False, 
-            data = savdat, idx_increment = False)
-        data.save_dataset(name='parameters_dict', do_plot=False, 
-            data = par, idx_increment = True)
-       
-        return 
-        
-    def ssro_vs_Ex_amplitude(self,name, data, par, min_power, max_power, steps, reps_per_point, do_ms0 = True, do_ms1=True):
->>>>>>> 54c8270ec6ded7035f530c75005cf8bbd74414e7
+
 
         for i in np.linspace(min_power,max_power,steps):
             print '==============================='
             print 'Ex amplitude sweep: amplitude = ',(i)*1e-9
             print '==============================='
-<<<<<<< HEAD
             self.par['SSRO_repetitions'] = reps_per_point
             self.par['Ex_RO_amplitude'] = (i)*1e-9
             self.par['A_RO_amplitude'] = 0
@@ -399,49 +254,27 @@ class ssroADwinMeasurement(Measurement):
                     A_SP_init_amplitude = 5e-9, Ex_SP_init_amplitude = 5e-9)
 
     def ssro_vs_A_amplitude(self,name, data, min_power, max_power, steps, reps_per_point):
-=======
-            par['SSRO_repetitions'] = reps_per_point
-            par['Ex_RO_amplitude'] = (i)*1e-9
-            par['A_RO_amplitude'] = 0
-
-            self.ssro_init(name, data, par, do_ms0 = do_ms0, do_ms1 = do_ms1,
-                    A_SP_init_amplitude = 5e-9, Ex_SP_init_amplitude = 5e-9)
-
-    def ssro_vs_A_amplitude(self,name, data, par, min_power, max_power, steps, reps_per_point):
->>>>>>> 54c8270ec6ded7035f530c75005cf8bbd74414e7
 
         for i in linspace(min_power,max_power,steps):
             print '==============================='
             print 'A amplitude sweep: amplitude = ',(i)*1e-9
             print '==============================='
-<<<<<<< HEAD
             self.par['SSRO_repetitions'] = reps_per_point
             self.par['A_RO_amplitude'] = (i)*1e-9
             self.par['Ex_RO_amplitude'] = 0e-9
            
             self.ssro_init(name, data,  do_ms0 = False, do_ms1 = True, 
-            Ex_SP_init_amplitude    = 5e-9)
+            Ex_SP_init_amplitude    = 12e-9)
 
 
     def ssro_vs_SP_amplitude(self,name, data,  min_power, max_power, steps, reps_per_point):
-=======
-            par['SSRO_repetitions'] = reps_per_point
-            par['A_RO_amplitude'] = (i)*1e-9
-            par['Ex_RO_amplitude'] = 0e-9
-           
-            self.ssro_init(name, data, par, do_ms0 = False, do_ms1 = True, 
-            Ex_SP_init_amplitude    = 5e-9)
 
 
-    def ssro_vs_SP_amplitude(self,name, data, par, min_power, max_power, steps, reps_per_point):
->>>>>>> 54c8270ec6ded7035f530c75005cf8bbd74414e7
-
-        for i in linspace(min_power,max_power,steps):
+        for i in np.linspace(min_power,max_power,steps):
             print '==============================='
             print 'SP amplitude sweep: amplitude = ',(i)*1e-9
             print '==============================='
             SP_amplitude = (i)*1e-9 
-<<<<<<< HEAD
             self.par['SSRO_repetitions'] = reps_per_point
             self.par['A_RO_amplitude'] = 0
             self.par['Ex_RO_amplitude'] = 5e-9
@@ -457,30 +290,13 @@ class ssroADwinMeasurement(Measurement):
             self.ssro(name,data)
 
     def ssro_vs_SP_duration(self,name, data,  sp_power, max_duration, stepsize, reps_per_point):
-=======
-            par['SSRO_repetitions'] = reps_per_point
-            par['A_RO_amplitude'] = 0
-            par['Ex_RO_amplitude'] = 5e-9
-            
-            
-            par['SP_duration'] = 50
-            par['A_SP_amplitude']  = SP_amplitude
-            par['Ex_SP_amplitude'] = 0.
-            self.ssro(name,data,par)
-            par['SP_duration'] = 50
-            par['A_SP_amplitude']  = 0
-            par['Ex_SP_amplitude'] = 5e-9
-            self.ssro(name,data,par)
 
-    def ssro_vs_SP_duration(self,name, data, par, sp_power, max_duration, stepsize, reps_per_point):
->>>>>>> 54c8270ec6ded7035f530c75005cf8bbd74414e7
 
         for i in range(1,max_duration+1,stepsize):
             print '==============================='
             print 'SP duration sweep:duration [us] = ',(i)*1e-6
             print '==============================='
             SP_duration = (i) 
-<<<<<<< HEAD
             self.par['SSRO_repetitions'] = reps_per_point
             self.par['A_RO_amplitude'] = 0
             self.par['Ex_RO_amplitude'] = 5e-9
@@ -499,26 +315,7 @@ class ssroADwinMeasurement(Measurement):
 
         self.par['A_RO_amplitude'] = 0
         self.par['Ex_RO_amplitude'] = 5e-9
-=======
-            par['SSRO_repetitions'] = reps_per_point
-            par['A_RO_amplitude'] = 0
-            par['Ex_RO_amplitude'] = 5e-9
-            
-            
-            par['SP_duration'] = SP_duration
-            par['A_SP_amplitude']  = sp_power
-            par['Ex_SP_amplitude'] = 0.
-            self.ssro(name,data,par)
-            par['SP_duration'] = 250
-            par['A_SP_amplitude']  = 0
-            par['Ex_SP_amplitude'] = 5e-9
-            self.ssro(name,data,par)
 
-    def ssro_vs_SP(self,name, data, par, min_power, max_power,steps, max_duration, stepsize, reps_per_point):
-
-        par['A_RO_amplitude'] = 0
-        par['Ex_RO_amplitude'] = 5e-9
->>>>>>> 54c8270ec6ded7035f530c75005cf8bbd74414e7
         for i in range(1,max_duration+1,stepsize):
             print '==============================='
             print 'SP duration sweep:duration [us] = ',(i)*1e-6
@@ -529,7 +326,6 @@ class ssroADwinMeasurement(Measurement):
                 print 'SP amplitude sweep: amplitude = ',(j)*1e-9
                 print '==============================='
                 SP_amplitude = (j)*1e-9 
-<<<<<<< HEAD
                 self.par['SSRO_repetitions'] = reps_per_point
          
         
@@ -541,29 +337,14 @@ class ssroADwinMeasurement(Measurement):
                 self.par['A_SP_amplitude']  = 0
                 self.par['Ex_SP_amplitude'] = 5e-9
                 self.ssro(name,data)
-=======
-                par['SSRO_repetitions'] = reps_per_point
-         
-        
-                par['SP_duration'] = SP_duration
-                par['A_SP_amplitude']  = SP_amplitude
-                par['Ex_SP_amplitude'] = 0.
-                self.ssro(name,data,par)
-                par['SP_duration'] = 250
-                par['A_SP_amplitude']  = 0
-                par['Ex_SP_amplitude'] = 5e-9
-                self.ssro(name,data,par)
->>>>>>> 54c8270ec6ded7035f530c75005cf8bbd74414e7
+
                 if (msvcrt.kbhit() and (msvcrt.getch() == 'w')): return
         qt.instruments['GreenAOM'].set_power(200e-6)
         qt.instruments['optimiz0r'].optimize(cnt=1,cycles=2,int_time=50)
         qt.instruments['GreenAOM'].set_power(0)
 
-<<<<<<< HEAD
     def ssro_vs_CR_duration(self,name, data, min_CR_duration, 
-=======
-    def ssro_vs_CR_duration(self,name, data, par, min_CR_duration, 
->>>>>>> 54c8270ec6ded7035f530c75005cf8bbd74414e7
+
             max_CR_duration, steps, reps_per_point):
 
         for CR_duration in linspace(min_CR_duration,max_CR_duration,steps):
@@ -574,7 +355,6 @@ class ssroADwinMeasurement(Measurement):
             print '================================='
             print 'CR duration sweep: duration = ', CR_duration,' us'
             print '================================='
-<<<<<<< HEAD
             self.par['CR_duration'] = CR_duration
             self.par['SSRO_repetitions'] = reps_per_point
             self.par['Ex_CR_amplitude'] = 5e-9
@@ -588,21 +368,7 @@ class ssroADwinMeasurement(Measurement):
             self.ssro(name,data)
 
     def ssro_vs_CR_power(self,name, data,  min_CR_power, 
-=======
-            par['CR_duration'] = CR_duration
-            par['SSRO_repetitions'] = reps_per_point
-            par['Ex_CR_amplitude'] = 5e-9
-            par['A_CR_amplitude'] = 5e-9
-            #### INITIALIZE #####
-            par['Ex_SP_amplitude'] = 0e-9
-            par['A_SP_amplitude'] = 5e-9        
-            ###### READOUT ######
-            par['A_RO_amplitude'] = 0
-            par['Ex_RO_amplitude'] = 5e-9
-            self.ssro(name,data,par)
 
-    def ssro_vs_CR_power(self,name, data, par, min_CR_power, 
->>>>>>> 54c8270ec6ded7035f530c75005cf8bbd74414e7
             max_CR_power, steps, reps_per_point):
 
         for k,CR_power in enumerate(linspace(min_CR_power,max_CR_power,steps)):
@@ -615,7 +381,6 @@ class ssroADwinMeasurement(Measurement):
             print '================================='
             print 'CR power sweep: power = ', CR_power,' W'
             print '================================='
-<<<<<<< HEAD
             self.par['CR_duration'] = 30
             self.par['SSRO_repetitions'] = reps_per_point
             self.par['Ex_CR_amplitude'] = CR_power
@@ -632,24 +397,7 @@ class ssroADwinMeasurement(Measurement):
             self.ssro(name,data)
 
     def ssro_vs_Ex_CR_power(self,name, data,  min_Ex_CR_power, 
-=======
-            par['CR_duration'] = 30
-            par['SSRO_repetitions'] = reps_per_point
-            par['Ex_CR_amplitude'] = CR_power
-            par['A_CR_amplitude'] = 0#CR_power
 
-
-            #### INITIALIZE #####
-            par['Ex_SP_amplitude'] = 0e-9
-            par['A_SP_amplitude'] = 15e-9
-            par['SP_duration'] = 2
-            ###### READOUT ######
-            par['A_RO_amplitude'] = 0
-            par['Ex_RO_amplitude'] = 5e-9
-            self.ssro(name,data,par)
-
-    def ssro_vs_Ex_CR_power(self,name, data, par, min_Ex_CR_power, 
->>>>>>> 54c8270ec6ded7035f530c75005cf8bbd74414e7
             max_Ex_CR_power, steps, reps_per_point):
 
         for k,CR_power in enumerate(linspace(min_Ex_CR_power,max_Ex_CR_power,steps)):
@@ -662,7 +410,6 @@ class ssroADwinMeasurement(Measurement):
             print '================================='
             print 'CR power sweep: power = ', CR_power,' W'
             print '================================='
-<<<<<<< HEAD
             self.par['CR_duration'] = 30
             self.par['SSRO_repetitions'] = reps_per_point
             self.par['Ex_CR_amplitude'] = CR_power
@@ -697,78 +444,29 @@ class ssroADwinMeasurement(Measurement):
             self.par['do_ms0'] = 0
             self.par['do_ms1'] = 1
             self.ssro(name,data)
-=======
-            par['CR_duration'] = 30
-            par['SSRO_repetitions'] = reps_per_point
-            par['Ex_CR_amplitude'] = CR_power
-            par['A_CR_amplitude'] = 0e-9
-
-
-            #### INITIALIZE #####
-            par['Ex_SP_amplitude'] = 0e-9
-            par['A_SP_amplitude'] = 15e-9
-            par['SP_duration'] = 2
-            ###### READOUT ######
-            par['A_RO_amplitude'] = 0
-            par['Ex_RO_amplitude'] = 5e-9
-            self.ssro(name,data,par)
-
-
-
-    def ssro_init(self,name, data, par, do_ms0 = True, do_ms1 = True, 
-            A_SP_init_amplitude     = 5e-9,
-            Ex_SP_init_amplitude    = 5e-9):
-        if do_ms0:
-            par['A_SP_amplitude']  = A_SP_init_amplitude
-            par['Ex_SP_amplitude'] = 0.
-            par['do_ms0'] = 1
-            par['do_ms1'] = 0
-            self.ssro(name,data,par)
-
-        if do_ms1:
-            par['A_SP_amplitude']  = 0.
-            par['Ex_SP_amplitude'] = Ex_SP_init_amplitude
-            par['do_ms0'] = 0
-            par['do_ms1'] = 1
-            self.ssro(name,data,par)
->>>>>>> 54c8270ec6ded7035f530c75005cf8bbd74414e7
 
     def end_measurement(self,):
         self.adwin.set_simple_counting()
         self.counters.set_is_running(True)
-<<<<<<< HEAD
         self.ins_green_aom.set_power(100e-6)
 
         
 
     def measure(self,m,name,sweep_power):
-=======
-        self.ins_green_aom.set_power(200e-6)
-
-        
-
-    def measure(self,m,name,par):
->>>>>>> 54c8270ec6ded7035f530c75005cf8bbd74414e7
 
         self.counters.set_is_running(False)
         #data = Measurement.Measurement(name,'ADwin_SSRO')
         #ssro_vs_SP_amplitude(name,data,par,min_power=2, max_power = 20, 
         #        steps = 10, reps_per_point = 5000)
         #ssro_vs_Ex_amplitude(name, data, par, 2, 30, 15, 10000, do_ms1=True)
-<<<<<<< HEAD
         #ssro_vs_A_amplitude(name, data, par, 1, 25, 13, 5000)
-=======
-        #self.ssro_vs_Ex_amplitude(name,m,par, 1, 11, 5, 5000)
-        #ssro_vs_A_amplitude(name, data, par, 1, 25, 13, 5000)
-        self.ssro_init(name,m,par, A_SP_init_amplitude = 15e-9, Ex_SP_init_amplitude = 15e-9)
->>>>>>> 54c8270ec6ded7035f530c75005cf8bbd74414e7
+
         #ssro_vs_SP_duration(name,data,par,sp_power=25e-9, max_duration = 10, 
         #        stepsize = 1, reps_per_point = 5000)
         #ssro_vs_CR_duration(name, data, par, 20, 100, 5, 5000)
          
         #ssro_vs_Ex_CR_power(name, data, par, 
         #        min_Ex_CR_power = 5e-9, max_Ex_CR_power = 15e-9, 
-<<<<<<< HEAD
         #        steps = 5, reps_per_point = 5000) 
 
         if sweep_power:
@@ -776,10 +474,7 @@ class ssroADwinMeasurement(Measurement):
         else:
             self.ssro_init(name,m, A_SP_init_amplitude = self.d['A_SP_amplitude'], Ex_SP_init_amplitude = self.d['Ex_SP_amplitude'])
         
-=======
-        #        steps = 5, reps_per_point = 5000)
->>>>>>> 54c8270ec6ded7035f530c75005cf8bbd74414e7
-        
+
         self.end_measurement()
 
         ### 2D Spin Pumping sweep
@@ -792,8 +487,7 @@ class ssroADwinMeasurement(Measurement):
         #    end_measurement()
         #    if (msvcrt.kbhit() and (msvcrt.getch() == 'e')): return
 
-<<<<<<< HEAD
-def ssro_ADwin_Cal(reps=20000,Ex_p='exp_dic',A_p=0,sweep_power=False,lt1=False,phase_lock=1,name=''):
+def ssro_ADwin_Cal(reps=20000,Ex_p='exp_dic',A_p=0,sweep_power=False,lt1=False,phase_lock=1,A_SP_power='exp_dic',name=''):
     if lt1:
         name='_LT1_'+name
     else:
@@ -805,16 +499,8 @@ def ssro_ADwin_Cal(reps=20000,Ex_p='exp_dic',A_p=0,sweep_power=False,lt1=False,p
         m.par['Ex_RO_amplitude'] = m.d['Ex_RO_amplitude']
     else:    
         m.par['Ex_RO_amplitude'] = Ex_p
-    m.par['A_RO_amplitude']=A_p    
+    if A_SP_power != 'exp_dic':
+        m.par['A_SP_amplitude']=A_SP_power    
     m.measure(m,name,sweep_power)
     ssro_analyse.run_all(ssro_analyse.get_latest_data())
-=======
-def ssro_ADwin_Cal(lt1=False):
-    if lt1:
-        name='SIL2_LT1'
-    else:
-        name='SIL9_LT2'
-    m = ssroADwinMeasurement(name)
-    par=m.setup(lt1)
-    m.measure(m,name,par)
->>>>>>> 54c8270ec6ded7035f530c75005cf8bbd74414e7
+
