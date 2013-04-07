@@ -6,22 +6,22 @@ import msvcrt
 
 
 #measurment name
-mname='laserscan_SIL2_paper_scans_'
+mname='laserscan_SIL9_'
 
 # measurement parameters
 start_v = 0.95#1.6#2.5# 2.5#
 stop_v = 0.7#-0.0# 1.0#-.2#
 steps = 401
 pxtime = 50  #15#ms
-green_during = 0e-6
-green_before = 50e-6
-red_during= 20e-9
+green_during = 2e-6
+green_before = 100e-6
+red_during= 5e-9
 f_offset = 470400 # GHz
-mw = True # True
+mw = False # True
 amp = True
 mw_power = -12 #-12
-mw_frq = 2.8236e9  #2.8286e9 #Lt2   2.8236e9  #LT1
-LT2 = False
+mw_frq = 2.8286e9 #Lt2   2.8236e9  #LT1
+LT2 = True
 reps = 1
 
 

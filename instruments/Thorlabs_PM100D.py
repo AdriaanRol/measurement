@@ -31,7 +31,8 @@ class Thorlabs_PM100D(Instrument):
         self._visa = visa.instrument(self._address)
 
         self.add_parameter('identification',
-            flags=Instrument.FLAG_GET)
+            flags=Instrument.FLAG_GET,
+            type=types.StringType)
 
         self.add_parameter('power',
             flags=Instrument.FLAG_GET,

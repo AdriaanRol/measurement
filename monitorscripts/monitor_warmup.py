@@ -10,7 +10,7 @@ def init():
 
     try:
         temp_calib = np.loadtxt(os.path.join(qt.config['execdir'], 
-            '..', 'user', 'calib', 'DT-670.txt'))
+            '..', 'measurement', 'calib', 'DT-670.txt'))
     except:
         print "could not get T-calibration data."
         temp_calib = None

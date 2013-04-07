@@ -60,6 +60,12 @@ config['mw_weak_meas'] = {
             'low' : -1.,
             'cable_delay': 242,
             },
+        'ADwin_trigger' : {
+            'AWG_channel' : 'ch1m2',
+            'high' : 2.,
+            'low' : 0.,
+            'cable_delay': 0,
+            },
         }
 
 config['mw'] = {

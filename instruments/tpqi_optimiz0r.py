@@ -1,4 +1,4 @@
-import os
+import os,sys
 import types
 from numpy import *
 import gobject
@@ -87,8 +87,7 @@ class tpqi_optimiz0r(Instrument):
                             'gate_factor': 2., # Volts per GHz detuned #NOTE
         }
         # override from config       
-        cfg_fn = os.path.abspath(
-                os.path.join(qt.config['ins_cfg_path'], name+'.cfg'))
+        cfg_fn = os.path.join(qt.config['ins_cfg_path'], name+'.cfg')
         if not os.path.exists(cfg_fn):
             _f = open(cfg_fn, 'w')
             _f.write('')
@@ -106,11 +105,15 @@ class tpqi_optimiz0r(Instrument):
         params_from_cfg = self.ins_cfg.get_all()
         for p in params_from_cfg:
                 self.set(p, value=self.ins_cfg.get(p))
+                if p == 'settings':
+                    self._settings=self.ins_cfg.get(p)
+                    print self.ins_cfg.get(p)
 
     def save_cfg(self):
         for param in self.get_parameter_names():
             value = self.get(param)
             self.ins_cfg[param] = value
+        self.ins_cfg['settings']=self._settings
 
     #--------------get_set        
     def do_get_is_running(self):
@@ -149,10 +152,11 @@ class tpqi_optimiz0r(Instrument):
 
     def init_freq_settings(self):
         
-        self._settings['min_setpoint_nf_lt1']=\
-                self._ins_pidnewfocus_lt1.get_setpoint()-0.2
-        self._settings['max_setpoint_nf_lt1']=\
-                self._ins_pidnewfocus_lt1.get_setpoint()+0.2
+        if self._gss('lt1_opt'):
+            self._settings['min_setpoint_nf_lt1']=\
+                    self._ins_pidnewfocus_lt1.get_setpoint()-0.2
+            self._settings['max_setpoint_nf_lt1']=\
+                    self._ins_pidnewfocus_lt1.get_setpoint()+0.2
 
         self._settings['min_setpoint_nf_lt2']=\
                 self._ins_pidnewfocus.get_setpoint()-0.2
@@ -244,7 +248,7 @@ class tpqi_optimiz0r(Instrument):
                          self._ins_adwin.get_remote_tpqi_control_var('get_cr_below_threshold_events') if self._gss('lt2_opt') else 1,
                          self._ins_adwin.get_remote_tpqi_control_var('get_noof_tpqi_starts') if self._gss('lt2_opt') else 1,
                          1]#self._ins_adwin.get_remote_tpqi_control_var('get_noof_tailcts')]
-        
+        self._raw_values[7]=self._raw_values[4]-self._raw_values[6]
         diff=self._raw_values-self._prev_raw_values
         dt, cr_checks_lt1, cr_cts_lt1, cr_failed_lt1, cr_checks_lt2,\
                 cr_cts_lt2, cr_failed_lt2, tpqi_starts, tail_cts\

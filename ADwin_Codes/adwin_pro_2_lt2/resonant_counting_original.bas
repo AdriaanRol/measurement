@@ -21,9 +21,8 @@ DIM AOM_channel AS LONG           ' DAC channel for green laser AOM
 DIM AOM_voltage AS Float           ' voltage of repump pulse
 DIM AOM_duration AS LONG          ' duration of AOM pulse in units of 10µs
 DIM probe_duration AS LONG        ' duration of probe pulse in units of 10µs
+DIM linescan_mode AS LONG         ' 1 if linescan is running
 
-DIM gate_channel AS Long           ' DAC channel for gate modulation
-DIM gate_voltage AS Float          ' voltage of the gate modulation
 DIM do_repump AS LONG
 DIM do_probe AS LONG
 DIM start, stop AS FLOAT
@@ -50,8 +49,7 @@ INIT:
   AOM_duration = PAR_27+1 '1 +1 necc for correct for loops
   probe_duration = PAR_28+1  '10
   
-  gate_channel = PAR_12
-  gate_voltage = FPar_12
+  linescan_mode = PAR_49
  
   float_avg=FPAR_11
   if (float_avg < 0) then
@@ -83,11 +81,10 @@ INIT:
   P2_CNT_ENABLE(CTR_MODULE, 1111b)
 EVENT:
 
-  gate_voltage = FPar_12
+  linescan_mode = PAR_49
   
   if (do_probe > 0) then
-    if (do_probe=probe_duration-1) then
-      P2_DAC(DAC_Module, gate_channel, 3277*gate_voltage+32768) ' turn on gate
+    if (do_probe=probe_duration) then
       P2_CNT_ENABLE(CTR_MODULE, 1111b)               'enable counters
     else
       timer1 = timer1 + 1
@@ -106,12 +103,17 @@ EVENT:
       DATA_42[timer2] = DATA_42[timer2] + cnt2
       DATA_43[timer2] = DATA_43[timer2] + cnt3
       DATA_44[timer2] = DATA_44[timer2] + cnt4
-
+      if (linescan_mode = 1) then
+        PAR_45 = PAR_45 + cnt1
+        PAR_46 = PAR_46 + cnt2
+        PAR_47 = PAR_47 + cnt3
+        PAR_48 = PAR_48 + cnt4
+      endif
       P2_CNT_ENABLE(CTR_MODULE, 0000b)
       P2_CNT_CLEAR(CTR_MODULE, 1111b)
 
       do_repump = AOM_duration
-      P2_DAC(DAC_Module, gate_channel, 32768) ' turn off the gate
+      P2_DAC(DAC_Module, AOM_channel, 3277*AOM_voltage+32768)
     endif
     
     if (timer1 >= 100) then    
@@ -133,10 +135,6 @@ EVENT:
   endif
   
   if (do_repump > 0) then
-    if(do_repump= AOM_duration-1) then
-      P2_DAC(DAC_Module, AOM_channel, 3277*AOM_voltage+32768) 'turn on green
-    endif
-    
     do_repump = do_repump-1  
     if (do_repump = 0) then
       P2_DAC(DAC_Module, AOM_channel, 32768)

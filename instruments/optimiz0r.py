@@ -26,7 +26,7 @@ class optimiz0r(Instrument):
                     'nr_of_points' : 51,
 #                    'pixel_time' : 50,
                     },
-                'order' : ['z','y','x'],
+                'zyx' : ['z','y','x'],
                 'xyonly':['y','x'],
                 },
             
