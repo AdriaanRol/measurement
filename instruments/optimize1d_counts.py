@@ -263,27 +263,38 @@ class optimize1d_counts(CyclopeanInstrument):
             gaussian_fit = fit.fit1d(p, cr,common.fit_gauss, array(cr).min(), 
                     array(cr).max(), p[i], .5, do_print=False,ret=True)
            
-            if gaussian_fit['success'] != False:
-                self.set_data('fit', gaussian_fit['fitfunc'](p))
-                self._fit_result = [gaussian_fit['params'][1], 
-                        gaussian_fit['params'][2], 
-                        gaussian_fit['params'][3],
-                        gaussian_fit['params'][0] ]
-                self._fit_error = [gaussian_fit['error'][1],
-                        gaussian_fit['error'][2],
-                        gaussian_fit['error'][3],
-                        gaussian_fit['error'][0] ]
-                self._opt_pos = self._fit_result[0]
-                ret = True
-                print '(%s) optimize succeeded!' % self.get_name()
-            
-            else:
+            if type(gaussian_fit) != dict:
                 self.set_data('fit', zeros(len(p)))
                 self._fit_result = False
                 self._fit_error = False
                 ret = False
-                print '(%s) optimize failed!' % self.get_name()
+                print '(%s) fit failed! Set to maximum.' % self.get_name()
                 self._opt_pos = p[cr.tolist().index(max(cr))]
+
+            else:
+            
+                if gaussian_fit['success'] != False:
+                    self.set_data('fit', gaussian_fit['fitfunc'](p))
+                    self._fit_result = [gaussian_fit['params'][1], 
+                            gaussian_fit['params'][2], 
+                            gaussian_fit['params'][3],
+                            gaussian_fit['params'][0] ]
+                    self._fit_error = [gaussian_fit['error'][1],
+                            gaussian_fit['error'][2],
+                            gaussian_fit['error'][3],
+                            gaussian_fit['error'][0] ]
+                    self._opt_pos = self._fit_result[0]
+                    ret = True
+                    print '(%s) optimize succeeded!' % self.get_name()
+                
+                else:
+                    self.set_data('fit', zeros(len(p)))
+                    self._fit_result = False
+                    self._fit_error = False
+                    ret = False
+                    print '(%s) optimize failed!' % self.get_name()
+                    self._opt_pos = p[cr.tolist().index(max(cr))]
+            
             self.get_fit_result()
 
         if array(p).min() < self._opt_pos < array(p).max():

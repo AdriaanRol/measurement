@@ -2,11 +2,12 @@ import qt
 import msvcrt
 # from measurement.AWG_HW_sequencer_v2 import Sequence
 
-name='ESR_SIL3_LT1'
-start_f = 2.83 #   2.853 #2.85 #  #in GHz
-stop_f  = 2.91 #   2.864 #2.905 #   #in GHz
-steps   = 161
+name='ESR_SIL2_LT1'
+start_f = 2.87 - 0.1 #   2.853 #2.85 #  #in GHz
+stop_f  = 2.87 + 0.1 #   2.864 #2.905 #   #in GHz
+steps   = 201
 mw_power = -8  #in dBm
+green_power = 50e-6
 int_time = 30       #in ms
 reps = 5
 
@@ -33,12 +34,14 @@ ins_smb.set_status('on')
 qt.msleep(0.2)
 #ins_counters.set_is_running(0)
 total_cnts = zeros(steps)
+qt.instruments['GreenAOM'].set_power(green_power)
+stop_scan=False
 for cur_rep in range(reps):
     
     print 'sweep %d/%d ...' % (cur_rep+1, reps)
     
     for i,cur_f in enumerate(f_list):
-        
+        if (msvcrt.kbhit() and (msvcrt.getch() == 'q')): stop_scan=True
         ins_smb.set_frequency(cur_f)
         qt.msleep(0.1)
         
@@ -46,7 +49,8 @@ for cur_rep in range(reps):
         # qt.msleep(0.01)
 
     p_c = qt.Plot2D(f_list, total_cnts, 'bO-', name=name, clear=True)
-    if (msvcrt.kbhit() and (msvcrt.getch() == 'q')): break
+    if stop_scan: break
+   
     
 
 ins_smb.set_status('off')

@@ -19,6 +19,16 @@ import os, sys
 import qt
 from lib import config
 import pprint
+import logging
+
+def split_path(path):
+    levels = []
+    while path != '':
+        path,tail = os.path.split(path)
+        if tail != '':
+            levels.append(tail)
+    levels.reverse()
+    return levels  
 
 class ConfigManager:
     """
@@ -52,6 +62,56 @@ class ConfigManager:
     def __setitem__(self, key, dictionary):
         self.configs[key] = dictionary
 
+    def get(self, path):
+        elt = self.configs
+        try:
+            for i,elt_name in enumerate(split_path(path)):
+                elt = elt[elt_name]
+        except KeyError:
+            logging.error("Could not find '%s'" % path)
+            return None
+
+        if i == 1 and elt == None:
+            logging.error("Could not find '%s'" % path)
+            return None
+        
+        return elt
+
+    def set(self, path, value):
+        levels = split_path(path)
+        elt = self.configs[levels[0]]
+        
+        for i,elt_name in enumerate(levels[1:-1]):
+            # for the case the current elt is a config object
+            try:
+                tmp = elt[elt_name]
+                if tmp == None:
+                    elt[elt_name] = {}
+                    elt = elt[elt_name]
+                else:
+                    elt = elt[elt_name]
+
+            # in the case the current elt is a dictionary
+            except KeyError:
+                elt[elt_name] = {}
+                elt = elt[elt_name]
+        
+        elt[levels[-1]] = value
+        self.save(levels[0])
+
+    def delete(self, path):
+        levels = split_path(path)
+        if len(levels) > 1:
+            elt = self.configs[levels[0]]
+            for i, elt_name in enumerate(levels[1:-1]):
+                elt = elt[elt_name]
+            del elt[levels[-1]]
+
+            self.save(levels[0])
+
+        else:
+            logging.error("Please delete config objects using remove_cfg")
+    
     def keys(self):
         return self.configs.keys()
 

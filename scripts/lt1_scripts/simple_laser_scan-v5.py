@@ -6,20 +6,20 @@ import msvcrt
 
 
 # measurement parameters
-start_v = -1.
-stop_v = -2.7
-steps = 2001
+start_v = 0.5 
+stop_v = -1.0
+steps = 1001
 pxtime = 50  #ms
 do_smooth = True
-green_during = .0e-6
+green_during = 0.0e-6
 green_before = 100e-6
-red_during= 10e-9
+red_during= 3e-9
 f_offset = 470400# GHz
-mw = True
+mw = True 
 amp = True
 mw_power = -8
-mw_frq = 2.862e9 #2.878e9
-dataname = 'Laserscan_SIL3_LT1_rotated_waveplate'+str(int(red_during*1E9))+'nW'+'_mw_'+str(mw)+'_'+str(int(green_during*1E6))+'uW_green'
+mw_frq = 2.863e9 #2.878e9
+dataname = 'Laserscan_SIL2_LT1'+str(int(red_during*1E9))+'nW'+'_mw_'+str(mw)+'_'+str(int(green_during*1E6))+'uW_green'
 
 # end measurement parameters
 
@@ -75,8 +75,8 @@ def rolling_avg(xvals, length=10):
 
 def laserscan(ins_laser_scan = ins_laser_scan):
 
-    ins_laser_scan.set_WavemeterChannel(2)
-    ins_laser_scan.set_CounterChannel(1)
+    ins_laser_scan.set_WavemeterChannel(1)
+    ins_laser_scan.set_CounterChannel(0)
     ins_laser_scan.set_StartVoltage(start_v)
     ins_laser_scan.set_StopVoltage(stop_v)
     ins_laser_scan.set_ScanSteps(steps)
@@ -90,7 +90,7 @@ def laserscan(ins_laser_scan = ins_laser_scan):
     
     GreenAOM.set_power(green_before)
     qt.msleep(1)
-    NewfocusAOM.set_power(red_during)
+    Velocity1AOM.set_power(red_during)
     GreenAOM.set_power(green_during)
 
     if mw:
@@ -112,9 +112,9 @@ def laserscan(ins_laser_scan = ins_laser_scan):
     p_c = qt.Plot2D(d, 'bO', name='counts', coorddim=1, valdim=2, clear=True)
 
     # go manually to initial position
-    ins_adwin.set_dac_voltage(('newfocus_frq',start_v))
+    ins_adwin.set_dac_voltage(('velocity1_frq',start_v))
     qt.msleep(1)
-    ins_adwin.set_dac_voltage(('newfocus_frq',start_v))
+    ins_adwin.set_dac_voltage(('velocity1_frq',start_v))
     qt.msleep(1)
 
     ins_laser_scan.start_scan()
@@ -181,8 +181,8 @@ def laserscan(ins_laser_scan = ins_laser_scan):
     qt.Data.set_filename_generator(data.DateTimeGenerator())
 
 
-    MatisseAOM.set_power(0)
-    NewfocusAOM.set_power(0)
+    Velocity1AOM.set_power(0)
+    Velocity2AOM.set_power(0)
     GreenAOM.set_power(green_before)
 
 

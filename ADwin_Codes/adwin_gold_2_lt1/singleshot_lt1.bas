@@ -5,10 +5,10 @@
 ' Control_long_Delays_for_Stop   = No
 ' Priority                       = High
 ' Version                        = 1
-' ADbasic_Version                = 5.0.6
+' ADbasic_Version                = 5.0.5
 ' Optimize                       = Yes
 ' Optimize_Level                 = 1
-' Info_Last_Save                 = TUD276629  TUD276629\localadmin
+' Info_Last_Save                 = TUD10238  TUD10238\localadmin
 '<Header End>
 ' this program implements single-shot readout fully controlled by ADwin Gold II
 '
@@ -267,7 +267,7 @@ EVENT:
             IF (counts < current_cr_threshold) THEN
               mode = 0
               CR_failed = CR_failed + 1
-              PAR_71 = CR_failed
+              inc(PAR_71)
               'PAR_25 = CR_preselect
             ELSE
               mode = 2

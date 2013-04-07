@@ -17,6 +17,7 @@ class Pulse():
             'ssb-q' : self._ssb_q_wform,
             'IQmod-I' : self._ssb_i_wform,
             'IQmod-Q' : self._ssb_q_wform,
+            'gaussian_noise' : self._gauss_rnd_wform,
             }
 
         self.envelope_funcs = {
@@ -50,6 +51,15 @@ class Pulse():
 
     def _ssb_q_wform(self):
         return self._sine_wform()
+        
+    def _gauss_rnd_wform(self):
+        a = self.pulse.get('amplitude', 0.)
+        rnd=np.random.normal(0.,a,self.samples)
+        if max(rnd)>a:
+            rnd=a*rnd/max(rnd)
+        
+        return rnd
+            
 
     def envelope(self):
         return self.envelope_funcs[self.pulse.get('envelope', None)]()

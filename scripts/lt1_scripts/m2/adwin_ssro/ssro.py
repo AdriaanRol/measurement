@@ -32,6 +32,17 @@ class AdwinSSRO(m2.AdwinControlledMeasurement):
         self.A_aom.set_power(0.)
 
         self.params.from_dict(qt.cfgman['protocols']['AdwinSSRO'])
+        self.params['Ex_laser_DAC_channel'] = self.adwin.get_dac_channels()\
+                [self.E_aom.get_pri_channel()]
+        self.params['A_laser_DAC_channel'] = self.adwin.get_dac_channels()\
+                [self.A_aom.get_pri_channel()]
+        self.params['green_laser_DAC_channel'] = self.adwin.get_dac_channels()\
+                [self.green_aom.get_pri_channel()]
+        self.params['yellow_laser_DAC_channel'] = self.adwin.get_dac_channels()\
+                [self.yellow_aom.get_pri_channel()]
+        self.params['gate_DAC_channel'] = self.adwin.get_dac_channels()\
+                ['gate']                
+        
     
     def run(self):
         
@@ -67,15 +78,20 @@ class AdwinSSRO(m2.AdwinControlledMeasurement):
         self.adwin_process_params['green_repump_voltage'] = \
                 self.green_aom.power_to_voltage(
                         self.params['green_repump_amplitude'])
-
+        
+        self.adwin_process_params['yellow_repump_voltage'] = \
+                self.yellow_aom.power_to_voltage(
+                        self.params['yellow_repump_amplitude'])
+        
         self.adwin_process_params['green_off_voltage'] = 0.0
         
         self.start_adwin_process(stop_processes=['counter'])
         qt.msleep(1)
-        self.start_keystroke_monitor('abort')
+        self.start_keystroke_monitor('abort',timer=False)
         
         CR_counts = 0
         while self.adwin_process_running():
+            self._keystroke_check('abort')
             if self.keystroke('abort') in ['q','Q']:
                 print 'aborted.'
                 self.stop_keystroke_monitor('abort')
@@ -114,33 +130,52 @@ class AdwinSSRO(m2.AdwinControlledMeasurement):
         m2.AdwinControlledMeasurement.finish(self)
 
 
-def calibration(name):
-    m = AdwinSSRO(name, qt.instruments['adwin'])
+def calibration(name, mode=''):
+    m = AdwinSSRO(name+mode, qt.instruments['adwin'])
     m.green_aom = qt.instruments['GreenAOM']
-    m.E_aom = qt.instruments['MatisseAOM']
-    m.A_aom = qt.instruments['NewfocusAOM']
+    m.yellow_aom = qt.instruments['YellowAOM']
+    m.E_aom = qt.instruments['Velocity2AOM']
+    m.A_aom = qt.instruments['Velocity1AOM']
     
     m.setup()
     
+    if mode=='yellow_only':
+        #then just pretend green is yellow
+        m.green_aom = m.yellow_aom
+        m.params['green_repump_amplitude'] = m.params['yellow_repump_amplitude'] 
+        m.params['green_repump_duration'] = m.params['yellow_repump_duration']
+        m.params['green_laser_DAC_channel'] = m.params['yellow_laser_DAC_channel']
+        qt.instruments['GreenAOM'].set_power(0)
+    elif mode=='double_repump':
+        #then use the double repump
+        m.params['green_repump_duration'] = 200
+        m.params['green_after_yellow_failed'] = 10 
+        
     m.params['SSRO_repetitions'] = 5000
-    m.params['SSRO_duration'] = 100
-    m.params['CR_preselect'] = 30
-    m.params['CR_probe'] = 30
-    
+    m.params['SSRO_duration'] = 50 
+    m.params['CR_preselect'] = 40
+    m.params['CR_probe'] =  40
+    m.params['counter_channel'] = 1
+    m.params['Ex_CR_amplitude'] = 10e-9
+    m.params['A_CR_amplitude'] = 10e-9#500e-9
+
     # ms = 0 calibration
+    m.params['SP_duration'] = 250
     m.params['A_SP_amplitude'] = 5e-9
     m.params['Ex_SP_amplitude'] = 0.
     m.params['A_RO_amplitude'] = 0.
-    m.params['Ex_RO_ampltude'] = 3e-9    
+    m.params['Ex_RO_amplitude'] = 5e-9
     
+
     m.run()
     m.save('ms0')
 
     # ms = 1 calibration
+    m.params['SP_duration'] = 250
     m.params['A_SP_amplitude'] = 0
-    m.params['Ex_SP_amplitude'] = 3e-9
+    m.params['Ex_SP_amplitude'] = 5e-9
     m.params['A_RO_amplitude'] = 0.
-    m.params['Ex_RO_ampltude'] = 3e-9
+    m.params['Ex_RO_amplitude'] = 5e-9
 
     m.run()
     m.save('ms1')
@@ -148,10 +183,11 @@ def calibration(name):
     m.save_params()
     m.save_stack()
     m.save_cfg_files()
+    m.save_intrument_settings_file()
     
     m.finish()
 
         
 #### script section
-calibration('SIL3')
+# calibration('SIL9')
 
