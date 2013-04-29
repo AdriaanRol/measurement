@@ -44,7 +44,7 @@ class ssroADwinMeasurement(Measurement):
             self.physical_adwin=qt.instruments['physical_adwin_lt1']
             self.ctr_channel=2
         else:
-            self.ins_green_aom=qt.instruments['GreenAOM']
+            self.ins_green_aom=qt.instruments['YellowAOM']
             self.ins_E_aom=qt.instruments['MatisseAOM']
             self.ins_A_aom=qt.instruments['NewfocusAOM']
             self.adwin= qt.instruments['adwin']
@@ -64,7 +64,7 @@ class ssroADwinMeasurement(Measurement):
 
         self.par = {}
         self.par['counter_channel'] =              self.ctr_channel
-        self.par['green_laser_DAC_channel'] =      self.adwin.get_dac_channels()['green_aom']
+        self.par['green_laser_DAC_channel'] =      self.adwin.get_dac_channels()['yellow_aom']
         self.par['Ex_laser_DAC_channel'] =         self.adwin.get_dac_channels()['matisse_aom']
         self.par['A_laser_DAC_channel'] =          self.adwin.get_dac_channels()['newfocus_aom']
         self.par['AWG_start_DO_channel'] =         1
@@ -82,6 +82,7 @@ class ssroADwinMeasurement(Measurement):
         self.par['SSRO_duration'] =                50 #NOTE this times reps must not exceed 1E6
         self.par['SSRO_stop_after_first_photon'] = 0
         self.par['cycle_duration'] =               300
+        self.par['repump_after_repetitions'] =     self.d['repump_after_repetitions']
 
         self.par['green_repump_amplitude'] =       self.d['green_repump_amplitude']
         self.par['green_off_amplitude'] =          self.d['green_off_amplitude']
@@ -112,6 +113,8 @@ class ssroADwinMeasurement(Measurement):
         self.par['Ex_RO_voltage'] = self.ins_E_aom.power_to_voltage(self.par['Ex_RO_amplitude'])
         self.par['A_RO_voltage'] = self.ins_A_aom.power_to_voltage(self.par['A_RO_amplitude'])
 
+        print self.par['green_repump_voltage']
+        print self.par['green_off_voltage']
     def ssro(self,name, data):
         
         self.par['green_repump_voltage'] = self.ins_green_aom.power_to_voltage(self.par['green_repump_amplitude'])
@@ -158,6 +161,7 @@ class ssroADwinMeasurement(Measurement):
                 SSRO_duration = self.par['SSRO_duration'],
                 SSRO_stop_after_first_photon = self.par['SSRO_stop_after_first_photon'],
                 cycle_duration = self.par['cycle_duration'],
+                repump_after_repetitions = self.par['repump_after_repetitions'],
                 green_repump_voltage = self.par['green_repump_voltage'],
                 green_off_voltage = self.par['green_off_voltage'],
                 Ex_CR_voltage = self.par['Ex_CR_voltage'],
@@ -446,9 +450,11 @@ class ssroADwinMeasurement(Measurement):
             self.ssro(name,data)
 
     def end_measurement(self,):
-        self.adwin.set_simple_counting()
+        #self.adwin.set_simple_counting()
+        self.counters.set_is_running(False)
+        self.counters.set_is_running(False)
         self.counters.set_is_running(True)
-        self.ins_green_aom.set_power(100e-6)
+        #self.ins_green_aom.set_power(100e-6)
 
         
 
@@ -504,3 +510,12 @@ def ssro_ADwin_Cal(reps=20000,Ex_p='exp_dic',A_p=0,sweep_power=False,lt1=False,p
     m.measure(m,name,sweep_power)
     ssro_analyse.run_all(ssro_analyse.get_latest_data())
 
+def ssro_A2(name):
+    m = ssroADwinMeasurement(name)
+    m.setup(False,False)
+    m.par['SSRO_repetitions'] = 10000
+    m.par['Ex_RO_amplitude']=0
+    m.par['A_RO_amplitude']=20e-9
+    m.measure(m,name,False)
+    ssro_analyse.run_all(ssro_analyse.get_latest_data())
+    
