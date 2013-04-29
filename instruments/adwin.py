@@ -184,7 +184,7 @@ class adwin(Instrument):
                     pls[i] = kw.pop(pl[0], pl[1])
                 self.physical_adwin.Set_Data_Long(pls, 
                         proc['params_long_index'], 1, 
-                       len(proc['params_long']))
+                        len(proc['params_long']))
 
             if 'params_float' in proc:
                 pfs = np.zeros(len(proc['params_float']), dtype=float)

@@ -42,7 +42,7 @@ class optimiz0r(Instrument):
 #                    'pixel_time' : 50,
                     },
                 'z' : {
-                    'scan_length' : 1.,
+                    'scan_length' : 2.,
                     'nr_of_points' : 99,
 #                    'pixel_time' : 50,
                     },

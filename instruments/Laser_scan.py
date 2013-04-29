@@ -13,7 +13,7 @@ class laser_scan(Instrument):
     _data_update_interval = 100
     
     def __init__(self, name, address=None,
-            laser='NewfocusLaser', adwin='adwin',
+            laser='Velocity1', adwin='adwin',
             wavemeter='wavemeter', physical_adwin='physical_adwin',
             counters='counters'):
         
@@ -63,7 +63,7 @@ class laser_scan(Instrument):
         self.add_parameter('CounterChannel',
                            type=types.IntType,
                            flags=Instrument.FLAG_GETSET,
-                           minval=1,maxval=5)
+                           minval=0,maxval=4)
         self.add_parameter('FrequencyAveraging',
                            type=types.IntType,
                            flags=Instrument.FLAG_GETSET,
@@ -223,13 +223,13 @@ class laser_scan(Instrument):
                 self._update_wm_frequency)
         gobject.timeout_add(self._data_update_interval,
                 self._update_data)
-        self._adwin.linescan(['newfocus_frq'], [self._StartVoltage],
+        self._adwin.linescan(['velocity1_frq'], [self._StartVoltage],
                 [self._StopVoltage], self._ScanSteps, self._IntegrationTime,
                 value='counts+suppl')
 
     def end_scan(self, scan_back=True):
         if scan_back:
-            self._adwin.linescan(['newfocus_frq'], [self._StopVoltage],
+            self._adwin.linescan(['velocity1_frq'], [self._StopVoltage],
                     [self._StartVoltage], 100, 50, value='none')
         
         if self._counter_was_running:

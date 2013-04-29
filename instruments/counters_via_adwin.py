@@ -105,8 +105,13 @@ class counters_via_adwin(CyclopeanInstrument):
     def _get_data(self):
         #debug = self._ins_adwin.get_countrate()
         cr = self._ins_adwin.get_countrates()
-        self._countrate['cntr1'] = cr[0]
-        self._countrate['cntr2'] = cr[1]
+        try:
+            self._countrate['cntr1'] = cr[0]
+            self._countrate['cntr2'] = cr[1]
+        except:
+            self._countrate['cntr1'] = 0
+            self._countrate['cntr2'] = 0
+        
         self.get_cntr1_countrate()
         self.get_cntr2_countrate()
             

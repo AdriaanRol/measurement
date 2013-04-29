@@ -440,6 +440,7 @@ config['adwin_lt2_processes'] = {
                     'FinalRO_FF'                : 37,
                     },
                 },        
+
         'spinmanipulation' : { #oldskool, with green
                 'index' : 9,
                 'file' : 'spinmanipulation_lt2.TB9',
@@ -604,10 +605,10 @@ config['adwin_lt1_dacs'] = {
         'atto_y' : 2,
         'atto_z' : 8,
         'green_aom': 4,
-        'newfocus_frq' : 5,
-        'newfocus_aom' : 6,
-        'matisse_aom' : 7,
-        'gate_1' : 3,
+        'gate' : 5, #not yet connected
+        'velocity1_aom' : 6,
+        'velocity2_aom' : 7,
+        'yellow_aom' : 3, 
         }
 
 config['adwin_lt1_dios'] = {
@@ -712,31 +713,6 @@ config['adwin_lt1_processes'] = {
                 'gate_voltage' : 12,
                 },
             },
-        'gate_modulation' :  {
-            'index' : 7, 
-            'file' : 'gate_modulation.TB7',
-            'par' : {
-                'modulation_on' : 14,
-                'dac_channel' : 12,
-                'modulation_period' : 13, #half period ms
-                },
-            'fpar' : {
-                'modulation_voltage' : 12,
-                },
-            },
-                  
-#                'dac_pulse' : {
-#                     'index' : 6,
-#                     'file' : 'lt1_universalDAC.tb6',
-#                     'par'  : {
-#                         'dac_no': 63,
-#                         'condition':64, #not sure what this is, value is always 1?
-#                         'duration' : 65,
-#                         },
-#                     'fpar' :{
-#                         'voltage off': 63,
-#                         'voltage on': 64,
-#                         }
 
         # remote TPQI adwin control
         'remote_tpqi_control' : {
@@ -775,6 +751,9 @@ config['adwin_lt1_processes'] = {
                     'CR_threshold' : 25,
                     'last_CR_counts' : 26,
                     },
+                'fpar' : {
+                    'gate_voltage' : 26,
+                    },
                 'params_long' : [
                     ['counter_channel'             ,   1],
                     ['green_laser_DAC_channel'     ,   7],
@@ -795,7 +774,11 @@ config['adwin_lt1_processes'] = {
                     ['SSRO_duration'               ,  50],
                     ['SSRO_stop_after_first_photon',   0],
                     ['cycle_duration'              , 300],
-                    ['CR_probe'                    ,  10]
+                    ['CR_probe'                    ,  10],
+                    ['green_after_yellow_failed'   ,  0],
+                    ['yellow_laser_DAC_channel'    ,  3],
+                    ['yellow_repump_duration'      ,  10],
+                    ['gate_DAC_channel'            ,  5],
                     ],
                 'params_long_index'  : 20,
                 'params_long_length' : 25,
@@ -807,7 +790,55 @@ config['adwin_lt1_processes'] = {
                     ['Ex_SP_voltage'        , 0.8],
                     ['A_SP_voltage'         , 0.8],
                     ['Ex_RO_voltage'        , 0.8],
-                    ['A_RO_voltage'         , 0.8]
+                    ['A_RO_voltage'         , 0.8],
+                    ['yellow_repump_voltage', 0.8],
+                    ],
+                'params_float_index'  : 21,
+                'params_float_length' : 10,
+                'data_long' : {
+                    'CR_before' : 22,
+                    'CR_after' : 23,
+                    'SP_hist' : 24,
+                    'RO_data' : 25,
+                    'statistics' : 26,
+                    },                    
+                },
+
+        'singleshot_AWG' : {
+                'index' : 9,
+                'file' : 'singleshot_AWG_lt1.TB9',
+                'par' : {
+                    'completed_reps' : 73,
+                    'total_CR_counts' : 70,
+                    'CR_preselect' : 75,
+                    'CR_probe' : 68,
+                    },
+                'params_long' : [
+                    ['counter_channel'             ,   1],
+                    ['green_laser_DAC_channel'     ,   7],
+                    ['Ex_laser_DAC_channel'        ,   6],
+                    ['A_laser_DAC_channel'         ,   8],
+                    ['AWG_start_DO_channel'        ,  16],
+                    ['AWG_done_DI_channel'         ,   8],
+                    ['pts'                         ,  25],
+                    ['green_repump_duration'       ,   5],
+                    ['CR_duration'                 ,  50],
+                    ['SP_duration'                 , 100],
+                    ['wait_after_pulse_duration'   ,   1],
+                    ['CR_preselect'                ,  10],
+                    ['SSRO_repetitions'            ,1000],
+                    ['cycle_duration'              , 300],
+                    ['CR_probe'                    ,  10]
+                    ],
+                'params_long_index'  : 20,
+                'params_long_length' : 25,
+                'params_float' : [
+                    ['green_repump_voltage' , 0.8],
+                    ['green_off_voltage'    , 0.0],
+                    ['Ex_CR_voltage'        , 0.8],
+                    ['A_CR_voltage'         , 0.8],
+                    ['Ex_SP_voltage'        , 0.8],
+                    ['A_SP_voltage'         , 0.8],
                     ],
                 'params_float_index'  : 21,
                 'params_float_length' : 10,
@@ -865,7 +896,7 @@ config['adwin_lt1_processes'] = {
                     ['Ex_RO_voltage'        , 0.8],
                     ['A_RO_voltage'         , 0.8],
                     ['Ex_off_voltage'       , 0.0],
-                    ['A_off_voltage'        , 0.0]
+                    ['A_off_voltage'        , 0.0],
                     ],
                 'params_float_index'  : 21,
                 'params_float_length' : 10,
@@ -874,6 +905,63 @@ config['adwin_lt1_processes'] = {
                     'CR_after' : 23,
                     'SP_hist' : 24,
                     'RO_data' : 25,
+                    'statistics' : 26,
+                    'ssro_results' : 27,
+                    },
+                },
+
+        'MBI' : {
+                'info' : """
+                    Conditional repumping, and resonant readout at the end.
+                    Has one MBI step and can read out multiple times (e.g., on different lines).
+                    """,
+                'index' : 9,
+                'file' : 'lt1_MBI.TB9',
+                'params_long' : [           # keep order!!!!!!!!!!!!!
+                    ['counter_channel'             ,   1],
+                    ['green_laser_DAC_channel'     ,   7],
+                    ['Ex_laser_DAC_channel'        ,   6],
+                    ['A_laser_DAC_channel'         ,   8],
+                    ['AWG_start_DO_channel'        ,   0],
+                    ['AWG_done_DI_channel'         ,   9],
+                    ['green_repump_duration'       ,   5],
+                    ['CR_duration'                 ,  50],
+                    ['SP_E_duration'               , 100],
+                    ['wait_after_pulse_duration'   ,   1],
+                    ['CR_preselect'                ,  10],
+                    ['repetitions'                 ,1000],
+                    ['sweep_length'                ,  10],
+                    ['cycle_duration'              , 300],
+                    ['CR_probe'                    ,  10],
+                    ['AWG_event_jump_DO_channel'   ,   6],
+                    ['MBI_duration'                ,   1],
+                    ['MBI_steps'                   ,   1],
+                    ['MBI_threshold'               ,   0],
+                    ['nr_of_ROsequences'           ,   1],
+                    ['wait_after_RO_pulse_duration',   3],
+                    ],
+                'params_long_index'  : 20,
+                'params_long_length' : 30,
+                'params_float' : [
+                    ['green_repump_voltage' , 0.8],
+                    ['green_off_voltage'    , 0.0],
+                    ['Ex_CR_voltage'        , 0.8],
+                    ['A_CR_voltage'         , 0.8],
+                    ['Ex_SP_voltage'        , 0.8],
+                    ['Ex_MBI_voltage'       , 0.8],
+                    ],
+                'params_float_index'  : 21,
+                'params_float_length' : 6,
+                'par' : {
+                    'CR_preselect' : 75,
+                    'CR_probe' : 68,
+                    'completed_reps' : 73,
+
+                    },
+                'data_long' : {
+                    'CR_before' : 22,
+                    'CR_after' : 23,
+                    'MBI_attempts' : 24,
                     'statistics' : 26,
                     'ssro_results' : 27,
                     },
@@ -926,5 +1014,5 @@ config['adwin_lt1_processes'] = {
                     'SSRO_counts'               : 22,
                     'CR_after_SSRO'             : 23,
                     },
-                },       
+                },  
         }

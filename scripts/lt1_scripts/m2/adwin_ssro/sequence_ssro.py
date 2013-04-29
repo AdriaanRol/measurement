@@ -8,13 +8,18 @@ import measurement.lib.measurement2.measurement as m2
 from measurement.lib.config import awgchannels as awgcfg
 from measurement.lib.AWG_HW_sequencer_v2 import Sequence
 
+chan_mw_pm = 'MW_pulsemod'
+chan_mwI = 'MW_Imod'
+chan_mwQ = 'MW_Qmod'
+chan_RF  = 'RF'
+chan_adwin_sync = 'adwin_sync'
 
-class SequenceSSROMeasurement(m2.AdwinControlledMeasurement, 
-        m2.SequencerMeasurement):
+class SequenceSSROMeasurement(m2.AdwinControlledMeasurement):
 
     mprefix = 'SequenceSSRO'
     max_SP_bins =    500
     max_RO_dim = 1000000
+
 
     def __init__(self, name, adwin, awg):
         m2.AdwinControlledMeasurement.__init__(self, name, adwin)
@@ -32,9 +37,9 @@ class SequenceSSROMeasurement(m2.AdwinControlledMeasurement,
         self.params['green_laser_DAC_channel'] = \
                 self.adwin.get_dac_channels()['green_aom']
         self.params['Ex_laser_DAC_channel'] = \
-                self.adwin.get_dac_channels()['matisse_aom']
+                self.adwin.get_dac_channels()['velocity2_aom']
         self.params['A_laser_DAC_channel'] = \
-                self.adwin.get_dac_channels()['newfocus_aom']
+                self.adwin.get_dac_channels()['velocity1_aom']
 
     def setup(self):
         self.mwsrc.set_iq('on')
@@ -61,7 +66,7 @@ class SequenceSSROMeasurement(m2.AdwinControlledMeasurement,
         chan_mwQ = 'MW_Qmod'
         chan_mw_pm = 'MW_pulsemod'
 
-        awgcfg.configure_sequence(self.seq, 'adwin', 'mw')
+        awgcfg.configure_sequence(self.seq, 'adwin', 'mw', 'rf')
 
         self.sequence()
 
@@ -160,7 +165,9 @@ class SequenceSSROMeasurement(m2.AdwinControlledMeasurement,
         self.mwsrc.set_pulm('off')
 
         qt.instruments['counters'].set_is_running(True)
-        self.green_aom.set_power(25e-6)
+        self.green_aom.set_power(20e-6)
+        self.E_aom.set_power(0)
+        self.A_aom.set_power(0)
 
     def save(self, name='adwindata'):
         reps = self.adwin_var('completed_reps')
@@ -186,7 +193,7 @@ class DarkESR(SequenceSSROMeasurement):
         SequenceSSROMeasurement.setup(self)
 
         self.params['sequence_wait_time'] = \
-                int(np.ceil(self.params['pulse_length']/1e3)+6)
+                int(np.ceil(self.params['pulse_length']/1e3)+10)
         self.params['RO_repetitions'] = \
                 int(self.params['repetitions'] * self.params['pts'])
         self.params['sweep_length'] = self.params['pts']
@@ -240,7 +247,7 @@ class ElectronRabi(SequenceSSROMeasurement):
         SequenceSSROMeasurement.setup(self)
 
         self.params['sequence_wait_time'] = \
-                int(np.ceil(self.params['pulse_length_stop']/1e3)+6)
+                int(np.ceil(self.params['pulse_length_stop']/1e3)+10)
         self.params['RO_repetitions'] = \
                 int(self.params['repetitions'] * self.params['pts'])
         self.params['sweep_length'] = self.params['pts']
@@ -264,7 +271,7 @@ class ElectronRabi(SequenceSSROMeasurement):
 
             self.seq.add_pulse('wait', channel = chan_mw_pm, element = ename,
                     start = 0, duration = 5000, amplitude = 0)
-            
+
             self.seq.add_IQmod_pulse(name='mwburst', channel=('MW_Imod','MW_Qmod'),
                     element = ename, 
                     start = 0, 
@@ -280,13 +287,59 @@ class ElectronRabi(SequenceSSROMeasurement):
                     link_start_to = 'start', 
                     link_duration_to = 'duration', 
                     amplitude = 2.0)
+
+            ###################################################################
+
+class RFHeating(SequenceSSROMeasurement):
+
+    mprefix = 'RFHeating'
+    
+    def setup(self):
+        SequenceSSROMeasurement.setup(self)
+
+        self.params['sequence_wait_time'] = \
+                int(np.ceil(self.params['pulse_element_length']*\
+                self.params['pulse_repetitions'][-1])/1e3+11)
+        self.params['RO_repetitions'] = \
+                int(self.params['repetitions'] * self.params['pts'])
+        self.params['sweep_length'] = self.params['pts']
+
+    def sequence(self):
+        for i, r in enumerate(self.params['pulse_repetitions']):
+
+            ###################################################################
+            ename = 'rabi_seq%d' % i
+            kw = {} if i < self.params['pts']-1 \
+                    else {'goto_target': 'rabi_seq0'}
+            
+            self.seq.add_element(ename, trigger_wait = True)
+
+            self.seq.add_pulse('wait', chan_RF, ename,
+                    start=0, duration=1000, amplitude=0,)
+
+            self.seq.add_element(ename+'-pt2', 
+                    repetitions=self.params['pulse_repetitions'][i], **kw)
+           
+            self.seq.add_pulse('RF', channel = chan_RF,
+                    element = ename+'-pt2',
+                    start = 0, 
+                    # start_reference = 'wait',
+                    # link_start_to = 'end', 
+                    duration = self.params['pulse_element_length'],
+                    amplitude = self.params['RF_amp'],
+                    shape = 'sine', 
+                    frequency = self.params['RF_frq'],
+                    envelope='erf',
+                    envelope_risetime=200,
+                    )
+
             ###################################################################
 
 def _prepare(m):
     m.mwsrc = qt.instruments['SMB100']
     m.green_aom = qt.instruments['GreenAOM']
-    m.E_aom = qt.instruments['MatisseAOM']
-    m.A_aom = qt.instruments['NewfocusAOM']
+    m.E_aom = qt.instruments['Velocity2AOM']
+    m.A_aom = qt.instruments['Velocity1AOM']
     m.autoconfig()
 
 def _run(m):
@@ -303,16 +356,19 @@ def darkesr(name):
     m = DarkESR(name, qt.instruments['adwin'], qt.instruments['AWG'])
     _prepare(m)
     
-    m.params['mw_frq'] = 2.82e9
-    m.params['ssbmod_frq_start'] = 20e6
-    m.params['ssbmod_frq_stop'] = 50e6
-    m.params['pts'] = 241
-    m.params['mw_power'] = -8
-    m.params['pulse_length'] = 1351
-    m.params['repetitions'] = 1000
-    m.params['ssbmod_amplitude'] = 0.3
+    m.params['mw_frq'] = 2.8e9
+    m.params['ssbmod_frq_start'] = 13e6
+    m.params['ssbmod_frq_stop'] = 21e6
+    m.params['pts'] = 161
+    m.params['mw_power'] = 20
+    m.params['pulse_length'] = 3000 
+    m.params['repetitions'] = 5000
+    m.params['ssbmod_amplitude'] = 0.01
     m.params['MW_pulse_mod_risetime'] = 2
     m.params['RO_duration'] = 15
+    m.params['Ex_RO_amplitude'] = 5e-9
+    m.params['CR_preselect'] = 30
+    m.params['CR_probe'] = 30
 
     _run(m)
 
@@ -322,22 +378,58 @@ def rabi(name):
     m = ElectronRabi(name, qt.instruments['adwin'], qt.instruments['AWG'])
     _prepare(m)
 
-    m.params['mw_frq'] = 2.82e9
-    m.params['ssbmod_frq'] = 27.58e6
-    m.params['pts'] = 31
-    m.params['mw_power'] = -8
+    m.params['mw_frq'] = 2.8e9
+    m.params['ssbmod_frq'] = 17.17e6
+    m.params['pts'] = 21
+    m.params['mw_power'] = 20
     m.params['pulse_length_start'] = 10
-    m.params['pulse_length_stop'] = 10 + 31 * 300
+    m.params['pulse_length_stop'] = 10 + 5000
     m.params['repetitions'] = 1000
-    m.params['ssbmod_amplitude'] = 0.15
-    m.params['MW_pulse_mod_risetime'] = 2
-    m.params['RO_duration'] = 15
+    m.params['ssbmod_amplitude'] = 0.007
+    m.params['MW_pulse_mod_risetime'] = 3
+    m.params['RO_duration'] = 12
+    m.params['CR_preselect'] = 30
+    m.params['CR_probe'] = 30
+    m.params['Ex_RO_amplitude'] = 5e-9
+
+    # for the autoanalysis
+    m.params['sweep_name'] = 'MW pulse length (ns)'
+    m.params['sweep_pts'] = np.linspace(m.params['pulse_length_start'],
+                    m.params['pulse_length_stop'], m.params['pts'])
+  
+    _run(m)
+
+### def rabi
+
+def rfheating(name):
+    m = RFHeating(name, qt.instruments['adwin'], qt.instruments['AWG'])
+    _prepare(m)
+
+    m.params['mw_frq'] = 2.82e9
+    m.params['mw_power'] = -2
     
+    pts = 21
+    m.params['pts'] = pts
+    m.params['pulse_element_length'] = 50000
+    m.params['pulse_repetitions'] = np.arange(pts, dtype=int) + 1
+    m.params['repetitions'] = 1000
+    m.params['RO_duration'] = 15
+    m.params['CR_preselect'] = 40
+    m.params['CR_probe'] = 40
+    m.params['Ex_RO_amplitude'] = 5e-9
+    
+    m.params['RF_amp'] = 1
+    m.params['RF_frq'] = 4e6
+
+    # for the autoanalysis
+    m.params['sweep_name'] = 'RF duration (us)'
+    m.params['sweep_pts'] = m.params['pulse_repetitions'] * 50
+
     _run(m)
 
 ### def rabi
 
 
 ### SCRIPT
-# darkesr('SIL3_findresonances')
-rabi('SIL3_find_pi_leftmost_line')
+# darkesr('SIL9_leftmostlines')
+# rabi('SIL9_findpi')self._countrate['cntr1']

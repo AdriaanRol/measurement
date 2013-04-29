@@ -15,34 +15,33 @@ config['picoharp'] = {
             'high' : 2.0, },
         }
 
-# NOTE cable delays seem pretty good, 2012/12/23 (Wolfgang)
 config['mw'] = {
         'MW_pulsemod': {
             'AWG_channel' : 'ch1m1',
             'high' : 2.0,
             'low' : 0.0,
-            'cable_delay' : 140,
+            'cable_delay' : 44+165,
             },
         'MW_Imod' : {
             'AWG_channel' : 'ch3',
             'high' : 0.9,
             'low' : -0.9,
-            'cable_delay': 120,
+            'cable_delay': 27+165,
             },
         'MW_Qmod' : {
             'AWG_channel' : 'ch4',
             'high' : 0.9,
             'low' : -0.9,
-            'cable_delay': 120,
+            'cable_delay': 27+165,
             },
         }
 
 config['rf'] = {
         'RF' : {
             'AWG_channel' : 'ch1',
-            'high' : 2.0,
-            'low' : -2.0,
-            'cable_delay' : 120, }
+            'high' : 1.,
+            'low' : -1.,
+            'cable_delay' : 165, }
         }
 
 config['adwin'] = {
@@ -50,6 +49,27 @@ config['adwin'] = {
             'AWG_channel' : 'ch3m2',
             'high': 2.0,
             'cable_delay' : 0, },
+        }
+
+config['light'] = {
+        'velocity1aom' : {
+            'AWG_channel' : 'ch1m2',
+            'high' : 1.0,
+            'low' : 0.,
+            'cable_delay' : 690, },
+        
+        'velocity1mod' : {
+            'AWG_channel' : 'ch2',
+            'high' : 1.0,
+            'low' : -1.0,
+            'cable_delay' : 690, },
+        
+        'psbapdgate' : {
+            'AWG_channel' : 'ch2m1',
+            'high' : 2.0,
+            'low' : 0,
+            'cable_delay' : 163, },
+
         }
 
 ### DEPRECATED!

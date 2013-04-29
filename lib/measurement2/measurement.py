@@ -270,7 +270,7 @@ class Measurement(object):
             fp = cfgman[k]._filename
             shutil.copy(fp, fdir)
 
-    def save_intsrument_settings_file(self):
+    def save_instrument_settings_file(self):
         h5settingsgroup = self.h5basegroup.create_group('instrument_settings')
         inslist = dict_to_ordered_tuples(qt.instruments.get_instruments())
         for (iname, ins) in inslist:
