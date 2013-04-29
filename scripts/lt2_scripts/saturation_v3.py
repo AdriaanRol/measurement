@@ -1,16 +1,16 @@
 import time
 import qt
 import data
-from analysis import fit, common
+from analysis.lib.fitting import fit, common
 import matplotlib.pyplot as plt
 from numpy import *
 
 #measurement parameters
-name = 'LT2-Sil9-PSB'
+name = 'LT2-Sil9-PSB-FS-APD'
 steps=31
-max_power=400e-6       #[w]
+max_power=350e-6       #[w]
 counter=1      #number of counter
-HH_count=False    # counting with the HH, assumes apd on channel 0
+HH_count=True    # counting with the HH, assumes apd on channel 0
 bg_x=2          #delta x position of background [um]
 bg_y=2             #delta y position of background [um]
 LT1 = False
@@ -79,7 +79,7 @@ if type(fitres) != type(False):
     p1 = fitres['params_dict']
     fit_A = p1['A']
     fit_sat = p1['xsat']
-    fd = fitres['fitdata']
+    #fd = fitres['fitdata']
     
     print ('maximum count rate: %.1f cps, saturation power: %.1f microwatt'%(fit_A,fit_sat))
    
