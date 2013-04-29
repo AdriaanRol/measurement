@@ -22,6 +22,7 @@ import numpy as np
 
 import qt
 import hdf5_data as h5
+from lib.misc import dict_to_ordered_tuples
 
 from .. import AWG_HW_sequencer_v2
 Sequence = AWG_HW_sequencer_v2.Sequence
@@ -163,7 +164,7 @@ class MeasurementParameters(object):
         """
         for k in param_dict:
             if k in self.parameters:
-                self.parameters[key].set(param_dict[k])
+                self.parameters[k].set(param_dict[k])
             else:
                 if add_new:
                     self.new(k, param_dict[k])
@@ -181,7 +182,7 @@ class MeasurementParameters(object):
 # TODO see how that goes with all the hdf5 elements as members
 # maybe better to use them only locally in functions; also this might result
 # in data loss; try maybe to close/re-open all the time.
-class Measurement:
+class Measurement(object):
     """
     Implements some common tasks such as data creation, so they need not be 
     implemented explicitly by all measurements
@@ -230,6 +231,7 @@ class Measurement:
         # pprint.pprint(inspect.stack())
         
         for i in range(depth):
+            # print inspect.stack()[i][1]
             shutil.copy(inspect.stack()[i][1], sdir)
 
     def add_file(self, filepath):
@@ -268,7 +270,20 @@ class Measurement:
             fp = cfgman[k]._filename
             shutil.copy(fp, fdir)
 
-    
+    def save_intsrument_settings_file(self):
+        h5settingsgroup = self.h5basegroup.create_group('instrument_settings')
+        inslist = dict_to_ordered_tuples(qt.instruments.get_instruments())
+        for (iname, ins) in inslist:
+            insgroup=h5settingsgroup.create_group(iname)
+            parlist = dict_to_ordered_tuples(ins.get_parameters())
+            for (param, popts) in parlist:
+                try:
+                    insgroup.attrs[param] = ins.get(param, query=True) \
+                            if 'remote' in ins.get_options()['tags'] \
+                            else ins.get(param, query=False)
+                except (ValueError, TypeError):
+                        insgroup.attrs[param] = str(ins.get(param, query=False))
+                
     def review_params(self):
         '''
         prints a summary of all measurement params and asks for confirmation.
@@ -298,13 +313,14 @@ class Measurement:
         self.h5data.close()
 
     # TODO - have monitors react only to certain keys
-    def start_keystroke_monitor(self, name):
+    def start_keystroke_monitor(self, name, timer=True):
         self.keystroke_monitors[name] = {}
         self.keystroke_monitors[name]['key'] = ''
         self.keystroke_monitors[name]['running'] = True
-        self.keystroke_monitors[name]['timer_id'] = \
-                gobject.timeout_add(self.keystroke_monitor_interval,
-                        self._keystroke_check, name)
+        if timer:
+            self.keystroke_monitors[name]['timer_id'] = \
+                    gobject.timeout_add(self.keystroke_monitor_interval,
+                            self._keystroke_check, name)
 
     def _keystroke_check(self, name):
         if not self.keystroke_monitors[name]['running']:
