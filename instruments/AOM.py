@@ -253,7 +253,7 @@ class AOM(Instrument):
         y = zeros(steps,dtype = float)
         
         self.apply_voltage(0)
-        self._ins_pm.set_wavelength(self._wavelength*1e9)
+        self._ins_pm.set_wavelength(self._wavelength)
         time.sleep(2)
         bg = self._ins_pm.get_power()
 

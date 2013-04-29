@@ -74,8 +74,9 @@ class Thorlabs_PM100D(Instrument):
 
     def do_get_wavelength(self):
         ans = self._visa.ask('CORR:WAV?')
-        return float(ans)
+        return float(ans)*1e-9
 
     def do_set_wavelength(self, val):
-        self._visa.write('CORR:WAV %e' % val)
+        valnm=val*1e9
+        self._visa.write('CORR:WAV %e' % valnm)
 
