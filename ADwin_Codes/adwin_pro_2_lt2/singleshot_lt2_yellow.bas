@@ -251,9 +251,12 @@ EVENT:
       CASE 0    ' green repump
         IF (timer = 0) THEN
           IF (Mod(repetition_counter,repump_after_repetitions)=0) THEN  'only repump after x SSRO repetitions
+            P2_DAC(DAC_MODULE, Ex_laser_DAC_channel, 0*3277*Ex_CR_voltage*3+32768) ' turn on Ex laser
+            P2_DAC(DAC_MODULE, A_laser_DAC_channel, 0*3277*A_CR_voltage*3+32768) ' turn on A laser
+            
             P2_CNT_CLEAR(CTR_MODULE,  counter_pattern)    'clear counter
             P2_CNT_ENABLE(CTR_MODULE, counter_pattern)	  'turn on counter
-            P2_DAC(DAC_MODULE, green_laser_DAC_channel, 3277*green_repump_voltage+32768) ' turn on green
+            
             repumps = repumps + 1
           ELSE
             mode = 1
@@ -262,6 +265,12 @@ EVENT:
           ENDIF
           
         ELSE 
+          IF (timer = (Round(green_repump_duration/10.))) THEN
+            P2_DAC(DAC_MODULE, Ex_laser_DAC_channel, 32768) ' turn off Ex laser
+            P2_DAC(DAC_MODULE, A_laser_DAC_channel, 32768) ' turn off A laser
+            P2_DAC(DAC_MODULE, green_laser_DAC_channel, 3277*green_repump_voltage+32768) ' turn on green
+          ENDIF
+          
           IF (timer = green_repump_duration) THEN
             P2_DAC(DAC_MODULE, green_laser_DAC_channel, 3277*green_off_voltage+32768) ' turn off green
             counts = P2_CNT_READ(CTR_MODULE, counter_channel)
