@@ -186,8 +186,43 @@ config['optical_rabi'] = {
             'cable_delay' : 0, 
             },
         }
+        
+config['awg_event_jitter'] = {
+        'strobe' : {
+            'AWG_channel' : 'ch4m1',
+            'high' : 2,
+            'low' : 0,
+            'cable_delay' : 0,
+            },
+        'event' : {
+            'AWG_channel' : 'ch4m2',
+            'high' : 2,
+            'low' : 0,
+            'cable_delay': 0,
+            },
+        'trigger' : {
+            'AWG_channel' : 'ch3m2',
+            'high' : 2,
+            'low' : 0,
+            'cable_delay' : 0,
+            },
+        }
 
-
+config['awg_trigger_jitter'] = {
+        'trigger' : {
+            'AWG_channel' : 'ch4m1',
+            'high' : 2,
+            'low' : 0,
+            'cable_delay' : 0,
+                   },
+        'trigger2' : {
+            'AWG_channel' : 'ch4m2',
+            'high' : 2,
+            'low' : 0,
+            'cable_delay' : 0,
+                   },
+        }
+            
 def configure_sequence(sequence, *use, **use_modified):
     """
     Creates the channel configuration on the given sequence.
