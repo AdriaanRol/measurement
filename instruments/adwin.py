@@ -338,18 +338,50 @@ class adwin(Instrument):
             sets all given PARs and FPARs, specified as kw-args by their names
             as defined in the process dictionary.
 
+            if the kw name corresponds to an adwin data set, the data is set from start=1
+            up to the length of the array supplied. If the kw name correspnds to multiple adwin data
+            sets, a list or tuple of arrays matching the number of adwin data sets must be supplied.
             """
+            start = kw.pop('start', 1)
             
             if not 'par' in proc:
                 proc['par'] = {}
             if not 'fpar' in proc:
                 proc['fpar'] = {}
+            if not 'data_long' in proc:
+                proc['data_long'] = {}
+            if not 'data_float' in proc:
+                proc['data_float'] = {}
 
             for var in kw:
                 if var in proc['par']:
                     self.physical_adwin.Set_Par(proc['par'][var], kw[var])
                 elif var in proc['fpar']:
                     self.physical_adwin.Set_FPar(proc['fpar'][var], kw[var])
+                elif var in proc['data_long']:
+                    if type(proc['data_long'][var]) in [list, tuple]:
+                        if len(proc['data_long'][var])==len(kw[var]):
+                            for i,j in enumerate(proc['data_long'][var]):
+                                self.physical_adwin.Set_Data_Long(
+                                    kw[var][i],j, 1, len(kw[var][i]))
+                        else:
+                            print 'Value for parameter %s has wrong length to set multiple adwin data.' % var 
+
+                    else:
+                        self.physical_adwin.Set_Data_Long(kw[var],
+                                proc['data_long'][var], 1, len(kw[var]))
+                elif var in proc['data_float']:
+                    if type(proc['data_float'][var]) in [list, tuple]:
+                        if len(proc['data_float'][var])==len(kw[var]):
+                            for i,j in enumerate(proc['data_float'][var]):
+                                self.physical_adwin.Set_Data_Float(
+                                    kw[var][i],j, 1, len(kw[var][i]))
+                        else:
+                            print 'Value for parameter %s has wrong length to set multiple adwin data.' % var 
+
+                    else:
+                        self.physical_adwin.Set_Data_Float(kw[var],
+                                proc['data_float'][var], 1, len(kw[var]))
                 else:
                     print 'Parameter %s is not defined.' % var
         
