@@ -12,32 +12,14 @@ from instrument import Instrument
 from data import Data
 from lib import config
 
-#class ControlThread(threading.Thread):
-    
-#    instrument = None
-#    interval = 0.1
-    
-#    def run(self):
-#        if self.instrument == None:
-#            print 'no instrument set in control thread'
-#            return
-               
-#        while self.instrument.get_is_running():
-#            print 'thread update'
-#            if not self.instrument.update():
-#                self.instrument.set_is_running(False)
-#                return
-            
-#            print 'before'
-#            qt.msleep(0.1)
-#            print 'after'
-
 
 class pid_controller(Instrument):
 
     _demo_mode = False
 
-    def __init__(self, name, set_ctrl_func=None, get_val_func=None,get_ctrl_func=None, get_stabilizor_func=None, **kw):
+    def __init__(self, name, set_ctrl_func=None, get_val_func=None,
+            get_ctrl_func=None, get_stabilizor_func=None, **kw):
+        
         Instrument.__init__(self, name)
 
         self._set_ctrl = set_ctrl_func
@@ -118,9 +100,15 @@ class pid_controller(Instrument):
         self.add_parameter('PID_type',
                 type=types.StringType,
                 flags=Instrument.FLAG_GETSET)
+        
+        self.add_parameter('step_size',
+                type=types.FloatType,
+                flags=Instrument.FLAG_GETSET)
 
         self.add_function('start')
         self.add_function('stop')
+        self.add_function('step_up')
+        self.add_function('step_down')
 
         self.set_is_running(False)
         self.set_use_stabilizor(False)
@@ -137,6 +125,7 @@ class pid_controller(Instrument):
         self.set_value_offset(470.4)
         self.set_value_factor(1e3)
         self.set_PID_type('')
+        self.set_step_size(0.)
         #self.get_value()
 
         # override from config       
@@ -238,6 +227,12 @@ class pid_controller(Instrument):
     def do_set_P(self, val):
         self._P = val
 
+    def do_get_step_size(self):
+        return self._step_size
+
+    def do_set_step_size(self, val):
+        self._step_size = val
+
     def do_get_I(self):
         return self._I
 
@@ -300,6 +295,12 @@ class pid_controller(Instrument):
     def stop(self):
         self.set_is_running(False)
 
+    def step_up(self):
+        self.set_setpoint(self.get_setpoint() + self._step_size)
+
+    def step_down(self):
+        self.set_setpoint(self.get_setpoint() - self._step_size)
+
     def _new_control_parameter(self):
 
         if self._PID_type == 'A':
@@ -341,8 +342,6 @@ class pid_controller(Instrument):
             return pterm + iterm + dterm
 
     def _update(self):
-        # print self._integral
-
         if not self._is_running:
             return False
         
@@ -362,8 +361,6 @@ class pid_controller(Instrument):
         self._dat.add_data_point(self._time, self._value,
                 self._setpoint, self._control_parameter)
 
-        # print self._values[-1], self._new_control_parameter()
-        
         new_control_parameter=self._new_control_parameter()
 
         if (abs(new_control_parameter-self._control_parameter) > \
@@ -375,10 +372,6 @@ class pid_controller(Instrument):
         if not self.set_control_parameter(new_control_parameter):
             print 'Could not set control parameter, quit.'
             return False
-
-        #self._plt = qt.Plot2D(self._times, self._values, 'kO', name=self._name)
-        #self._plt.add(self._times, self._SPs, 'b-')
-        #self._plt.update()
 
         return True
     
