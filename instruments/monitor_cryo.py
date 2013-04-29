@@ -6,6 +6,7 @@ import qt
 import time
 import numpy as np
 import os
+import urllib
 
 class monitor_cryo(MonitorInstrument):
     '''This is a child class of the monitor instrument. 
@@ -220,7 +221,14 @@ class monitor_cryo(MonitorInstrument):
             with open('//tudelft.net/staff-groups/tnw/ns/qt/Diamond/setups/LT2/cryo.txt','a') as f:
                 f.write('%.0f\t%s\t%s\t%s\t%.3f V\n'%(t_num,t_str,lev1,lev2,volt))
                 f.close()
-        
+                
+        if self.get_send_email():
+            try:
+                params = urllib.urlencode({'entry_312373567': lev1, 'entry_941467047': lev2, 'ss-submit': 'Submit'})
+                urllib.urlopen('https://docs.google.com/forms/d/1T0ZY1G08LPWRn3M_-yq--PAdrz_8LtqzQJn9AL3qZVs/formResponse', params)
+            except Exception:
+                print ' error publishing levels'
+          
         if (lev2_flt < self.get_he2_lvl_min()) or (volt != 'n/a' and volt < self.get_temp_voltage_min()) or (-0.1 < lev1_flt < self.get_he1_lvl_min()):
             subject= 'Warning from Cryo LT2!'
             message = 'Warning from Cryo LT2: Measured levels: \n'+\
