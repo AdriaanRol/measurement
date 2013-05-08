@@ -5,7 +5,7 @@ config['adwin_lt2_dacs'] = {
         'atto_y' : 2,
         'atto_z' : 3,
         'gate' : 4,
-        'newfocus_frq' : 5,
+        'yellow_aom' : 5,
         'matisse_aom' : 6,
         'green_aom': 7,
         'newfocus_aom' : 8,
@@ -201,7 +201,8 @@ config['adwin_lt2_processes'] = {
                     ['SSRO_duration'               ,  50],
                     ['SSRO_stop_after_first_photon',   0],
                     ['cycle_duration'              , 300],
-                    ['CR_probe'                    ,  10]
+                    ['CR_probe'                    ,  10],
+                    ['repump_after_repetitions'    ,  1]
                     ],
                 'params_long_index'  : 20,
                 'params_long_length' : 25,
@@ -482,6 +483,44 @@ config['adwin_lt2_processes'] = {
                     ],
                 'params_float_index'  : 21,
                 'params_float_length' : 10,
+                },
+                
+        'general_pulses' : { 
+                'index' : 9,
+                'file' : 'general_pulser.TB9',
+                'params_long' : [           # keep order!!!!!!!!!!!!!
+                    ['counter_channel'             ,   4],
+                    ['dac1_channel'                ,   7],
+                    ['dac2_channel'                ,   6],
+                    ['dac3_channel'                ,   8],
+                    ['max_element'                 ,   4],
+                    ['cycle_duration'              , 300],
+                    ['wait_after_pulse_duration'   ,   1],
+                    ['max_sweep'                   ,  10],
+                    ['sweep_channel'               ,   7],
+                    ['do_sweep_duration'           ,   0],
+                    ['sweep_element'               ,  10],
+                    ],
+                'params_long_index'  : 20,
+                'params_long_length' : 11,
+                'par' : {
+                    'repetition_counter'      : 73,
+                    'total_counts'            : 15,
+                    },
+                'data_float': {
+                    'dac1_voltages'             : 21,
+                    'dac2_voltages'             : 22,
+                    'dac3_voltages'             : 23,
+                    'sweep_voltages'            : 26,
+                    },
+                'data_long': {
+                    'counter_on'                : 24,
+                    'element_durations'         : 25,
+                    'results'                   : 30,
+                    'histogram'                 : 31,
+                    'counter'                   : 32,
+                    'sweep_durations'           : 27,
+                    },
                 },
 
         'lde' : {

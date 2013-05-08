@@ -19,7 +19,7 @@ hardware = {
 sil9 = {
         'MW_source_power':  20,
         'MW_source_freq': 2.79E9,
-        'MW_freq_center':  2.8289064E9,
+        'MW_freq_center':  2.829085E9,
         'hf_splitting': 2.185E6,
         'mI_p1_freq':   2.766E6,
         'mI_m1_freq':   7.136E6,
@@ -37,7 +37,7 @@ pulses ={
         'RF_pi_amp':            .8,
         'RF_pi2_amp':            .8,
         'pi2pi_len' :           397.,
-        'pi2pi_amp':            0.11,
+        'pi2pi_amp':            0.16,
         'pi2_len' :           35.,
         'pi2_amp':            0.91,
         'time_between_CORPSE':  1.,
@@ -59,15 +59,16 @@ ssroprotocol = {
         'wait_after_pulse_duration':    3,
         'CR_preselect':                 1000,
         'RO_duration':                  37,     # ADwin time (us) 
-        'green_repump_amplitude':       200e-6,
+        'green_repump_amplitude':       150e-6,
         'green_off_amplitude':          0e-6,
-        'Ex_CR_amplitude':              40e-9, #OK
-        'A_CR_amplitude':               520e-9,#NOTE 15 for A1 readout
+        'Ex_CR_amplitude':              30e-9, #OK
+        'A_CR_amplitude':               20e-9,#NOTE 15 for A1 readout
         'Ex_SP_amplitude':              30e-9,
-        'A_SP_amplitude':               520e-9, #OK: PREPARE IN MS = 0
+        'A_SP_amplitude':               30e-9, #OK: PREPARE IN MS = 0
         'Ex_RO_amplitude':              30e-9, #OK: READOUT MS = 0
         'A_RO_amplitude':               0e-9,
-        'CR_probe':                     12.
+        'CR_probe':                     12,
+        'repump_after_repetitions':     1,
         }
 
 MBIprotocol={

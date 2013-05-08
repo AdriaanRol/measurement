@@ -276,7 +276,7 @@ class Measurement(object):
 
     def save_instrument_settings_file(self, parent=None):
         if parent == None:
-            parent = self.h5data
+            parent = self.h5basegroup
         
         h5settingsgroup = parent.create_group('instrument_settings')
         inslist = dict_to_ordered_tuples(qt.instruments.get_instruments())

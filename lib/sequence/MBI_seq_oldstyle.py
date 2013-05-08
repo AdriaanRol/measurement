@@ -38,10 +38,10 @@ def MBI_element(seq,el_name,freq,jump_target,goto_target):
             
     seq.add_pulse('MBI_pulse_I', channel = chan_mwI, element = el_name,
         start = 0, duration = MBIcfg['MBI_pulse_len'], amplitude = MBIcfg['MBI_pulse_amp'],
-        shape = 'sine',frequency=freq,envelope='erf',start_reference = 'wait',link_start_to = 'end')
+        shape = 'cosine',frequency=freq,start_reference = 'wait',link_start_to = 'end')
     seq.add_pulse('MBI_pulse_Q', channel = chan_mwQ, element = el_name,
         start = 0, duration = MBIcfg['MBI_pulse_len'], amplitude = MBIcfg['MBI_pulse_amp'],
-        shape = 'sine',frequency=freq,envelope='erf',start_reference = 'wait',link_start_to = 'end')
+        shape = 'sine',frequency=freq,start_reference = 'wait',link_start_to = 'end')
     seq.add_pulse('pulse_mod2', channel = chan_mw_pm, element = el_name,
         start=-MW_pulse_mod_risetime, duration=2*MW_pulse_mod_risetime, 
         start_reference = 'MBI_pulse_I', link_start_to = 'start', 
@@ -75,11 +75,11 @@ def shelving_pulse(seq,pulse_name,freq,el_name):
     seq.add_pulse(pulse_name+'I', channel = chan_mwI, element = el_name,
             start = 0, duration =pulsescfg['shelving_len'], amplitude = pulsescfg['shelving_amp'], 
             start_reference = 'wait_before'+pulse_name, 
-            link_start_to = 'end', shape = 'sine',envelope='erf',frequency=freq)  
+            link_start_to = 'end', shape = 'cosine',frequency=freq)  
     seq.add_pulse(pulse_name+'Q', channel = chan_mwQ, element = el_name,
             start = 0, duration =pulsescfg['shelving_len'], amplitude = pulsescfg['shelving_amp'], 
             start_reference = 'wait_before'+pulse_name, 
-            link_start_to = 'end', shape = 'sine',envelope='erf',frequency=freq)
+            link_start_to = 'end', shape = 'sine',frequency=freq)
     seq.add_pulse(pulse_name+'_mod', channel = chan_mw_pm, element = el_name,
             start=-MW_pulse_mod_risetime, duration=2*MW_pulse_mod_risetime, 
             start_reference = pulse_name+'I', link_start_to = 'start', duration_reference = pulse_name+'I', 
@@ -112,10 +112,10 @@ def readout_pulse(seq, freq=2E6,pulse_name='', first='', el_name=''):
     
     seq.add_pulse(pulse_name+'I', channel = chan_mwI, element = el_name,
             start = 0, duration =pulsescfg['pi2pi_len'], amplitude = pulsescfg['pi2pi_amp'],
-            start_reference = first, link_start_to = 'end', shape = 'sine',envelope='erf',frequency=freq)
+            start_reference = first, link_start_to = 'end', shape = 'cosine',frequency=freq)
     seq.add_pulse(pulse_name+'Q', channel = chan_mwQ, element = el_name,
             start = 0, duration =pulsescfg['pi2pi_len'], amplitude = pulsescfg['pi2pi_amp'],
-            start_reference = first, link_start_to = 'end', shape = 'sine',envelope='erf',frequency=freq)
+            start_reference = first, link_start_to = 'end', shape = 'sine',frequency=freq)
 
     seq.add_pulse(pulse_name+'_mod', channel = chan_mw_pm, element = el_name,
             start=-MW_pulse_mod_risetime, duration=2*MW_pulse_mod_risetime, 
@@ -253,11 +253,11 @@ def MW_sweep (m, seq):
                         seq.add_pulse('MW_pulse_I'+str(j),channel=chan_mwI,element=el_name,start=0,
                             start_reference= 'wait'+str(j),link_start_to='end',
                             duration=m.MW_pulse_len[i], amplitude = m.MW_pulse_amp[i],
-                            shape='sine',envelope='erf',frequency=m.MW_mod_freq[i])
+                            shape='cosine',frequency=m.MW_mod_freq[i])
                         seq.add_pulse('MW_pulse_Q'+str(j),channel=chan_mwQ,element=el_name,start=0,
                             start_reference= 'wait'+str(j),link_start_to='end',
                             duration=m.MW_pulse_len[i], amplitude = m.MW_pulse_amp[i],
-                            shape='sine',envelope='erf',frequency=m.MW_mod_freq[i])
+                            shape='sine',frequency=m.MW_mod_freq[i])
                         seq.add_pulse('MW_pulse_mod'+str(j),channel=chan_mw_pm,element=el_name,
                             start=-MW_pulse_mod_risetime, duration = 2*MW_pulse_mod_risetime,
                             start_reference='MW_pulse_I'+str(j),link_start_to='start',
@@ -267,11 +267,11 @@ def MW_sweep (m, seq):
                         seq.add_pulse('MW_pulse_I'+str(j),channel=chan_mwI,element=el_name,start=0,
                             start_reference= 'wait'+str(j),link_start_to='end',
                             duration=m.MW1_pulse_len[i], amplitude = m.MW1_pulse_amp[i],
-                            shape='sine',envelope='erf',frequency=m.MW1_mod_freq[i])
+                            shape='cosine',frequency=m.MW1_mod_freq[i])
                         seq.add_pulse('MW_pulse_Q'+str(j),channel=chan_mwQ,element=el_name,start=0,
                             start_reference= 'wait'+str(j),link_start_to='end',
                             duration=m.MW1_pulse_len[i], amplitude = m.MW1_pulse_amp[i],
-                            shape='sine',envelope='erf',frequency=m.MW1_mod_freq[i])
+                            shape='sine',frequency=m.MW1_mod_freq[i])
                         seq.add_pulse('MW_pulse_mod'+str(j),channel=chan_mw_pm,element=el_name,
                             start=-MW_pulse_mod_risetime, duration = 2*MW_pulse_mod_risetime,
                             start_reference='MW_pulse_I'+str(j),link_start_to='start',
@@ -345,11 +345,11 @@ def Nucl_Ramsey(m,seq):
             seq.add_pulse('MW_pulse_I'+str(i),channel=chan_mwI,element=el_name,start=0,
                            start_reference= last,link_start_to='end',
                            duration=m.MW_pulse_len[i], amplitude = m.MW_pulse_amp[i],
-                           shape='sine',envelope='erf',frequency=m.MW_mod_freq[i])
+                           shape='cosine',frequency=m.MW_mod_freq[i])
             seq.add_pulse('MW_pulse_Q'+str(i),channel=chan_mwQ,element=el_name,start=0,
                            start_reference= last,link_start_to='end',
                            duration=m.MW_pulse_len[i], amplitude = m.MW_pulse_amp[i],
-                           shape='sine',envelope='erf',frequency=m.MW_mod_freq[i])
+                           shape='sine',frequency=m.MW_mod_freq[i])
             seq.add_pulse('MW_pulse_mod'+str(i),channel=chan_mw_pm,element=el_name,
                            start=-MW_pulse_mod_risetime, duration = 2*MW_pulse_mod_risetime,
                            start_reference='MW_pulse_I'+str(i),link_start_to='start',
@@ -369,11 +369,11 @@ def Nucl_Ramsey(m,seq):
             seq.add_pulse('MW_pulse_I'+str(i),channel=chan_mwI,element=el_name,start=0,
                            link_start_to='end',start_reference=last,
                            duration=m.MW_pulse_len[i], amplitude = m.MW_pulse_amp[i],
-                           shape='sine',envelope='erf',frequency=m.MW_mod_freq[i])
+                           shape='cosine',frequency=m.MW_mod_freq[i])
             seq.add_pulse('MW_pulse_Q'+str(i),channel=chan_mwQ,element=el_name,start=0,
                            link_start_to='end', start_reference=last,
                            duration=m.MW_pulse_len[i], amplitude = m.MW_pulse_amp[i],
-                           shape='sine',envelope='erf',frequency=m.MW_mod_freq[i])
+                           shape='sine',frequency=m.MW_mod_freq[i])
             seq.add_pulse('MW_pulse_mod'+str(i),channel=chan_mw_pm,element=el_name,
                            start=-MW_pulse_mod_risetime, duration = 2*MW_pulse_mod_risetime,
                            start_reference='MW_pulse_I'+str(i),link_start_to='start',

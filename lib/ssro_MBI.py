@@ -18,7 +18,7 @@ from analysis.lib.spin import pulse_calibration_fitandplot_lib as lde_calibratio
 from analysis.lib.spin import spin_control
 from config import experiment_lt2 as exp
 from sequence import MBI_seq as MBIseq
-
+from sequence import MBI_seq_oldstyle as MBIseq_old
 
 #import measurement.measurement as meas
 #from measurement.AWG_HW_sequencer_v2 import Sequence
@@ -94,7 +94,7 @@ class MBI(Measurement):
             self.ctr_channel=2
             self.mwpower = self.MW_power
         else:
-            self.ins_green_aom=qt.instruments['GreenAOM']
+            self.ins_green_aom=qt.instruments['YellowAOM'] #XXX YELLOW XXX
             self.ins_E_aom=qt.instruments['MatisseAOM']
             self.ins_A_aom=qt.instruments['NewfocusAOM']
             self.adwin=qt.instruments['adwin']
@@ -105,7 +105,7 @@ class MBI(Measurement):
             self.mwpower = self.MW_power
             self.microwaves.set_status('off')
         self.par['counter_channel'] = self.ctr_channel
-        self.par['green_laser_DAC_channel'] =      self.adwin.get_dac_channels()['green_aom']
+        self.par['green_laser_DAC_channel'] =      self.adwin.get_dac_channels()['yellow_aom'] #XXX YELLOW XXX
         self.par['Ex_laser_DAC_channel'] =         self.adwin.get_dac_channels()['matisse_aom']
         self.par['A_laser_DAC_channel'] =          self.adwin.get_dac_channels()['newfocus_aom']
 
@@ -205,6 +205,7 @@ class MBI(Measurement):
         print "Sweep parameter:" +str(self.par['sweep_par'])
         
         self.adwin.start_MBI_Multiple_RO(
+            load=True, stop_processes=['counter'],
             counter_channel = self.hardwaredic['counter_channel'],
             green_laser_DAC_channel = self.par['green_laser_DAC_channel'],
             Ex_laser_DAC_channel = self.par['Ex_laser_DAC_channel'],
@@ -367,7 +368,8 @@ class MBI(Measurement):
         self.awg.set_runmode('CONT')
         self.adwin.set_simple_counting()
         self.counters.set_is_running(1)
-        self.ins_green_aom.set_power(180e-6)
+        self.counters.set_is_running(1)
+        #self.ins_green_aom.set_power(180e-6) #XXX YELLOW XXX
 
         self.microwaves.set_status('off')
         self.microwaves.set_iq('off')
@@ -774,11 +776,12 @@ def sweep_nr_of_cycle_steps (lt1 = False, name = 'SIL9_lt2_multiple_pump_cycles'
 #    m.MWdic['MW_mod_freq'] = get_freq(m,MW_line)*np.ones(nr_of_datapoints)  
 #    m.MBI_mod_freq = get_freq(m,init_line)*np.ones(nr_of_datapoints)
 ################
+    
     m.nr_of_MW_pulses = nr_of_MW_pulses    
     m.MW_pulse_len = np.ones(nr_of_datapoints)*m.pulsedic['pi2pi_len']
     m.MW_pulse_amp = np.ones(nr_of_datapoints)*m.pulsedic['pi2pi_amp']
-    m.MW1_pulse_len = np.ones(nr_of_datapoints)*105
-    m.MW1_pulse_amp = np.ones(nr_of_datapoints)*0.95
+    m.MW1_pulse_len = np.ones(nr_of_datapoints)*80
+    m.MW1_pulse_amp = np.ones(nr_of_datapoints)*0.9
     m.do_shelv_pulse = do_shel*np.ones(RO_reps)
     
     m.MBI_mod_freq = get_freq(m,init_line)*np.ones(nr_of_datapoints)
@@ -794,7 +797,7 @@ def sweep_nr_of_cycle_steps (lt1 = False, name = 'SIL9_lt2_multiple_pump_cycles'
     m.par['sweep_par_name'] = 'Pump cycles'
     m.par['RO_repetitions'] = int(len(m.par['sweep_par'])*reps_per_datap)
     
-    m.start_measurement(MBIseq.MW_sweep)
+    m.start_measurement(MBIseq_old.MW_sweep)
     dp = get_datapath()
     path = lde_calibration.find_newest_data (dp, string=name)
     spin_control.plot_data_MBI(path)
