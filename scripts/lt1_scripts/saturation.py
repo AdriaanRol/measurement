@@ -6,9 +6,9 @@ from numpy import *
 import msvcrt
 
 #measurement parameters
-name = 'Sil2-PSB_after_excit_opt_2'
+name = 'Sil2_PSB_SM'
 steps=31
-max_power=180e-6       #[w]
+max_power=390e-6       #[w]
 counter=1      #number of counter
 PH_count=False    # counting with the HH, assumes apd on channel 0
 bg_x=1          #delta x position of background [um]

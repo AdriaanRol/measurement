@@ -224,12 +224,6 @@ class MBIMeasurement(SequenceSSROMeasurement):
         self.seq.force_HW_sequencing(True)
         self.seq.send_sequence()
 
-    def autoconfig(self):
-        SequenceSSROMeasurement.autoconfig(self)
-
-        self.params.from_dict(qt.cfgman['protocols']['AdwinMBI'])
-
-
     def setup(self):
         SequenceSSROMeasurement.setup(self)
 
@@ -238,6 +232,17 @@ class MBIMeasurement(SequenceSSROMeasurement):
                 self.params['nr_of_ROsequences'] * \
                 self.params['pts'] * \
                 self.params['reps_per_ROsequence']
+
+        self.green_aom.set_power(0.)
+        self.E_aom.set_power(0.)
+        self.A_aom.set_power(0.)
+
+        self.params['Ex_laser_DAC_channel'] = self.adwin.get_dac_channels()\
+                [self.E_aom.get_pri_channel()]
+        self.params['A_laser_DAC_channel'] = self.adwin.get_dac_channels()\
+                [self.A_aom.get_pri_channel()]
+        self.params['green_laser_DAC_channel'] = self.adwin.get_dac_channels()\
+                [self.green_aom.get_pri_channel()]
     
     def run(self):
         
@@ -766,7 +771,7 @@ class PostInitDarkESR(MBIMeasurement):
             
             self.seq.add_pulse(name='seq_done',
                     channel = chan_adwin_sync,
-                    element = 'spin_cont-int(l)/2rol'+str(i),
+                    element = 'spin_control'+str(i),
                     duration = AWG_to_adwin_ttl_trigger_duration, 
                     amplitude = 2,
                     start = 0,
@@ -1076,16 +1081,17 @@ def _prepare(m):
     # calculate, convert and copy some things automatically in order to avoid
     # redundencies in the parameter specifications 
     m.autoconfig()
+    m.params.from_dict(qt.cfgman['protocols']['AdwinSSRO'])
+    m.params.from_dict(qt.cfgman['protocols']['sil2-default']['AdwinSSRO'])
+    m.params.from_dict(qt.cfgman['protocols']['sil2-default']['AdwinSSRO+MBI'])
     
     # general stuff for adwin SSRO
     m.params['Ex_SP_amplitude'] = 5e-9
-    m.params['SP_E_duration'] = 300
-    m.params['CR_preselect'] = 40
-    m.params['CR_probe'] = 40
+    m.params['SP_E_duration'] = 100
 
     # parameters for MBI
     m.params['MBI_steps'] = 1 # how often to retry MBI before going to CR
-    m.params['MBI_duration'] = 4 # in adwin process cycles (us)
+    m.params['MBI_duration'] = 5 # in adwin process cycles (us)
 
     # the hard pi pulse that brings us back to ms=-1 after MBI
     m.params['AWG_wait_duration_before_shelving_pulse'] = 100
@@ -1095,21 +1101,21 @@ def _prepare(m):
     # MBI MW pulse (CNOT)
     m.params['AWG_MBI_MW_pulse_duration'] = 2500 # in ns
     m.params['AWG_MBI_MW_pulse_amp'] = 0.0105
-    m.params['AWG_MBI_MW_pulse_ssbmod_frq'] = 21.194e6- 2.189e6#  + 2.187e6
-    m.params['Ex_MBI_amplitude'] = 5e-9
+    m.params['AWG_MBI_MW_pulse_ssbmod_frq'] = 43.862e6 - 2.189e6#  + 2.187e6
+    m.params['Ex_MBI_amplitude'] = 2e-9
     m.params['MBI_threshold'] = 1
     
     # the waiting time has to be long enough that the adwin can jump in case
     # of success, i.e. the adwin has to react before the sequence element
     # is finished. MBI RO duration + 10 works fine, shorter can cause the
     # AWG to miss the jump trigger (if it happens once, then we're scr*wed)
-    m.params['AWG_wait_for_adwin_MBI_duration'] = np.array([15000], dtype=int)
+    m.params['AWG_wait_for_adwin_MBI_duration'] = np.array([25000], dtype=int)
     m.params['AWG_wait_duration_before_MBI_MW_pulse'] = 50
     m.params['wait_for_MBI_pulse'] = 3 # deprecated, but i'm not sure if i removed all references
 
     m.params['wait_after_pulse_duration'] = 10
     m.params['wait_after_RO_pulse_duration'] = 10
-
+ 
     # MW settings
     m.params['mw_frq'] = 2.80e9
     m.params['mw_power'] = 20
@@ -1117,9 +1123,9 @@ def _prepare(m):
     # (RO) sequence parameters
     # everything can be set individually for each RO iteration
     m.params['nr_of_ROsequences'] = 1
-    m.params['A_SP_durations'] = np.array([100], dtype=int)
+    m.params['A_SP_durations'] = np.array([5], dtype=int)
     m.params['E_RO_durations'] = np.array([15], dtype=int)
-    m.params['A_SP_voltages'] = np.array([m.A_aom.power_to_voltage(10e-9)])
+    m.params['A_SP_voltages'] = np.array([m.A_aom.power_to_voltage(0e-9)])
     m.params['E_RO_voltages'] = np.array([m.E_aom.power_to_voltage(5e-9)])
     m.params['send_AWG_start'] = np.array([1])
     m.params['sequence_wait_time'] = np.array([0], dtype=int)
@@ -1133,7 +1139,7 @@ def _prepare(m):
     #Hard pi over 2 pulse
     m.params['AWG_Pi2_MW_pulse_duration'] = 37
     m.params['AWG_Pi2_MW_pulse_amp'] = 0.9
-    m.params['AWG_Pi2_MW_pulse_ssbmod_frq'] = m.params['AWG_MBI_MW_pulse_ssbmod_frq']- 2.189e6/2
+    m.params['AWG_Pi2_MW_pulse_ssbmod_frq'] = m.params['AWG_MBI_MW_pulse_ssbmod_frq']+ 2.189e6/2
 
 
     # CORPSE pulse
@@ -1141,7 +1147,7 @@ def _prepare(m):
     m.params['AWG_uncond_CORPSE300_duration'] = 97
     m.params['AWG_uncond_CORPSE420_duration'] = 137
     m.params['AWG_uncond_CORPSE_amp'] = 0.9
-    m.params['AWG_uncond_CORPSE_mod_frq'] = m.params['AWG_MBI_MW_pulse_ssbmod_frq']#+(2.189e6/2)
+    m.params['AWG_uncond_CORPSE_mod_frq'] = m.params['AWG_MBI_MW_pulse_ssbmod_frq']+(2.189e6/2)
 
     # RF Nitrogen pi pulse
     m.params['AWG_RF_pipulse_duration'] = 90e3
@@ -1207,15 +1213,20 @@ def esr(name):
     m = PostInitDarkESR(name, qt.instruments['adwin'], qt.instruments['AWG'])
     _prepare(m)
 
+    # debugging Set MW pulse amp to 0 
+    m.params['AWG_MBI_MW_pulse_amp'] = 0.01
+    m.params['MBI_threshold'] = 1
+
     # ESR pulses
-    m.params['RO_MW_pulse_duration'] = 5000
-    m.params['RO_MW_pulse_amp'] = 0.005
+    m.params['RO_MW_pulse_duration'] = 2500
+    m.params['RO_MW_pulse_amp'] = 0.01
 
     # measurement settings
     m.params['reps_per_ROsequence'] = 1000
-    m.params['pts'] = 41
+    m.params['pts'] = 31
     pts=m.params['pts']
-    m.params['RO_MW_pulse_ssbmod_frqs'] = np.linspace(-4e6,4e6,pts) +21.142e6
+    m.params['RO_MW_pulse_ssbmod_frqs'] = np.linspace(-4e6,4e6,pts) + \
+            m.params['AWG_MBI_MW_pulse_ssbmod_frq'] + 2.189e6
 
     # for the autoanalysis
     m.params['sweep_name'] = 'MW frq (MHz)'

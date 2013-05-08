@@ -39,7 +39,12 @@ def darkesr(name):
 def calslowpipulse(name):
     m = mbi.ElectronRabi('pi_calib_slow_'+name,#'pi_calib_slow', 
         qt.instruments['adwin'], qt.instruments['AWG'])
-    mbi._prepare(m)
+    #mbi._prepare(m)
+
+
+
+
+
 
     pts = 8
     m.params['pts'] = pts
