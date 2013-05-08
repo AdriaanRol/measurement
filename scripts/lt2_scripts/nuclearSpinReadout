@@ -1,4 +1,0 @@
-
-from pylab import *
-
-U = array ()

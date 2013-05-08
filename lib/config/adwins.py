@@ -221,8 +221,15 @@ config['adwin_lt2_processes'] = {
                 'params_float_index'  : 21,
                 'params_float_length' : 10,
                 'par' : {
-                    'set_phase_locking_on'      : 19,
-                    'set_gate_good_phase'       : 18,}
+                    'set_phase_locking_on'          : 19,
+                    'set_gate_good_phase'           : 18,
+                    'get_cr_check_counts'           : 70,
+                    'get_cr_below_threshold_events' : 71,
+                    'get_noof_cr_checks'            : 72,
+                    'get_noof_repetitions'          : 73,
+                    'set_CR_preselect'              : 75,
+                    'set_CR_probe'                  : 68,
+                    }
                 },
         
         'spincontrol' : {  #with conditional repump, resonant

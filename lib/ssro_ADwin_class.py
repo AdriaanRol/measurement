@@ -45,8 +45,8 @@ class ssroADwinMeasurement(Measurement):
             self.ctr_channel=2
         else:
             self.ins_green_aom=qt.instruments['GreenAOM']
-            self.ins_E_aom=qt.instruments['MatisseAOM']
-            self.ins_A_aom=qt.instruments['NewfocusAOM']
+            self.ins_E_aom=qt.instruments['NewfocusAOM']
+            self.ins_A_aom=qt.instruments['MatisseAOM']
             self.adwin= qt.instruments['adwin']
             self.counters=qt.instruments['counters']
             self.physical_adwin=qt.instruments['physical_adwin']
@@ -65,8 +65,8 @@ class ssroADwinMeasurement(Measurement):
         self.par = {}
         self.par['counter_channel'] =              self.ctr_channel
         self.par['green_laser_DAC_channel'] =      self.adwin.get_dac_channels()['green_aom']
-        self.par['Ex_laser_DAC_channel'] =         self.adwin.get_dac_channels()['matisse_aom']
-        self.par['A_laser_DAC_channel'] =          self.adwin.get_dac_channels()['newfocus_aom']
+        self.par['Ex_laser_DAC_channel'] =         self.adwin.get_dac_channels()['newfocus_aom']
+        self.par['A_laser_DAC_channel'] =          self.adwin.get_dac_channels()['matisse_aom']
         self.par['AWG_start_DO_channel'] =         1
         self.par['AWG_done_DI_channel'] =          8
         self.par['send_AWG_start'] =               0

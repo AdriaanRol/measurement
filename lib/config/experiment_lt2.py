@@ -51,23 +51,25 @@ pulses ={
         }
 ssroprotocol = {
         'green_repump_duration':        10,
+        'yellow_repump_duration':       1000,
         'CR_duration':                  200, #NOTE 60 for A1 readout
         'SP_E_duration':                250,    # ADwin time (us) 
         'SP_A_duration':                250,    # ADwin time (us) 
         'SP_filter_duration':           0,
         'sequence_wait_time':           1,
         'wait_after_pulse_duration':    3,
-        'CR_preselect':                 1000,
+        'CR_preselect':                 20,
         'RO_duration':                  37,     # ADwin time (us) 
-        'green_repump_amplitude':       150e-6,
+        'green_repump_amplitude':       100e-6,
+        'yellow_repump_amplitude':      150e-9,
         'green_off_amplitude':          0e-6,
         'Ex_CR_amplitude':              30e-9, #OK
-        'A_CR_amplitude':               20e-9,#NOTE 15 for A1 readout
+        'A_CR_amplitude':               30e-9,#280e-9,#NOTE 15 for A1 readout
         'Ex_SP_amplitude':              30e-9,
-        'A_SP_amplitude':               30e-9, #OK: PREPARE IN MS = 0
+        'A_SP_amplitude':               30e-9,#280e-9, #OK: PREPARE IN MS = 0
         'Ex_RO_amplitude':              30e-9, #OK: READOUT MS = 0
         'A_RO_amplitude':               0e-9,
-        'CR_probe':                     12,
+        'CR_probe':                     20,
         'repump_after_repetitions':     1,
         }
 

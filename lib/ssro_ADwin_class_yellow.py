@@ -45,8 +45,8 @@ class ssroADwinMeasurement(Measurement):
             self.ctr_channel=2
         else:
             self.ins_green_aom=qt.instruments['YellowAOM']
-            self.ins_E_aom=qt.instruments['MatisseAOM']
-            self.ins_A_aom=qt.instruments['NewfocusAOM']
+            self.ins_E_aom=qt.instruments['NewfocusAOM']
+            self.ins_A_aom=qt.instruments['MatisseAOM']
             self.adwin= qt.instruments['adwin']
             self.counters=qt.instruments['counters']
             self.physical_adwin=qt.instruments['physical_adwin']
@@ -65,13 +65,13 @@ class ssroADwinMeasurement(Measurement):
         self.par = {}
         self.par['counter_channel'] =              self.ctr_channel
         self.par['green_laser_DAC_channel'] =      self.adwin.get_dac_channels()['yellow_aom']
-        self.par['Ex_laser_DAC_channel'] =         self.adwin.get_dac_channels()['matisse_aom']
-        self.par['A_laser_DAC_channel'] =          self.adwin.get_dac_channels()['newfocus_aom']
+        self.par['Ex_laser_DAC_channel'] =         self.adwin.get_dac_channels()['newfocus_aom']
+        self.par['A_laser_DAC_channel'] =          self.adwin.get_dac_channels()['matisse_aom']
         self.par['AWG_start_DO_channel'] =         1
         self.par['AWG_done_DI_channel'] =          8
         self.par['send_AWG_start'] =               0
         self.par['wait_for_AWG_done'] =            0
-        self.par['green_repump_duration'] =        self.d['green_repump_duration']
+        self.par['green_repump_duration'] =        self.d['yellow_repump_duration']
         self.par['CR_duration'] =                  self.d['CR_duration']
         self.par['SP_duration'] =                  self.d['SP_A_duration']
         self.par['SP_filter_duration'] =           self.d['SP_filter_duration']
@@ -84,7 +84,7 @@ class ssroADwinMeasurement(Measurement):
         self.par['cycle_duration'] =               300
         self.par['repump_after_repetitions'] =     self.d['repump_after_repetitions']
 
-        self.par['green_repump_amplitude'] =       self.d['green_repump_amplitude']
+        self.par['green_repump_amplitude'] =       self.d['yellow_repump_amplitude']
         self.par['green_off_amplitude'] =          self.d['green_off_amplitude']
         self.par['Ex_CR_amplitude'] =              self.d['Ex_CR_amplitude']
         self.par['A_CR_amplitude'] =               self.d['A_CR_amplitude']
