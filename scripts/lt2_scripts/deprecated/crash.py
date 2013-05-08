@@ -1,0 +1,3 @@
+adwin_lt1.start_remote_tpqi_control(cr_count_threshold=1)
+adwin.start_remote_tpqi_control(cr_count_threshold=1,cr_time_limit=30)
+#adwin_lt1.remote_tpqi_control_set_cr_count_threshold(0)
