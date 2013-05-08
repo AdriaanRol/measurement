@@ -218,7 +218,7 @@ INIT:
   cnt_enable(0000b)'turn off all counters
   cnt_mode(counter_channel,00001000b) 'configure counter
 
-  conf_dio(13)      'configure DIO 08:15 as input, all other ports as output
+  conf_dio(11) ' in  is now 16:23   'configure DIO 08:15 as input, all other ports as output
   digout(AWG_start_DO_channel,0)
   
   tmp = digin_edge(0)
@@ -258,6 +258,9 @@ INIT:
   cr_counts = 0
   
 EVENT:
+  
+  par_60 = AWG_event_jump_DO_channel
+  par_61 = AWG_start_DO_channel
   
   awg_in_was_hi = awg_in_is_hi
   awg_in_is_hi = digin(AWG_done_DI_channel)
@@ -394,13 +397,13 @@ EVENT:
        
           ' make sure we don't accidentally think we're done before getting the trigger
           next_MBI_stop = -2
-          'inc(par_62)
         
         else
           ' we expect a trigger from the AWG once it has done the MW pulse
           ' as soon as we assume the AWG has done the MW pulse, we turn on the E-laser,
           ' and start counting
           if(awg_in_switched_to_hi > 0) then
+            
             next_MBI_stop = timer + MBI_duration
             cnt_clear(counter_pattern)    'clear counter
             cnt_enable(counter_pattern)	  'turn on counter
