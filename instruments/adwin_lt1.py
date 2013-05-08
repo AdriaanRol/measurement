@@ -50,6 +50,46 @@ class adwin_lt1(adwin):
                 set_probe_duration = probe_duration,
                 set_aom_voltage = aom_voltage,
                 floating_average = floating_average) 
+    
+    def set_altern_resonant_counting(self,
+            repump_aom = 'green_aom',
+            pump_aom = 'velocity1_aom',
+            probe_aom = 'velocity2_aom',
+            pump_aom_ins = 'Velocity1AOM',
+            probe_aom_ins = 'Velocity2AOM',
+            repump_duration = 5,
+            pump_duration = 2,
+            probe_duration = 2,
+            repump_voltage = 7.,
+            pump_power = 10e-9,
+            probe_power = 10e-9,
+            floating_average = 10,
+            pp_cycles = 5,
+            single_shot = 0,
+            prepump = 1,
+            prepump_duration = 10):
+
+        self.start_alternating_resonant_counting(
+                stop=True, load=True,
+                set_repump_aom_dac = self.dacs[repump_aom],
+                set_pump_aom_dac = self.dacs[pump_aom],
+                set_probe_aom_dac = self.dacs[probe_aom],
+                set_repump_duration = repump_duration,
+                set_pump_duration = pump_duration,
+                set_probe_duration = probe_duration,
+                set_repump_aom_voltage = repump_voltage,
+                set_pump_aom_voltage = \
+                        qt.instruments[pump_aom_ins].power_to_voltage(
+                            pump_power),
+                set_probe_aom_voltage = \
+                        qt.instruments[probe_aom_ins].power_to_voltage(
+                            probe_power),
+                set_floating_average = floating_average,
+                set_pp_cycles = pp_cycles,
+                set_single_shot = single_shot,
+                set_prepump = prepump,
+                set_prepump_duration = prepump_duration)
+
         
     # linescan
     def linescan(self, dac_names, start_voltages, stop_voltages, steps, 
@@ -74,11 +114,9 @@ class adwin_lt1(adwin):
             'none' : adwin only steps
             'counts+suppl' : counts per pixel, plus adwin will record
                 the value of FPar #2 as supplemental data
-
             in any case, the pixel clock will be incremented for each step.
         scan_to_start = False : bool
-            if True, scan involved dacs to start first counters_lt1.set_is_running(1)
-    counters.set_is_running(1)
+            if True, scan involved dacs to start first 
             right now, with default settings of speed2px()
 
         blocking = False : bool
