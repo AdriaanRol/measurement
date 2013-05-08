@@ -357,18 +357,26 @@ def darkesr(name):
     _prepare(m)
     
     m.params['mw_frq'] = 2.8e9
-    m.params['ssbmod_frq_start'] = 13e6
-    m.params['ssbmod_frq_stop'] = 21e6
+    m.params['ssbmod_frq_start'] = 40e6
+    m.params['ssbmod_frq_stop'] = 48e6
     m.params['pts'] = 161
     m.params['mw_power'] = 20
-    m.params['pulse_length'] = 3000 
-    m.params['repetitions'] = 5000
+    m.params['pulse_length'] = 1500 
+    m.params['repetitions'] = 1000
     m.params['ssbmod_amplitude'] = 0.01
     m.params['MW_pulse_mod_risetime'] = 2
-    m.params['RO_duration'] = 15
-    m.params['Ex_RO_amplitude'] = 5e-9
+    m.params['RO_duration'] = 25
+    m.params['Ex_RO_amplitude'] = 2e-9
     m.params['CR_preselect'] = 30
     m.params['CR_probe'] = 30
+
+    m.params['SP_duration'] = 250
+    m.params['A_SP_amplitude'] = 10e-9
+    m.params['Ex_SP_amplitude'] = 0.
+
+    m.params['sweep_name'] = 'MW frq (GHz)'
+    m.params['sweep_pts'] = (np.linspace(m.params['ssbmod_frq_start'],
+                    m.params['ssbmod_frq_stop'], m.params['pts']) + m.params['mw_frq'])*1e-9
 
     _run(m)
 

@@ -687,6 +687,30 @@ config['adwin_lt1_processes'] = {
                  'get_counts' : [41,42,43,44],
                  },
              },
+
+        'alternating_resonant_counting' : {
+            'doc' : '',
+            'index' : 1,
+            'file' : 'lt1_alternating_resonant_counting.tb1',
+            'par' : {
+                'set_repump_aom_dac' : 30,
+                'set_pump_aom_dac' : 31,
+                'set_probe_aom_dac' : 32,
+                'set_repump_duration' : 33,
+                'set_pump_duration' : 34,
+                'set_probe_duration' : 35,
+                'set_pp_cycles' : 36,
+                'set_floating_average' : 11,
+                'set_single_shot' : 37,
+                'set_prepump' : 38,
+                'set_prepump_duration' : 39,
+                },
+            'fpar' : {
+                'set_repump_aom_voltage' : 30,
+                'set_pump_aom_voltage' : 31,
+                'set_probe_aom_voltage' : 32,
+                },
+            },
         
         'set_dac' :  {
             'index' : 3, 
@@ -751,7 +775,7 @@ config['adwin_lt1_processes'] = {
         # ADwin single-shot readout
         'singleshot' : {
                 'index' : 9,
-                'file' : 'singleshot_lt1.TB9',
+                'file' : 'singleshot_lt1.tb9', # 'singleshot_lt1_click_click_click_click.TB9',
                 'par' : {
                     'completed_reps' : 73,
                     'total_CR_counts' : 70,
@@ -809,6 +833,67 @@ config['adwin_lt1_processes'] = {
                     'RO_data' : 25,
                     'statistics' : 26,
                     },                    
+                },
+
+        'singleshot_altern_CR' : {
+                'index' : 9,
+                'file' : 'singleshot_lt1_altern_cr.tb9', # 'singleshot_lt1_click_click_click_click.TB9',
+                'par' : {
+                    'completed_reps' : 73,
+                    'total_CR_counts' : 70,
+                    'CR_threshold' : 25,
+                    'last_CR_counts' : 26,
+                    },
+                'fpar' : {
+                    'gate_voltage' : 26,
+                    },
+                'params_long' : [
+                    ['counter_channel'             ,   1],
+                    ['green_laser_DAC_channel'     ,   7],
+                    ['Ex_laser_DAC_channel'        ,   6],
+                    ['A_laser_DAC_channel'         ,   8],
+                    ['AWG_start_DO_channel'        ,  16],
+                    ['AWG_done_DI_channel'         ,   8],
+                    ['send_AWG_start'              ,   0],
+                    ['wait_for_AWG_done'           ,   0],
+                    ['green_repump_duration'       ,   5],
+                    ['CR_pump_duration'            ,  50],
+                    ['SP_duration'                 , 100],
+                    ['SP_filter_duration'          ,   0],
+                    ['sequence_wait_time'          ,   0],
+                    ['wait_after_pulse_duration'   ,   1],
+                    ['CR_preselect'                ,  10],
+                    ['SSRO_repetitions'            ,1000],
+                    ['SSRO_duration'               ,  50],
+                    ['SSRO_stop_after_first_photon',   0],
+                    ['cycle_duration'              , 300],
+                    ['CR_probe'                    ,  10],
+                    ['CR_probe_duration'           ,  50],
+                    ['CR_pp_cycles'                ,   5],
+                    ['CR_prepump_duration'         , 100],
+                    ],
+                'params_long_index'  : 20,
+                'params_long_length' : 25,
+                'params_float' : [
+                    ['green_repump_voltage' , 0.8],
+                    ['green_off_voltage'    , 0.0],
+                    ['Ex_CR_voltage'        , 0.8],
+                    ['A_CR_voltage'         , 0.8],
+                    ['Ex_SP_voltage'        , 0.8],
+                    ['A_SP_voltage'         , 0.8],
+                    ['Ex_RO_voltage'        , 0.8],
+                    ['A_RO_voltage'         , 0.8],
+                    ['yellow_repump_voltage', 0.8],
+                    ],
+                'params_float_index'  : 21,
+                'params_float_length' : 10,
+                'data_long' : {
+                    'CR_before' : 22,
+                    'CR_after' : 23,
+                    'SP_hist' : 24,
+                    'RO_data' : 25,
+                    'statistics' : 26,
+                    },
                 },
 
         'singleshot_AWG' : {

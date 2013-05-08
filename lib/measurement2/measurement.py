@@ -244,14 +244,18 @@ class Measurement(object):
         
         shutil.copy(filepath, fdir+'/')
 
-    def save_params(self):
+    def save_params(self, grp=None):
         '''
         adds all measurement params contained in self.params as attributes
-        to the basis data group of the hdf5 data object
+        to the basis data group of the hdf5 data object or any other
+        specified object.
         '''
+        if grp == None:
+            grp = self.h5basegroup
+
         params = self.params.to_dict()
         for k in params:
-            self.h5basegroup.attrs[k] = params[k]
+            grp.attrs[k] = params[k]
         
         self.h5data.flush()
 
@@ -270,12 +274,17 @@ class Measurement(object):
             fp = cfgman[k]._filename
             shutil.copy(fp, fdir)
 
-    def save_instrument_settings_file(self):
-        h5settingsgroup = self.h5basegroup.create_group('instrument_settings')
+    def save_instrument_settings_file(self, parent=None):
+        if parent == None:
+            parent = self.h5basegroup
+        
+        h5settingsgroup = parent.create_group('instrument_settings')
         inslist = dict_to_ordered_tuples(qt.instruments.get_instruments())
+        
         for (iname, ins) in inslist:
-            insgroup=h5settingsgroup.create_group(iname)
+            insgroup = h5settingsgroup.create_group(iname)
             parlist = dict_to_ordered_tuples(ins.get_parameters())
+            
             for (param, popts) in parlist:
                 try:
                     insgroup.attrs[param] = ins.get(param, query=True) \
@@ -285,7 +294,7 @@ class Measurement(object):
                         insgroup.attrs[param] = str(ins.get(param, query=False))
                 
     def review_params(self):
-        '''
+        ''' 
         prints a summary of all measurement params and asks for confirmation.
         if confirmed, returns True, otherwise False
         '''
@@ -362,7 +371,6 @@ class AdwinControlledMeasurement(Measurement):
         return func()
 
     def save_adwin_data(self, name, variables):
-        
         grp = h5.DataGroup(name, self.h5data, 
                 base=self.h5base)
         
@@ -372,9 +380,14 @@ class AdwinControlledMeasurement(Measurement):
             if data != None:
                 grp.add(name,data=data)
 
-        params = self.adwin_process_params.to_dict()
-        for k in params:
-            grp.group.attrs[k] = params[k]
+        # save all parameters in each group (could change per run!)
+        self.save_params(grp=grp.group)  
+
+        # then save all specific adwin params, overwriting other params
+        # if double
+        adwinparams = self.adwin_process_params.to_dict()
+        for k in adwinparams:
+            grp.group.attrs[k] = adwinparams[k]
 
         self.h5data.flush()
 

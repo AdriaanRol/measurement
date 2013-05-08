@@ -32,7 +32,7 @@ def recalibrate_aoms(names=['Velocity1AOM', 'Velocity2AOM']):
     qt.instruments['PMServo'].move_out()
     qt.msleep(1)
 
-def check_powers():
+def check_powers(setpoints=(50e-9,10e-9)):
     qt.instruments['adwin'].set_simple_counting()
     
     turn_off_lasers()
@@ -41,16 +41,16 @@ def check_powers():
     qt.msleep(1)
 
     print 'Velocity 1: ',
-    qt.instruments['Velocity1AOM'].set_power(2e-9)
+    qt.instruments['Velocity1AOM'].set_power(setpoints[0])
     qt.msleep(1)
-    print qt.instruments['powermeter'].get_power()*1e9, '(setpoint: 2)'
+    print qt.instruments['powermeter'].get_power()*1e9, '; setpoint:', setpoints[0]*1e9
     qt.instruments['Velocity1AOM'].apply_voltage(0)
 
 
     print 'Velocity 2: ',
-    qt.instruments['Velocity2AOM'].set_power(2e-9)
+    qt.instruments['Velocity2AOM'].set_power(setpoints[1])
     qt.msleep(1)
-    print qt.instruments['powermeter'].get_power()*1e9, '(setpoint: 2)'
+    print qt.instruments['powermeter'].get_power()*1e9, '; setpoint:', setpoints[1]*1e9
     qt.instruments['Velocity2AOM'].apply_voltage(0)
 
     turn_off_lasers()

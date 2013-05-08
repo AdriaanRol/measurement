@@ -2,12 +2,12 @@ import qt
 import msvcrt
 # from measurement.AWG_HW_sequencer_v2 import Sequence
 
-name='ESR_SIL2_LT1'
-start_f = 2.87 - 0.1 #   2.853 #2.85 #  #in GHz
-stop_f  = 2.87 + 0.1 #   2.864 #2.905 #   #in GHz
+name='ESR_SIL14_LT1'
+start_f = 2.88 - 0.05 #   2.853 #2.85 #  #in GHz
+stop_f  = 2.88 + 0.05 #   2.864 #2.905 #   #in GHz
 steps   = 201
 mw_power = -8  #in dBm
-green_power = 50e-6
+green_power = 10e-6
 int_time = 30       #in ms
 reps = 5
 
@@ -17,7 +17,7 @@ f_list = linspace(start_f*1e9, stop_f*1e9, steps)
 ins_smb = qt.instruments['SMB100']
 ins_adwin = qt.instruments['adwin']
 ins_counters = qt.instruments['counters']
-counter = 2
+counter = 1
 MW_power = mw_power
 
 ins_counters.set_is_running(0)
