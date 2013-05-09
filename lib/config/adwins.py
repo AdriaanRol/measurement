@@ -221,15 +221,18 @@ config['adwin_lt2_processes'] = {
                 'params_float_index'  : 21,
                 'params_float_length' : 10,
                 'par' : {
-                    'set_phase_locking_on'          : 19,
-                    'set_gate_good_phase'           : 18,
-                    'get_cr_check_counts'           : 70,
-                    'get_cr_below_threshold_events' : 71,
-                    'get_noof_cr_checks'            : 72,
-                    'get_noof_repetitions'          : 73,
-                    'set_CR_preselect'              : 75,
-                    'set_CR_probe'                  : 68,
-                    }
+                    'completed_reps' : 73,
+                    'total_CR_counts' : 70,
+                    'CR_threshold' : 25,
+                    'last_CR_counts' : 26,
+                    },
+				'data_long' : {
+                    'CR_before' : 22,
+                    'CR_after' : 23,
+                    'SP_hist' : 24,
+                    'RO_data' : 25,
+                    'statistics' : 26,
+                    }, 
                 },
         
         'spincontrol' : {  #with conditional repump, resonant
@@ -775,7 +778,7 @@ config['adwin_lt1_processes'] = {
         # ADwin single-shot readout
         'singleshot' : {
                 'index' : 9,
-                'file' : 'singleshot_lt1.tb9', # 'singleshot_lt1_click_click_click_click.TB9',
+                'file' : 'singleshot_lt1.tb9',
                 'par' : {
                     'completed_reps' : 73,
                     'total_CR_counts' : 70,
@@ -783,7 +786,6 @@ config['adwin_lt1_processes'] = {
                     'last_CR_counts' : 26,
                     },
                 'fpar' : {
-                    'gate_voltage' : 26,
                     },
                 'params_long' : [
                     ['counter_channel'             ,   1],
@@ -806,10 +808,6 @@ config['adwin_lt1_processes'] = {
                     ['SSRO_stop_after_first_photon',   0],
                     ['cycle_duration'              , 300],
                     ['CR_probe'                    ,  10],
-                    ['green_after_yellow_failed'   ,  0],
-                    ['yellow_laser_DAC_channel'    ,  3],
-                    ['yellow_repump_duration'      ,  10],
-                    ['gate_DAC_channel'            ,  5],
                     ],
                 'params_long_index'  : 20,
                 'params_long_length' : 25,
@@ -822,7 +820,6 @@ config['adwin_lt1_processes'] = {
                     ['A_SP_voltage'         , 0.8],
                     ['Ex_RO_voltage'        , 0.8],
                     ['A_RO_voltage'         , 0.8],
-                    ['yellow_repump_voltage', 0.8],
                     ],
                 'params_float_index'  : 21,
                 'params_float_length' : 10,
@@ -837,7 +834,7 @@ config['adwin_lt1_processes'] = {
 
         'singleshot_altern_CR' : {
                 'index' : 9,
-                'file' : 'singleshot_lt1_altern_cr.tb9', # 'singleshot_lt1_click_click_click_click.TB9',
+                'file' : 'singleshot_lt1_altern_cr.tb9', 
                 'par' : {
                     'completed_reps' : 73,
                     'total_CR_counts' : 70,
