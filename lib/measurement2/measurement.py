@@ -353,12 +353,11 @@ class Measurement(object):
 class AdwinControlledMeasurement(Measurement):
     
     mprefix = 'AdwinMeasurement'
+    adwin_process = ''
 
-    def __init__(self, name, adwin):
+    def __init__(self, name):
         Measurement.__init__(self, name)
 
-        self.adwin = adwin
-        self.adwin_process = ''
         self.adwin_process_params = MeasurementParameters('AdwinParameters')
 
     def start_adwin_process(self, load=True, stop_processes=[]):

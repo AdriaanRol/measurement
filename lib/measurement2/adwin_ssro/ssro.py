@@ -1,6 +1,5 @@
 """
-Class for characterizing SSRO with the Adwin
-
+Class for SSRO with the Adwin
 last version: 2013/01/02, Wolfgang
 """
 import numpy as np
@@ -8,7 +7,10 @@ import numpy as np
 import qt
 import hdf5_data as h5
 import measurement.lib.config.adwins as adwins_cfg
+reload(adwins_cfg)
+
 import measurement.lib.measurement2.measurement as m2
+reload(m2)
 
 class AdwinSSRO(m2.AdwinControlledMeasurement):
 
@@ -16,22 +18,25 @@ class AdwinSSRO(m2.AdwinControlledMeasurement):
     max_repetitions = 20000
     max_SP_bins = 500
     max_SSRO_dim = 1000000
-	adwin_process = 'singleshot'
+    adwin_process = 'singleshot'
     adwin_dict = adwins_cfg.config
     adwin_processes_key = ''
     E_aom = None
     A_aom = None
     green_aom = None
     yellow_aom = None
+    adwin = None
     
-    def __init__(self, name, adwin):
-        m2.AdwinControlledMeasurement.__init__(self, name, adwin)
-
-    def setup(self):
-        self.green_aom.set_power(0.)
-        self.E_aom.set_power(0.)
-        self.A_aom.set_power(0.)
-
+    def __init__(self, name):
+        m2.AdwinControlledMeasurement.__init__(self, name)
+        
+    def autoconfig(self):
+        """
+        sets/computes parameters (can be from other, user-set params)
+        as required by the specific type of measurement.
+        E.g., compute AOM voltages from desired laser power, or get
+        the correct AOM DAC channel from the specified AOM instrument.
+        """
         self.params['Ex_laser_DAC_channel'] = self.adwin.get_dac_channels()\
                 [self.E_aom.get_pri_channel()]
         self.params['A_laser_DAC_channel'] = self.adwin.get_dac_channels()\
@@ -41,14 +46,33 @@ class AdwinSSRO(m2.AdwinControlledMeasurement):
         self.params['yellow_laser_DAC_channel'] = self.adwin.get_dac_channels()\
                 [self.yellow_aom.get_pri_channel()]
         self.params['gate_DAC_channel'] = self.adwin.get_dac_channels()\
-                ['gate']        
-    
-    def run(self):
-        for key,_val in self.adwins_dict[self.adwin_processes_key]\
-                [self.adwin_process]['params_long']:
-            self.adwin_process_params[key] = self.params[key]
+                ['gate']
 
-        for key in self.params.parameters:
+    def setup(self):
+        """
+        sets up the hardware such that the msmt can be run
+        (i.e., turn of the lasers, prepare MW src, etc)
+        """
+        
+        self.green_aom.set_power(0.)
+        self.E_aom.set_power(0.)
+        self.A_aom.set_power(0.)
+        self.green_aom.set_cur_controller('ADWIN')
+        self.E_aom.set_cur_controller('ADWIN')
+        self.A_aom.set_cur_controller('ADWIN')
+        self.green_aom.set_power(0.)
+        self.E_aom.set_power(0.)
+        self.A_aom.set_power(0.)  
+    
+    def run(self, autoconfig=True, setup=True):
+        if autoconfig:
+            self.autoconfig()
+            
+        if setup:
+            self.setup()        
+        
+        for key,_val in self.adwin_dict[self.adwin_processes_key]\
+                [self.adwin_process]['params_long']:
             self.adwin_process_params[key] = self.params[key]
 
         self.adwin_process_params['Ex_CR_voltage'] = \
@@ -83,7 +107,12 @@ class AdwinSSRO(m2.AdwinControlledMeasurement):
                 self.yellow_aom.power_to_voltage(
                         self.params['yellow_repump_amplitude'])
         
-        self.adwin_process_params['green_off_voltage'] = 0.0
+        self.adwin_process_params['green_off_voltage'] = \
+                self.params['green_off_voltage']
+        self.adwin_process_params['A_off_voltage'] = \
+                self.params['A_off_voltage']
+        self.adwin_process_params['Ex_off_voltage'] = \
+                self.params['Ex_off_voltage']
         
         self.start_adwin_process(stop_processes=['counter'])
         qt.msleep(1)
@@ -108,6 +137,11 @@ class AdwinSSRO(m2.AdwinControlledMeasurement):
             
             qt.msleep(1)
 
+        try:
+            self.stop_keystroke_monitor('abort')
+        except KeyError:
+            pass # means it's already stopped
+        
         self.stop_adwin_process()
         reps_completed = self.adwin_var('completed_reps')
         print('completed %s / %s readout repetitions' % \
@@ -126,12 +160,57 @@ class AdwinSSRO(m2.AdwinControlledMeasurement):
                     'CR_threshold',
                     'last_CR_counts' ])
 
-    def finish(self):
+    def finish(self, save_params=True, save_stack=True, 
+            stack_depth=4, save_cfg=True, save_ins_settings=True):
+               
+        if save_params:
+            self.save_params()
+            
+        if save_stack:
+            self.save_stack(depth=stack_depth)
+            
+        if save_ins_settings:
+            self.save_instrument_settings_file()
+            
+        qt.instruments['counters'].set_is_running(True)
+        self.green_aom.set_power(0)
+        self.E_aom.set_power(0)
+        self.A_aom.set_power(0)
+            
         m2.AdwinControlledMeasurement.finish(self)
 
-class AdwinSSROAlternCR(AdwinSSRO):
-   
+class AdwinSSROAlternCR(AdwinSSRO):   
     adwin_process = 'singleshot_altern_CR'
-
-    def __init__(self, name, adwin):
-        AdwinSSRO.__init__(self, name, adwin)
+    mprefix = 'AdwinSSROAlternCR'
+    
+    def __init__(self, name):
+        AdwinSSRO.__init__(self, name)
+        
+        
+class IntegratedSSRO(AdwinSSRO):
+    adwin_process = 'integrated_ssro'
+    mprefix = 'IntegratedSSRO'
+    
+    def __init__(self, name):
+        AdwinSSRO.__init__(self, name)
+        
+    def autoconfig(self):
+        AdwinSSRO.autoconfig(self)
+        
+        self.params['SSRO_repetitions'] = \
+            self.params['pts'] * self.params['repetitions']
+        self.params['sweep_length'] = self.params['pts']
+        
+    def save(self, name='ssro'):
+        reps = self.adwin_var('completed_reps')
+        self.save_adwin_data(name,
+                [   ('SP_hist', self.params['SP_duration']),
+                    ('RO_data', self.params['pts']),
+                    ('statistics', 10),
+                    'completed_reps',
+                    'total_CR_counts',
+                    'CR_threshold',
+                    'last_CR_counts'])
+        
+        
+   
