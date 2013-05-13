@@ -22,29 +22,34 @@ def darkesr(name):
 
     m.params['mw_power'] = 20
     m.params['mw_frq'] = 2.8e9
-    m.params['ssbmod_frq_start'] = 16e6
-    m.params['ssbmod_frq_stop'] = 26e6
+    m.params['ssbmod_frq_start'] = 40e6
+    m.params['ssbmod_frq_stop'] = 48e6
     m.params['pts'] = 61
-    m.params['pulse_length'] = 5000
+    m.params['pulse_length'] = 1500
     m.params['repetitions'] = 1000
-    m.params['ssbmod_amplitude'] = 0.009
+    m.params['ssbmod_amplitude'] = 0.01
     m.params['MW_pulse_mod_risetime'] = 2
-    m.params['RO_duration'] = 15
-    m.params['Ex_RO_amplitude'] = 5e-9
+    m.params['RO_duration'] = 25
+
+    m.params['Ex_RO_amplitude'] = 2e-9
     m.params['CR_preselect'] = 40
     m.params['CR_probe'] = 40
  
+    m.params['SP_duration'] = 250
+    m.params['A_SP_amplitude'] = 10e-9
+    m.params['Ex_SP_amplitude'] = 0.
+
+    m.params['sweep_name'] = 'MW frq (GHz)'
+    m.params['sweep_pts'] = (np.linspace(m.params['ssbmod_frq_start'],
+                    m.params['ssbmod_frq_stop'], m.params['pts']) + m.params['mw_frq'])*1e-9
+
+
     sequence_ssro._run(m)
 
 def calslowpipulse(name):
     m = mbi.ElectronRabi('pi_calib_slow_'+name,#'pi_calib_slow', 
         qt.instruments['adwin'], qt.instruments['AWG'])
-    #mbi._prepare(m)
-
-
-
-
-
+    mbi._prepare(m)
 
     pts = 8
     m.params['pts'] = pts

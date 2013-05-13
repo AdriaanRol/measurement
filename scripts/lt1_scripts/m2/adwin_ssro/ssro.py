@@ -208,9 +208,9 @@ def SP_vs_power(name):
     
 
 
-def calibration(name, mode=''):
+def calibration(name,**kw):
     CRmode = '' #'altern_CR' # (options: 'altern_CR' or anything else for regular)
-    
+    mode=''#'yellow_only' #'yellow_only'
     if CRmode == 'altern_CR':
         m = AdwinSSROAlternCR(name+mode, qt.instruments['adwin'])
     else:
@@ -226,33 +226,34 @@ def calibration(name, mode=''):
     
     m.setup()
     
-#     if mode=='yellow_only':
-#         #then just pretend green is yellow
-#         m.green_aom = m.yellow_aom
-#         m.params['green_repump_amplitude'] = m.params['yellow_repump_amplitude'] 
-#         m.params['green_repump_duration'] = m.params['yellow_repump_duration']
-#         m.params['green_laser_DAC_channel'] = m.params['yellow_laser_DAC_channel']
-#         qt.instruments['GreenAOM'].set_power(0)
-#     
+    if mode=='yellow_only':
+        #then just pretend green is yellow
+        m.green_aom = m.yellow_aom
+        m.params['green_repump_amplitude'] = 50e-9#m.params['yellow_repump_amplitude'] 
+        m.params['green_repump_duration']  = 300#m.params['yellow_repump_duration']
+        m.params['green_laser_DAC_channel'] = m.params['yellow_laser_DAC_channel']
+        qt.instruments['GreenAOM'].set_power(0)
+     
 #     elif mode=='double_repump':
 #         #then use the double repump
 #         m.params['green_repump_duration'] = 200
 #         m.params['green_after_yellow_failed'] = 10
-        
+  
     m.params['Ex_CR_amplitude'] = 10e-9 #20e-9 #30e-9
     m.params['A_CR_amplitude'] = 10e-9 #200e-9  #500e-9
     m.params['Ex_RO_amplitude'] = 2e-9 #10e-9
     
     # needed only for altern CR checking
-    # m.params['CR_pump_duration'] = 10
-    # m.params['CR_probe_duration'] = 10
-    # m.params['CR_prepump_duration'] = 100
-    # m.params['CR_pp_cycles'] = 5
+    #m.params['CR_pump_duration'] = 10
+    #m.params['CR_probe_duration'] = 40
+    #m.params['CR_prepump_duration'] = 10
+    #m.params['CR_pp_cycles'] = 3
 
     # ms = 0 calibration
     m.params['A_SP_amplitude'] = 10e-9
     m.params['Ex_SP_amplitude'] = 0.
-
+    for k in kw:
+        m.params[k]=kw[k]
     m.run()
     m.save('ms0')
 

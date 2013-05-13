@@ -78,7 +78,7 @@ _cfg['AWG_wait_duration_before_MBI_MW_pulse'] = 1000
 _cfg['Ex_MBI_amplitude'] = 2e-9
 _cfg['MBI_duration'] = 5
 _cfg['SP_E_duration'] = 100
-
+_cfg['AWG_MBI_MW_pulse_ssbmod_frq'] = 43.862e6 - 2.189e6
 
 
 
