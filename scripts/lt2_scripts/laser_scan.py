@@ -2,7 +2,6 @@ import msvcrt
 import qt
 import numpy as np
 import measurement.lib.config.adwins as adwins_cfg
-import measurement.lib.config.experiment_lt2 as lt2_cfg
 
 class LaserFrequencyScan:
 
@@ -186,8 +185,8 @@ class YellowLaserScan(LabjackAdwinLaserScan):
     def __init__(self, name):
         LabjackAdwinLaserScan.__init__(self, name,2)
         self.set_laser_power = qt.instruments['YellowAOM'].set_power
-        self.set_repump_power = qt.instruments['MatisseAOM'].set_power
-        self.set_nf_repump_power=qt.instruments['NewfocusAOM'].set_power
+        self.set_repump_power = qt.instruments['Velocity1AOM'].set_power
+        self.set_nf_repump_power=qt.instruments['Velocity2AOM'].set_power
         
     def repump_pulse(self):
         qt.msleep(1) 
@@ -205,9 +204,9 @@ class YellowLaserScan(LabjackAdwinLaserScan):
 class RedLaserScan(LabjackAdwinLaserScan):
     def __init__(self, name, labjack_dac_nr):
         LabjackAdwinLaserScan.__init__(self, name,labjack_dac_nr)
-        self.set_laser_power = qt.instruments['NewfocusAOM'].set_power
+        self.set_laser_power = qt.instruments['Velocity1AOM'].set_power
         self.set_yellow_repump_power=qt.instruments['YellowAOM'].set_power
-        self.set_red_repump_power=qt.instruments['MatisseAOM'].set_power
+        self.set_red_repump_power=qt.instruments['Velocity2AOM'].set_power
         self.set_repump_power = qt.instruments['GreenAOM'].set_power
             
     def repump_pulse(self):

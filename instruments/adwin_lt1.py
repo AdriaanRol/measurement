@@ -40,7 +40,6 @@ class adwin_lt1(adwin):
     def set_resonant_counting(self, aom_dac='green_aom', aom_voltage= 7.,
              aom_duration=1, probe_duration=10, red_powers=[5e-9, 5e-9],
              red_aoms=['NewfocusAOM_lt1', 'MatisseAOM_lt1'], floating_average = 100):
-        
         for i,n in enumerate(red_aoms):
             qt.instruments[n].set_power(red_powers[i])
 
