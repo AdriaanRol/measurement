@@ -76,7 +76,17 @@ def average_power(n=10, prepare=False):
 
     print 'P = (%.3f +/- %.3f) nW' % (np.mean(powers), np.std(powers))
     print ''
-    
+
+def gate_scan_to_voltage(voltage, stepsize=0.01, dwell_time=0.05):
+    cur_v=qt.instruments['adwin'].get_dac_voltage('gate')
+    print 'scan gate to voltage ...',voltage
+    print 'current gate voltage: ', cur_v 
+    steps=int(abs(cur_v-voltage)/stepsize)
+    for v in np.linspace(cur_v, voltage, steps):
+        qt.instruments['adwin'].set_dac_voltage(('gate',v))
+        qt.msleep(dwell_time)
+
+    print 'done.'
 
         
     
