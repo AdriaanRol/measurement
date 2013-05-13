@@ -211,6 +211,7 @@ EVENT:
         if (timer = 0) then
           DAC(Ex_laser_DAC_channel, 3277*Ex_CR_voltage+32768) ' turn on Ex laser
           DAC(A_laser_DAC_channel, 32768) ' turn off A laser
+          INC(Par_72)
         endif
         
         if (timer = CR_prepump_duration) then
