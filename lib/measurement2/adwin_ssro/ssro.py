@@ -1,38 +1,42 @@
 """
-Class and script for characterizing SSRO with the Adwin
-
+Class for SSRO with the Adwin
 last version: 2013/01/02, Wolfgang
 """
 import numpy as np
 
 import qt
 import hdf5_data as h5
-
 import measurement.lib.config.adwins as adwins_cfg
+reload(adwins_cfg)
+
 import measurement.lib.measurement2.measurement as m2
-
-
+reload(m2)
 
 class AdwinSSRO(m2.AdwinControlledMeasurement):
 
     mprefix = 'AdwinSSRO'
-
     max_repetitions = 20000
     max_SP_bins = 500
     max_SSRO_dim = 1000000
+    adwin_process = 'singleshot'
+    adwin_dict = adwins_cfg.config
+    adwin_processes_key = ''
+    E_aom = None
+    A_aom = None
+    green_aom = None
+    yellow_aom = None
+    adwin = None
     
-    def __init__(self, name, adwin):
-
-        m2.AdwinControlledMeasurement.__init__(self, name, adwin)
-
-        self.adwin_process = 'singleshot'
-
-    def setup(self):
-        self.green_aom.set_power(0.)
-        self.E_aom.set_power(0.)
-        self.A_aom.set_power(0.)
-
-        self.params.from_dict(qt.cfgman['protocols']['AdwinSSRO'])
+    def __init__(self, name):
+        m2.AdwinControlledMeasurement.__init__(self, name)
+        
+    def autoconfig(self):
+        """
+        sets/computes parameters (can be from other, user-set params)
+        as required by the specific type of measurement.
+        E.g., compute AOM voltages from desired laser power, or get
+        the correct AOM DAC channel from the specified AOM instrument.
+        """
         self.params['Ex_laser_DAC_channel'] = self.adwin.get_dac_channels()\
                 [self.E_aom.get_pri_channel()]
         self.params['A_laser_DAC_channel'] = self.adwin.get_dac_channels()\
@@ -42,14 +46,33 @@ class AdwinSSRO(m2.AdwinControlledMeasurement):
         self.params['yellow_laser_DAC_channel'] = self.adwin.get_dac_channels()\
                 [self.yellow_aom.get_pri_channel()]
         self.params['gate_DAC_channel'] = self.adwin.get_dac_channels()\
-                ['gate']                
+                ['gate']
+
+    def setup(self):
+        """
+        sets up the hardware such that the msmt can be run
+        (i.e., turn of the lasers, prepare MW src, etc)
+        """
         
+        self.green_aom.set_power(0.)
+        self.E_aom.set_power(0.)
+        self.A_aom.set_power(0.)
+        self.green_aom.set_cur_controller('ADWIN')
+        self.E_aom.set_cur_controller('ADWIN')
+        self.A_aom.set_cur_controller('ADWIN')
+        self.green_aom.set_power(0.)
+        self.E_aom.set_power(0.)
+        self.A_aom.set_power(0.)  
     
-    def run(self):
+    def run(self, autoconfig=True, setup=True):
+        if autoconfig:
+            self.autoconfig()
+            
+        if setup:
+            self.setup()        
         
-        # get adwin params
-        for key,_val in adwins_cfg.config['adwin_lt1_processes']\
-                ['singleshot']['params_long']:
+        for key,_val in self.adwin_dict[self.adwin_processes_key]\
+                [self.adwin_process]['params_long']:
             self.adwin_process_params[key] = self.params[key]
 
         self.adwin_process_params['Ex_CR_voltage'] = \
@@ -84,7 +107,12 @@ class AdwinSSRO(m2.AdwinControlledMeasurement):
                 self.yellow_aom.power_to_voltage(
                         self.params['yellow_repump_amplitude'])
         
-        self.adwin_process_params['green_off_voltage'] = 0.0
+        self.adwin_process_params['green_off_voltage'] = \
+                self.params['green_off_voltage']
+        self.adwin_process_params['A_off_voltage'] = \
+                self.params['A_off_voltage']
+        self.adwin_process_params['Ex_off_voltage'] = \
+                self.params['Ex_off_voltage']
         
         self.start_adwin_process(stop_processes=['counter'])
         qt.msleep(1)
@@ -103,12 +131,17 @@ class AdwinSSRO(m2.AdwinControlledMeasurement):
             cts = self.adwin_var('last_CR_counts')
             trh = self.adwin_var('CR_threshold')
             
-            print('completed %s / %s readout repetitions, %s CR counts/s' % \
-                    (reps_completed, self.params['SSRO_repetitions'], CR_counts))
-            print('threshold: %s cts, last CR check: %s cts' % (trh, cts))
+            print('completed %s / %s readout repetitions' % \
+                    (reps_completed, self.params['SSRO_repetitions']))
+            # print('threshold: %s cts, last CR check: %s cts' % (trh, cts))
             
             qt.msleep(1)
 
+        try:
+            self.stop_keystroke_monitor('abort')
+        except KeyError:
+            pass # means it's already stopped
+        
         self.stop_adwin_process()
         reps_completed = self.adwin_var('completed_reps')
         print('completed %s / %s readout repetitions' % \
@@ -127,96 +160,57 @@ class AdwinSSRO(m2.AdwinControlledMeasurement):
                     'CR_threshold',
                     'last_CR_counts' ])
 
-    def finish(self):
+    def finish(self, save_params=True, save_stack=True, 
+            stack_depth=4, save_cfg=True, save_ins_settings=True):
+               
+        if save_params:
+            self.save_params()
+            
+        if save_stack:
+            self.save_stack(depth=stack_depth)
+            
+        if save_ins_settings:
+            self.save_instrument_settings_file()
+            
+        qt.instruments['counters'].set_is_running(True)
+        self.green_aom.set_power(0)
+        self.E_aom.set_power(0)
+        self.A_aom.set_power(0)
+            
         m2.AdwinControlledMeasurement.finish(self)
 
-def RO_saturation(name):
-    m = AdwinSSRO('RO_saturation_power_'+name, qt.instruments['adwin'])
-    m.green_aom = qt.instruments['GreenAOM']
-    m.yellow_aom = qt.instruments['YellowAOM']
-    m.E_aom = qt.instruments['Velocity2AOM']
-    m.A_aom = qt.instruments['Velocity1AOM']
-
-    m.setup()
-
-    m.params['SSRO_repetitions'] = 5000
-    m.params['SSRO_duration'] = 100
-    m.params['CR_preselect'] = 50
-    m.params['CR_probe'] =  50
-    m.params['counter_channel'] = 1
-    m.params['Ex_CR_amplitude'] = 10e-9
-    m.params['A_CR_amplitude'] = 10e-9 #500e-9
-    m.params['SP_duration'] = 250
-    m.params['A_SP_amplitude'] = 10e-9
-    m.params['Ex_SP_amplitude'] = 0.
-    m.params['A_RO_amplitude'] = 0.
-    m.params['Ex_RO_amplitudes'] = np.arange(20)*2e-9 + 1e-9
-
-    for p in m.params['Ex_RO_amplitudes']:
-        m.params['Ex_RO_amplitude'] = p
-        m.run()
-        m.save('P_%dnW' % (p*1e9))
-
-
-def calibration(name, mode=''):
-    m = AdwinSSRO(name+mode, qt.instruments['adwin'])
-    m.green_aom = qt.instruments['GreenAOM']
-    m.yellow_aom = qt.instruments['YellowAOM']
-    m.E_aom = qt.instruments['Velocity2AOM']
-    m.A_aom = qt.instruments['Velocity1AOM']
+class AdwinSSROAlternCR(AdwinSSRO):   
+    adwin_process = 'singleshot_altern_CR'
+    mprefix = 'AdwinSSROAlternCR'
     
-    m.setup()
-    
-    if mode=='yellow_only':
-        #then just pretend green is yellow
-        m.green_aom = m.yellow_aom
-        m.params['green_repump_amplitude'] = m.params['yellow_repump_amplitude'] 
-        m.params['green_repump_duration'] = m.params['yellow_repump_duration']
-        m.params['green_laser_DAC_channel'] = m.params['yellow_laser_DAC_channel']
-        qt.instruments['GreenAOM'].set_power(0)
-    
-    elif mode=='double_repump':
-        #then use the double repump
-        m.params['green_repump_duration'] = 200
-        m.params['green_after_yellow_failed'] = 10
+    def __init__(self, name):
+        AdwinSSRO.__init__(self, name)
         
-    m.params['SSRO_repetitions'] = 5000
-    m.params['SSRO_duration'] = 50
-    m.params['CR_preselect'] = 50 #20
-    m.params['CR_probe'] = 50 #20
-    m.params['counter_channel'] = 1
-    m.params['Ex_CR_amplitude'] = 5e-9 #20e-9 #30e-9
-    m.params['A_CR_amplitude'] = 10e-9 #200e-9  #500e-9
-
-    # ms = 0 calibration
-    m.params['SP_duration'] = 250
-    m.params['A_SP_amplitude'] = 10e-9
-    m.params['Ex_SP_amplitude'] = 0.
-    m.params['A_RO_amplitude'] = 0.
-    m.params['Ex_RO_amplitude'] = 2e-9 #10e-9
-    
-
-    m.run()
-    m.save('ms0')
-
-    # ms = 1 calibration
-    m.params['SP_duration'] = 250
-    m.params['A_SP_amplitude'] = 0
-    m.params['Ex_SP_amplitude'] = 5e-9 #10e-9
-    m.params['A_RO_amplitude'] = 0.
-    m.params['Ex_RO_amplitude'] = 2e-9 #10e-9
-
-    m.run()
-    m.save('ms1')
-
-    m.save_params()
-    m.save_stack()
-    m.save_cfg_files()
-    m.save_intrument_settings_file()
-    
-    m.finish()
-
         
-#### script section
-# calibration('SIL9')
-
+class IntegratedSSRO(AdwinSSRO):
+    adwin_process = 'integrated_ssro'
+    mprefix = 'IntegratedSSRO'
+    
+    def __init__(self, name):
+        AdwinSSRO.__init__(self, name)
+        
+    def autoconfig(self):
+        AdwinSSRO.autoconfig(self)
+        
+        self.params['SSRO_repetitions'] = \
+            self.params['pts'] * self.params['repetitions']
+        self.params['sweep_length'] = self.params['pts']
+        
+    def save(self, name='ssro'):
+        reps = self.adwin_var('completed_reps')
+        self.save_adwin_data(name,
+                [   ('SP_hist', self.params['SP_duration']),
+                    ('RO_data', self.params['pts']),
+                    ('statistics', 10),
+                    'completed_reps',
+                    'total_CR_counts',
+                    'CR_threshold',
+                    'last_CR_counts'])
+        
+        
+   

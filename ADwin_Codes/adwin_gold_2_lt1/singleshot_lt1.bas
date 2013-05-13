@@ -200,11 +200,9 @@ INIT:
   timer = 0
   processdelay = cycle_duration
   
-  ' No documentation for this stuff at the top and in the adwin class --wp, Jun16
-  Par_73 = repetition_counter
-  'PAR_23 = 0
-  'PAR_25 = 0
   
+  Par_73 = repetition_counter
+
   PAR_70 = 0                      ' cumulative counts from probe intervals
   PAR_71 = 0                      ' below CR threshold events
   PAR_72 = 0                      ' number of CR checks performed (lt1)
@@ -212,15 +210,12 @@ INIT:
   Par_68 = CR_probe
   par_76 = 0                      ' cumulative counts during repumping
   Par_80 = 0                      ' cumulative counts in PSB when not CR chekging or repummping 
-  
+ 
   current_cr_threshold = CR_preselect
-  
 EVENT:
   CR_preselect                 = PAR_75
   CR_probe                     = PAR_68
-  'PAR_22 = mode
-  'PAR_23 = PAR_23 + 1
-  'PAR_24 = timer
+
   IF (wait_after_pulse > 0) THEN
     wait_after_pulse = wait_after_pulse - 1
   ELSE
@@ -266,9 +261,8 @@ EVENT:
             
             IF (counts < current_cr_threshold) THEN
               mode = 0
-              CR_failed = CR_failed + 1
+              inc(CR_failed)
               inc(PAR_71)
-              'PAR_25 = CR_preselect
             ELSE
               mode = 2
               DATA_22[repetition_counter+1] = counts  ' CR before next SSRO sequence
@@ -424,7 +418,6 @@ EVENT:
     
     timer = timer + 1
   ENDIF
-  
 FINISH:
   DATA_26[1] = repumps
   DATA_26[2] = total_repump_counts

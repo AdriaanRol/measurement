@@ -65,7 +65,8 @@
 ' Data_25[RO_duration]                 spin readout
 ' Data_26[...]               statistics : how often we entered each mode
 
-#INCLUDE ADwinGoldII.inc
+#INCLUDE ADwinPro_All.inc
+#INCLUDE configuration.inc
 
 #DEFINE max_SP_bins       500
 #DEFINE max_RO_dim     200000
@@ -123,6 +124,8 @@ DIM A_SP_voltage AS FLOAT
 DIM Ex_RO_voltage AS FLOAT
 DIM A_RO_voltage AS FLOAT
 DIM Ex_MBI_voltage AS FLOAT
+DIM A_off_voltage as float
+dim Ex_off_voltage as float
 
 DIM timer, mode, i, tmp AS LONG
 DIM wait_time AS LONG
@@ -136,6 +139,7 @@ DIM first AS LONG
 DIM stop_MBI AS LONG
 DIM MBI_starts AS LONG
 DIM ROseq_cntr AS LONG
+dim AWG_done_DI_pattern as long
 
 ' MBI stuff
 dim next_MBI_stop, next_MBI_laser_stop as long
@@ -179,7 +183,9 @@ INIT:
   A_CR_voltage                 = DATA_21[4]
   Ex_SP_voltage                = DATA_21[5]
   Ex_MBI_voltage               = DATA_21[6]
-  
+  Ex_off_voltage               = DATA_21[9]
+  A_off_voltage                = DATA_21[10]
+    
   ' initialize the data arrays
   FOR i = 1 TO max_sweep_dim
     DATA_22[i] = 0
@@ -210,18 +216,20 @@ INIT:
   next_MBI_stop = -2
   current_MBI_step = 1
   next_MBI_laser_stop = -2
-      
-  dac(green_laser_DAC_channel, 3277*green_off_voltage+32768) ' turn off green
-  dac(Ex_laser_DAC_channel, 32768) ' turn off Ex laser
-  dac(A_laser_DAC_channel, 32768) ' turn off Ex laser
-
-  cnt_enable(0000b)'turn off all counters
-  cnt_mode(counter_channel,00001000b) 'configure counter
-
-  conf_dio(11) ' in  is now 16:23   'configure DIO 08:15 as input, all other ports as output
-  digout(AWG_start_DO_channel,0)
   
-  tmp = digin_edge(0)
+  AWG_done_DI_pattern = 2 ^ AWG_done_DI_channel
+  counter_pattern     = 2 ^ (counter_channel-1)
+      
+  P2_DAC(DAC_MODULE,green_laser_DAC_channel, 3277*green_off_voltage+32768) ' turn off green
+  P2_DAC(DAC_MODULE,Ex_laser_DAC_channel, 3277*Ex_off_voltage+32768) ' turn off Ex laser
+  P2_DAC(DAC_MODULE,A_laser_DAC_channel, 3277*A_off_voltage+32768) ' turn off A laser
+
+  P2_CNT_ENABLE(CTR_MODULE, 0000b)'turn off all counters
+  P2_CNT_MODE(CTR_MODULE,counter_channel,00001000b) 'configure counter
+
+  P2_Digprog(DIO_MODULE,13) ' in  is now 16:23   'configure DIO 08:15 as input, all other ports as output
+  P2_DIGOUT(DIO_MODULE,AWG_start_DO_channel,0)
+  
   mode = 0
   timer = 0
   processdelay = cycle_duration
@@ -258,12 +266,12 @@ INIT:
   cr_counts = 0
   
 EVENT:
-  
-  par_60 = AWG_event_jump_DO_channel
-  par_61 = AWG_start_DO_channel
-  
+    
   awg_in_was_hi = awg_in_is_hi
-  awg_in_is_hi = digin(AWG_done_DI_channel)
+  IF (((P2_DIGIN_LONG(DIO_MODULE)) AND (AWG_done_DI_pattern)) > 0) THEN
+    awg_in_is_hi = 1
+  endif
+
   if ((awg_in_was_hi = 0) and (awg_in_is_hi > 0)) then
     awg_in_switched_to_hi = 1
   else
@@ -287,9 +295,9 @@ EVENT:
         IF (timer = 0) THEN
           inc(data_26[mode+1])
           
-          cnt_clear(counter_pattern)    'clear counter
-          cnt_enable(counter_pattern)	  'turn on counter
-          dac(green_laser_DAC_channel, 3277*green_repump_voltage+32768) ' turn on green
+          P2_CNT_CLEAR(CTR_MODULE,counter_pattern)    'clear counter
+          P2_CNT_ENABLE(CTR_MODULE, counter_pattern)	  'turn on counter
+          P2_DAC(DAC_MODULE,green_laser_DAC_channel, 3277*green_repump_voltage+32768) ' turn on green
           repumps = repumps + 1
         
         ELSE 
@@ -297,9 +305,9 @@ EVENT:
           ' turn off the green laser and get the counts
           ' in any case, we proceed to the CR checking
           IF (timer = green_repump_duration) THEN
-            dac( green_laser_DAC_channel, 3277*green_off_voltage+32768) ' turn off green
-            counts = cnt_read( counter_channel)
-            cnt_enable(0)
+            P2_DAC(DAC_MODULE, green_laser_DAC_channel, 3277*green_off_voltage+32768) ' turn off green
+            counts = P2_CNT_READ(CTR_MODULE, counter_channel)
+            P2_CNT_ENABLE(CTR_MODULE, 0)
             par_76 = par_76 + counts
             mode = 1
             timer = -1
@@ -313,23 +321,23 @@ EVENT:
         ' turn on both lasers and start counting
         IF (timer = 0) THEN
           inc(data_26[mode+1])          
-          dac( Ex_laser_DAC_channel, 3277*Ex_CR_voltage+32768) ' turn on Ex laser
-          dac( A_laser_DAC_channel, 3277*A_CR_voltage+32768) ' turn on A laser
-          cnt_clear(  counter_pattern)    'clear counter
-          cnt_enable( counter_pattern)	  'turn on counter
+          P2_DAC(DAC_MODULE, Ex_laser_DAC_channel, 3277*Ex_CR_voltage+32768) ' turn on Ex laser
+          P2_DAC(DAC_MODULE, A_laser_DAC_channel, 3277*A_CR_voltage+32768) ' turn on A laser
+          P2_CNT_CLEAR(CTR_MODULE, counter_pattern)    'clear counter
+          P2_CNT_ENABLE(CTR_MODULE, counter_pattern)	  'turn on counter
           
         ELSE 
           
           ' turn off the lasers, and read the counter
           ' let the user know the accumulated counts and how often we checked
           IF (timer = CR_duration) THEN
-            cr_counts = cnt_read(counter_channel)
-            cnt_enable(0)
+            cr_counts = P2_CNT_READ(CTR_MODULE,counter_channel)
+            P2_CNT_ENABLE(CTR_MODULE, 0)
             PAR_70 = PAR_70 + cr_counts
             INC(PAR_72)
             
-            dac( Ex_laser_DAC_channel, 32768) ' turn off Ex laser
-            dac( A_laser_DAC_channel, 32768) ' turn off A laser
+            P2_DAC(DAC_MODULE, Ex_laser_DAC_channel, 3277*Ex_off_voltage+32768) ' turn off Ex laser
+            P2_DAC(DAC_MODULE, A_laser_DAC_channel, 3277*A_off_voltage+32768) ' turn off A laser
             DATA_22[seq_cntr] = cr_counts  ' CR before next SSRO sequence
             
             ' if it's the first attempt after a full sequence, we save it.
@@ -362,16 +370,16 @@ EVENT:
         ' turn on both lasers and start counting
         IF (timer = 0) THEN
           inc(data_26[mode+1])          
-          dac( Ex_laser_DAC_channel, 3277*Ex_SP_voltage+32768) ' turn on Ex laser
-          cnt_clear(  counter_pattern)    'clear counter
-          cnt_enable( counter_pattern)	  'turn on counter
+          P2_DAC(DAC_MODULE, Ex_laser_DAC_channel, 3277*Ex_SP_voltage+32768) ' turn on Ex laser
+          P2_CNT_CLEAR(CTR_MODULE,  counter_pattern)    'clear counter
+          P2_CNT_ENABLE(CTR_MODULE,  counter_pattern)	  'turn on counter
         
         ELSE          
           ' turn off the lasers, and read the counter
           IF (timer = SP_E_duration) THEN
-            cnt_enable(0)
-            dac( Ex_laser_DAC_channel, 32768) ' turn off Ex laser
-            dac( A_laser_DAC_channel, 32768) ' turn off A laser
+            P2_CNT_ENABLE(CTR_MODULE, 0)
+            P2_DAC(DAC_MODULE, Ex_laser_DAC_channel, 3277*Ex_off_voltage+32768) ' turn off Ex laser
+            P2_DAC(DAC_MODULE, A_laser_DAC_channel, 3277*A_off_voltage+32768) ' turn off A laser
             
             mode = 3
             wait_time = wait_after_pulse_duration
@@ -391,9 +399,9 @@ EVENT:
             PAR_78 = MBI_starts
           endif
           
-          digout(AWG_start_DO_channel,1)  ' AWG trigger
+          P2_DIGOUT(DIO_MODULE,AWG_start_DO_channel,1)  ' AWG trigger
           CPU_SLEEP(9)               ' need >= 20ns pulse width; adwin needs >= 9 as arg, which is 9*10ns
-          digout(AWG_start_DO_channel,0)
+          P2_DIGOUT(DIO_MODULE,AWG_start_DO_channel,0)
        
           ' make sure we don't accidentally think we're done before getting the trigger
           next_MBI_stop = -2
@@ -405,15 +413,15 @@ EVENT:
           if(awg_in_switched_to_hi > 0) then
             
             next_MBI_stop = timer + MBI_duration
-            cnt_clear(counter_pattern)    'clear counter
-            cnt_enable(counter_pattern)	  'turn on counter
-            dac(Ex_laser_DAC_channel, 3277*Ex_MBI_voltage+32768) ' turn on Ex laser
+            P2_CNT_CLEAR(CTR_MODULE,counter_pattern)    'clear counter
+            P2_CNT_ENABLE(CTR_MODULE, counter_pattern)	  'turn on counter
+            P2_DAC(DAC_MODULE,Ex_laser_DAC_channel, 3277*Ex_MBI_voltage+32768) ' turn on Ex laser
                       
           else            
             IF (timer = next_MBI_stop) THEN
-              dac( Ex_laser_DAC_channel, 32768) ' turn off Ex laser
-              counts = cnt_read( counter_channel)
-              cnt_enable(0)	  'turn on counter
+              P2_DAC(DAC_MODULE, Ex_laser_DAC_channel, 3277*Ex_off_voltage+32768) ' turn off Ex laser
+              counts = P2_CNT_READ(CTR_MODULE, counter_channel)
+              P2_CNT_ENABLE(CTR_MODULE, 0)	  'turn on counter
                               
               ' MBI succeeds if the counts surpass the threshold;
               ' we then trigger an AWG jump (sequence has to be long enough!) and move on to SP on A
@@ -431,9 +439,9 @@ EVENT:
                 endif 
                 timer = -1      
               else               
-                digout(AWG_event_jump_DO_channel,1)  ' AWG trigger
+                P2_DIGOUT(DIO_MODULE,AWG_event_jump_DO_channel,1)  ' AWG trigger
                 CPU_SLEEP(9)               ' need >= 20ns pulse width; adwin needs >= 9 as arg, which is 9*10ns
-                digout(AWG_event_jump_DO_channel,0)
+                P2_DIGOUT(DIO_MODULE,AWG_event_jump_DO_channel,0)
                 
                 mode = 4
                 current_MBI_step = 1  
@@ -450,13 +458,13 @@ EVENT:
         ' turn on A laser; we don't need to count here for the moment
         IF (timer = 0) THEN
           inc(data_26[mode+1])
-          dac(A_laser_DAC_channel, 3277*A_SP_voltage+32768)
+          P2_DAC(DAC_MODULE,A_laser_DAC_channel, 3277*A_SP_voltage+32768)
         ELSE 
           
           ' when we're done, turn off the laser and proceed to the sequence
           IF (timer = A_SP_duration) THEN
-            dac( Ex_laser_DAC_channel, 32768) ' turn off Ex laser
-            dac( A_laser_DAC_channel, 32768) ' turn off A laser
+            P2_DAC(DAC_MODULE, Ex_laser_DAC_channel, 3277*Ex_off_voltage+32768) ' turn off Ex laser
+            P2_DAC(DAC_MODULE, A_laser_DAC_channel, 3277*A_off_voltage+32768) ' turn off A laser
             wait_time = wait_after_pulse_duration
             
             mode = 5
@@ -476,9 +484,9 @@ EVENT:
         if(send_AWG_start > 0) then
           
           IF (timer = 0) THEN
-            digout(AWG_start_DO_channel, 1)  ' AWG trigger
+            P2_DIGOUT(DIO_MODULE,AWG_start_DO_channel, 1)  ' AWG trigger
             CPU_SLEEP(9)               ' need >= 20ns pulse width; adwin needs >= 9 as arg, which is 9*10ns
-            digout(AWG_start_DO_channel, 0)          
+            P2_DIGOUT(DIO_MODULE,AWG_start_DO_channel, 0)          
           else
             
             ' we wait for the sequence to be finished. the AWG needs to tell us by a pulse,
@@ -505,15 +513,15 @@ EVENT:
         IF (timer = 0) THEN
           inc(data_26[mode+1])
           
-          cnt_clear(counter_pattern)    'clear counter
-          cnt_enable(counter_pattern)	  'turn on counter
-          dac(Ex_laser_DAC_channel, 3277 * Ex_RO_voltage + 32768) ' turn on Ex laser
+          P2_CNT_CLEAR(CTR_MODULE,counter_pattern)    'clear counter
+          P2_CNT_ENABLE(CTR_MODULE, counter_pattern)	  'turn on counter
+          P2_DAC(DAC_MODULE,Ex_laser_DAC_channel, 3277 * Ex_RO_voltage + 32768) ' turn on Ex laser
         
         ELSE
-          counts = cnt_read(counter_channel) 
+          counts = P2_CNT_READ(CTR_MODULE,counter_channel) 
           
           IF ((timer = RO_duration) OR counts > 0) THEN
-            dac(Ex_laser_DAC_channel, 32768) ' turn off Ex laser
+            P2_DAC(DAC_MODULE,Ex_laser_DAC_channel, 3277*Ex_off_voltage+32768) ' turn off Ex laser
 
             IF (counts > 0) THEN
               i = repetition_counter
@@ -521,7 +529,7 @@ EVENT:
             ENDIF
                     
             wait_time = wait_after_RO_pulse_duration
-            cnt_enable(0)
+            P2_CNT_ENABLE(CTR_MODULE, 0)
                         
             inc(ROseq_cntr)
             par_80 = ROseq_cntr

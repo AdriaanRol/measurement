@@ -80,10 +80,10 @@
 #DEFINE max_SSRO_dim   4000000
 #DEFINE max_stat           10
 
-DIM DATA_20[25] AS LONG                           ' integer parameters
-DIM DATA_21[20] AS FLOAT                          ' float parameters
+DIM DATA_20[25] AS LONG               ' integer parameters
+DIM DATA_21[20] AS FLOAT              ' float parameters
 DIM DATA_22[max_repetitions] AS LONG AT EM_LOCAL  ' CR counts before sequence
-DIM DATA_23[max_repetitions] AS LONG  AT EM_LOCAL ' CR counts after sequence
+DIM DATA_23[max_repetitions] AS LONG  AT EM_LOCAL  ' CR counts after sequence
 DIM DATA_24[max_SP_bins] AS LONG AT EM_LOCAL      ' SP counts
 DIM DATA_25[max_SSRO_dim] AS LONG AT DRAM_EXTERN  ' SSRO counts
 DIM DATA_26[max_stat] AS LONG AT EM_LOCAL         ' statistics
@@ -131,6 +131,7 @@ DIM counter_pattern AS LONG
 DIM AWG_done_DI_pattern AS LONG
 DIM counts, old_counts, cr_counts AS LONG
 DIM first AS LONG
+DIM gate_good_phase AS INTEGER
 DIM time_start, time_stop AS LONG
 
 DIM current_cr_threshold AS LONG
@@ -168,9 +169,11 @@ INIT:
   A_SP_voltage                 = DATA_21[6]
   Ex_RO_voltage                = DATA_21[7]
   A_RO_voltage                 = DATA_21[8]
-  Ex_off_voltage               = DATA_21[9]
-  A_off_voltage                = DATA_21[10]
-   
+  Ex_off_voltage            = DATA_21[9]
+  A_off_voltage            = DATA_21[10]
+  
+  current_cr_threshold = CR_preselect
+  
   FOR i = 1 TO SSRO_repetitions
     DATA_22[i] = 0
     DATA_23[i] = 0
@@ -197,6 +200,10 @@ INIT:
   repetition_counter  = 0
   first               = 0
   wait_after_pulse    = 0
+  cr_counts           = 0
+  counts              = 0
+  old_counts          = 0
+    
   P2_DAC(DAC_MODULE, green_laser_DAC_channel, 3277*green_off_voltage+32768) ' turn off green
   P2_DAC(DAC_MODULE, Ex_laser_DAC_channel, 3277*Ex_off_voltage+32768) ' turn off Ex laser
   P2_DAC(DAC_MODULE, A_laser_DAC_channel, 3277*A_off_voltage+32768) ' turn off Ex laser
@@ -211,20 +218,32 @@ INIT:
   timer = 0
   processdelay = cycle_duration
   Par_73 = repetition_counter
-
+  PAR_23 = 0
+  PAR_25 = 0
+  
   PAR_70 = 0                      ' cumulative counts from probe intervals
   PAR_71 = 0                      ' below CR threshold events
   PAR_72 = 0                      ' number of CR checks performed (lt2)
   par_75 = CR_preselect
   par_68 = CR_probe
   par_76 = 0                      ' cumulative counts during repumping
-
-  current_cr_threshold = CR_preselect
+  par_79 = 0                      ' cumulative LT2 counts in PSB during ssro sequence
+  
+  par_60 = 0
+  par_61 = 0
+  par_62 = 0
+  par_63 = 0 'par to check the total process time
   
 EVENT:
+  gate_good_phase = par_15*par_18-2*(par_19-1)
+  time_start = Read_Timer()
+  
+  
   CR_preselect                 = PAR_75
   CR_probe                     = PAR_68
-
+  'PAR_22 = mode
+  'PAR_23 = PAR_23 + 1
+  'PAR_24 = timer
   IF (wait_after_pulse > 0) THEN
     wait_after_pulse = wait_after_pulse - 1
   ELSE
@@ -261,14 +280,18 @@ EVENT:
           P2_DAC(DAC_MODULE, A_laser_DAC_channel, 3277*A_CR_voltage+32768) ' turn on A laser
           P2_CNT_CLEAR(CTR_MODULE,  counter_pattern)    'clear counter
           P2_CNT_ENABLE(CTR_MODULE, counter_pattern)	  'turn on counter
-          inc(par_72)
         ELSE 
           IF (timer = CR_duration) THEN
-            P2_DAC(DAC_MODULE, Ex_laser_DAC_channel, 3277*Ex_off_voltage+32768) ' turn off Ex laser
-            P2_DAC(DAC_MODULE, A_laser_DAC_channel, 3277*A_off_voltage+32768) ' turn off A laser
-            cr_counts = P2_CNT_READ(CTR_MODULE, counter_channel)
+            'cr_counts = P2_CNT_READ(CTR_MODULE, counter_channel)
+            'P2_CNT_ENABLE(CTR_MODULE, 0)
+            
+            IF (gate_good_phase > 0) THEN
+              cr_counts = P2_CNT_READ(CTR_MODULE, counter_channel)
+              PAR_70 = PAR_70 + cr_counts
+              INC(PAR_72)
+            ENDIF
+            
             P2_CNT_ENABLE(CTR_MODULE, 0)
-            PAR_70 = PAR_70 + cr_counts
             
             IF (first > 0) THEN ' first CR after SSRO sequence
               DATA_23[repetition_counter] = cr_counts
@@ -278,11 +301,23 @@ EVENT:
             IF (cr_counts < current_cr_threshold) THEN
               mode = 0
               INC(CR_failed)
-              inc(par_71)
+              PAR_71 = CR_failed
+              'PAR_25 = CR_preselect
+              'PAR_26 = cr_counts
             ELSE
-              mode = 2
-              DATA_22[repetition_counter+1] = counts  ' CR before next SSRO sequence
-              current_cr_threshold = CR_probe			
+              IF (gate_good_phase > 0) THEN
+                P2_DAC(DAC_MODULE, Ex_laser_DAC_channel, 3277*Ex_off_voltage+32768) ' turn off Ex laser
+                P2_DAC(DAC_MODULE, A_laser_DAC_channel, 3277*A_off_voltage+32768) ' turn off A laser
+                mode = 2
+                DATA_22[repetition_counter+1] = cr_counts  ' CR before next SSRO sequence
+                current_cr_threshold = CR_probe
+                'PAR_25 = CR_preselect
+                'PAR_26 = cr_counts
+                'ELSE
+                ' mode = 0
+                ' INC(CR_failed)
+                ' PAR_71 = CR_failed
+              ENDIF
             ENDIF
             
             timer = -1
@@ -299,7 +334,17 @@ EVENT:
         ELSE 
           counts = P2_CNT_READ(CTR_MODULE, counter_channel)
           DATA_24[timer] = DATA_24[timer] + counts - old_counts
-
+          
+          if (counts < 0) then
+            par_60 = par_60 + 1
+          endif
+          if (old_counts < 0) then
+            par_61 = par_61 + 1
+          endif
+          if (counts < old_counts) then
+            par_62 = par_62 + 1
+          endif     
+          
           old_counts = counts
           IF (timer = SP_duration) THEN
             P2_CNT_ENABLE(CTR_MODULE, 0)
@@ -435,7 +480,8 @@ EVENT:
     
     timer = timer + 1
   ENDIF
-  
+  time_stop = Read_Timer()
+  par_63 = Max_long(par_63,(time_stop-time_start))
 FINISH:
   DATA_26[1] = repumps
   DATA_26[2] = total_repump_counts
