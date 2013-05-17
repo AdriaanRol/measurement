@@ -30,6 +30,7 @@ class simple_optimizer(Instrument):
                     'do_plot'           :   {'type':types.BooleanType,'val':True,'flags':Instrument.FLAG_GETSET},
                     'plot_name'         :   {'type':types.StringType,'val':plot_name,'flags':Instrument.FLAG_GETSET},
                     'variance'          :   {'type':types.FloatType,'val':0.,'flags':Instrument.FLAG_GETSET},
+                    'last_max'          :   {'type':types.FloatType,'val':0.,'flags':Instrument.FLAG_GETSET},
                     }
         
         instrument_helper.create_get_set(self,ins_pars)
@@ -99,6 +100,7 @@ class simple_optimizer(Instrument):
             self.set_variance(variance)
             print 'variance: ', variance
             maxy=np.max(y)
+            self.set_last_max(maxy)
             if maxy>1.1*value_before:
                 print self.get_name(),'setting new control (old,new,delta): {:.2f},{:.2f},{:.2f}'.format(self.get_control_f(),maxx,self.get_control_f()-maxx)
                 self.set_control_f(maxx)

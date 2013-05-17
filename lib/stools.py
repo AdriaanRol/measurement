@@ -2,12 +2,22 @@ import qt
 import numpy as np
 import msvcrt
 
-def turn_off_lasers():
-    qt.instruments['GreenAOM'].apply_voltage(0)
-    qt.instruments['NewfocusAOM'].apply_voltage(0)
-    qt.instruments['MatisseAOM'].apply_voltage(0)
-    qt.instruments['YellowAOM'].apply_voltage(0)
+def turn_off_lasers(names=['MatisseAOM', 'NewfocusAOM','YellowAOM','GreenAOM']):
+    for l in names:
+        qt.instruments[l].apply_voltage(0)
+    
+def turn_on_lasers(names=['MatisseAOM', 'NewfocusAOM','YellowAOM','GreenAOM']):
+    for l in names:
+        turn_on_laser(l)
 
+def turn_on_laser(laser):
+    las=qt.instruments[laser]
+    if np.max(np.abs(las.get_V_min()))>las.get_V_max():
+        v=las.get_V_min()
+    else:
+        v=las.get_V_max()
+    las.apply_voltage(v)
+    
 def recalibrate_aoms(names=['MatisseAOM', 'NewfocusAOM']):
     qt.instruments['adwin'].set_simple_counting()
     
@@ -83,7 +93,7 @@ def set_laser_powers(names=['MatisseAOM', 'NewfocusAOM','YellowAOM','GreenAOM'],
     for i,n in enumerate(names):
         qt.instruments[n].set_power(powers[i])
         
-
+"""
 speech_lasers={
     'off': 'None',
     'new': 'NewfocusAOM',
@@ -103,11 +113,5 @@ def start_listening():
     import speech
     speech.stoplistening()
     speech.listenfor([i for i in speech_lasers],listener)      
-        
-def turn_on_laser(laser):
-    las=qt.instruments[laser]
-    if np.max(np.abs(las.get_V_min()))>las.get_V_max():
-        v=las.get_V_min()
-    else:
-        v=las.get_V_max()
-    las.apply_voltage(v)
+"""        
+

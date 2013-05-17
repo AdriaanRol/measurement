@@ -250,7 +250,7 @@ EVENT:
     SELECTCASE mode
       CASE 0    ' green repump
         IF (timer = 0) THEN
-          IF (Mod(repetition_counter,repump_after_repetitions)=0) THEN  'only repump after x SSRO repetitions
+          IF (Mod(repetition_counter,repump_after_repetitions)=0) THEN  'only repump after x probe repetitions
             P2_DAC(DAC_MODULE, Ex_laser_DAC_channel, 0*3277*Ex_CR_voltage*3+32768) ' turn on Ex laser
             P2_DAC(DAC_MODULE, A_laser_DAC_channel, 0*3277*A_CR_voltage*3+32768) ' turn on A laser
             
