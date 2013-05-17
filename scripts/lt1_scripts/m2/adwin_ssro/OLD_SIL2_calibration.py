@@ -1,11 +1,32 @@
 import qt
 import numpy as np
-
-import sequence_ssro
-reload(sequence_ssro)
+import measurement.lib.config.adwins as adwins_cfg
+import measurement.lib.measurement2.measurement as m2
+import measurement.lib.config.awgchannels as awgcfg
 
 import mbi
 reload(mbi)
+
+# import the msmt class
+from measurement.lib.measurement2.adwin_ssro import ssro
+from measurement.lib.measurement2.adwin_ssro import sequence
+
+# set the static variables for LT1
+ssro.AdwinSSRO.adwin_processes_key = 'adwin_lt1_processes'
+ssro.AdwinSSRO.E_aom = qt.instruments['Velocity2AOM']
+ssro.AdwinSSRO.A_aom = qt.instruments['Velocity1AOM']
+ssro.AdwinSSRO.green_aom = qt.instruments['GreenAOM']
+ssro.AdwinSSRO.yellow_aom = qt.instruments['YellowAOM']
+ssro.AdwinSSRO.adwin = qt.instruments['adwin']
+
+sequence.SequenceSSRO.awg = qt.instruments['AWG']
+sequence.SequenceSSRO.mwsrc = qt.instruments['SMB100']
+sequence.SequenceSSRO.chan_mwI = 'MW_Imod'
+sequence.SequenceSSRO.chan_mwQ = 'MW_Qmod'
+sequence.SequenceSSRO.chan_mw_pm = 'MW_pulsemod'
+sequence.SequenceSSRO.awgcfg_module = awgcfg
+sequence.SequenceSSRO.awgcfg_args = ['mw', 'rf', 'adwin']
+
 
 ## These are the calibrations for SIL2.
 # The first step is the darkesr, of which the centre frequency should be
@@ -17,9 +38,11 @@ reload(mbi)
 
 
 def darkesr(name):
-    m = sequence_ssro.DarkESR(name, qt.instruments['adwin'], qt.instruments['AWG'])
-    sequence_ssro._prepare(m)
-
+    m = sequence.DarkESR(name)
+    m.params.from_dict(qt.cfgman['protocols']['AdwinSSRO'])
+    m.params.from_dict(qt.cfgman['protocols']['sil2-default']['AdwinSSRO'])
+    m.params.from_dict(qt.cfgman['protocols']['sil2-default']['AdwinSSRO-integrated'])
+   
     m.params['mw_power'] = 20
     m.params['mw_frq'] = 2.8e9
     m.params['ssbmod_frq_start'] = 40e6
@@ -29,28 +52,24 @@ def darkesr(name):
     m.params['repetitions'] = 1000
     m.params['ssbmod_amplitude'] = 0.01
     m.params['MW_pulse_mod_risetime'] = 2
-    m.params['RO_duration'] = 25
 
-    m.params['Ex_RO_amplitude'] = 2e-9
-    m.params['CR_preselect'] = 40
-    m.params['CR_probe'] = 40
- 
-    m.params['SP_duration'] = 250
-    m.params['A_SP_amplitude'] = 10e-9
-    m.params['Ex_SP_amplitude'] = 0.
+    m.autoconfig()
+    m.generate_sequence()
+    m.run()
+    m.save()
+    m.finish()  
+    
 
-    m.params['sweep_name'] = 'MW frq (GHz)'
-    m.params['sweep_pts'] = (np.linspace(m.params['ssbmod_frq_start'],
-                    m.params['ssbmod_frq_stop'], m.params['pts']) + m.params['mw_frq'])*1e-9
-
-
-    sequence_ssro._run(m)
 
 def calslowpipulse(name):
-    m = mbi.ElectronRabi('pi_calib_slow_'+name,#'pi_calib_slow', 
+    m = mbi.ElectronRabi('pi_calib_slow_'+name,
         qt.instruments['adwin'], qt.instruments['AWG'])
-    mbi._prepare(m)
-
+       
+    m.params.from_dict(qt.cfgman['protocols']['AdwinSSRO'])
+    m.params.from_dict(qt.cfgman['protocols']['sil2-default']['AdwinSSRO'])
+    m.params.from_dict(qt.cfgman['protocols']['AdwinSSRO+MBI'])
+    m.params.from_dict(qt.cfgman['protocols']['sil2-default']['AdwinSSRO+MBI'])
+    
     pts = 8
     m.params['pts'] = pts
     m.params['AWG_RO_MW_pulse_durations'] = np.ones(pts) * 2500
@@ -59,15 +78,16 @@ def calslowpipulse(name):
         m.params['AWG_MBI_MW_pulse_ssbmod_frq']
     m.params['reps_per_ROsequence'] = 1000
     m.params['MW_pulse_multiplicity'] = 5
-    m.params['MW_pulse_delay'] = 20000
-
-
+    
     m.params['sweep_name'] = 'MW pulse amplitude (V)'
     m.params['sweep_pts'] = m.params['AWG_RO_MW_pulse_amps']
-
-    m.program_AWG = True
-
-    mbi._run(m)
+    
+    m.setup()
+    m.autoconfig()
+    m.generate_sequence()
+    m.run()
+    m.save()
+    m.finish()  
 
 def calpi397ns(name):
     m = mbi.ElectronRabi('pi_calib_397ns_'+name, 
