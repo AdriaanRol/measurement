@@ -3,6 +3,7 @@ Class for SSRO with the Adwin
 last version: 2013/01/02, Wolfgang
 """
 import numpy as np
+import logging
 
 import qt
 import hdf5_data as h5
@@ -47,33 +48,15 @@ class AdwinSSRO(m2.AdwinControlledMeasurement):
                 [self.yellow_aom.get_pri_channel()]
         self.params['gate_DAC_channel'] = self.adwin.get_dac_channels()\
                 ['gate']
-
-    def setup(self):
-        """
-        sets up the hardware such that the msmt can be run
-        (i.e., turn of the lasers, prepare MW src, etc)
-        """
-        
-        self.green_aom.set_power(0.)
-        self.E_aom.set_power(0.)
-        self.A_aom.set_power(0.)
-        self.green_aom.set_cur_controller('ADWIN')
-        self.E_aom.set_cur_controller('ADWIN')
-        self.A_aom.set_cur_controller('ADWIN')
-        self.green_aom.set_power(0.)
-        self.E_aom.set_power(0.)
-        self.A_aom.set_power(0.)  
-    
-    def run(self, autoconfig=True, setup=True):
-        if autoconfig:
-            self.autoconfig()
-            
-        if setup:
-            self.setup()        
-        
+                
         for key,_val in self.adwin_dict[self.adwin_processes_key]\
                 [self.adwin_process]['params_long']:
-            self.adwin_process_params[key] = self.params[key]
+            try:
+                self.adwin_process_params[key] = self.params[key]
+            except:
+                logging.error("Cannot set adwin process variable '%s'" \
+                        % key)
+                return False
 
         self.adwin_process_params['Ex_CR_voltage'] = \
                 self.E_aom.power_to_voltage(
@@ -113,6 +96,31 @@ class AdwinSSRO(m2.AdwinControlledMeasurement):
                 self.params['A_off_voltage']
         self.adwin_process_params['Ex_off_voltage'] = \
                 self.params['Ex_off_voltage']
+                
+        
+
+    def setup(self):
+        """
+        sets up the hardware such that the msmt can be run
+        (i.e., turn of the lasers, prepare MW src, etc)
+        """
+        
+        self.green_aom.set_power(0.)
+        self.E_aom.set_power(0.)
+        self.A_aom.set_power(0.)
+        self.green_aom.set_cur_controller('ADWIN')
+        self.E_aom.set_cur_controller('ADWIN')
+        self.A_aom.set_cur_controller('ADWIN')
+        self.green_aom.set_power(0.)
+        self.E_aom.set_power(0.)
+        self.A_aom.set_power(0.)  
+    
+    def run(self, autoconfig=True, setup=True):
+        if autoconfig:
+            self.autoconfig()
+            
+        if setup:
+            self.setup()      
         
         self.start_adwin_process(stop_processes=['counter'])
         qt.msleep(1)
@@ -128,8 +136,6 @@ class AdwinSSRO(m2.AdwinControlledMeasurement):
             
             reps_completed = self.adwin_var('completed_reps')
             CR_counts = self.adwin_var('total_CR_counts') - CR_counts
-            cts = self.adwin_var('last_CR_counts')
-            trh = self.adwin_var('CR_threshold')
             
             print('completed %s / %s readout repetitions' % \
                     (reps_completed, self.params['SSRO_repetitions']))
@@ -156,9 +162,7 @@ class AdwinSSRO(m2.AdwinControlledMeasurement):
                     ('RO_data', reps * self.params['SSRO_duration']),
                     ('statistics', 10),
                     'completed_reps',
-                    'total_CR_counts',
-                    'CR_threshold',
-                    'last_CR_counts' ])
+                    'total_CR_counts'])
 
     def finish(self, save_params=True, save_stack=True, 
             stack_depth=4, save_cfg=True, save_ins_settings=True):
@@ -208,9 +212,7 @@ class IntegratedSSRO(AdwinSSRO):
                     ('RO_data', self.params['pts']),
                     ('statistics', 10),
                     'completed_reps',
-                    'total_CR_counts',
-                    'CR_threshold',
-                    'last_CR_counts'])
+                    'total_CR_counts'])
         
         
    
