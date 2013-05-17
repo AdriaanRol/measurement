@@ -277,7 +277,6 @@ EVENT:
             
             PAR_70 = PAR_70 + counts
             inc(par_72)
-            
             IF (counts < current_cr_threshold) THEN
               mode = 0
               inc(par_71)
