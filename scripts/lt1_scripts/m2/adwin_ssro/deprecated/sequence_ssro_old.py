@@ -342,6 +342,10 @@ def _prepare(m):
     m.A_aom = qt.instruments['Velocity1AOM']
     m.autoconfig()
 
+    #m.params.from_dict(qt.cfgman['protocols']['AdwinSSRO'])
+    #m.params.from_dict(qt.cfgman['protocols']['sil2-default']['AdwinSSRO'])
+
+
 def _run(m):
     m.setup()
     m.generate_sequence(do_program=True)

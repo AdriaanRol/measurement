@@ -75,7 +75,7 @@ class LaserFrequencyScan:
             p3=qt.Plot3D(d, name='Laser_Scan2D', plottitle=self.mprefix, coorddims=(1,3), valdim=2, clear=True)
 
         qt.mstart()
-######
+        ###### HERE THE MEASUREMENT LOOP STARTS ######
         for j,gv in enumerate(np.linspace(self.gate_start_voltage, self.gate_stop_voltage, self.gate_pts)):
             if (msvcrt.kbhit() and (msvcrt.getch() == 'c')): break  
             
@@ -169,8 +169,10 @@ class LabjackAdwinLaserScan(LaserFrequencyScan):
             self.mw.set_status('on')
             
         self.set_laser_power(self.laser_power)
-
-
+    
+    def repump_pulse(self):
+        pass
+        
     def finish_scan(self):
         self.set_laser_power(0)
 
@@ -204,9 +206,9 @@ class YellowLaserScan(LabjackAdwinLaserScan):
 class RedLaserScan(LabjackAdwinLaserScan):
     def __init__(self, name, labjack_dac_nr):
         LabjackAdwinLaserScan.__init__(self, name,labjack_dac_nr)
-        self.set_laser_power = qt.instruments['Velocity1AOM'].set_power
+        self.set_laser_power = qt.instruments['Velocity2AOM'].set_power
         self.set_yellow_repump_power=qt.instruments['YellowAOM'].set_power
-        self.set_red_repump_power=qt.instruments['Velocity2AOM'].set_power
+        self.set_red_repump_power=qt.instruments['Velocity1AOM'].set_power
         self.set_repump_power = qt.instruments['GreenAOM'].set_power
             
     def repump_pulse(self):
@@ -226,8 +228,71 @@ class RedLaserScan(LabjackAdwinLaserScan):
             self.set_repump_power(0)
             qt.msleep(1)
 
+class LabjackResonantCountingScan(LabjackAdwinLaserScan):
+    def __init__(self, name, labjack_dac_nr):
+        LabjackAdwinLaserScan.__init__(self, name, labjack_dac_nr)
 
-            
+        self.average_pts = 10
+        self.average_sleep = 0.01
+        self.do_repump = False
+
+        self.get_counts = self._get_counts
+
+    def _get_counts(self, int_time):
+        cts = np.array([0,0,0,0])
+        
+        for i in range(self.average_pts):
+            cts += np.array(self.adwin.get_countrates())
+            qt.msleep(self.average_sleep)
+
+        return cts / self.average_pts
+    
+class LabjackAlternResonantCountingScan(LabjackAdwinLaserScan):
+    def __init__(self, name, labjack_dac_nr):
+        LabjackAdwinLaserScan.__init__(self, name, labjack_dac_nr)
+
+        self.get_counts = self._get_counts
+        self.do_repump = False
+        
+        self.repump_aom = 'green_aom'
+        self.pump_aom = 'velocity1_aom'
+        self.probe_aom = 'velocity2_aom'
+        self.pump_aom_ins = 'Velocity1AOM'
+        self.probe_aom_ins = 'Velocity2AOM'
+        self.repump_duration = 0
+        self.pump_duration = 5
+        self.probe_duration = 5
+        self.repump_voltage = 0
+        self.pump_power = 5e-9
+        self.probe_power = 2e-9
+        self.floating_average = 100
+        self.pp_cycles = 5
+        self.single_shot = 1
+        self.prepump = 1
+
+    def _get_counts(self, int_time):
+        self.adwin.set_altern_resonant_counting(
+                repump_aom = self.repump_aom,
+                pump_aom = self.pump_aom,
+                probe_aom = self.probe_aom,
+                pump_aom_ins = self.pump_aom_ins,
+                probe_aom_ins = self.probe_aom_ins,
+                repump_duration = self.repump_duration,
+                pump_duration = self.pump_duration,
+                probe_duration = self.probe_duration,
+                repump_voltage = self.repump_voltage,
+                pump_power = self.pump_power,
+                probe_power = self.probe_power,
+                floating_average = self.floating_average,
+                pp_cycles = self.pp_cycles,
+                single_shot = self.single_shot,
+                prepump = self.prepump)
+        qt.msleep(0.01)
+        
+        cts = self.adwin.get_counter_var('get_countrates')
+        return np.array(cts)
+
+    
 def yellow_laser_scan(name):
     m = YellowLaserScan(name)
 
@@ -239,7 +304,7 @@ def yellow_laser_scan(name):
    
     # MW setup
     m.use_mw = False
-    m.mw_frq = lt2_cfg.sil9['MW_freq_center']
+    m.mw_frq = qt.cfgman['samples']['sil2']['MW frq']
     m.mw_power = -12
 
     # repump setup
@@ -268,20 +333,92 @@ def yellow_laser_scan(name):
     m.prepare_scan()
     m.run_scan()
     m.finish_scan()    
+
     
-def red_laser_scan(name):
-    labjack_dac_nr=3
-    m = RedLaserScan(name,labjack_dac_nr)
+def red_resonant_counting_scan(name):
+    labjack_dac_channel=0 #velocity 1
+    m = LabjackResonantCountingScan(name,labjack_dac_channel)
     
     # Hardware setup
-    m.wm_channel = 3
+    m.wm_channel = 1
     m.frq_offset = 470400
     m.frq_factor = 1
     m.counter_channel = 0
 
     # MW setup
     m.use_mw = True
-    m.mw_frq = lt2_cfg.sil9['MW_freq_center']
+    m.mw_frq = qt.cfgman['samples']['sil2']['MW frq']
+    m.mw_power = -12
+    
+    #Scan setup
+    m.laser_power = 50e-9
+    m.start_voltage = 0.6
+    m.stop_voltage = -0.9
+    m.pts = 1500
+    m.integration_time = 40 # ms
+    
+    #Gate scan setup
+    m.set_gate_after_repump=False
+    m.gate_start_voltage=0.
+    m.gate_stop_voltage=0.
+    m.gate_pts=1
+    
+    #strain lines
+    m.plot_strain_lines=True
+    
+    m.prepare_scan()
+    m.run_scan()
+    m.finish_scan()
+    
+def red_alternating_resonant_counting(name):
+    labjack_dac_channel = 0 # 0 = velocity 1 frq.
+    m = LabjackAlternResonantCountingScan(name, labjack_dac_channel)
+        
+    # Hardware setup
+    m.wm_channel = 1
+    m.frq_offset = 470400
+    m.frq_factor = 1
+    m.counter_channel = 0
+
+    # MW setup
+    m.use_mw = True
+    m.mw_frq = qt.cfgman['samples']['sil2']['MW frq']
+    m.mw_power = -12
+    
+    #Scan setup
+    m.laser_power = 50e-9
+    m.start_voltage = 0.6
+    m.stop_voltage = -0.9
+    m.pts = 1500
+    m.integration_time = 40 # ms
+    
+    #Gate scan setup
+    m.set_gate_after_repump=False
+    m.gate_start_voltage=0.
+    m.gate_stop_voltage=0.
+    m.gate_pts=1
+    
+    #strain lines
+    m.plot_strain_lines=True
+    
+    m.prepare_scan()
+    m.run_scan()
+    m.finish_scan()        
+
+    
+def red_laser_scan(name):
+    labjack_dac_nr=1
+    m = RedLaserScan(name,labjack_dac_nr)
+    
+    # Hardware setup
+    m.wm_channel = 2
+    m.frq_offset = 470400
+    m.frq_factor = 1
+    m.counter_channel = 0
+
+    # MW setup
+    m.use_mw = True
+    m.mw_frq = qt.cfgman['samples']['sil2']['MW frq']
     m.mw_power = -12
     
     # repump setup
@@ -289,16 +426,16 @@ def red_laser_scan(name):
     m.yellow_repump_power=500e-9
     m.red_repump_power=0e-9
     m.yellow_repump_duration=4 #seconds
-    m.repump_power = 150e-6
+    m.repump_power = 50e-6
     m.repump_duration = 2 # seconds
     m.use_repump_during = False
     m.repump_power_during = 0.5e-6
     
     #Scan setup
-    m.laser_power = 5e-9
-    m.start_voltage = -0
-    m.stop_voltage = -2.
-    m.pts = 2000
+    m.laser_power = 3e-9
+    m.start_voltage = -0.5
+    m.stop_voltage = -1.6
+    m.pts = 1000
     m.integration_time = 40 # ms
     
     #Gate scan setup
@@ -314,9 +451,11 @@ def red_laser_scan(name):
     m.run_scan()
     m.finish_scan()
 
+    
 if __name__=='__main__':
 
-    stools.turn_off_lasers()
+    #Velocity1AOM.set_power(50e-9)
+    #YellowAOM.set_power(50e-9)
     red_laser_scan('red_scan_go')
     #yellow_laser_scan('yellow_1nW')
 

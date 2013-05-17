@@ -5,10 +5,10 @@
 ' Control_long_Delays_for_Stop   = No
 ' Priority                       = High
 ' Version                        = 1
-' ADbasic_Version                = 5.0.6
+' ADbasic_Version                = 5.0.5
 ' Optimize                       = Yes
 ' Optimize_Level                 = 1
-' Info_Last_Save                 = TUD276629  TUD276629\localadmin
+' Info_Last_Save                 = TUD10238  TUD10238\localadmin
 '<Header End>
 ' MBI with the adwin, with dynamic CR-preparation, dynamic MBI-success/fail
 ' recognition, and SSRO at the end. 
@@ -79,7 +79,8 @@ DIM DATA_20[35] AS LONG                           ' integer parameters
 DIM DATA_21[10] AS FLOAT                          ' float parameters
 DIM DATA_22[max_sweep_dim] AS LONG                ' CR counts before sequence
 DIM DATA_23[max_sweep_dim] AS LONG                ' CR counts after sequence
-DIM DATA_24[max_sweep_dim] AS LONG                ' number of MBI attempts needed
+DIM DATA_24[max_sweep_dim] AS LONG                ' number of MBI attempts needed in the successful cycle
+DIM DATA_25[max_sweep_dim] AS LONG                ' number of cycles before success
 DIM DATA_26[max_stat] AS LONG AT EM_LOCAL         ' statistics
 DIM DATA_27[max_RO_dim] AS LONG AT DRAM_EXTERN    ' SSRO counts
 DIM DATA_28[max_sequences] AS LONG                ' A SP durations
@@ -185,6 +186,7 @@ INIT:
     DATA_22[i] = 0
     DATA_23[i] = 0
     DATA_24[i] = 0
+    DATA_25[i] = 0
   next i
     
   FOR i = 1 TO max_RO_dim
@@ -259,11 +261,15 @@ INIT:
   
 EVENT:
   
+  par_59 = AWG_done_DI_channel
   par_60 = AWG_event_jump_DO_channel
   par_61 = AWG_start_DO_channel
   
   awg_in_was_hi = awg_in_is_hi
   awg_in_is_hi = digin(AWG_done_DI_channel)
+  
+  par_62 = awg_in_is_hi
+  
   if ((awg_in_was_hi = 0) and (awg_in_is_hi > 0)) then
     awg_in_switched_to_hi = 1
   else
@@ -361,10 +367,10 @@ EVENT:
         
         ' turn on both lasers and start counting
         IF (timer = 0) THEN
-          inc(data_26[mode+1])          
+          inc(data_26[mode+1])
           dac( Ex_laser_DAC_channel, 3277*Ex_SP_voltage+32768) ' turn on Ex laser
-          cnt_clear(  counter_pattern)    'clear counter
-          cnt_enable( counter_pattern)	  'turn on counter
+          cnt_clear(counter_pattern)    'clear counter
+          cnt_enable(counter_pattern)	  'turn on counter
         
         ELSE          
           ' turn off the lasers, and read the counter
@@ -389,6 +395,7 @@ EVENT:
             inc(data_26[mode+1])
             INC(MBI_starts)
             PAR_78 = MBI_starts
+            inc(data_25[seq_cntr])
           endif
           
           digout(AWG_start_DO_channel,1)  ' AWG trigger
@@ -435,8 +442,9 @@ EVENT:
                 CPU_SLEEP(9)               ' need >= 20ns pulse width; adwin needs >= 9 as arg, which is 9*10ns
                 digout(AWG_event_jump_DO_channel,0)
                 
+                data_24[seq_cntr] = current_MBI_step
                 mode = 4
-                current_MBI_step = 1  
+                current_MBI_step = 1
               endif
               timer = -1
             endif          

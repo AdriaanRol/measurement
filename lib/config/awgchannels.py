@@ -91,7 +91,7 @@ def configure_sequence(sequence, *use, **use_modified):
 
     Returns the sequence again.
     """
-
+    
     for cfg in use:
         for chan in config[cfg]:
             sequence.add_channel(chan, **config[cfg][chan])
