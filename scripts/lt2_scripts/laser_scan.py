@@ -295,10 +295,10 @@ def red_laser_scan(name):
     m.repump_power_during = 0.5e-6
     
     #Scan setup
-    m.laser_power = 50e-9
-    m.start_voltage = 0.6
-    m.stop_voltage = -0.9
-    m.pts = 1500
+    m.laser_power = 5e-9
+    m.start_voltage = -0
+    m.stop_voltage = -2.
+    m.pts = 2000
     m.integration_time = 40 # ms
     
     #Gate scan setup
@@ -317,7 +317,7 @@ def red_laser_scan(name):
 if __name__=='__main__':
 
     stools.turn_off_lasers()
-    #red_laser_scan('red_scan_go')
-    yellow_laser_scan('yellow_1nW')
+    red_laser_scan('red_scan_go')
+    #yellow_laser_scan('yellow_1nW')
 
         

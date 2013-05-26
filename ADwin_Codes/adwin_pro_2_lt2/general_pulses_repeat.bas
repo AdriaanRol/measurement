@@ -16,8 +16,8 @@
 
 #DEFINE max_elements 10 'max cases: this is the maximum number of different pulse/counting combinations.
 #DEFINE max_dacs 3
-#DEFINE max_sweeps 100
-#DEFINE max_counts 100
+#DEFINE max_histogram_length 100
+#DEFINE max_repetitions 100000
 
 DIM DATA_20[25] AS LONG               ' integer parameters, sequence definition, dac channels etc
 
@@ -32,22 +32,15 @@ DIM DATA_24[max_elements] AS LONG AT EM_LOCAL             ' integer parameter co
 'duractions of each element
 DIM DATA_25[max_elements] AS LONG AT EM_LOCAL 
 
-'sweep dac voltage
-DIM DATA_26[max_sweeps] AS FLOAT          
-
-'sweep duration
-DIM DATA_27[max_sweeps] AS FLOAT
-
 'result data
-DIM DATA_30[1000] AS LONG    ' counts acquired duting each element for each sweep_var 
-'SIZE IS max_sweeps*max_elements
+DIM DATA_30[1000000] AS LONG    ' counts acquired duting each element for each repetition 
+'SIZE IS max_repetitions*max_elements
 
 'result histogram
-DIM DATA_31[10001] AS LONG    ' counts acquired duting each element for each sweep_var 
-'SIZE IS max_sweeps*max_counts+1
-
-'counts during exp
-DIM DATA_32[max_elements] AS LONG AT EM_LOCAL
+DIM DATA_31[10000000] AS LONG
+'SIZE IS max_repetitions*max_histogram_length
+'first count during timee element
+DIM DATA_32[max_repetitions] AS LONG
 'SIZE is max_elements
 
 
@@ -59,19 +52,20 @@ DIM sweep_channel AS LONG
 DIM counter_channel AS LONG
 DIM counter_pattern AS LONG
 
-DIM sweep_element AS LONG
+DIM timed_element AS LONG
 DIM max_element AS LONG
-DIM max_sweep AS LONG
+DIM max_repetition AS LONG
 DIM do_sweep_duration AS LONG
 
 DIM element AS LONG
 DIM timer AS LONG
 DIM cur_timer_max AS LONG
-DIM sweep_index AS LONG
+DIM repetition_counter AS LONG
 DIM i AS LONG
 DIM modulator AS LONG
 
 DIM counts AS lONG
+DIM counts_total AS lONG
 
 DIM cycle_duration AS LONG
 DIM wait_after_pulse AS LONG
@@ -86,28 +80,24 @@ INIT:
   max_element                  = DATA_20[5]
   cycle_duration               = DATA_20[6]
   wait_after_pulse_duration    = DATA_20[7]
-  max_sweep                    = DATA_20[8]
-  sweep_channel                = DATA_20[9]
-  do_sweep_duration            = DATA_20[10]
-  sweep_element                = DATA_20[11]
-
+  max_repetition               = DATA_20[8]
+  timed_element                = DATA_20[9]
   
-  FOR i = 1 TO max_sweeps*max_elements
+  FOR i = 1 TO max_repetitions*max_elements
     DATA_30[i] = 0
   NEXT i
   
-  FOR i = 1 TO max_sweeps*max_counts+1
+  FOR i = 1 TO max_histogram_length*max_repetitions
     DATA_31[i] = 0
   NEXT i
-  
-  FOR i = 1 TO max_elements
+   
+  FOR i = 1 TO max_repetitions
     DATA_32[i] = 0
   NEXT i
 
   element = 1
   timer = 0
-  sweep_index=1
-  modulator = 1
+  repetition_counter=1
   cur_timer_max=10
   wait_after_pulse=0
   processdelay = cycle_duration
@@ -122,8 +112,9 @@ INIT:
   P2_DAC(DAC_MODULE,dac3_channel, 32768) 
   
   'pars
-  Par_73 = 0 'repetition_counter
-  Par_15 = 0 'total counts
+  Par_72 = 0 'repetition_counter
+  Par_70 = 0 'total counts
+  
   
 EVENT:
   
@@ -149,68 +140,50 @@ EVENT:
       IF(DATA_24[element] > 0) THEN      
         P2_CNT_CLEAR(CTR_MODULE,counter_pattern)    'clear counter
         P2_CNT_ENABLE(CTR_MODULE,counter_pattern)	  'turn on counter
+        counts=0
+        counts_total=0
       ENDIF
       
       cur_timer_max=DATA_25[element]
-      
-      IF (element = sweep_element) THEN
-        IF (do_sweep_duration=0)  THEN
-          P2_DAC(DAC_MODULE,sweep_channel, 3277*DATA_26[sweep_index]+32768)
-        ELSE
-          cur_timer_max=DATA_27[sweep_index]
-        ENDIF
-      ENDIF
-        
+             
     ELSE
       IF (timer = cur_timer_max) THEN
         
         IF(DATA_24[element] > 0) THEN   
-          counts = P2_CNT_READ(CTR_MODULE,counter_channel)
-          Par_15=Par_15+counts
-          i=(element-1)*max_sweep+sweep_index   
-          DATA_30[i] = DATA_30[i] + counts
-          i=(sweep_index-1)*max_counts+MIN_LONG(counts,max_counts-1)+1        
-          DATA_31[i]=DATA_31[i]+1
-          DATA_32[element] = counts
+          counts_total = P2_CNT_READ(CTR_MODULE,counter_channel)
+          Par_70=Par_70+counts_total
+          i=(max_element-1)*repetition_counter+element  
+          DATA_30[i] = DATA_30[i] + counts_total
           P2_CNT_ENABLE(CTR_MODULE,0)
         ENDIF
-
-        IF (element = sweep_element) THEN
-          'DATA_33[sweep_index]=DATA_33[sweep_index]+1
-          IF (do_sweep_duration=0)  THEN
-            P2_DAC(DAC_MODULE,sweep_channel, 32768)
-          ENDIF
-          
-          'turn around at the end of the sweep_index ranges
-          sweep_index=sweep_index+modulator
-          IF (sweep_index = 1) THEN
-            IF (modulator = 0) THEN
-              modulator=1
-            ELSE
-              modulator=0
-            ENDIF
-          ENDIF
-          IF (sweep_index = max_sweep) THEN
-            IF (modulator = 0) THEN
-              modulator=-1
-            ELSE
-              modulator=0
-            ENDIF
-          ENDIF   
-                       
-        ENDIF
-                
+              
         IF (element= max_element) THEN
           element = 1
-          INC(Par_73)
+          INC(repetition_counter)
+          INC(Par_72)
+          IF(repetition_counter>max_repetition) THEN
+            END
+          ENDIF
         ELSE
           INC(element)
         ENDIF
        
         timer = -1
         wait_after_pulse=wait_after_pulse_duration
-      ENDIF
+      
+      ELSE
+        IF (element=timed_element) THEN
+          counts = P2_CNT_READ(CTR_MODULE,counter_channel)
+          i= (MIN_LONG(cur_timer_max,max_histogram_length))*repetition_counter+MIN_LONG(timer,max_histogram_length)
+          DATA_31[i]=DATA_31[i]+counts-counts_total
+          IF ((counts_total=0) AND (counts>0)) THEN
+            DATA_32[repetition_counter]=timer
+          ENDIF
           
+          counts_total = counts       
+        ENDIF
+        
+      ENDIF     
      
     ENDIF
     timer = timer + 1

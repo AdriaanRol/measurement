@@ -24,8 +24,7 @@ class AdwinSSRO(m2.AdwinControlledMeasurement):
     adwin_processes_key = ''
     E_aom = None
     A_aom = None
-    green_aom = None
-    yellow_aom = None
+    repump_aom = None
     adwin = None
     
     def __init__(self, name):
@@ -42,13 +41,34 @@ class AdwinSSRO(m2.AdwinControlledMeasurement):
                 [self.E_aom.get_pri_channel()]
         self.params['A_laser_DAC_channel'] = self.adwin.get_dac_channels()\
                 [self.A_aom.get_pri_channel()]
-        self.params['green_laser_DAC_channel'] = self.adwin.get_dac_channels()\
-                [self.green_aom.get_pri_channel()]
-        self.params['yellow_laser_DAC_channel'] = self.adwin.get_dac_channels()\
-                [self.yellow_aom.get_pri_channel()]
+        self.params['repump_laser_DAC_channel'] = self.adwin.get_dac_channels()\
+                [self.repump_aom.get_pri_channel()]
         self.params['gate_DAC_channel'] = self.adwin.get_dac_channels()\
                 ['gate']
-                
+
+    def setup(self):
+        """
+        sets up the hardware such that the msmt can be run
+        (i.e., turn of the lasers, prepare MW src, etc)
+        """
+        
+        self.repump_aom.set_power(0.)
+        self.E_aom.set_power(0.)
+        self.A_aom.set_power(0.)
+        self.repump_aom.set_cur_controller('ADWIN')
+        self.E_aom.set_cur_controller('ADWIN')
+        self.A_aom.set_cur_controller('ADWIN')
+        self.repump_aom.set_power(0.)
+        self.E_aom.set_power(0.)
+        self.A_aom.set_power(0.)  
+    
+    def run(self, autoconfig=True, setup=True):
+        if autoconfig:
+            self.autoconfig()
+            
+        if setup:
+            self.setup()        
+        
         for key,_val in self.adwin_dict[self.adwin_processes_key]\
                 [self.adwin_process]['params_long']:
             try:
@@ -82,16 +102,12 @@ class AdwinSSRO(m2.AdwinControlledMeasurement):
                 self.A_aom.power_to_voltage(
                         self.params['A_RO_amplitude'])
 
-        self.adwin_process_params['green_repump_voltage'] = \
-                self.green_aom.power_to_voltage(
-                        self.params['green_repump_amplitude'])
-        
-        self.adwin_process_params['yellow_repump_voltage'] = \
-                self.yellow_aom.power_to_voltage(
-                        self.params['yellow_repump_amplitude'])
-        
-        self.adwin_process_params['green_off_voltage'] = \
-                self.params['green_off_voltage']
+        self.adwin_process_params['repump_voltage'] = \
+                self.repump_aom.power_to_voltage(
+                        self.params['repump_amplitude'])
+                
+        self.adwin_process_params['repump_off_voltage'] = \
+                self.params['repump_off_voltage']
         self.adwin_process_params['A_off_voltage'] = \
                 self.params['A_off_voltage']
         self.adwin_process_params['Ex_off_voltage'] = \
@@ -177,7 +193,7 @@ class AdwinSSRO(m2.AdwinControlledMeasurement):
             self.save_instrument_settings_file()
             
         qt.instruments['counters'].set_is_running(True)
-        self.green_aom.set_power(0)
+        self.repump_aom.set_power(0)
         self.E_aom.set_power(0)
         self.A_aom.set_power(0)
             

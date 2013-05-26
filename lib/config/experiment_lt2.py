@@ -64,7 +64,7 @@ ssroprotocol = {
         'yellow_repump_amplitude':      150e-9,
         'green_off_amplitude':          0e-6,
         'Ex_CR_amplitude':              30e-9, #OK
-        'A_CR_amplitude':               30e-9,#280e-9,#NOTE 15 for A1 readout
+        'A_CR_amplitude':               15e-9,#280e-9,#NOTE 15 for A1 readout
         'Ex_SP_amplitude':              30e-9,
         'A_SP_amplitude':               30e-9,#280e-9, #OK: PREPARE IN MS = 0
         'Ex_RO_amplitude':              30e-9, #OK: READOUT MS = 0

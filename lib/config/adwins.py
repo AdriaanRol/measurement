@@ -130,14 +130,14 @@ config['adwin_lt2_processes'] = {
                 'file' : 'singleshot_lt2.TB9',
                 'params_long' : [           # keep order!!!!!!!!!!!!!
                     ['counter_channel'             ,   1],
-                    ['green_laser_DAC_channel'     ,   7],
+                    ['repump_laser_DAC_channel'    ,   7],
                     ['Ex_laser_DAC_channel'        ,   6],
                     ['A_laser_DAC_channel'         ,   8],
                     ['AWG_start_DO_channel'        ,  16],
                     ['AWG_done_DI_channel'         ,   8],
                     ['send_AWG_start'              ,   0],
                     ['wait_for_AWG_done'           ,   0],
-                    ['green_repump_duration'       ,   5],
+                    ['repump_duration'             ,   5],
                     ['CR_duration'                 ,  50],
                     ['SP_duration'                 , 100],
                     ['SP_filter_duration'          ,   0],
@@ -154,8 +154,8 @@ config['adwin_lt2_processes'] = {
                 'params_long_index'  : 20,
                 'params_long_length' : 25,
                 'params_float' : [
-                    ['green_repump_voltage' , 0.8],
-                    ['green_off_voltage'    , 0.07],
+                    ['repump_voltage' , 0.8],
+                    ['repump_off_voltage'   , 0.07],
                     ['Ex_CR_voltage'        , 0.8],
                     ['A_CR_voltage'         , 0.8],
                     ['Ex_SP_voltage'        , 0.8],
@@ -296,8 +296,8 @@ config['adwin_lt2_processes'] = {
                 'params_long_index'  : 20,
                 'params_long_length' : 11,
                 'par' : {
-                    'repetition_counter'      : 73,
-                    'total_counts'            : 15,
+                    'repetition_counter'      : 72,
+                    'total_counts'            : 70,
                     },
                 'data_float': {
                     'dac1_voltages'             : 21,
@@ -308,7 +308,8 @@ config['adwin_lt2_processes'] = {
                     'counter_on'                : 24,
                     'element_durations'         : 25,
                     'results'                   : 30,
-                    'counter'                   : 32,
+                    'histogram'                 : 31,
+                    'first_count'               : 32,
                     },
                 },
 

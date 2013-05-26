@@ -112,7 +112,7 @@ class pid_controller(Instrument):
 
         self.set_is_running(False)
         self.set_use_stabilizor(False)
-        self.set_control_parameter(0)
+        self._control_parameter=0
         self.set_max_value_deviation(10) #GHz
         self.set_max_control_deviation(6)
         self.set_setpoint(0)
@@ -136,9 +136,9 @@ class pid_controller(Instrument):
             _f.write('')
             _f.close()
         
-        self._parlist = ['P', 'I', 'D', 'control_parameter', 'integration_time', 
+        self._parlist = ['P', 'I', 'D', 'integration_time', 
                 'setpoint', 'value_factor', 'value_offset','max_value_deviation',
-                'max_control_deviation','PID_type','use_stabilizor']
+                'max_control_deviation','PID_type','use_stabilizor','step_size']
         self.ins_cfg = config.Config(cfg_fn)
         self.load_cfg()
         self.save_cfg()
@@ -152,6 +152,8 @@ class pid_controller(Instrument):
         for p in params_from_cfg:
             if p in self._parlist:
                 self.set(p, value=self.ins_cfg.get(p))
+            if p=='control_parameter':
+                self._control_parameter=self.ins_cfg.get(p)
 
     def save_cfg(self):
         for param in self._parlist:

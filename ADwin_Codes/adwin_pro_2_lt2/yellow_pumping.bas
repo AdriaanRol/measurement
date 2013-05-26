@@ -28,7 +28,7 @@
 ' integer parameters: DATA_20[i]
 ' index i   description
 '   1       counter_channel
-'   2       repump_laser_DAC_channel
+'   2       green_laser_DAC_channel
 '   3       Ex_laser_DAC_channel
 '   4       A_laser_DAC_channel
 '   5       AWG_start_DO_channel
@@ -51,8 +51,8 @@
 
 ' float parameters: DATA_21[i]
 ' index i   description
-'   1       repump_voltage
-'   2       repump_off_voltage
+'   1       green_repump_voltage
+'   2       green_off_voltage
 '   3       Ex_CR_voltage
 '   4       A_CR_voltage
 '   5       Ex_SP_voltage
@@ -89,7 +89,7 @@ DIM DATA_25[max_SSRO_dim] AS LONG AT DRAM_EXTERN  ' SSRO counts
 DIM DATA_26[max_stat] AS LONG AT EM_LOCAL         ' statistics
 
 DIM counter_channel AS LONG
-DIM repump_laser_DAC_channel AS LONG
+DIM green_laser_DAC_channel AS LONG
 DIM Ex_laser_DAC_channel AS LONG
 DIM A_laser_DAC_channel AS LONG
 DIM AWG_start_DO_channel AS LONG
@@ -108,8 +108,8 @@ DIM SSRO_stop_after_first_photon AS LONG
 DIM cycle_duration AS LONG
 DIM repump_after_repetitions AS LONG
 
-DIM repump_voltage AS FLOAT
-DIM repump_off_voltage AS FLOAT
+DIM green_repump_voltage AS FLOAT
+DIM green_off_voltage AS FLOAT
 DIM Ex_CR_voltage AS FLOAT
 DIM A_CR_voltage AS FLOAT
 DIM Ex_SP_voltage AS FLOAT
@@ -126,7 +126,7 @@ DIM wait_after_pulse AS LONG
 DIM repetition_counter AS LONG
 DIM repumps AS LONG
 DIM CR_failed AS LONG
-DIM total_repump_counts AS LONG
+DIM repump_counts AS LONG
 DIM counter_pattern AS LONG
 DIM AWG_done_DI_pattern AS LONG
 DIM counts, old_counts, cr_counts AS LONG
@@ -134,13 +134,15 @@ DIM first AS LONG
 DIM time_start, time_stop AS LONG
 
 DIM current_cr_threshold AS LONG
+DIM yellow_cr_threshold AS LONG
 DIM CR_probe AS LONG
 DIM CR_preselect AS LONG
-DIM CR_preselect AS LONG
+DIM CR_short_duration AS LONG
+DIM CR_short_counts AS LONG
 
 INIT:
   counter_channel              = DATA_20[1]
-  repump_laser_DAC_channel      = DATA_20[2]
+  green_laser_DAC_channel      = DATA_20[2]
   Ex_laser_DAC_channel         = DATA_20[3]
   A_laser_DAC_channel          = DATA_20[4]
   AWG_start_DO_channel         = DATA_20[5]
@@ -161,8 +163,10 @@ INIT:
   CR_probe                     = DATA_20[20]
   repump_after_repetitions     = DATA_20[21]
   
-  repump_voltage         = DATA_21[1]
-  repump_off_voltage            = DATA_21[2]
+  
+  
+  green_repump_voltage         = DATA_21[1]
+  green_off_voltage            = DATA_21[2]
   Ex_CR_voltage                = DATA_21[3]
   A_CR_voltage                 = DATA_21[4]
   Ex_SP_voltage                = DATA_21[5]
@@ -192,13 +196,14 @@ INIT:
   AWG_done_DI_pattern = 2 ^ AWG_done_DI_channel
   counter_pattern     = 2 ^ (counter_channel-1)
   
-  total_repump_counts = 0
+  repump_counts = 0
+  CR_short_counts= 0
   CR_failed           = 0
   repumps             = 0
   repetition_counter  = 0
   first               = 0
   wait_after_pulse    = 0
-  P2_DAC(DAC_MODULE, repump_laser_DAC_channel, 3277*repump_off_voltage+32768) ' turn off green
+  P2_DAC(DAC_MODULE, green_laser_DAC_channel, 3277*green_off_voltage+32768) ' turn off green
   P2_DAC(DAC_MODULE, Ex_laser_DAC_channel, 3277*Ex_off_voltage+32768) ' turn off Ex laser
   P2_DAC(DAC_MODULE, A_laser_DAC_channel, 3277*A_off_voltage+32768) ' turn off Ex laser
 
@@ -225,17 +230,19 @@ INIT:
 EVENT:
   CR_preselect                 = PAR_75
   CR_probe                     = PAR_68
-
+  yellow_cr_threshold          = Par_74
+  CR_short_duration            = Par_77
+  CR_duration                  = Par_78
   IF (wait_after_pulse > 0) THEN
     wait_after_pulse = wait_after_pulse - 1
   ELSE
     SELECTCASE mode
-      CASE 0    ' green repump
+      CASE 0    ' yellow repump + couting
         IF (timer = 0) THEN
           IF (Mod(repetition_counter,repump_after_repetitions)=0) THEN  'only repump after x SSRO repetitions
             P2_CNT_CLEAR(CTR_MODULE,  counter_pattern)    'clear counter
             P2_CNT_ENABLE(CTR_MODULE, counter_pattern)	  'turn on counter
-            P2_DAC(DAC_MODULE, repump_laser_DAC_channel, 3277*repump_voltage+32768) ' turn on green
+            P2_DAC(DAC_MODULE, green_laser_DAC_channel, 3277*green_repump_voltage+32768) ' turn on green
             repumps = repumps + 1
           ELSE
             mode = 1
@@ -245,11 +252,11 @@ EVENT:
           
         ELSE 
           IF (timer = green_repump_duration) THEN
-            P2_DAC(DAC_MODULE, repump_laser_DAC_channel, 3277*repump_off_voltage+32768) ' turn off green
+            P2_DAC(DAC_MODULE, green_laser_DAC_channel, 3277*green_off_voltage+32768) ' turn off green
             counts = P2_CNT_READ(CTR_MODULE, counter_channel)
             P2_CNT_ENABLE(CTR_MODULE, 0)
-            total_repump_counts = total_repump_counts + counts
-            PAR_76 = total_repump_counts
+            repump_counts = counts
+            PAR_76 = PAR_76+repump_counts
             mode = 1
             timer = -1
             wait_after_pulse = wait_after_pulse_duration
@@ -264,10 +271,14 @@ EVENT:
           P2_CNT_ENABLE(CTR_MODULE, counter_pattern)	  'turn on counter
           inc(par_72)
         ELSE 
+          IF (timer = CR_duration-CR_short_duration) THEN
+            cr_counts = P2_CNT_READ(CTR_MODULE, counter_channel)
+            P2_CNT_CLEAR(CTR_MODULE,  counter_pattern)    'clear counter
+          ENDIF
           IF (timer = CR_duration) THEN
             P2_DAC(DAC_MODULE, Ex_laser_DAC_channel, 3277*Ex_off_voltage+32768) ' turn off Ex laser
             P2_DAC(DAC_MODULE, A_laser_DAC_channel, 3277*A_off_voltage+32768) ' turn off A laser
-            cr_counts = P2_CNT_READ(CTR_MODULE, counter_channel)
+            CR_short_counts = P2_CNT_READ(CTR_MODULE, counter_channel)
             P2_CNT_ENABLE(CTR_MODULE, 0)
             PAR_70 = PAR_70 + cr_counts
             
@@ -276,12 +287,13 @@ EVENT:
               first = 0
             ENDIF
             
-            IF (cr_counts < current_cr_threshold) THEN
+            IF (((cr_counts < current_cr_threshold) OR (repump_counts < yellow_cr_threshold)) OR (CR_short_counts > 0) ) THEN
               mode = 0
               INC(CR_failed)
+              Par_80=321
               inc(par_71)
             ELSE
-              mode = 2
+              mode = 4
               DATA_22[repetition_counter+1] = counts  ' CR before next SSRO sequence
               current_cr_threshold = CR_probe			
             ENDIF
@@ -291,58 +303,9 @@ EVENT:
           ENDIF
         ENDIF
       CASE 2    ' Ex or A laser spin pumping
-        IF (timer = 0) THEN
-          P2_DAC(DAC_MODULE, Ex_laser_DAC_channel, 3277*Ex_SP_voltage+32768) ' turn on Ex laser
-          P2_DAC(DAC_MODULE, A_laser_DAC_channel, 3277*A_SP_voltage+32768)   ' turn on A laser
-          P2_CNT_CLEAR(CTR_MODULE,  counter_pattern)    'clear counter
-          P2_CNT_ENABLE(CTR_MODULE, counter_pattern)	  'turn on counter
-          old_counts = 0
-        ELSE 
-          counts = P2_CNT_READ(CTR_MODULE, counter_channel)
-          DATA_24[timer] = DATA_24[timer] + counts - old_counts
-
-          old_counts = counts
-          IF (timer = SP_duration) THEN
-            P2_CNT_ENABLE(CTR_MODULE, 0)
-            IF (SP_filter_duration = 0) THEN
-              P2_DAC(DAC_MODULE, Ex_laser_DAC_channel, 3277*Ex_off_voltage+32768) ' turn off Ex laser
-              P2_DAC(DAC_MODULE, A_laser_DAC_channel, 3277*A_off_voltage+32768) ' turn off A laser
-              IF ((send_AWG_start > 0) or (sequence_wait_time > 0)) THEN
-                mode = 4
-              ELSE
-                mode = 5
-              ENDIF
-              wait_after_pulse = wait_after_pulse_duration
-            ELSE
-              mode = 3
-              wait_after_pulse = 0
-            ENDIF
-            timer = -1
-          ENDIF
-        ENDIF
+        END     'we should not be here
       CASE 3    ' SP filter (postselection)
-        IF (timer = 0) THEN
-          P2_CNT_CLEAR(CTR_MODULE,  counter_pattern)    'clear counter
-          P2_CNT_ENABLE(CTR_MODULE, counter_pattern)	  'turn on counter
-        ELSE 
-          IF (timer = SP_filter_duration) THEN
-            P2_DAC(DAC_MODULE, Ex_laser_DAC_channel, 3277*Ex_off_voltage+32768) ' turn off Ex laser
-            P2_DAC(DAC_MODULE, A_laser_DAC_channel, 3277*A_off_voltage+32768) ' turn off A laser
-            counts = P2_CNT_READ(CTR_MODULE, counter_channel)
-            P2_CNT_ENABLE(CTR_MODULE, 0)
-            IF (counts > 0) THEN
-              mode = 1
-            ELSE
-              IF ((send_AWG_start > 0) or (sequence_wait_time > 0)) THEN
-                mode = 4
-              ELSE
-                mode = 5
-              ENDIF
-            ENDIF
-            timer = -1
-            wait_after_pulse = wait_after_pulse_duration
-          ENDIF
-        ENDIF
+        END     'we should not be here
       CASE 4    '  wait for AWG sequence or for fixed duration
         IF (timer = 0) THEN
           IF (send_AWG_start > 0) THEN
@@ -439,7 +402,7 @@ EVENT:
   
 FINISH:
   DATA_26[1] = repumps
-  DATA_26[2] = total_repump_counts
+  DATA_26[2] = repump_counts
   DATA_26[3] = CR_failed
   
 

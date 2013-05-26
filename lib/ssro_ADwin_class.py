@@ -23,7 +23,7 @@ class ssroADwinMeasurement(Measurement):
 
 
     def __init__(self,name):
-        Measurement.__init__(self,name,mclass='ADwin_SSRO')
+        Measurement.__init__(self,name,mclass='Adwin_SSRO')
         
             ########################################################### 
     ##
@@ -134,8 +134,8 @@ class ssroADwinMeasurement(Measurement):
         #print 'SP A amplitude: %s'%self.par['A_SP_voltage']
 
         if not(self.lt1):
-            self.adwin.set_spincontrol_var(set_phase_locking_on = self.set_phase_locking_on)
-            self.adwin.set_spincontrol_var(set_gate_good_phase =  self.set_gate_good_phase)            
+            self.adwin.set_singleshot_var(set_phase_locking_on = self.set_phase_locking_on)
+            self.adwin.set_singleshot_var(set_gate_good_phase =  self.set_gate_good_phase)            
 
         self.adwin.start_singleshot(
                 load=True, stop_processes=['counter'],
@@ -186,7 +186,7 @@ class ssroADwinMeasurement(Measurement):
         reps_completed      = self.physical_adwin.Get_Par(73)
         print('completed %s / %s readout repetitions'%(reps_completed,self.par['SSRO_repetitions']))
         if not(self.lt1):
-            self.adwin.set_spincontrol_var(set_phase_locking_on = 0)
+            self.adwin.set_singleshot_var(set_phase_locking_on = 0)
 
         self.par_long   = self.physical_adwin.Get_Data_Long(20,1,25)
         self.par_float  = self.physical_adwin.Get_Data_Float(20,1,10)
@@ -487,7 +487,7 @@ class ssroADwinMeasurement(Measurement):
         #    end_measurement()
         #    if (msvcrt.kbhit() and (msvcrt.getch() == 'e')): return
 
-def ssro_ADwin_Cal(reps=20000,Ex_p='exp_dic',A_p=0,sweep_power=False,lt1=False,phase_lock=1,A_SP_power='exp_dic',name=''):
+def ssro_ADwin_Cal(reps=5000,Ex_p='exp_dic',A_p=0,sweep_power=False,lt1=False,phase_lock=1,A_SP_power='exp_dic',name=''):
     if lt1:
         name='_LT1_'+name
     else:

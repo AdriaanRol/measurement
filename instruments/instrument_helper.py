@@ -1,6 +1,6 @@
 def create_get_set(ins,par_list):
     for par,kw in par_list.items():
-        setattr(ins,par,kw.pop('val',None))
+        setattr(ins,'_'+par,kw.pop('val',None))
         f_get=make_f_get(ins,par)
         f_set=make_f_set(ins,par)
         fgetname='do_get_' + par
@@ -13,10 +13,10 @@ def create_get_set(ins,par_list):
 
 def make_f_get(ins,par):
     def f():
-        return getattr(ins,par)
+        return getattr(ins,'_'+par)
     return f
 
 def make_f_set(ins,par):
     def f(val):
-        setattr(ins,par,val)
+        setattr(ins,'_'+par,val)
     return f

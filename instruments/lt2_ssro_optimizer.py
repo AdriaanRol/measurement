@@ -18,12 +18,15 @@ class lt2_ssro_optimizer(multiple_optimizer):
                     'threshold_probe'     :   {'type':types.IntType,'flags':Instrument.FLAG_GETSET, 'val':20},
                     'threshold_preselect' :   {'type':types.IntType,'flags':Instrument.FLAG_GETSET, 'val':20},
                     'variance_yellow_min' :   {'type':types.FloatType,'flags':Instrument.FLAG_GETSET, 'val':50},
+                    'threshold_init'      :   {'type':types.FloatType,'flags':Instrument.FLAG_GETSET, 'val':15},
                     }
+        
+        instrument_helper.create_get_set(self,ins_pars)
+        self.add_function('set_high_threshold')
+        self.add_function('set_low_threshold')
+        
         self._stepper_size=0.01
         self._last_optimizer=''
-        instrument_helper.create_get_set(self,ins_pars)
-        
-        
         self.plot_name='lt2_ssro_optimizer_plot'
         
         self._ins_adwin=qt.instruments['adwin']
@@ -52,15 +55,15 @@ class lt2_ssro_optimizer(multiple_optimizer):
                           get_norm_f= self._get_value_f['cr_checks'],
                           plot_name=self.plot_name)
         self.create_stepper_buttons(pid)
-        pid='pidnewfocus2'
-        pid_ins_n=qt.instruments[pid]
-        self.add_optimizer(pid+'_optimizer',
-                          get_control_f=pid_ins_n.get_value,
-                          set_control_f=lambda x: pid_ins_n.set_setpoint(x),
-                          get_value_f= self._get_value_f['probe_cts'],
-                          get_norm_f= self._get_value_f['cr_checks'],
-                          plot_name=self.plot_name)
-        self.create_stepper_buttons(pid)
+        #pid='pidnewfocus2'
+        #pid_ins_n=qt.instruments[pid]
+        #self.add_optimizer(pid+'_optimizer',
+        #                  get_control_f=pid_ins_n.get_value,
+        #                  set_control_f=lambda x: pid_ins_n.set_setpoint(x),
+        #                  get_value_f= self._get_value_f['probe_cts'],
+        #                  get_norm_f= self._get_value_f['cr_checks'],
+        #                  plot_name=self.plot_name)
+        #self.create_stepper_buttons(pid)
         
         self._optimize_yellow=optimize_yellow
         if self._optimize_yellow:
@@ -145,7 +148,8 @@ class lt2_ssro_optimizer(multiple_optimizer):
         
         self.set_high_threshold()
         ins_opt.optimize()
-        self.set_low_threshold()
+        if ins_opt.get_last_max()>self.get_threshold_init:
+            self.set_low_threshold()
         
         self._last_optimizer=cur_optimizer
         self.start_waiting(ins_opt.get_wait_time())
@@ -159,7 +163,11 @@ class lt2_ssro_optimizer(multiple_optimizer):
             return True
             
         d_vals=self._update_values()
-        print 'average cr:', d_vals['probe_cts']/d_vals['cr_checks'], 'starts per sec:', d_vals['starts']/d_vals['t']
+        print 'average cr:', float(d_vals['probe_cts'])/d_vals['cr_checks'], 'starts per sec:', d_vals['starts']/d_vals['t']
+        
+        if float(d_vals['probe_cts'])/d_vals['cr_checks'] > self.get_threshold_init():
+            self.set_low_thresholds()
+        
         if (d_vals['cr_checks']/d_vals['t'])<self.cr_checks_min:
             print 'too little cr checks:', d_vals['cr_checks']/d_vals['t']
             return True
