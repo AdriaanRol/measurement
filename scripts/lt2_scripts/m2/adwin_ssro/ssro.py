@@ -10,19 +10,11 @@ import msvcrt
 # import the msmt class
 from measurement.lib.measurement2.adwin_ssro import ssro
 
-# set the static variables for LT2
-ssro.AdwinSSRO.adwin_processes_key = 'adwin_lt2_processes'
-ssro.AdwinSSRO.E_aom = qt.instruments['MatisseAOM']
-ssro.AdwinSSRO.A_aom = qt.instruments['NewfocusAOM']
-ssro.AdwinSSRO.repump_aom = qt.instruments['GreenAOM']
-ssro.AdwinSSRO.adwin = qt.instruments['adwin']
-
 def calibration(name,yellow=False):
-    
-        
+
     m = ssro.AdwinSSRO('SSROCalibration_'+name)
     m.params.from_dict(qt.cfgman['protocols']['AdwinSSRO'])
-    m.params.from_dict(qt.cfgman['protocols']['sil9-default']['AdwinSSRO'])    
+    m.params.from_dict(qt.cfgman['protocols']['sil9-default']['AdwinSSRO'])
         
     # parameters
     m.params['SSRO_repetitions'] = 5000
@@ -33,15 +25,15 @@ def calibration(name,yellow=False):
     # ms = 0 calibration
     m.params['A_SP_amplitude'] = 70e-9
     m.params['Ex_SP_amplitude'] = 0.
-    m.params['Ex_RO_amplitude'] = 5e-9 #10e-9
+    m.params['Ex_RO_amplitude'] = 10e-9
     
     m.run()
     m.save('ms0')
 
     # ms = 1 calibration
     m.params['A_SP_amplitude'] = 0
-    m.params['Ex_SP_amplitude'] = 5e-9 #10e-9
-    m.params['Ex_RO_amplitude'] = 5e-9 #10e-9
+    m.params['Ex_SP_amplitude'] = 20e-9
+    m.params['Ex_RO_amplitude'] = 10e-9
 
     m.run()
     m.save('ms1')
