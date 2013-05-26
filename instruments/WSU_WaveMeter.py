@@ -15,7 +15,7 @@ from data import Data
 
 
 
-class WS600_WaveMeter(Instrument): #1
+class WSU_WaveMeter(Instrument): #1
     '''
     This is the driver for the WS600 HighFinesse wavemeter
 
