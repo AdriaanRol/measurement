@@ -2,6 +2,7 @@ import msvcrt
 import qt
 import numpy as np
 import measurement.lib.config.adwins as adwins_cfg
+from measurement.lib.config import experiment_lt2 as lt2_cfg
 
 class LaserFrequencyScan:
 
@@ -182,8 +183,8 @@ class LabjackAdwinLaserScan(LaserFrequencyScan):
 
             
 class YellowLaserScan(LabjackAdwinLaserScan):
-    def __init__(self, name):
-        LabjackAdwinLaserScan.__init__(self, name,2)
+    def __init__(self, name, labjack_dac_nr):
+        LabjackAdwinLaserScan.__init__(self, name, labjack_dac_nr)
         self.set_laser_power = qt.instruments['YellowAOM'].set_power
         self.set_repump_power = qt.instruments['Velocity1AOM'].set_power
         self.set_nf_repump_power=qt.instruments['Velocity2AOM'].set_power
@@ -204,9 +205,9 @@ class YellowLaserScan(LabjackAdwinLaserScan):
 class RedLaserScan(LabjackAdwinLaserScan):
     def __init__(self, name, labjack_dac_nr):
         LabjackAdwinLaserScan.__init__(self, name,labjack_dac_nr)
-        self.set_laser_power = qt.instruments['Velocity1AOM'].set_power
+        self.set_laser_power = qt.instruments['NewfocusAOM'].set_power
         self.set_yellow_repump_power=qt.instruments['YellowAOM'].set_power
-        self.set_red_repump_power=qt.instruments['Velocity2AOM'].set_power
+        self.set_red_repump_power=qt.instruments['MatisseAOM'].set_power
         self.set_repump_power = qt.instruments['GreenAOM'].set_power
             
     def repump_pulse(self):
@@ -229,7 +230,8 @@ class RedLaserScan(LabjackAdwinLaserScan):
 
             
 def yellow_laser_scan(name):
-    m = YellowLaserScan(name)
+    labjack_dac_nr=2 # 2 is coarse and 3 is fine for yellow
+    m = YellowLaserScan(name, labjack_dac_nr)
 
     # Hardware setup
     m.wm_channel = 2
@@ -270,7 +272,7 @@ def yellow_laser_scan(name):
     m.finish_scan()    
     
 def red_laser_scan(name):
-    labjack_dac_nr=3
+    labjack_dac_nr=1 # 0 is coarse and 1 is fine for NF
     m = RedLaserScan(name,labjack_dac_nr)
     
     # Hardware setup
@@ -290,16 +292,16 @@ def red_laser_scan(name):
     m.red_repump_power=0e-9
     m.yellow_repump_duration=4 #seconds
     m.repump_power = 150e-6
-    m.repump_duration = 2 # seconds
+    m.repump_duration = 0.5 # seconds
     m.use_repump_during = False
     m.repump_power_during = 0.5e-6
     
     #Scan setup
-    m.laser_power = 5e-9
-    m.start_voltage = -0
-    m.stop_voltage = -2.
-    m.pts = 2000
-    m.integration_time = 40 # ms
+    m.laser_power = 3e-9
+    m.start_voltage = 2
+    m.stop_voltage = 7
+    m.pts = 600
+    m.integration_time = 50 # ms
     
     #Gate scan setup
     m.set_gate_after_repump=False
@@ -308,7 +310,7 @@ def red_laser_scan(name):
     m.gate_pts=1
     
     #strain lines
-    m.plot_strain_lines=True
+    m.plot_strain_lines=False
     
     m.prepare_scan()
     m.run_scan()
@@ -317,7 +319,7 @@ def red_laser_scan(name):
 if __name__=='__main__':
 
     stools.turn_off_lasers()
-    red_laser_scan('red_scan_go')
+    red_laser_scan('red_scan_coarse')
     #yellow_laser_scan('yellow_1nW')
 
         
