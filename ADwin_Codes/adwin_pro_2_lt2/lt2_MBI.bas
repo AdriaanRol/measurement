@@ -81,6 +81,7 @@ DIM DATA_21[10] AS FLOAT                          ' float parameters
 DIM DATA_22[max_sweep_dim] AS LONG                ' CR counts before sequence
 DIM DATA_23[max_sweep_dim] AS LONG                ' CR counts after sequence
 DIM DATA_24[max_sweep_dim] AS LONG                ' number of MBI attempts needed
+DIM DATA_25[max_sweep_dim] AS LONG                ' number of cycles before success
 DIM DATA_26[max_stat] AS LONG AT EM_LOCAL         ' statistics
 DIM DATA_27[max_RO_dim] AS LONG AT DRAM_EXTERN    ' SSRO counts
 DIM DATA_28[max_sequences] AS LONG                ' A SP durations
@@ -183,14 +184,15 @@ INIT:
   A_CR_voltage                 = DATA_21[4]
   Ex_SP_voltage                = DATA_21[5]
   Ex_MBI_voltage               = DATA_21[6]
-  Ex_off_voltage               = DATA_21[9]
-  A_off_voltage                = DATA_21[10]
+  Ex_off_voltage               = DATA_21[7]
+  A_off_voltage                = DATA_21[8]
     
   ' initialize the data arrays
   FOR i = 1 TO max_sweep_dim
     DATA_22[i] = 0
     DATA_23[i] = 0
     DATA_24[i] = 0
+    DATA_25[i] = 0
   next i
     
   FOR i = 1 TO max_RO_dim
@@ -270,6 +272,8 @@ EVENT:
   awg_in_was_hi = awg_in_is_hi
   IF (((P2_DIGIN_LONG(DIO_MODULE)) AND (AWG_done_DI_pattern)) > 0) THEN
     awg_in_is_hi = 1
+  else
+    awg_in_is_hi = 0
   endif
 
   if ((awg_in_was_hi = 0) and (awg_in_is_hi > 0)) then
@@ -397,6 +401,7 @@ EVENT:
             inc(data_26[mode+1])
             INC(MBI_starts)
             PAR_78 = MBI_starts
+            inc(data_25[seq_cntr])
           endif
           
           P2_DIGOUT(DIO_MODULE,AWG_start_DO_channel,1)  ' AWG trigger
@@ -411,7 +416,7 @@ EVENT:
           ' as soon as we assume the AWG has done the MW pulse, we turn on the E-laser,
           ' and start counting
           if(awg_in_switched_to_hi > 0) then
-            
+                  
             next_MBI_stop = timer + MBI_duration
             P2_CNT_CLEAR(CTR_MODULE,counter_pattern)    'clear counter
             P2_CNT_ENABLE(CTR_MODULE, counter_pattern)	  'turn on counter
@@ -419,6 +424,7 @@ EVENT:
                       
           else            
             IF (timer = next_MBI_stop) THEN
+             
               P2_DAC(DAC_MODULE, Ex_laser_DAC_channel, 3277*Ex_off_voltage+32768) ' turn off Ex laser
               counts = P2_CNT_READ(CTR_MODULE, counter_channel)
               P2_CNT_ENABLE(CTR_MODULE, 0)	  'turn on counter
@@ -438,13 +444,16 @@ EVENT:
                   inc(current_MBI_step)
                 endif 
                 timer = -1      
-              else               
-                P2_DIGOUT(DIO_MODULE,AWG_event_jump_DO_channel,1)  ' AWG trigger
+              else
+                      
+                P2_DIGOUT(DIO_MODULE,AWG_event_jump_DO_channel,1)  ' AWG jump
                 CPU_SLEEP(9)               ' need >= 20ns pulse width; adwin needs >= 9 as arg, which is 9*10ns
                 P2_DIGOUT(DIO_MODULE,AWG_event_jump_DO_channel,0)
                 
+                data_24[seq_cntr] = current_MBI_step
                 mode = 4
-                current_MBI_step = 1  
+                current_MBI_step = 1
+                timer = -1
               endif
               timer = -1
             endif          
@@ -546,6 +555,7 @@ EVENT:
               
               ' we're done once we're at the last repetition and the last RO step
               IF (repetition_counter = RO_repetitions+1) THEN
+                dec(repetition_counter)
                 END
               ENDIF
                  

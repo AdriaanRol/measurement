@@ -74,10 +74,10 @@
 #Include Math.inc
 
 
-#DEFINE max_repetitions 20000
-#DEFINE max_SP_bins       500
+#DEFINE max_repetitions  20000
+#DEFINE max_SP_bins        500
 #DEFINE max_SSRO_dim   4000000
-#DEFINE max_stat           10
+#DEFINE max_stat            10
 
 DIM DATA_20[25] AS LONG                           ' integer parameters
 DIM DATA_21[20] AS FLOAT                          ' float parameters
@@ -182,7 +182,7 @@ INIT:
     DATA_24[i] = 0
   NEXT i
   
-  FOR i = 1 TO SSRO_repetitions*sweep_length
+  FOR i = 1 TO sweep_length
     DATA_25[i] = 0
   NEXT i
   
@@ -213,6 +213,9 @@ INIT:
   timer = 0
   processdelay = cycle_duration
   
+  par_59 = SSRO_repetitions
+  par_60 = sweep_length
+  
   Par_73 = repetition_counter
   PAR_70 = 0                      ' CR counts
   PAR_71 = 0                      ' below CR threshold events
@@ -220,6 +223,8 @@ INIT:
   par_75 = CR_preselect
   par_68 = CR_probe
   par_76 = 0                      ' cumulative counts during repumping
+  par_79 = 0                      ' timer
+  par_78 = 0                      ' mode
 
   current_cr_threshold = CR_preselect
   
@@ -233,6 +238,9 @@ EVENT:
     if (timer = 0) then
       inc(data_26[mode+1])
     endif
+    
+    par_78 = mode
+    par_79 = timer
     
     SELECTCASE mode
       
@@ -304,7 +312,7 @@ EVENT:
           P2_DAC(DAC_MODULE, A_laser_DAC_channel, 3277*A_off_voltage+32768) ' turn off A laser
           
           counts = P2_CNT_READ(CTR_MODULE, counter_channel)
-          DATA_24[timer] = DATA_24[timer] + counts
+          ' DATA_24[timer] = DATA_24[timer] + counts
           
           IF ((send_AWG_start > 0) or (sequence_wait_time > 0)) THEN
             mode = 3
