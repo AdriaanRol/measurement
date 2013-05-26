@@ -546,6 +546,7 @@ EVENT:
               
               ' we're done once we're at the last repetition and the last RO step
               IF (repetition_counter = RO_repetitions+1) THEN
+                dec(repetition_counter)
                 END
               ENDIF
                  
