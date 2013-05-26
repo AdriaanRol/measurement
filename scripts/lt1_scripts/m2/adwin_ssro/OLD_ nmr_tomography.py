@@ -19,7 +19,7 @@ physical_adwin = qt.instruments['physical_adwin']
 MW_pulse_mod_risetime = qt.cfgman['setup']['MW_pulsemod_risetime']
 AWG_to_adwin_ttl_trigger_duration = qt.cfgman['setup']['AWG_to_adwin_ttl_trigger_duration']
 
-class NMRTomography(mbi.MBIMeasurement):
+class NMRTomoPi2(mbi.MBIMeasurement):
     
     def sequence(self):
 
@@ -54,16 +54,14 @@ class NMRTomography(mbi.MBIMeasurement):
                     duration = 2000, amplitude = 0)
             last = 'wait_before_RF'
             
-            # # Implement a Hadamard gate by XSqrtY. Do the Y first
-            # # This is a rotation pi/2 around the Y axis, so we need a phase 180
-            # # Now, turn it into a pi/2 pulse around -Y. phase 0. 
+            # # This is a rotation pi/2 onto the X axis, around the Y axis, so we need a phase 180
             self.seq.add_pulse('RF_pulse-1-'+n, channel=chan_RF,
                     element = 'spin_control-'+n,
                     start = 0, start_reference = last, link_start_to='end', 
                     duration = int(self.params['AWG_RF_p2pulse_duration']),
                     amplitude = self.params['AWG_RF_p2pulse_amp'],
                     shape ='cosine',
-                    phase = -90,
+                    phase = 180,
                     frequency = self.params['AWG_RF_p2pulse_frq'],
                     envelope='erf',
                     envelope_risetime=200)
@@ -131,7 +129,7 @@ class NMRTomography(mbi.MBIMeasurement):
                     start_reference=last,
                     link_start_to='end')
 
-        return
+
 
 class NMRTomoHadamard(mbi.MBIMeasurement):
     
@@ -446,8 +444,13 @@ class UncondPiOver2(mbi.MBIMeasurement):
                     envelope_risetime=200)
             last = 'RF_pulse-1-'+n
 
-            # Introduce the right amount of waiting time,
-            #
+            ########### Introduce the right amount of waiting time ###########
+            # The nitrogen phase evolves with a rate that depends on the state of the electron. 
+            # For the electron in a superposition, the phase-dependent gates need to be timed 
+            # such that for both electron state the nitrogen phase evolution is the same.  
+            # The difference in hyperfine splitting for ms=0 and ms=-1 is 2.189e6 Hz. 
+            # The waiting time should be n*2pi/2.189e6=n*2870.3ns.
+            
             # In the BSM script this is the second timed waiting time
             # The start of this waiting time is the pi2 pulse (CNOT). 
             # The end is the CORPSE pulse.

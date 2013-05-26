@@ -50,7 +50,7 @@ class MBIMeasurement(sequence.SequenceSSRO):
     adwin_process = 'MBI'
     
     def _MBI_seq_element(self, el_name, jump_target, goto_target):
-
+        
         for i in range(self.params['MBI_steps']):
             name = el_name + '-' + str(i)
             jmp = jump_target if (i == self.params['MBI_steps']-1) \
@@ -93,7 +93,33 @@ class MBIMeasurement(sequence.SequenceSSRO):
                 start = 0,
                 start_reference = 'MBI_pulse-I',
                 link_start_to = 'end')
-
+                
+    def _N_RO_seq_element(self, el_name, goto_target, iii, last_i):
+    
+        ## The sequence element for the nitrogen readout. 
+        print 20
+        # Goes to first MBI_pulse after the last element for which i = last_i
+        if iii == last_i:
+            self.seq.add_element(name = el_name, 
+                trigger_wait = True, goto_target = goto_target)
+        else:
+            self.seq.add_element(name = el_name, 
+                trigger_wait = True) 
+        print 21
+        last = self._readout_pulse(el_name = el_name, 
+                    pulse_name = 'N_RO_pulse', 
+                    link_to = '', 
+                    ssbmod_frq = self.params['AWG_RO_MW_pulse_ssbmod_frq'])
+        print 22
+        self.seq.add_pulse(name='seq_done',
+                    channel = self.chan_adwin_sync,
+                    element = el_name,
+                    duration = 10000, #AWG_to_adwin_ttl_trigger_duration, 
+                    amplitude = 2,
+                    start = 0,
+                    start_reference=last,
+                    link_start_to='end')
+               
     def _shelving_pulse(self, el_name, pulse_name, ssbmod_frq):
 
         self.seq.add_pulse('wait_before'+pulse_name, channel = self.chan_RF, 
@@ -149,9 +175,10 @@ class MBIMeasurement(sequence.SequenceSSRO):
         
         last = pulse_name+'-I'
         
-        return last
+        return last  
 
-    def autoconfig(self):                               
+    def autoconfig(self): 
+        
         self.params['sweep_length'] = self.params['pts']
         self.params['repetitions'] = \
                 self.params['nr_of_ROsequences'] * \

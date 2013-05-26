@@ -24,6 +24,12 @@ reload(sequence)
 from measurement.lib.measurement2.adwin_ssro import mbi
 reload(mbi)
 
+from measurement.lib.measurement2.adwin_ssro import mbi_espin
+reload(mbi_espin)
+
+from measurement.lib.measurement2.adwin_ssro import mbi_nmr
+reload(mbi_nmr)
+
 # default measurement parameters
 execfile(r'd:\measuring\measurement\scripts\lt1_scripts\m2\msmt_params.py')
 

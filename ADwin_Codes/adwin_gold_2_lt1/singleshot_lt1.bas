@@ -157,15 +157,16 @@ INIT:
   repump_after_repetitions     = DATA_20[21]
   
   green_repump_voltage         = DATA_21[1]
-  green_off_voltage            = DATA_21[2]
+  green_off_voltage            = 0 ' DATA_21[2]
   Ex_CR_voltage                = DATA_21[3]
   A_CR_voltage                 = DATA_21[4]
   Ex_SP_voltage                = DATA_21[5]
   A_SP_voltage                 = DATA_21[6]
   Ex_RO_voltage                = DATA_21[7]
   A_RO_voltage                 = DATA_21[8]
-  Ex_off_voltage               = DATA_21[9]
-  A_off_voltage                = DATA_21[10]
+  Ex_off_voltage               = 0 'DATA_21[9]
+  A_off_voltage                = 0 'DATA_21[10]
+  
   FOR i = 1 TO SSRO_repetitions
     DATA_22[i] = 0
     DATA_23[i] = 0

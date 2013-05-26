@@ -34,10 +34,16 @@ class NewportAgilisUC2_v2(Instrument):
         self._channels = (1,2)
 
         #calibrated to 5000 steps == 10 degrees
+        #self.maxjog_cfg = { 1 : {'positive' : 1.000/0.989,
+        #                         'negative' : 0.940/0.930},
+        #                    2 : {'positive' : 0.995/0.984,
+        #                         'negative' : 1.025/1.013},
+        #                   }
+
         self.maxjog_cfg = { 1 : {'positive' : 1.000,
                                  'negative' : 0.940},
-                            2 : {'positive' : 0.995,
-                                 'negative' : 1.025},
+                            2 : {'positive' : 1.000,
+                                 'negative' : 0.900},
                            }
 
         #normalized to ~ 481 steps/degree
@@ -47,9 +53,17 @@ class NewportAgilisUC2_v2(Instrument):
                                  'negative' : 1.130},
                            }
 
+        #values provided here are in deg/step
+        self.step_deg_cfg = { 1 : 10/5000.,
+                              2 : 10/5000.}
+
         #define the get and set functions of the positioner. order is 
         #according to the manual page 24.
         
+        self.add_parameter('step_deg_cfg',
+                flags=Instrument.FLAG_GET,
+                type=types.DictType)
+                
         self.add_parameter('jog_ch',
                 flags=Instrument.FLAG_GETSET,
                 type=types.IntType,
@@ -113,34 +127,9 @@ class NewportAgilisUC2_v2(Instrument):
         self.add_function('remote')
         self.add_function('reset')
         self.add_function('quick_scan')
+        self.add_function('write_raw')
 
-        #Functions that should not be created with the set functions   
-        for ch in self._channels:
-            fname = 'stop_moving_ch'+str(ch)
-            gname = 'set_zero_position_ch'+str(ch)
-
-            def _f():
-                """
-                Stops the motion on the defined axis. Sets the state to ready.
-                """
-                self._visa.write('%dST'%ch)
-
-            def _g():
-                """
-                Resets the step counter to zero. See TP command for further details.
-                """
-                self._visa.write('%dZP'%ch)
-
-                print 'Zero position set to current position.'
-
-            _f.__name__ = fname          #change the name of the function
-            setattr(self, fname, _f)     #assign the function f to this class
-            self.add_function(fname)    #make the function accessible to qtlab
-
-            _g.__name__ = gname
-            setattr(self, gname, _g)
-            self.add_function(gname)
-        
+              
         #last things
         self.remote()
         #set speeds to max
@@ -157,6 +146,25 @@ class NewportAgilisUC2_v2(Instrument):
         self.set_mode('R')
         
     #define the get and set functions
+    def do_get_step_deg_cfg(self):
+        return self.step_deg_cfg
+    
+    def stop_moving(self, channel):
+        """
+        Stops the motion on the defined axis. Sets the state to ready.
+        """
+        print '%dST'%ch
+        self._visa.write('%dST'%ch)
+
+
+    def set_zero_position(self, channel):
+        """
+        Resets the step counter to zero. See TP command for further details.
+        """
+        self._visa.write('%dZP'%channel)
+        print 'Zero position channel %d set to current position.'%channel
+
+
     def do_get_jog_ch(self, channel): #OK!
         """
         Returns the speed during a jog session.
@@ -381,26 +389,20 @@ class NewportAgilisUC2_v2(Instrument):
             steps = steps * self.maxjog_cfg[channel]['negative']
 
         if channel in self._channels:
-          
-            speed = 1750
-
-            getattr(self, 'set_jog_ch%d'%channel)(np.sign(steps)*3)
-            qt.msleep(0.0)
-            qt.msleep(abs(steps)/float(speed))
             
+            speed = 1750.
+            getattr(self, 'set_jog_ch%d'%channel)(np.sign(steps)*3)
+            qt.msleep(abs(steps)/float(speed))
             getattr(self, 'set_jog_ch%d'%channel)(0)
 
         else:
             raise ValueError('Unknown channel')
 
-
-
-
-
-
+    def write_raw(self, string):
+        self._visa.write(string)
 
     
-    
+       
 
 
 

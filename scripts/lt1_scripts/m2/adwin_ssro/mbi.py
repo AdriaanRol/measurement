@@ -24,18 +24,20 @@ def postinitdarkesr(name):
     m.params.from_dict(qt.cfgman['protocols']['sil2-default']['AdwinSSRO+MBI'])
     
     # ESR pulses
-    m.params['RO_MW_pulse_duration'] = 2000
-    m.params['RO_MW_pulse_amp'] = 0.01
+    m.params['RO_MW_pulse_duration'] = 2100
+    m.params['RO_MW_pulse_amp'] = 0.02
     
     # MBI
+    m.params['AWG_MBI_MW_pulse_amp'] = 0.1898
+    m.params['AWG_MBI_MW_pulse_duration'] = 398
     m.params['MBI_steps'] = 1
 
     # measurement settings
-    pts = 11
-    m.params['reps_per_ROsequence'] = 100
+    pts = 81
+    m.params['reps_per_ROsequence'] = 1000
     m.params['pts'] = pts
-    m.params['RO_MW_pulse_ssbmod_frqs'] = np.linspace(-1e6,1e6,pts) + \
-            m.params['AWG_MBI_MW_pulse_ssbmod_frq'] # + 2.189e6    
+    m.params['RO_MW_pulse_ssbmod_frqs'] = np.linspace(-4e6,4e6,pts) + \
+            m.params['AWG_MBI_MW_pulse_ssbmod_frq'] + 2.175e6
     
     m.autoconfig()
     m.generate_sequence()
