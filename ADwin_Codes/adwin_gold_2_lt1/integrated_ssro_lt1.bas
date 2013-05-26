@@ -178,7 +178,7 @@ INIT:
     DATA_24[i] = 0
   NEXT i
   
-  FOR i = 1 TO SSRO_repetitions*sweep_length
+  FOR i = 1 TO sweep_length
     DATA_25[i] = 0
   NEXT i
   
