@@ -1018,11 +1018,11 @@ def _prepare(m):
     # m.params['send_AWG_start'] = np.array([1])
     # m.params['sequence_wait_time'] = np.array([0], dtype=int)
 
-    # Readout pulse (= CNOT). a rabi frq. of the hyperfine splitting/sqrt(3)
-    # rotates the resonant line by pi, direct neighbor lines by 2pi
-    m.params['AWG_RO_MW_pulse_duration'] = 396
-    m.params['AWG_RO_MW_pulse_amp'] = 0.0724# F = 0.941 +/- 0.004
-    m.params['AWG_RO_MW_pulse_ssbmod_frq'] = m.params['AWG_MBI_MW_pulse_ssbmod_frq']
+    # # Readout pulse (= CNOT). a rabi frq. of the hyperfine splitting/sqrt(3)
+    # # rotates the resonant line by pi, direct neighbor lines by 2pi
+    # m.params['AWG_RO_MW_pulse_duration'] = 396
+    # m.params['AWG_RO_MW_pulse_amp'] = 0.0724# F = 0.941 +/- 0.004
+    # m.params['AWG_RO_MW_pulse_ssbmod_frq'] = m.params['AWG_MBI_MW_pulse_ssbmod_frq']
 
     #Hard pi over 2 pulse
     m.params['AWG_Pi2_MW_pulse_duration'] = 37
@@ -1030,21 +1030,21 @@ def _prepare(m):
     m.params['AWG_Pi2_MW_pulse_ssbmod_frq'] = m.params['AWG_MBI_MW_pulse_ssbmod_frq']+ 2.189e6/2
 
 
-    # CORPSE pulse
-    m.params['AWG_uncond_CORPSE60_duration'] = 25
-    m.params['AWG_uncond_CORPSE300_duration'] = 97
-    m.params['AWG_uncond_CORPSE420_duration'] = 137
-    m.params['AWG_uncond_CORPSE_amp'] = 0.9
-    m.params['AWG_uncond_CORPSE_mod_frq'] = m.params['AWG_MBI_MW_pulse_ssbmod_frq']+(2.189e6/2)
+    # # CORPSE pulse
+    # m.params['AWG_uncond_CORPSE60_duration'] = 25
+    # m.params['AWG_uncond_CORPSE300_duration'] = 97
+    # m.params['AWG_uncond_CORPSE420_duration'] = 137
+    # m.params['AWG_uncond_CORPSE_amp'] = 0.9
+    # m.params['AWG_uncond_CORPSE_mod_frq'] = m.params['AWG_MBI_MW_pulse_ssbmod_frq']+(2.189e6/2)
 
-    # RF Nitrogen pi pulse
-    m.params['AWG_RF_pipulse_duration'] = 90e3
-    m.params['AWG_RF_pipulse_amp'] = 1.
-    m.params['AWG_RF_pipulse_frq'] = 7.135e6
-    # RF Nitrogen pi over 2 pulse
-    m.params['AWG_RF_p2pulse_duration'] = 45e3
-    m.params['AWG_RF_p2pulse_amp'] = 1.
-    m.params['AWG_RF_p2pulse_frq'] = 7.135e6
+    # # RF Nitrogen pi pulse
+    # m.params['AWG_RF_pipulse_duration'] = 90e3
+    # m.params['AWG_RF_pipulse_amp'] = 1.
+    # m.params['AWG_RF_pipulse_frq'] = 7.135e6
+    # # RF Nitrogen pi over 2 pulse
+    # m.params['AWG_RF_p2pulse_duration'] = 45e3
+    # m.params['AWG_RF_p2pulse_amp'] = 1.
+    # m.params['AWG_RF_p2pulse_frq'] = 7.135e6
 
     m.program_AWG = True
 
@@ -1159,7 +1159,7 @@ def erabi(name):
 
     m.params['AWG_RO_MW_pulse_durations'] = np.linspace(10,160,pts)
     m.params['AWG_RO_MW_pulse_amps'] = np.ones(pts) * 0.9
-    m.params['AWG_RO_MW_pulse_ssbmod_frqs'] = np.ones(pts) * (21.167e6-2.187e6)
+    m.params['AWG_RO_MW_pulse_ssbmod_frqs'] = np.ones(pts) * (21.167e6-2.189e6)
     m.params['MW_pulse_multiplicity'] = 1
     m.params['MW_pulse_delay'] = 2000
      
