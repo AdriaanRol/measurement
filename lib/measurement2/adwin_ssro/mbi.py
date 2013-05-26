@@ -160,7 +160,7 @@ class MBIMeasurement(sequence.SequenceSSRO):
         
         # Calling autoconfig from sequence.SequenceSSRO and thus from ssro.IntegratedSSRO 
         # after defining self.params['repetitions'], since the autoconfig of IntegratedSSRO uses this parameter.  
-        sequence.SequenceSSRO.autoconfig(self)        
+        sequence.SequenceSSRO.autoconfig(self)     
         
         self.adwin_process_params['Ex_MBI_voltage'] = \
             self.E_aom.power_to_voltage(
