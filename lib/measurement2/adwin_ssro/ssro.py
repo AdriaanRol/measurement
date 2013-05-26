@@ -199,12 +199,13 @@ class IntegratedSSRO(AdwinSSRO):
         AdwinSSRO.__init__(self, name)
         
     def autoconfig(self):
-        AdwinSSRO.autoconfig(self)
-        
+        ### These parameters are defined before AdwinSSRO.autoconfig, since they are used there.
         self.params['SSRO_repetitions'] = \
             self.params['pts'] * self.params['repetitions']
         self.params['sweep_length'] = self.params['pts']
         
+        AdwinSSRO.autoconfig(self)
+           
     def save(self, name='ssro'):
         reps = self.adwin_var('completed_reps')
         self.save_adwin_data(name,
