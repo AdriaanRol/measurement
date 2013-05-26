@@ -2,7 +2,7 @@ from instrument import Instrument
 import types
 import qt
 import numpy as np
-import msvcrt, os, sys, time
+import msvcrt, os, sys, time, gobject
 from analysis.lib.fitting import fit, common
 
 class laser_reject0r(Instrument):
@@ -23,26 +23,25 @@ class laser_reject0r(Instrument):
         
         self.optim_sets = {
                         'half' : {
-                            'channel' : 1,
-                            'int_time' : 0.1,
-                            'stepsize' : 500,
+                            'channel' : 2,
+                            'stepsize' : 2000,
                             'noof_points' : 11}, 
                         'quarter' : {
-                            'channel' : 2,
-                            'int_time' : 0.1,
-                            'stepsize' : 1000,
+                            'channel' : 1,
+                            'stepsize' : 2000,
                             'noof_points' : 11},
                         'first_time' : {
                             'channel' : 0,
-                            'int_time' : 0.1,
-                            'stepsize' : 4285,
+                            'stepsize' : 4250.,
                             'noof_points' : 11}
                         }
 
         self.check_noof_steps = 10000    #ask before changing this number of steps
-        self.opt_threshold = 500000
-        self.opt_red_power = 5E-9
+        self.opt_threshold = 1E5
+        self.opt_red_power = 1E-9 #NOTE!!
         self.zpl_counter = 2
+        self._is_running = False
+        self.plot_degrees = True
 
         self.add_parameter('opt_red_power',
                 flags=Instrument.FLAG_GETSET,
@@ -59,15 +58,35 @@ class laser_reject0r(Instrument):
                 flags=Instrument.FLAG_GETSET,
                 type=types.FloatType)
 
-
         self.add_parameter('zpl_counter',
                 flags=Instrument.FLAG_GETSET,
                 type=types.IntType)
+
+        self.add_parameter('is_running',
+                type=types.BooleanType,
+                flags=Instrument.FLAG_GETSET)
+
+        self.add_parameter('plot_degrees',
+                type=types.BooleanType,
+                flags=Instrument.FLAG_GETSET)
+
+        self.add_parameter('conversion_factor',
+                type=types.FloatType,
+                flags=Instrument.FLAG_GET)
 
     ############################################################
     #FUNCTIONS THAT ARE ASSOCIATED WITH PARAMETERS DEFINED ABOVE
     ############################################################
     
+    def do_get_conversion_factor(self, w = 'half'):
+        return self.rotator.get_step_deg_cfg()[self.optim_sets[w]['channel']]
+
+    def do_get_plot_degrees(self):
+        return self.plot_degrees
+
+    def do_set_plot_degrees(self, val):
+        self.plot_degrees = val
+
     def do_get_opt_red_power(self):
         return self.opt_red_power
 
@@ -76,9 +95,9 @@ class laser_reject0r(Instrument):
 
     def do_get_opt_scan_range(self):
         hwp_factor = self.optim_sets['half']['noof_points']\
-                * 1/500. #noof_steps * deg/steps
+                * self.get_conversion_factor('half') #noof_steps * deg/steps
         qwp_factor = self.optim_sets['quarter']['noof_points']\
-                * 1/500. #noof_steps * deg/steps        
+                * self.get_conversion_factor('quarter') #noof_steps * deg/steps        
         
         scan_range = (self.optim_sets['half']['stepsize'] * hwp_factor, 
                 self.optim_sets['quarter']['stepsize'] * qwp_factor)
@@ -90,9 +109,9 @@ class laser_reject0r(Instrument):
         Specify input as follows: (hwp_range, qwp_range)
         """
         hwp_factor = self.optim_sets['half']['noof_points']\
-                * 1/500. #noof_steps * deg/steps
+                * self.get_conversion_factor('half') #noof_steps * deg/steps
         qwp_factor = self.optim_sets['quarter']['noof_points']\
-                * 1/500. #noof_steps * deg/steps 
+                * self.get_conversion_factor('quarter') #noof_steps * deg/steps 
 
         if size(val) == 2:
             self.optim_sets['half']['stepsize'] = val[0]/hwp_factor
@@ -119,6 +138,13 @@ class laser_reject0r(Instrument):
         """
         self.zpl_counter = val
 
+    def do_get_is_running(self):
+        return self._is_running
+
+    def do_set_is_running(self, val):
+        self._is_running = val
+
+
     ##################################################
     #FUNCTIONS THAT ARE NOT ASSOCIATED WITH PARAMETERS
     ##################################################
@@ -128,13 +154,12 @@ class laser_reject0r(Instrument):
         return idx
 
 
-    def optimize(self, cycles = 1, int_time = 50, waveplates = ['half', 'quarter'],
+    def optimize(self, cycles = 1, waveplates = ['half', 'quarter'],
             counter = 0):
         """
         Function that is accessible from QTLab.
         Input: 
         - cycles: number of optimization cycles (default = 1)
-        - int_time: integration time in ms (default = 50)
         - waveplates: what waveplates to optimize (default = ['half', 'quarter'])
         - counter: integer in 0 to 3.
 
@@ -151,33 +176,42 @@ class laser_reject0r(Instrument):
             print '* Optimizing cycle %d of %d...'%(c+1, cycles)
             
             for w in waveplates:
-                int_time = self.optim_sets[w]['int_time']
-
                 #measure position before optimizing
+                getattr(self.rotator, 'set_zero_position')(self.optim_sets[w]['channel'])
                 pos_before = getattr(self.rotator, 'get_noof_steps_ch'+\
                         str(self.optim_sets[w]['channel']))()
-
-                #turn waveplates
-                data, qtdata, dataplot, premature_quit = self.run(w, int_time)
-                qtdata, fitres = self.fit(data, qtdata, dataplot)
+                
+                #turn waveplat2es
+                data, qtdata, dataplot, premature_quit = self.run(w)
+                if not premature_quit:
+                    qtdata, fitres = self.fit(w, data, qtdata, dataplot)
                 qtdata.close_file()
-
 
                 if not premature_quit:
                 
                     #set optimal position
                     if type(fitres) != type(False):
-                        optim_pos = -np.int(fitres['a1']/(2*fitres['a2']))
+                        if np.sign(fitres['a2']) != -1:
+                            optim_pos = -np.int(fitres['a1']/(2*fitres['a2']))
+                        else:
+                            print '\tFitting a maximum instead of a minimum.'
+                            optim_pos = 0
+                        
                     else:
                         print '\tGuessing optimal waveplate position...'
                         optim_pos = data['wp_steps'](self.find_nearest(data['counts'],
                             min(data['counts'])))
-                    
+
+                    if self.get_plot_degrees():
+                        print '\tOptimal waveplate position determined at %.0f degrees.'%(optim_pos*self.get_conversion_factor(w))
+                    else:
+                        print '\tOptimal waveplate position determined at %d steps.'%optim_pos
+    
+                    #BEWARE: never ask the current position in noof_steps
                     curr_pos = data['wp_step'][len(data['wp_step'])-1]
 
                     #check that the optimum position is somewhat reasonable
                     if abs(optim_pos) < self.check_noof_steps:
-                        
                         #set the position to the optimal position
                         self.rotator.quick_scan(optim_pos-curr_pos, 
                                 self.optim_sets[w]['channel'])
@@ -198,12 +232,10 @@ class laser_reject0r(Instrument):
                             raise ValueError('Response to question is not \
                                     understood. Not taking any action.')
                 else:
-                    #what to do if there was a premature quit during optimization? #NOTE
-                    pos_quit = getattr(self.rotator, 'get_noof_steps_ch'+\
-                        str(self.optim_sets[w]['channel']))()
+                    #what to do if there was a premature quit during optimization?
+                    pos_quit = data['wp_step'][len(data['wp_step'])-1]
 
                     print '\tReturning to initial position...'
-
                     #set the position to the optimal position
                     self.rotator.quick_scan(pos_before-pos_quit, self.optim_sets[w]['channel'])
 
@@ -211,14 +243,17 @@ class laser_reject0r(Instrument):
                 pos_after = getattr(self.rotator, 'get_noof_steps_ch'+\
                         str(self.optim_sets[w]['channel']))()
 
-                print "\tPosition of %s waveplate changed %d steps"\
-                        %(w, pos_after-pos_before)
+                #print "\tPosition of %s waveplate changed %d steps"\
+                #        %(w, pos_after-pos_before)
                 
                 if msvcrt.kbhit():
                     kb_char=msvcrt.getch()
                     if kb_char == "q" : break
                 
-                qt.msleep(1)
+                qt.msleep(0.5)
+                
+            if premature_quit:
+                break
 
     def map_abs_to_rel(self, abs_array):
         
@@ -231,11 +266,12 @@ class laser_reject0r(Instrument):
         return rel_array.astype(int)
 
 
-    def run(self, w, int_time):
+    def run(self, w):
         """
         The actual optimization procedure. Input: waveplate ('half'/'quarter').
         Produces a plot of measured counts vs. rotation step.
         """
+        self.set_is_running(True)
 
         dx = self.optim_sets[w]['stepsize']
         pts = self.optim_sets[w]['noof_points']
@@ -248,31 +284,38 @@ class laser_reject0r(Instrument):
         dataname = 'optimize_%s_waveplate'%w
 
         qtdata = qt.Data(name = dataname)
-        qtdata.add_coordinate('Waveplate steps')
-        qtdata.add_value('Signal')
-        qtdata.add_value('Fit')
-
-        qtdata.create_file() #NOTE: necessary if I don't want it saved?
         
+        if self.get_plot_degrees():
+            qtdata.add_coordinate('Waveplate steps')
+        else:
+            qtdata.add_coordinate('Degrees')
+        qtdata.add_value('Signal')
+    
         dataplot = qt.Plot2D(qtdata, 'rO', name = dataname, coorddim = 0, 
                 valdim = 1, clear = True)
+        dataplot.add(qtdata, 'b-', coorddim = 0, valdim = 2)
+        gobject.timeout_add(500, self._update)
         
         y = np.zeros(len(x))
         for idx, X in enumerate(self.map_abs_to_rel(x)):
-
             #set position
             self.rotator.quick_scan(X, self.optim_sets[w]['channel'])
-            
+
             #turn on red
             self.red.set_power(self.get_opt_red_power())
             qt.msleep(0.1)
 
             #get counts/ voltage
             y[idx] = self.adwin.get_countrates()[self.zpl_counter-1]
-            #y[idx] = self.arduino.get_instant_voltage(int_time)
             
             #turn off red
             self.red.set_power(0)
+
+            #add to plot
+            if self.get_plot_degrees():
+                qtdata.add_data_point(x[idx]*self.get_conversion_factor(w), y[idx])
+            else:
+                qtdata.add_data_point(x[idx], y[idx])
 
             #Threshold implementation
             #Was it the first point in the sequence? return to init pos.
@@ -281,6 +324,9 @@ class laser_reject0r(Instrument):
                         threshold. Returning to initial position...'
                 self.rotator.quick_scan(-X, self.optim_sets[w]['channel'])
                 premature_quit = True
+
+                x = x[0:idx+1]
+                y = y[0:idx+1]
                 break
 
             #Was it a later point: If previous position was safe, go back
@@ -292,6 +338,9 @@ class laser_reject0r(Instrument):
                 else:
                     print '\tSomething is terribly wrong here...'
                 premature_quit = True
+
+                x = x[0:idx+1]
+                y = y[0:idx+1]
                 break
             
 
@@ -299,16 +348,19 @@ class laser_reject0r(Instrument):
                 kb_char=msvcrt.getch()
                 if kb_char == "q" : 
                     premature_quit = True
+                    x = x[0:idx+1]
+                    y = y[0:idx+1]
                     break
             else:
                 premature_quit = False
 
+        self.set_is_running(False)
         data = {'wp_step' : x, 'counts': y}
     
         return data, qtdata, dataplot, premature_quit
 
 
-    def fit(self, data, qtdata, dataplot):
+    def fit(self, w, data, qtdata, dataplot):
         """
         Gets data from _run and fits it with a parabola. Needs:
         - data (measured data points)
@@ -337,15 +389,15 @@ class laser_reject0r(Instrument):
         else:
             p1 = False
             print '\tCould not fit curve!'
-
-        #add the data to the existing plot
-        qtdata.add_data_point(data['wp_step'], data['counts'], fd)
-        dataplot.add_data(qtdata, coorddim = 0, valdim = 2)
-        dataplot.update()
+        
+        if self.get_plot_degrees():
+            dataplot.add(data['wp_step']*self.get_conversion_factor(w), fd, '-b')
+        else:
+            dataplot.add(data['wp_step'], fd, '-b')
 
         return qtdata, p1
 
-    def first_time_run(self, w): #NOTE FIND WAY TO MAKE THIS IDIOT PROOF
+    def first_time_run(self, w):
         """
         For the first time, trace 360 degrees with the waveplate
         """
@@ -355,20 +407,13 @@ class laser_reject0r(Instrument):
             raise ValueError('Input type for "w" should be "half" or "quarter"')
 
         #measure position before optimizing
+        getattr(self.rotator, 'set_zero_position')(self.optim_sets[w]['channel'])        
         pos_before = getattr(self.rotator, 'get_noof_steps_ch'+\
                 str(self.optim_sets[w]['channel']))()
 
-        int_time = self.optim_sets['first_time']['int_time']
-        
         #turn waveplates
-        data, qtdata, dataplot, premature_quit = self.run('first_time', int_time)
+        data, qtdata, dataplot, premature_quit = self.run('first_time')
         qtdata.close_file()
-
-        #add the data to the existing plot
-        qtdata.add_data_point(data['wp_step'], data['counts'], 
-                np.zeros(len(data['counts'])))
-        dataplot.add_data(qtdata, coorddim = 0, valdim = 2)
-        dataplot.update()
 
         if not premature_quit:
 
@@ -376,6 +421,12 @@ class laser_reject0r(Instrument):
             optim_pos = data['wp_step'][self.find_nearest(data['counts'],
                 min(data['counts']))]
 
+            if self.get_plot_degrees():
+                print '\tOptimal waveplate position determined at %.0f degrees.'%(optim_pos*self.get_conversion_factor(w))
+            else:
+                print '\tOptimal waveplate position determined at %d steps.'%optim_pos
+            
+            #BEWARE: never ask the current position in noof_steps
             curr_pos = data['wp_step'][len(data['wp_step'])-1]
 
             #set the position to the optimal position
@@ -383,43 +434,51 @@ class laser_reject0r(Instrument):
 
         else:
             #ways to get a premature quit action: q key stroke or > threshold
-            pos_quit = getattr(self.rotator, 'get_noof_steps_ch'+\
-                str(self.optim_sets[w]['channel']))()
+            #BEWARE: never ask the current position in noof_steps
+            curr_pos = data['wp_step'][len(data['wp_step'])-1]            
 
             print '\tReturning to initial position...'
 
             #set the position to the optimal position
-            self.rotator.quick_scan(pos_before-pos_quit, self.optim_sets[w]['channel'])
+            self.rotator.quick_scan(pos_before-curr_pos, self.optim_sets[w]['channel'])
 
 
         #measure position after optimizing
         pos_after = getattr(self.rotator, 'get_noof_steps_ch'+\
                 str(self.optim_sets[w]['channel']))()
 
-        print "\tPosition of %s waveplate changed %d steps"\
-                %(w, pos_after-pos_before)
+        #print "\tPosition of %s waveplate changed %d steps"\
+        #        %(w, pos_after-pos_before)
 
 
-    def routine(self): #NOTE TEST THIS
+    def routine(self):
         #idea: turn red on only just before we're at the first point       
-        self.set_opt_red_power(1E-9)        
+        self.set_opt_red_power(self.get_opt_red_power())        
         self.first_time_run('half')
         self.first_time_run('quarter')
 
         #test if initial point is a valid starting point for optimization!
-        self.red.set_power(self.get_opt_red_power)
+        self.red.set_power(self.get_opt_red_power())
         crate = self.adwin.get_countrates()[self.zpl_counter-1]
         self.red.set_power(0)
 
-        #set the correct optimization power
-        self.set_opt_red_power(10E-9)
-
         if crate < self.opt_threshold:
-            self.optimize(cycles = 4, int_time = 50, 
-                    waveplates = ['half', 'quarter'], counter = self.zpl_counter)
+            self.optimize(cycles = 5, waveplates = ['half', 'quarter'], 
+                    counter = self.zpl_counter)
         else:
             print 'Not starting optimization: starting point is not valid.'
 
+
+    def _update(self):
+        """
+        Returns False if the procedure is done. No updating is necessary.
+        Returns True if the procedure is still running and the plot needs 
+        to update
+        """        
+        if not self._is_running:
+            return False
+        
+        return True
 
 
 
