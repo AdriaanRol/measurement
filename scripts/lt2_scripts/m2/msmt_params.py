@@ -2,14 +2,25 @@ import types
 import qt
 cfg = qt.cfgman
 
-### protocol settings ###
+cfg['samples']['current'] = 'sil9'
+cfg['protocols']['current'] = 'sil9-default'
 
+### sample settings ###
+### sil 9 ###
+if type(cfg['samples']['sil9']) == types.NoneType:
+	cfg['samples']['sil9'] = {}
+    
+cfg['samples']['sil9']['N_HF_frq'] = 2.189e6
+cfg['samples']['sil9']['ms-1_cntr_frq'] = 2.83013e9
+
+
+### protocol settings ###
 ### General settings for AdwinSSRO
 if type(cfg['protocols']['AdwinSSRO']) == types.NoneType:
 	cfg['protocols']['AdwinSSRO'] = {}
 
-cfg['protocols']['AdwinSSRO']['AWG_done_DI_channel'] = 16
-cfg['protocols']['AdwinSSRO']['AWG_event_jump_DO_channel'] = 7
+cfg['protocols']['AdwinSSRO']['AWG_done_DI_channel'] = 8
+cfg['protocols']['AdwinSSRO']['AWG_event_jump_DO_channel'] = 6
 cfg['protocols']['AdwinSSRO']['AWG_start_DO_channel'] = 1
 cfg['protocols']['AdwinSSRO']['A_laser_DAC_channel'] = 6
 cfg['protocols']['AdwinSSRO']['A_RO_amplitude'] = 0.
@@ -31,6 +42,25 @@ cfg['protocols']['AdwinSSRO']['repump_off_voltage'] = 0.07
 cfg['protocols']['AdwinSSRO']['A_off_voltage'] = -0.08
 cfg['protocols']['AdwinSSRO']['Ex_off_voltage'] = 0
 
+### General settings for AdwinSSRO+espin
+if type(cfg['protocols']['AdwinSSRO+espin']) == types.NoneType:
+	cfg['protocols']['AdwinSSRO+espin'] = {}
+cfg['protocols']['AdwinSSRO+espin']['send_AWG_start'] = 1
+
+### General settings for AdwinSSRO+MBI
+if type(cfg['protocols']['AdwinSSRO+MBI']) == types.NoneType:
+	cfg['protocols']['AdwinSSRO+MBI'] = {}
+    
+cfg['protocols']['AdwinSSRO+MBI']['AWG_wait_duration_before_MBI_MW_pulse'] = 1000
+cfg['protocols']['AdwinSSRO+MBI']['AWG_wait_for_adwin_MBI_duration'] = np.array([15000], dtype=int)
+cfg['protocols']['AdwinSSRO+MBI']['AWG_MBI_MW_pulse_duration'] = 2000
+cfg['protocols']['AdwinSSRO+MBI']['AWG_wait_duration_before_shelving_pulse'] = 100
+cfg['protocols']['AdwinSSRO+MBI']['AWG_shelving_pulse_amp'] = 0.9
+cfg['protocols']['AdwinSSRO+MBI']['nr_of_ROsequences'] = 1
+cfg['protocols']['AdwinSSRO+MBI']['MW_pulse_mod_risetime'] = 2
+cfg['protocols']['AdwinSSRO+MBI']['AWG_to_adwin_ttl_trigger_duration'] = 2000
+
+
 ### Specific protocol settings ###
 
 ### sil9 ###
@@ -44,13 +74,13 @@ try:
 except KeyError:
 	cfg['protocols']['sil9-default']['AdwinSSRO'] = {}	
 
-cfg['protocols']['sil9-default']['AdwinSSRO']['A_CR_amplitude'] = 5e-9
+cfg['protocols']['sil9-default']['AdwinSSRO']['A_CR_amplitude'] = 70e-9
 cfg['protocols']['sil9-default']['AdwinSSRO']['A_RO_amplitude'] = 0.
 cfg['protocols']['sil9-default']['AdwinSSRO']['A_SP_amplitude'] = 20e-9
 cfg['protocols']['sil9-default']['AdwinSSRO']['CR_duration'] = 100
 cfg['protocols']['sil9-default']['AdwinSSRO']['CR_preselect'] = 10
 cfg['protocols']['sil9-default']['AdwinSSRO']['CR_probe'] = 10
-cfg['protocols']['sil9-default']['AdwinSSRO']['Ex_CR_amplitude'] = 5e-9
+cfg['protocols']['sil9-default']['AdwinSSRO']['Ex_CR_amplitude'] = 15e-9
 cfg['protocols']['sil9-default']['AdwinSSRO']['Ex_RO_amplitude'] = 10e-9
 cfg['protocols']['sil9-default']['AdwinSSRO']['Ex_SP_amplitude'] = 0.
 cfg['protocols']['sil9-default']['AdwinSSRO']['SP_duration'] = 250
@@ -66,6 +96,37 @@ try:
 except KeyError:
 	cfg['protocols']['sil9-default']['AdwinSSRO-integrated'] = {}	
 cfg['protocols']['sil9-default']['AdwinSSRO-integrated']['SSRO_duration'] = 40
+
+### sil9, AdwinSSRO+MBI ###
+try:
+	if type(cfg['protocols']['sil9-default']['AdwinSSRO+MBI']) == types.NoneType:
+		cfg['protocols']['sil9-default']['AdwinSSRO+MBI'] = {}
+except KeyError:
+	cfg['protocols']['sil9-default']['AdwinSSRO+MBI'] = {}
+   
+cfg['protocols']['sil9-default']['AdwinSSRO+MBI']['mw_frq'] = 2.80e9
+cfg['protocols']['sil9-default']['AdwinSSRO+MBI']['mw_power'] = 20    
+cfg['protocols']['sil9-default']['AdwinSSRO+MBI']['Ex_MBI_amplitude'] = 10e-9
+cfg['protocols']['sil9-default']['AdwinSSRO+MBI']['Ex_SP_amplitude'] = 20e-9
+cfg['protocols']['sil9-default']['AdwinSSRO+MBI']['MBI_duration'] = 8
+cfg['protocols']['sil9-default']['AdwinSSRO+MBI']['MBI_steps'] = 1
+cfg['protocols']['sil9-default']['AdwinSSRO+MBI']['MBI_threshold'] = 1
+cfg['protocols']['sil9-default']['AdwinSSRO+MBI']['SP_E_duration'] = 100
+cfg['protocols']['sil9-default']['AdwinSSRO+MBI']['A_SP_durations'] = np.array([75], dtype=int)
+cfg['protocols']['sil9-default']['AdwinSSRO+MBI']['E_RO_durations'] = np.array([40], dtype=int)
+cfg['protocols']['sil9-default']['AdwinSSRO+MBI']['A_SP_amplitudes'] = np.array([70e-9])
+cfg['protocols']['sil9-default']['AdwinSSRO+MBI']['E_RO_amplitudes'] = np.array([10e-9])
+cfg['protocols']['sil9-default']['AdwinSSRO+MBI']['send_AWG_start'] = np.array([1])
+cfg['protocols']['sil9-default']['AdwinSSRO+MBI']['sequence_wait_time'] = np.array([0], dtype=int)
+cfg['protocols']['sil9-default']['AdwinSSRO+MBI']['AWG_MBI_MW_pulse_ssbmod_frq'] = \
+    cfg['samples']['sil9']['ms-1_cntr_frq'] - cfg['protocols']['sil9-default']['AdwinSSRO+MBI']['mw_frq'] - \
+    cfg['samples']['sil9']['N_HF_frq']
+
+cfg['protocols']['sil9-default']['AdwinSSRO+MBI']['AWG_MBI_MW_pulse_duration'] = 2000
+cfg['protocols']['sil9-default']['AdwinSSRO+MBI']['AWG_MBI_MW_pulse_amp'] = 0.03
+cfg['protocols']['sil9-default']['AdwinSSRO+MBI']['AWG_shelving_pulse_duration'] = 64
+cfg['protocols']['sil9-default']['AdwinSSRO+MBI']['AWG_wait_duration_before_MBI_MW_pulse'] = 50
+cfg['protocols']['sil9-default']['AdwinSSRO+MBI']['AWG_wait_for_adwin_MBI_duration'] = np.array([15000], dtype=int)
 
 
 ### save everything
