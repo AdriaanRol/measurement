@@ -39,11 +39,13 @@ class LaserFrequencyScan:
 
         #print 'done.'
         
-    def gate_scan_to_voltage(self, voltage, pts=51, dwell_time=0.05):
-        print 'scan gate to voltage ...', str(voltage)
-        print 'current gate voltage: ' + str(self.get_gate_voltage())
-        for v in np.linspace(self.get_gate_voltage(), voltage, pts):
-            self.set_gate_voltage(v)
+    def gate_scan_to_voltage(self,voltage, stepsize=0.01, dwell_time=0.05):
+        cur_v=qt.instruments['adwin'].get_dac_voltage('gate')
+        print 'scan gate to voltage ...',voltage
+        print 'current gate voltage: ', cur_v 
+        steps=int(abs(cur_v-voltage)/stepsize)
+        for v in np.linspace(cur_v, voltage, steps):
+            qt.instruments['adwin'].set_dac_voltage(('gate',v))
             qt.msleep(dwell_time)
 
         print 'done.'
@@ -85,7 +87,7 @@ class LaserFrequencyScan:
             if not self.use_repump_during:
                 self.repump_pulse()
             
-            if self.set_gate_after_repump:
+            if self.set_gate:
                 self.gate_scan_to_voltage(gv)                 
                         
             for i,v in enumerate(np.linspace(self.start_voltage, self.stop_voltage, self.pts)):
@@ -107,7 +109,7 @@ class LaserFrequencyScan:
                 if np.mod(i,10)==0:
                     p.update()
                 
-            if self.set_gate_after_repump:
+            if self.set_gate_to_zero_before_repump:
                 self.gate_scan_to_voltage(0.)
             p.update()
             if self.plot_strain_lines:
@@ -214,6 +216,7 @@ class RedLaserScan(LabjackAdwinLaserScan):
         if self.yellow_repump:
             self.set_laser_power(0)
             self.set_red_repump_power(self.red_repump_power)
+            self.set_yellow_repump_power(self.yellow_repump_power)
             qt.msleep(self.repump_duration)
             self.set_red_repump_power(0)
             self.set_yellow_repump_power(self.yellow_repump_power)
@@ -241,7 +244,7 @@ def yellow_laser_scan(name):
    
     # MW setup
     m.use_mw = False
-    m.mw_frq = lt2_cfg.sil9['MW_freq_center']
+    m.mw_frq =  qt.cfgman['samples']['sil9']['ms-1_cntr_frq']
     m.mw_power = -12
 
     # repump setup
@@ -272,7 +275,7 @@ def yellow_laser_scan(name):
     m.finish_scan()    
     
 def red_laser_scan(name):
-    labjack_dac_nr=1 # 0 is coarse and 1 is fine for NF
+    labjack_dac_nr=0 # 0 is coarse and 1 is fine for NF
     m = RedLaserScan(name,labjack_dac_nr)
     
     # Hardware setup
@@ -283,31 +286,32 @@ def red_laser_scan(name):
 
     # MW setup
     m.use_mw = True
-    m.mw_frq = lt2_cfg.sil9['MW_freq_center']
+    m.mw_frq =  qt.cfgman['samples']['sil9']['ms-1_cntr_frq']
     m.mw_power = -12
     
     # repump setup
-    m.yellow_repump=False
-    m.yellow_repump_power=500e-9
-    m.red_repump_power=0e-9
+    m.yellow_repump=True
+    m.yellow_repump_power=180e-9
+    m.red_repump_power=100e-9
     m.yellow_repump_duration=4 #seconds
     m.repump_power = 150e-6
-    m.repump_duration = 0.5 # seconds
+    m.repump_duration = 4 # seconds
     m.use_repump_during = False
     m.repump_power_during = 0.5e-6
     
     #Scan setup
     m.laser_power = 3e-9
-    m.start_voltage = 2
-    m.stop_voltage = 7
-    m.pts = 600
+    m.start_voltage = 5
+    m.stop_voltage = -2.1
+    m.pts = 1200
     m.integration_time = 50 # ms
     
     #Gate scan setup
-    m.set_gate_after_repump=False
-    m.gate_start_voltage=0.
-    m.gate_stop_voltage=0.
-    m.gate_pts=1
+    m.set_gate_to_zero_before_repump=False
+    m.set_gate=True
+    m.gate_start_voltage=1.4
+    m.gate_stop_voltage=1.4
+    m.gate_pts=100
     
     #strain lines
     m.plot_strain_lines=False
@@ -316,10 +320,11 @@ def red_laser_scan(name):
     m.run_scan()
     m.finish_scan()
 
-if __name__=='__main__':
 
+if __name__=='__main__':
+    
     stools.turn_off_lasers()
-    red_laser_scan('red_scan_coarse')
+    red_laser_scan('red_scan_coarse_repump_100nW')
     #yellow_laser_scan('yellow_1nW')
 
         
