@@ -94,17 +94,17 @@ class MBIMeasurement(sequence.SequenceSSRO):
                 start_reference = 'MBI_pulse-I',
                 link_start_to = 'end')
                 
-    def _N_RO_seq_element(self, el_name, goto_target, iii, last_i):
+    def _N_RO_seq_element(self, el_name, goto_target, iii, last_i, trigger_wait = True):
     
         ## The sequence element for the nitrogen readout. 
         print 20
         # Goes to first MBI_pulse after the last element for which i = last_i
         if iii == last_i:
             self.seq.add_element(name = el_name, 
-                trigger_wait = True, goto_target = goto_target)
+                trigger_wait = trigger_wait, goto_target = goto_target)
         else:
             self.seq.add_element(name = el_name, 
-                trigger_wait = True) 
+                trigger_wait = trigger_wait) 
         print 21
         last = self._readout_pulse(el_name = el_name, 
                     pulse_name = 'N_RO_pulse', 
