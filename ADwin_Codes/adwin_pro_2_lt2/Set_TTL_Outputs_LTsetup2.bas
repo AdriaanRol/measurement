@@ -15,11 +15,11 @@
 DIM channel, set AS LONG
 
 INIT:
-  P2_Digprog(DIO_MODULE, PAR_63)   'configure DIO-16 to DIO 31 as outputs, the rest are inputs
+  P2_Digprog(DIO_MODULE,13)  'configure DIO 08:15 as input, all other ports as output
   channel=PAR_61    'Number of DIO to set 
   set=PAR_62        'can be 1 or 0
 EVENT:
 
-  DIGOUT(DIO_Module,channel, set)   'This sets the digital output with channelnr to the value given by set
+  P2_DIGOUT(DIO_Module,channel, set)   'This sets the digital output with channelnr to the value given by set
    
   END   
