@@ -130,7 +130,7 @@ class LabjackLaserScan(LaserFrequencyScan):
         self.adwin = qt.instruments['adwin']
         self.mw = qt.instruments['SMB100']
 
-        self.set_laser_power = qt.instruments['Velocity1AOM'].set_power
+        self.set_laser_power = qt.instruments['Velocity2AOM'].set_power
         self.set_repump_power = qt.instruments['GreenAOM'].set_power
         self.set_laser_voltage = lambda x: self.labjack.__dict__['set_bipolar_dac'+str(labjack_dac_nr)](x)
         self.get_laser_voltage = lambda : self.labjack.__dict__['get_bipolar_dac'+str(labjack_dac_nr)]()
@@ -151,7 +151,7 @@ class LabjackLaserScan(LaserFrequencyScan):
             self.mw.set_status('on')
 
         self.scan_to_voltage(self.start_voltage)
-        #self.set_laser_power(self.laser_power)
+        self.set_laser_power(self.laser_power)
 
     def finish_scan(self):
         self.set_laser_power(0)
@@ -161,6 +161,9 @@ class LabjackLaserScan(LaserFrequencyScan):
 
         if self.use_repump_during:
             self.set_repump_power(0)
+
+        qt.instruments['counters'].set_is_running(True)
+        qt.instruments['GreenAOM'].set_power(10e-6)
 
 def adwin_laser_scan(name):
     m = AdwinLaserScan(name)
@@ -176,7 +179,7 @@ def adwin_laser_scan(name):
     m.laser_power = 5e-9
     m.repump_duration = 1 # seconds
     m.counter_channel = 0
-    m.wm_channel = 1
+    m.wm_channel = 2
     m.use_repump_during = False
     m.repump_power_during = 0.1e-6
     
@@ -191,28 +194,28 @@ def adwin_laser_scan(name):
     m.finish_scan()
 
 def labjack_laser_scan(name):
-    labjack_dac_channel=2
+    labjack_dac_channel=1
     m = LabjackLaserScan(name,labjack_dac_channel)
 
-    m.frq_offset = 521220 # red 470400
-    m.frq_factor = 2 #red 1
+    m.frq_offset = 470400 # red 470400
+    m.frq_factor = 1 #red 1
 
     # HW setup
-    m.use_mw = False
-    m.mw_frq = 2.863e9
+    m.use_mw = False # True
+    m.mw_frq = 2.827e9
     m.mw_power = -8
     m.repump_power = 100e-6
-    m.laser_power = 5e-9
+    m.laser_power = 2e-9
     m.repump_duration = 1 # seconds
     m.counter_channel = 0
-    m.wm_channel = 3
-    m.use_repump_during = True
-    m.repump_power_during = 0.2e-6
+    m.wm_channel = 2
+    m.use_repump_during = False # True
+    m.repump_power_during = 0.1e-6
     
     # sweep
-    m.start_voltage = -.5
-    m.stop_voltage = 1.5
-    m.pts = 1001
+    m.start_voltage = -1
+    m.stop_voltage = 1
+    m.pts = 501
     m.integration_time = 50 # ms
 
     m.prepare_scan()
@@ -222,6 +225,6 @@ def labjack_laser_scan(name):
 
               
 if __name__=='__main__':
-    labjack_laser_scan('yellow_scan')
+    labjack_laser_scan('red_scan_no_MW')
 
         

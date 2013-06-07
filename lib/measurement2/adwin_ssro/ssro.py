@@ -42,12 +42,35 @@ class AdwinSSRO(m2.AdwinControlledMeasurement):
         self.params['A_laser_DAC_channel'] = self.adwin.get_dac_channels()\
                 [self.A_aom.get_pri_channel()]
         self.params['repump_laser_DAC_channel'] = self.adwin.get_dac_channels()\
-                [self.repump_aom.get_pri_channel()]                
+                [self.repump_aom.get_pri_channel()]        
         self.params['gate_DAC_channel'] = self.adwin.get_dac_channels()\
                 ['gate']
-                                
+
+    def setup(self):
+        """
+        sets up the hardware such that the msmt can be run
+        (i.e., turn of the lasers, prepare MW src, etc)
+        """
+        
+        self.repump_aom.set_power(0.)
+        self.E_aom.set_power(0.)
+        self.A_aom.set_power(0.)
+        self.repump_aom.set_cur_controller('ADWIN')
+        self.E_aom.set_cur_controller('ADWIN')
+        self.A_aom.set_cur_controller('ADWIN')
+        self.repump_aom.set_power(0.)
+        self.E_aom.set_power(0.)
+        self.A_aom.set_power(0.)        
+    
+    def run(self, autoconfig=True, setup=True):
+        if autoconfig:
+            self.autoconfig()
+            
+        if setup:
+            self.setup()
+            
         for key,_val in self.adwin_dict[self.adwin_processes_key]\
-            [self.adwin_process]['params_long']:
+                [self.adwin_process]['params_long']:
             try:
                 self.adwin_process_params[key] = self.params[key]
             except:
@@ -78,40 +101,17 @@ class AdwinSSRO(m2.AdwinControlledMeasurement):
         self.adwin_process_params['A_RO_voltage'] = \
                 self.A_aom.power_to_voltage(
                         self.params['A_RO_amplitude'])
-
+                       
         self.adwin_process_params['repump_voltage'] = \
                 self.repump_aom.power_to_voltage(
-                        self.params['repump_amplitude'])                        
-        
+                        self.params['repump_amplitude'])
+                
         self.adwin_process_params['repump_off_voltage'] = \
                 self.params['repump_off_voltage']
         self.adwin_process_params['A_off_voltage'] = \
                 self.params['A_off_voltage']
         self.adwin_process_params['Ex_off_voltage'] = \
                 self.params['Ex_off_voltage']
-
-    def setup(self):
-        """
-        sets up the hardware such that the msmt can be run
-        (i.e., turn of the lasers, prepare MW src, etc)
-        """
-        
-        self.repump_aom.set_power(0.)
-        self.E_aom.set_power(0.)
-        self.A_aom.set_power(0.)
-        self.repump_aom.set_cur_controller('ADWIN')
-        self.E_aom.set_cur_controller('ADWIN')
-        self.A_aom.set_cur_controller('ADWIN')
-        self.repump_aom.set_power(0.)
-        self.E_aom.set_power(0.)
-        self.A_aom.set_power(0.)  
-    
-    def run(self, autoconfig=True, setup=True):
-        if autoconfig:
-            self.autoconfig()
-            
-        if setup:
-            self.setup()      
         
         self.start_adwin_process(stop_processes=['counter'])
         qt.msleep(1)
@@ -190,23 +190,21 @@ class IntegratedSSRO(AdwinSSRO):
         AdwinSSRO.__init__(self, name)
         
     def autoconfig(self):
+        ### These parameters are defined before AdwinSSRO.autoconfig, since they are used there.
         self.params['SSRO_repetitions'] = \
             self.params['pts'] * self.params['repetitions']
         self.params['sweep_length'] = self.params['pts']
         
-        # sweep length is an adwin parameter, therefore we first calculate it, then
-        # call the parent method (which tries to set the adwin params)
         AdwinSSRO.autoconfig(self)
-        
-        
+           
     def save(self, name='ssro'):
         reps = self.adwin_var('completed_reps')
         self.save_adwin_data(name,
-                [   ('CR_before', reps),
-                    ('CR_after', reps),   
+                [   ('SP_hist', self.params['SP_duration']),
                     ('RO_data', self.params['pts']),
                     ('statistics', 10),
-                    'completed_reps'])
+                    'completed_reps',
+                    'total_CR_counts'])
         
         
    

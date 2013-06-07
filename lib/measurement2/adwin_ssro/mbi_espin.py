@@ -66,8 +66,77 @@ class ElectronRabi(mbi.MBIMeasurement):
                     start_reference='RO_pulse-'+str(j)+'-I',
                     link_start_to='end')
             
-### class ElectronRabi
+### class ElectronRamsey
 
+class ElectronRamsey(mbi.MBIMeasurement):
+    mprefix = 'MBIElectronRamsey'
+    
+    def sequence(self):
+        for i in np.arange(self.params['pts']):
+            
+            self._MBI_seq_element(el_name='MBI_pulse'+str(i),
+                    jump_target='spin_control'+str(i),
+                    goto_target='MBI_pulse'+str(i)+'-0')
+
+            if i == self.params['pts'] - 1:
+                self.seq.add_element(name = 'spin_control'+str(i), 
+                    trigger_wait = True, goto_target = 'MBI_pulse0-0')
+            else:
+                self.seq.add_element(name = 'spin_control'+str(i), 
+                    trigger_wait = True)
+
+            self.seq.add_IQmod_pulse(name = '1st_pi2_pulse-'+str(i),
+                    channel = (self.chan_mwI,self.chan_mwQ),
+                    element = 'spin_control'+str(i),
+                    start = 1000, 
+                    duration = int(self.params['AWG_1st_pi2_duration']),
+                    amplitude = self.params['AWG_1st_pi2_amp'],
+                    frequency = self.params['AWG_1st_pi2_ssbmod_frq'])
+            last = '1st_pi2_pulse-'+str(i)+'-I'                  
+                           
+            self.seq.add_pulse('waiting_time_between', channel=self.chan_RF,
+                    element = 'spin_control'+str(i),
+                    start = 0, 
+                    start_reference=last, link_start_to='end', 
+                    duration = self.params['Waiting_times'][i],
+                    amplitude = 0)
+            last = 'waiting_time_between'
+
+            self.seq.add_IQmod_pulse(name = '2nd_pi2_pulse-'+str(i),
+                    channel = (self.chan_mwI,self.chan_mwQ),
+                    element = 'spin_control'+str(i),
+                    start = 0, 
+                    duration = int(self.params['AWG_2nd_pi2_duration']),
+                    amplitude = self.params['AWG_2nd_pi2_amp'],
+                    frequency = self.params['AWG_2nd_pi2_ssbmod_frq'],
+                    phase = self.params['AWG_2nd_pi2_phases'][i],
+                    start_reference = last,
+                    link_start_to = 'end')
+            last = '2nd_pi2_pulse-'+str(i)+'-I'             
+            
+            self.seq.clone_channel(self.chan_mw_pm, self.chan_mwI, 'spin_control'+str(i),
+                    start = -self.params['MW_pulse_mod_risetime'],
+                    duration = 2 * self.params['MW_pulse_mod_risetime'], 
+                    link_start_to = 'start', 
+                    link_duration_to = 'duration',
+                    amplitude = 2.0)
+
+            # make sure PM is low at the beginning
+            self.seq.add_pulse('delay_start', self.chan_mw_pm, 'spin_control'+str(i),
+                    start=-5, duration=5, amplitude=0,
+                    start_reference='1st_pi2_pulse-'+str(i)+'-I',
+                    link_start_to='start')
+
+            self.seq.add_pulse(name='seq_done',
+                    channel = self.chan_adwin_sync,
+                    element = 'spin_control'+str(i),
+                    duration = 10000, #AWG_to_adwin_ttl_trigger_duration, 
+                    amplitude = 2,
+                    start = 0,
+                    start_reference = last,
+                    link_start_to='end')
+            
+### class ElectronRamsey
 
 class CORPSETest(mbi.MBIMeasurement):
     mprefix = 'MBICORPSETest'
@@ -115,14 +184,15 @@ class CORPSETest(mbi.MBIMeasurement):
                     amplitude = 0)
             last = 'wait_before_RO'
 
-            for j in range(self.params['MW_pulse_multiplicity']):
+            for j in range(self.params['MW_pulse_multiplicities'][i]):
+                
                 self.seq.add_IQmod_pulse('CORPSE420-'+str(i)+'-'+str(j), 
                     channel = (self.chan_mwI, self.chan_mwQ),
                     element = 'spin_control'+str(i),
                     start = self.params['MW_pulse_delay'], 
                     duration = int(self.params['AWG_uncond_CORPSE420_durations'][i]),
-                    amplitude = self.params['AWG_uncond_CORPSE_amps'][i], 
-                    frequency = self.params['AWG_uncond_CORPSE_mod_frq'],
+                    amplitude = self.params['AWG_uncond_CORPSE420_amps'][i], 
+                    frequency = self.params['AWG_uncond_CORPSE_mod_frqs'][i],
                     start_reference = last,
                     link_start_to='end')
                 last = 'CORPSE420-'+str(i)+'-'+str(j)+'-I'
@@ -131,10 +201,10 @@ class CORPSETest(mbi.MBIMeasurement):
                     name = 'CORPSE300-'+str(i)+'-'+str(j), 
                     channel = (self.chan_mwI, self.chan_mwQ),
                     element = 'spin_control'+str(i),
-                    start = 10, 
+                    start = 0, 
                     duration = int(self.params['AWG_uncond_CORPSE300_durations'][i]),
-                    amplitude = -self.params['AWG_uncond_CORPSE_amps'][i], 
-                    frequency = self.params['AWG_uncond_CORPSE_mod_frq'],
+                    amplitude = -self.params['AWG_uncond_CORPSE300_amps'][i], 
+                    frequency = self.params['AWG_uncond_CORPSE_mod_frqs'][i],
                     start_reference = last,
                     link_start_to='end')
                 last = 'CORPSE300-'+str(i)+'-'+str(j)+'-I'
@@ -143,10 +213,10 @@ class CORPSETest(mbi.MBIMeasurement):
                     name = 'CORPSE60-'+str(i)+'-'+str(j), 
                     channel = (self.chan_mwI, self.chan_mwQ),
                     element = 'spin_control'+str(i),
-                    start = 10, 
+                    start = 0, 
                     duration = int(self.params['AWG_uncond_CORPSE60_durations'][i]),
-                    amplitude = self.params['AWG_uncond_CORPSE_amps'][i], 
-                    frequency = self.params['AWG_uncond_CORPSE_mod_frq'],
+                    amplitude = self.params['AWG_uncond_CORPSE60_amps'][i], 
+                    frequency = self.params['AWG_uncond_CORPSE_mod_frqs'][i],
                     start_reference = last,
                     link_start_to='end')
                 last = 'CORPSE60-'+str(i)+'-'+str(j)+'-I'
@@ -162,7 +232,7 @@ class CORPSETest(mbi.MBIMeasurement):
             # make sure PM is low at the beginning
             self.seq.add_pulse('delay_start', self.chan_mw_pm, 'spin_control'+str(i),
                     start=-5, duration=5, amplitude=0,
-                    start_reference = last,#'RO_pulse-0-I',
+                    start_reference = 'CORPSE420-'+str(i)+'-0-I',#'RO_pulse-0-I',
                     link_start_to='start')
             
             self.seq.add_pulse(name='seq_done',
