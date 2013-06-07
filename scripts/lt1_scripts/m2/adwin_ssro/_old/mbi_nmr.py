@@ -13,6 +13,28 @@ from measurement.lib.measurement2.adwin_ssro import sequence
 from measurement.lib.measurement2.adwin_ssro import mbi
 from measurement.lib.measurement2.adwin_ssro import mbi_nmr
 
+def _prepare(m):
+    m.params.from_dict(qt.cfgman['protocols']['AdwinSSRO'])
+    m.params.from_dict(qt.cfgman['protocols']['sil2-default']['AdwinSSRO'])
+    m.params.from_dict(qt.cfgman['protocols']['sil2-default']['AdwinSSRO-integrated'])
+    
+    m.params.from_dict(qt.cfgman['protocols']['AdwinSSRO+MBI'])
+    m.params.from_dict(qt.cfgman['protocols']['sil2-default']['AdwinSSRO+MBI'])
+    
+    m.params.from_dict(qt.cfgman['protocols']['sil2-default']['pulses'])
+    
+    ssro.AdwinSSRO.repump_aom = qt.instruments['GreenAOM']
+    m.params['repump_duration'] = m.params['green_repump_duration']
+    m.params['repump_amplitude'] = m.params['green_repump_amplitude']
+
+def _finish(m):
+    m.autoconfig()
+    m.generate_sequence()
+    m.setup()
+    m.run()
+    m.save()
+    m.finish()
+
 def nitrogenrabi(name):
     m = mbi_nmr.NMRSweep(name)
     
@@ -46,6 +68,35 @@ def nitrogenrabi(name):
     m.run()
     m.save()
     m.finish() 
+
+def Npulse_vs_frq(name):
+    m = mbi_nmr.NMRSweep('Npulse_vs_frq_'+name)
+    _prepare(m)
+    
+    # measurement settings
+    m.params['pts'] = 31
+    pts = m.params['pts']    
+    m.params['reps_per_ROsequence'] = 500
+    
+    # Uncomment for electron in ms=0
+    m.params['AWG_shelving_pulse_duration'] = m.params['4MHz_pi_duration']
+    m.params['AWG_shelving_pulse_amp'] = 0 # m.params['4MHz_pi_amp']
+        
+    # RF pulses
+    m.params['RF_pulse_len'] = np.ones(pts) * 80e3
+    m.params['RF_pulse_amp'] = np.ones(pts) * 0.5
+    
+    #This is the hyperfine splitting (Q for ms=0, Q+A for ms=-1) between mI=-1 and mI=0
+    m.params['RF_frq'] = np.linspace(-0.030e6 , 0.030e6, pts) + 4.942e6 # + 2.193e6
+   
+    m.params['wait_before_readout_reps'] = np.ones(pts)
+    m.params['wait_before_readout_element'] = int(1e3)
+    
+    # for the autoanalysis
+    m.params['sweep_name'] = 'RF pulse frequency (MHz)'
+    m.params['sweep_pts'] = m.params['RF_frq']/1e6
+    
+    _finish(m)
     
 
 def tomo(name):

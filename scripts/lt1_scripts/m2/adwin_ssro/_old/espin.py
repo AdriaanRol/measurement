@@ -20,21 +20,25 @@ def darkesr(name):
     
     m.params.from_dict(qt.cfgman['protocols']['AdwinSSRO+espin'])
     
+    ssro.AdwinSSRO.repump_aom = qt.instruments['GreenAOM']
+    m.params['repump_duration']=m.params['green_repump_duration']
+    m.params['repump_amplitude']=m.params['green_repump_amplitude']
+    
     m.params['mw_frq'] = 2.8e9
     m.params['ssbmod_frq_start'] = 23e6
     m.params['ssbmod_frq_stop'] = 31e6
-    m.params['pts'] = 161
+    m.params['pts'] = 81
     m.params['mw_power'] = 20
-    m.params['pulse_length'] = 1200
+    m.params['pulse_length'] = 1000
     m.params['repetitions'] = 1000
-    m.params['ssbmod_amplitude'] = 0.05
+    m.params['ssbmod_amplitude'] = 0.04
     m.params['MW_pulse_mod_risetime'] = 2
     
     m.autoconfig()
     m.generate_sequence()
     m.run()
     m.save()
-    m.finish()   
+    m.finish()
    
 
    
