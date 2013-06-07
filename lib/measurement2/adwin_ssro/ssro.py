@@ -42,7 +42,7 @@ class AdwinSSRO(m2.AdwinControlledMeasurement):
         self.params['A_laser_DAC_channel'] = self.adwin.get_dac_channels()\
                 [self.A_aom.get_pri_channel()]
         self.params['repump_laser_DAC_channel'] = self.adwin.get_dac_channels()\
-                [self.repump_aom.get_pri_channel()]
+                [self.repump_aom.get_pri_channel()]        
         self.params['gate_DAC_channel'] = self.adwin.get_dac_channels()\
                 ['gate']
 
@@ -60,15 +60,15 @@ class AdwinSSRO(m2.AdwinControlledMeasurement):
         self.A_aom.set_cur_controller('ADWIN')
         self.repump_aom.set_power(0.)
         self.E_aom.set_power(0.)
-        self.A_aom.set_power(0.)  
+        self.A_aom.set_power(0.)        
     
     def run(self, autoconfig=True, setup=True):
         if autoconfig:
             self.autoconfig()
             
         if setup:
-            self.setup()        
-        
+            self.setup()
+            
         for key,_val in self.adwin_dict[self.adwin_processes_key]\
                 [self.adwin_process]['params_long']:
             try:
@@ -101,7 +101,7 @@ class AdwinSSRO(m2.AdwinControlledMeasurement):
         self.adwin_process_params['A_RO_voltage'] = \
                 self.A_aom.power_to_voltage(
                         self.params['A_RO_amplitude'])
-
+                       
         self.adwin_process_params['repump_voltage'] = \
                 self.repump_aom.power_to_voltage(
                         self.params['repump_amplitude'])
@@ -112,31 +112,6 @@ class AdwinSSRO(m2.AdwinControlledMeasurement):
                 self.params['A_off_voltage']
         self.adwin_process_params['Ex_off_voltage'] = \
                 self.params['Ex_off_voltage']
-                
-        
-
-    def setup(self):
-        """
-        sets up the hardware such that the msmt can be run
-        (i.e., turn of the lasers, prepare MW src, etc)
-        """
-        
-        self.green_aom.set_power(0.)
-        self.E_aom.set_power(0.)
-        self.A_aom.set_power(0.)
-        self.green_aom.set_cur_controller('ADWIN')
-        self.E_aom.set_cur_controller('ADWIN')
-        self.A_aom.set_cur_controller('ADWIN')
-        self.green_aom.set_power(0.)
-        self.E_aom.set_power(0.)
-        self.A_aom.set_power(0.)  
-    
-    def run(self, autoconfig=True, setup=True):
-        if autoconfig:
-            self.autoconfig()
-            
-        if setup:
-            self.setup()      
         
         self.start_adwin_process(stop_processes=['counter'])
         qt.msleep(1)
