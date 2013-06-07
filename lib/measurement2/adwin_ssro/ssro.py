@@ -202,7 +202,9 @@ class IntegratedSSRO(AdwinSSRO):
     def save(self, name='ssro'):
         reps = self.adwin_var('completed_reps')
         self.save_adwin_data(name,
-                [   ('RO_data', self.params['pts']),
+                [   ('CR_before', reps),
+                    ('CR_after', reps),   
+                    ('RO_data', self.params['pts']),
                     ('statistics', 10),
                     'completed_reps'])
         

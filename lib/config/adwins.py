@@ -98,7 +98,7 @@ config['adwin_lt2_processes'] = {
             'index' : 4, 
             'file' : 'Set_TTL_Outputs_LTsetup2.TB4',
             'par' : {
-                'dio_no' : 61,
+                'dio_no' : 61, #configured DIO 08:15 as input, all other ports as output
                 'dio_val' : 62,
                 },
             },
@@ -149,7 +149,8 @@ config['adwin_lt2_processes'] = {
                     ['SSRO_stop_after_first_photon',   0],
                     ['cycle_duration'              , 300],
                     ['CR_probe'                    ,  10],
-                    ['repump_after_repetitions'    ,  1]
+                    ['repump_after_repetitions'    ,  1],
+                    ['CR_repump'                   ,  0],
                     ],
                 'params_long_index'  : 20,
                 'params_long_length' : 25,
@@ -207,7 +208,8 @@ config['adwin_lt2_processes'] = {
                     ['SSRO_stop_after_first_photon',   0],
                     ['cycle_duration'              , 300],
                     ['CR_probe'                    ,  10],
-                    ['repump_after_repetitions'    ,  1]
+                    ['repump_after_repetitions'    ,  1],
+                    ['CR_repump'                   ,  0],
                     ],
                 'params_long_index'  : 20,
                 'params_long_length' : 25,
@@ -234,8 +236,8 @@ config['adwin_lt2_processes'] = {
                     'last_CR_counts' : 26,
                     },
 				'data_long' : {
-                    # 'CR_before' : 22,  # not used in the integrated ssro
-                    # 'CR_after' : 23,
+                     'CR_before' : 22,  # not used in the integrated ssro
+                     'CR_after' : 23,
                     'SP_hist' : 24,
                     'RO_data' : 25,
                     'statistics' : 26,
@@ -270,6 +272,8 @@ config['adwin_lt2_processes'] = {
                     ['MBI_threshold'               ,   0],
                     ['nr_of_ROsequences'           ,   1],
                     ['wait_after_RO_pulse_duration',   3],
+                    ['repump_after_repetitions'    ,  1],
+                    ['CR_repump'                   ,  0],
                     ],
                 'params_long_index'  : 20,
                 'params_long_length' : 30,

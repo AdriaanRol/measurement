@@ -36,8 +36,8 @@ cfg['protocols']['AdwinSSRO']['wait_after_RO_pulse_duration'] = 3
 cfg['protocols']['AdwinSSRO']['wait_after_pulse_duration'] = 3
 cfg['protocols']['AdwinSSRO']['wait_for_AWG_done'] = 0
 cfg['protocols']['AdwinSSRO']['repump_after_repetitions'] = 1
-cfg['protocols']['AdwinSSRO']['yellow_repump_amplitude'] = 5e-9
-cfg['protocols']['AdwinSSRO']['yellow_repump_duration'] = 1000
+cfg['protocols']['AdwinSSRO']['yellow_repump_amplitude'] = 50e-9
+cfg['protocols']['AdwinSSRO']['yellow_repump_duration'] = 500
 cfg['protocols']['AdwinSSRO']['repump_off_voltage'] = 0.07
 cfg['protocols']['AdwinSSRO']['A_off_voltage'] = -0.08
 cfg['protocols']['AdwinSSRO']['Ex_off_voltage'] = 0
@@ -73,12 +73,13 @@ try:
 except KeyError:
 	cfg['protocols']['sil9-default']['AdwinSSRO'] = {}	
 
-cfg['protocols']['sil9-default']['AdwinSSRO']['A_CR_amplitude'] = 70e-9
+cfg['protocols']['sil9-default']['AdwinSSRO']['A_CR_amplitude'] = 20e-9
 cfg['protocols']['sil9-default']['AdwinSSRO']['A_RO_amplitude'] = 0.
 cfg['protocols']['sil9-default']['AdwinSSRO']['A_SP_amplitude'] = 20e-9
 cfg['protocols']['sil9-default']['AdwinSSRO']['CR_duration'] = 100
 cfg['protocols']['sil9-default']['AdwinSSRO']['CR_preselect'] = 15
 cfg['protocols']['sil9-default']['AdwinSSRO']['CR_probe'] = 15
+cfg['protocols']['sil9-default']['AdwinSSRO']['CR_repump'] = 0
 cfg['protocols']['sil9-default']['AdwinSSRO']['Ex_CR_amplitude'] = 20e-9
 cfg['protocols']['sil9-default']['AdwinSSRO']['Ex_RO_amplitude'] = 10e-9
 cfg['protocols']['sil9-default']['AdwinSSRO']['Ex_SP_amplitude'] = 0.
