@@ -287,7 +287,7 @@ def red_yellow_laser_scan(name):
     #Laser scan setup
  
     m.laser_power_scan_min=0
-    m.laser_power_scan_max=1.5e-6
+    m.laser_power_scan_max=200e-9
     
     m.laser_power_scan_pts=30
     m.plot_3D = True

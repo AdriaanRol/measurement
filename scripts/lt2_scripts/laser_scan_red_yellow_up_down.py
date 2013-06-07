@@ -294,7 +294,7 @@ def red_yellow_laser_scan(name):
     m.set_gate=False
     m.gate_start_voltage=0.
     m.gate_stop_voltage=0.
-    m.gate_pts=10
+    m.gate_pts=100
     m.plot_3D = False
     
     #strain lines

@@ -27,11 +27,11 @@ def darkesr(name):
     m.params['mw_frq'] = 2.8e9
     m.params['ssbmod_frq_start'] = 24e6
     m.params['ssbmod_frq_stop'] = 34e6
-    m.params['pts'] = 101
+    m.params['pts'] = 161
     m.params['mw_power'] = 20
-    m.params['pulse_length'] = 2000
-    m.params['repetitions'] = 1000
-    m.params['ssbmod_amplitude'] = 0.03
+    m.params['pulse_length'] = 3500
+    m.params['repetitions'] = 2000
+    m.params['ssbmod_amplitude'] = 0.015
     m.params['MW_pulse_mod_risetime'] = 2
     
     m.autoconfig()

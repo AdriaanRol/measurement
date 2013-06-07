@@ -38,7 +38,7 @@ def recalibrate_aoms(names=['MatisseAOM', 'NewfocusAOM']):
     qt.instruments['PMServo'].move_out()
     qt.msleep(1)
 
-def check_powers(check_power=10e-9,names=['MatisseAOM', 'NewfocusAOM'] ):
+def check_powers(check_power='max',names=['MatisseAOM', 'NewfocusAOM','YellowAOM','GreenAOM'] ):
     qt.instruments['adwin'].set_simple_counting()
     
     turn_off_lasers()
@@ -49,7 +49,10 @@ def check_powers(check_power=10e-9,names=['MatisseAOM', 'NewfocusAOM'] ):
         if (msvcrt.kbhit() and (msvcrt.getch() == 'q')): break
         turn_off_lasers()
         print n
-        qt.instruments[n].set_power(check_power)
+        if check_power=='max':
+            turn_on_laser(n)
+        else:
+            qt.instruments[n].set_power(check_power)
         qt.instruments['powermeter'].set_wavelength(qt.instruments[n].get_wavelength()*1e9)
         qt.msleep(1)
         print qt.instruments['powermeter'].get_power(), 'setpoint: ',check_power

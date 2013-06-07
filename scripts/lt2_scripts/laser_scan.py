@@ -103,7 +103,8 @@ class LaserFrequencyScan:
 
                 cts = float(self.get_counts(self.integration_time)[self.counter_channel])/(self.integration_time*1e-3)
                 frq = self.get_frequency(self.wm_channel)*self.frq_factor - self.frq_offset
-                if frq < 0: 
+                if frq < 0:
+                    print 'WARNING: WM gives frq',frq
                     continue
                 d.add_data_point(v, frq, cts, gv)
                 if np.mod(i,10)==0:
@@ -290,7 +291,7 @@ def red_laser_scan(name):
     m.mw_power = -12
     
     # repump setup
-    m.yellow_repump=True
+    m.yellow_repump=False
     m.yellow_repump_power=180e-9
     m.red_repump_power=100e-9
     m.yellow_repump_duration=4 #seconds
@@ -301,17 +302,17 @@ def red_laser_scan(name):
     
     #Scan setup
     m.laser_power = 3e-9
-    m.start_voltage = 5
-    m.stop_voltage = -2.1
-    m.pts = 1200
+    m.start_voltage = 1
+    m.stop_voltage = -5.
+    m.pts = 900
     m.integration_time = 50 # ms
     
     #Gate scan setup
     m.set_gate_to_zero_before_repump=False
-    m.set_gate=True
-    m.gate_start_voltage=1.4
-    m.gate_stop_voltage=1.4
-    m.gate_pts=100
+    m.set_gate=False
+    m.gate_start_voltage=0
+    m.gate_stop_voltage=0
+    m.gate_pts=1
     
     #strain lines
     m.plot_strain_lines=False

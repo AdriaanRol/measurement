@@ -86,6 +86,8 @@ def _set_repump_settings(m,yellow):
         ssro.AdwinSSRO.repump_aom = qt.instruments['YellowAOM']
         m.params['repump_duration']=m.params['yellow_repump_duration']
         m.params['repump_amplitude']=m.params['yellow_repump_amplitude']
+        m.params['CR_repump']=1
+        m.params['repump_after_repetitions']=100
     else:
         qt.instruments['YellowAOM'].set_power(0)
         ssro.AdwinSSRO.repump_aom = qt.instruments['GreenAOM']
