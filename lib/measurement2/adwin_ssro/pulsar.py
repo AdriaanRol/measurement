@@ -255,7 +255,7 @@ class MBI(PulsarMeasurement):
 
         adwin_sync = pulse.SquarePulse(channel='adwin_sync',
             length = (self.params['AWG_to_adwin_ttl_trigger_duration'] \
-                + self.params['AWG_wait_for_adwin_MBI_duration'][0]),
+                + self.params['AWG_wait_for_adwin_MBI_duration']),
             amplitude = 2)
 
         # the actual element
