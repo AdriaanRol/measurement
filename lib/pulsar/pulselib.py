@@ -1,4 +1,5 @@
 import numpy as np
+import scipy.special as ssp
 import pulse
 
 
@@ -23,6 +24,8 @@ class MW_IQmod_pulse(pulse.Pulse):
             'phase_lock_time_offset', 0)
 
         self.length += 2*self.PM_risetime
+        self.start_offset = self.PM_risetime
+        self.stop_offset = self.PM_risetime
 
 
     def __call__(self, **kw):
@@ -44,12 +47,11 @@ class MW_IQmod_pulse(pulse.Pulse):
         idx1 = np.where(tvals <= self.length - self.PM_risetime)[0][-1] + 1
 
         # correct the time axis -- we want the IQ pulses to be the reference
-        # self._t0 += tvals[idx0] # reference time within an element
-        # tvals -= tvals[idx0] # for the calculation of the wf
+        tvals -= tvals[idx0] # for the calculation of the wf
 
         if self.lock_phase_to_element_time:
-            self.phase += (self.frequency * \
-                (self._t0 + self.phase_lock_time_offset)) % 1
+            self.phase += ((self.frequency * \
+                (self._t0 + self.phase_lock_time_offset)) % 1) * 360
 
         I_wf = np.zeros(len(tvals))
         I_wf[idx0:idx1] += self.amplitude * np.cos(2 * np.pi * \
@@ -83,6 +85,9 @@ class IQ_CORPSE_pi_pulse(MW_IQmod_pulse):
         self.length = self.length_60 + self.length_m300 + self.length_420 + \
             2*self.pulse_delay + 2*self.PM_risetime
 
+        self.start_offset = self.PM_risetime
+        self.stop_offset = self.PM_risetime
+
     def __call__(self, **kw):
         MW_IQmod_pulse.__call__(self, **kw)
 
@@ -114,8 +119,7 @@ class IQ_CORPSE_pi_pulse(MW_IQmod_pulse):
             self.length_60))[0][-1]
 
         # correct the time axis -- we want the IQ pulses to be the reference
-        # self._t0 += tvals[start_420] # reference time within an element
-        # tvals -= tvals[start_420] # for the calculation of the wf
+        tvals -= tvals[start_420] # for the calculation of the wf
 
         I_wf = np.zeros(len(tvals))
         Q_wf = np.zeros(len(tvals))
@@ -139,4 +143,22 @@ class IQ_CORPSE_pi_pulse(MW_IQmod_pulse):
             self.I_channel : I_wf,
             self.Q_channel : Q_wf,
             self.PM_channel : PM_wf,
+            }
+
+class RF_erf_envelope(pulse.SinePulse):
+    def __init__(self, *arg, **kw):
+        pulse.SinePulse.__init__(self, *arg, **kw)
+
+        self.envelope_risetime = kw.pop('envelope_risetime', 500e-9)
+
+    def wf(self, tvals):
+        wf = pulse.SinePulse.wf(self, tvals)[self.channel]
+        
+        # TODO make this nicer
+        rt = self.envelope_risetime
+        env = (ssp.erf(2./rt*(tvals-rt))/2.+0.5) * \
+                (ssp.erf(-2./rt*(tvals-tvals[-1]+rt))/2. + 0.5)
+
+        return {
+            self.channel : wf * env
             }
