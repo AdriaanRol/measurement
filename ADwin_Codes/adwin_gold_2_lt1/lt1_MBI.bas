@@ -5,10 +5,10 @@
 ' Control_long_Delays_for_Stop   = No
 ' Priority                       = High
 ' Version                        = 1
-' ADbasic_Version                = 5.0.5
+' ADbasic_Version                = 5.0.6
 ' Optimize                       = Yes
 ' Optimize_Level                 = 1
-' Info_Last_Save                 = TUD10238  TUD10238\localadmin
+' Info_Last_Save                 = TUD276629  TUD276629\localadmin
 '<Header End>
 ' MBI with the adwin, with dynamic CR-preparation, dynamic MBI-success/fail
 ' recognition, and SSRO at the end. 
@@ -124,6 +124,8 @@ DIM A_SP_voltage AS FLOAT
 DIM Ex_RO_voltage AS FLOAT
 DIM A_RO_voltage AS FLOAT
 DIM Ex_MBI_voltage AS FLOAT
+DIM A_off_voltage as float
+dim Ex_off_voltage as float
 
 DIM timer, mode, i, tmp AS LONG
 DIM wait_time AS LONG
@@ -179,8 +181,9 @@ INIT:
   Ex_CR_voltage                = DATA_21[3]
   A_CR_voltage                 = DATA_21[4]
   Ex_SP_voltage                = DATA_21[5]
-  Ex_MBI_voltage               = DATA_21[6]
-  
+  Ex_MBI_voltage               = DATA_21[6]  
+  Ex_off_voltage               = DATA_21[9]
+  A_off_voltage                = DATA_21[10]
   ' initialize the data arrays
   FOR i = 1 TO max_sweep_dim
     DATA_22[i] = 0

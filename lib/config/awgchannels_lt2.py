@@ -115,7 +115,7 @@ config['optical_rabi'] = {
             },
         'EOM_AOM_Matisse' : {
             'AWG_channel' : 'ch4m1',
-            'high' : 0.8,
+            'high' : 1.0,
             'low' : 0.01,
             'cable_delay' : 445, 
             },
@@ -124,12 +124,11 @@ config['optical_rabi'] = {
             'high' : 0.8,
             'cable_delay' : 525, 
             },        
-        'HH_Marker' : {
-            'AWG_channel' : 'ch3m1',
+        'ADwin_trigger' : {
+            'AWG_channel' : 'ch1m2',
             'high' : 2.,
             'low' : 0.,
-            'default_voltage' : 0.0,            
-            'cable_delay' : 0, 
+            'cable_delay': 0,
             },
         }
         

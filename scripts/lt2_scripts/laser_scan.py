@@ -2,6 +2,7 @@ import msvcrt
 import qt
 import numpy as np
 import measurement.lib.config.adwins as adwins_cfg
+from measurement.lib.config import experiment_lt2 as lt2_cfg
 
 class LaserFrequencyScan:
 
@@ -38,11 +39,13 @@ class LaserFrequencyScan:
 
         #print 'done.'
         
-    def gate_scan_to_voltage(self, voltage, pts=51, dwell_time=0.05):
-        print 'scan gate to voltage ...', str(voltage)
-        print 'current gate voltage: ' + str(self.get_gate_voltage())
-        for v in np.linspace(self.get_gate_voltage(), voltage, pts):
-            self.set_gate_voltage(v)
+    def gate_scan_to_voltage(self,voltage, stepsize=0.01, dwell_time=0.05):
+        cur_v=qt.instruments['adwin'].get_dac_voltage('gate')
+        print 'scan gate to voltage ...',voltage
+        print 'current gate voltage: ', cur_v 
+        steps=int(abs(cur_v-voltage)/stepsize)
+        for v in np.linspace(cur_v, voltage, steps):
+            qt.instruments['adwin'].set_dac_voltage(('gate',v))
             qt.msleep(dwell_time)
 
         print 'done.'
@@ -84,7 +87,7 @@ class LaserFrequencyScan:
             if not self.use_repump_during:
                 self.repump_pulse()
             
-            if self.set_gate_after_repump:
+            if self.set_gate:
                 self.gate_scan_to_voltage(gv)                 
                         
             for i,v in enumerate(np.linspace(self.start_voltage, self.stop_voltage, self.pts)):
@@ -100,13 +103,14 @@ class LaserFrequencyScan:
 
                 cts = float(self.get_counts(self.integration_time)[self.counter_channel])/(self.integration_time*1e-3)
                 frq = self.get_frequency(self.wm_channel)*self.frq_factor - self.frq_offset
-                if frq < 0: 
+                if frq < 0:
+                    print 'WARNING: WM gives frq',frq
                     continue
                 d.add_data_point(v, frq, cts, gv)
                 if np.mod(i,10)==0:
                     p.update()
                 
-            if self.set_gate_after_repump:
+            if self.set_gate_to_zero_before_repump:
                 self.gate_scan_to_voltage(0.)
             p.update()
             if self.plot_strain_lines:
@@ -182,8 +186,8 @@ class LabjackAdwinLaserScan(LaserFrequencyScan):
 
             
 class YellowLaserScan(LabjackAdwinLaserScan):
-    def __init__(self, name):
-        LabjackAdwinLaserScan.__init__(self, name,2)
+    def __init__(self, name, labjack_dac_nr):
+        LabjackAdwinLaserScan.__init__(self, name, labjack_dac_nr)
         self.set_laser_power = qt.instruments['YellowAOM'].set_power
         self.set_repump_power = qt.instruments['Velocity1AOM'].set_power
         self.set_nf_repump_power=qt.instruments['Velocity2AOM'].set_power
@@ -204,15 +208,16 @@ class YellowLaserScan(LabjackAdwinLaserScan):
 class RedLaserScan(LabjackAdwinLaserScan):
     def __init__(self, name, labjack_dac_nr):
         LabjackAdwinLaserScan.__init__(self, name,labjack_dac_nr)
-        self.set_laser_power = qt.instruments['Velocity1AOM'].set_power
+        self.set_laser_power = qt.instruments['NewfocusAOM'].set_power
         self.set_yellow_repump_power=qt.instruments['YellowAOM'].set_power
-        self.set_red_repump_power=qt.instruments['Velocity2AOM'].set_power
+        self.set_red_repump_power=qt.instruments['MatisseAOM'].set_power
         self.set_repump_power = qt.instruments['GreenAOM'].set_power
             
     def repump_pulse(self):
         if self.yellow_repump:
             self.set_laser_power(0)
             self.set_red_repump_power(self.red_repump_power)
+            self.set_yellow_repump_power(self.yellow_repump_power)
             qt.msleep(self.repump_duration)
             self.set_red_repump_power(0)
             self.set_yellow_repump_power(self.yellow_repump_power)
@@ -229,7 +234,8 @@ class RedLaserScan(LabjackAdwinLaserScan):
 
             
 def yellow_laser_scan(name):
-    m = YellowLaserScan(name)
+    labjack_dac_nr=2 # 2 is coarse and 3 is fine for yellow
+    m = YellowLaserScan(name, labjack_dac_nr)
 
     # Hardware setup
     m.wm_channel = 2
@@ -239,7 +245,7 @@ def yellow_laser_scan(name):
    
     # MW setup
     m.use_mw = False
-    m.mw_frq = lt2_cfg.sil9['MW_freq_center']
+    m.mw_frq =  qt.cfgman['samples']['sil9']['ms-1_cntr_frq']
     m.mw_power = -12
 
     # repump setup
@@ -270,7 +276,7 @@ def yellow_laser_scan(name):
     m.finish_scan()    
     
 def red_laser_scan(name):
-    labjack_dac_nr=3
+    labjack_dac_nr=0 # 0 is coarse and 1 is fine for NF
     m = RedLaserScan(name,labjack_dac_nr)
     
     # Hardware setup
@@ -281,43 +287,45 @@ def red_laser_scan(name):
 
     # MW setup
     m.use_mw = True
-    m.mw_frq = lt2_cfg.sil9['MW_freq_center']
+    m.mw_frq =  qt.cfgman['samples']['sil9']['ms-1_cntr_frq']
     m.mw_power = -12
     
     # repump setup
     m.yellow_repump=False
-    m.yellow_repump_power=500e-9
-    m.red_repump_power=0e-9
+    m.yellow_repump_power=180e-9
+    m.red_repump_power=100e-9
     m.yellow_repump_duration=4 #seconds
     m.repump_power = 150e-6
-    m.repump_duration = 2 # seconds
+    m.repump_duration = 4 # seconds
     m.use_repump_during = False
     m.repump_power_during = 0.5e-6
     
     #Scan setup
-    m.laser_power = 5e-9
-    m.start_voltage = -0
-    m.stop_voltage = -2.
-    m.pts = 2000
-    m.integration_time = 40 # ms
+    m.laser_power = 3e-9
+    m.start_voltage = 1
+    m.stop_voltage = -5.
+    m.pts = 900
+    m.integration_time = 50 # ms
     
     #Gate scan setup
-    m.set_gate_after_repump=False
-    m.gate_start_voltage=0.
-    m.gate_stop_voltage=0.
+    m.set_gate_to_zero_before_repump=False
+    m.set_gate=False
+    m.gate_start_voltage=0
+    m.gate_stop_voltage=0
     m.gate_pts=1
     
     #strain lines
-    m.plot_strain_lines=True
+    m.plot_strain_lines=False
     
     m.prepare_scan()
     m.run_scan()
     m.finish_scan()
 
-if __name__=='__main__':
 
+if __name__=='__main__':
+    
     stools.turn_off_lasers()
-    red_laser_scan('red_scan_go')
+    red_laser_scan('red_scan_coarse_repump_100nW')
     #yellow_laser_scan('yellow_1nW')
 
         

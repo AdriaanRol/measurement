@@ -54,15 +54,15 @@ class lt2_ssro_optimizer(multiple_optimizer):
                           get_value_f= self._get_value_f['probe_cts'],
                           get_norm_f= self._get_value_f['cr_checks'],
                           plot_name=self.plot_name)
-        self.create_stepper_buttons(pid)
-        #pid='pidnewfocus2'
-        #pid_ins_n=qt.instruments[pid]
-        #self.add_optimizer(pid+'_optimizer',
-        #                  get_control_f=pid_ins_n.get_value,
-        #                  set_control_f=lambda x: pid_ins_n.set_setpoint(x),
-        #                  get_value_f= self._get_value_f['probe_cts'],
-        #                  get_norm_f= self._get_value_f['cr_checks'],
-        #                  plot_name=self.plot_name)
+        #self.create_stepper_buttons(pid)
+        pid='pidmatisse'
+        pid_ins_n=qt.instruments[pid]
+        self.add_optimizer(pid+'_optimizer',
+                          get_control_f=pid_ins_n.get_value,
+                          set_control_f=lambda x: pid_ins_n.set_setpoint(x),
+                          get_value_f= self._get_value_f['probe_cts'],
+                          get_norm_f= self._get_value_f['cr_checks'],
+                          plot_name=self.plot_name)
         #self.create_stepper_buttons(pid)
         
         self._optimize_yellow=optimize_yellow
@@ -75,7 +75,7 @@ class lt2_ssro_optimizer(multiple_optimizer):
                               get_value_f= self._get_value_f['probe_cts'],
                               get_norm_f= self._get_value_f['cr_checks'],
                               plot_name=self.plot_name)
-            self.create_stepper_buttons(pid)
+            #self.create_stepper_buttons(pid)
         #gate
         #self.add_optimizer('gate_optimizer',
         #                  get_control_f=lambda:self._ins_adwin.get_dac_voltage('gate'),

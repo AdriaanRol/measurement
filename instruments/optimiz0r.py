@@ -63,6 +63,7 @@ class optimiz0r(Instrument):
         self.mos = mos_ins
        
     def optimize(self, cycles=1, cnt=1, int_time=50, dims=[], order='zyx'):
+        ret=True
         for c in range(cycles):
            
             if len(dims) == 0:
@@ -70,7 +71,7 @@ class optimiz0r(Instrument):
 
             for d in dims:
                 position_before_opt = getattr(self.mos, 'get_'+d)()*1E3
-                self.opt1d_ins.run(dimension=d,counter = cnt, 
+                ret=ret and self.opt1d_ins.run(dimension=d,counter = cnt, 
                         pixel_time=int_time, **self.dimensions[d])
                 position_after_opt = getattr(self.mos, 'get_'+d)()*1E3
 
@@ -81,4 +82,5 @@ class optimiz0r(Instrument):
                     kb_char=msvcrt.getch()
                     if kb_char == "q" : break
                 qt.msleep(1)
+        return ret
     

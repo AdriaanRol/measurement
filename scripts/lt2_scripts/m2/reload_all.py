@@ -8,8 +8,8 @@ reload(adwins_cfg)
 qt.instruments.reload(adwin)
 
 # reload AWG channel config
-import measurement.lib.config.awgchannels_lt2 as awg_cfg
-reload(awg_cfg)
+import measurement.lib.config.awgchannels_lt2 as awgcfg
+reload(awgcfg)
 
 # measurement classes
 from measurement.lib.measurement2 import measurement
@@ -21,6 +21,14 @@ reload(ssro)
 from measurement.lib.measurement2.adwin_ssro import sequence
 reload(sequence)
 
+from measurement.lib.measurement2.adwin_ssro import mbi
+reload(mbi)
+
+from measurement.lib.measurement2.adwin_ssro import mbi_espin
+reload(mbi_espin)
+
 # default measurement parameters
 execfile(r'd:\measuring\measurement\scripts\lt2_scripts\m2\msmt_params.py')
 
+# set all the static variables for lt2
+execfile(r'd:\measuring\measurement\scripts\lt2_scripts\m2\lt2_statics.py')
