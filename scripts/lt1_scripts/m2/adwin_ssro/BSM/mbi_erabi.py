@@ -26,7 +26,7 @@ def run(name):
     m.params['sweep_name'] = 'MW pulse duration (ns)'
     m.params['sweep_pts'] = m.params['MW_pulse_durations'] * 1e9
     
-    funcs.finish(m)
+    funcs.finish(m, debug=True)
 
 if __name__ == '__main__':
     run('SIL2_check_pi2pi')
