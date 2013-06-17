@@ -44,10 +44,18 @@ class MW_IQmod_pulse(pulse.Pulse):
     def wf(self, tvals):
         PM_wf = np.ones(len(tvals))     
         idx0 = np.where(tvals >= self.PM_risetime)[0][0]
-        idx1 = np.where(tvals <= self.length - self.PM_risetime)[0][-1] + 1
+        idx1 = np.where(tvals <= self.length - self.PM_risetime)[0][-1]
+
+        # DEBUG
+        # print len(tvals), tvals
+        # print idx0, idx1
+        # print len(tvals[idx0:idx1]), tvals[idx0:idx1]
 
         # correct the time axis -- we want the IQ pulses to be the reference
         tvals -= tvals[idx0] # for the calculation of the wf
+        
+        # DEBUG
+        # print tvals[idx0]
 
         if self.lock_phase_to_element_time:
             self.phase += ((self.frequency * \
@@ -80,7 +88,7 @@ class IQ_CORPSE_pi_pulse(MW_IQmod_pulse):
         self.length_60 = kw.pop('length_60', 0)
         self.length_m300 = kw.pop('length_m300', 0)
         self.length_420 = kw.pop('length_420', 0)
-        self.pulse_delay = kw.pop('pulse_delay', 2e-9)
+        self.pulse_delay = kw.pop('pulse_delay', 1e-9)
 
         self.length = self.length_60 + self.length_m300 + self.length_420 + \
             2*self.pulse_delay + 2*self.PM_risetime
