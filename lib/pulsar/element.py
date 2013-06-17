@@ -191,7 +191,7 @@ class Element:
     
     ### computing the numerical waveform
     def ideal_waveforms(self):
-        tvals = np.arange(self.samples())/self.clock
+        # tvals = np.arange(self.samples())/self.clock
         wfs = {}
 
         # use channels on demand, i.e., only create data when there's a pulse
@@ -199,6 +199,7 @@ class Element:
 
         # we first compute the ideal function values
         for p in self.pulses:
+            tvals = np.arange(self.samples())/self.clock
             psamples = self.pulse_samples(p)
             pulsewfs = self.pulses[p].wf(tvals[:psamples])
             for c in self.pulses[p].channels:
