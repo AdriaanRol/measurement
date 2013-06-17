@@ -30,15 +30,19 @@ class PulsarMeasurement(ssro.IntegratedSSRO):
         self.awg.start()
         
         if wait_for_awg:
+            i=0
             awg_ready = False
-            while not awg_ready:
+            while not awg_ready and i<40:
                 try:
                     if self.awg.get_state() == 'Waiting for trigger':
                         awg_ready = True
                 except:
-                    # usually means awg is still busy and doesn't respond
-                    pass
+                    print 'waiting for awg: usually means awg is still busy and doesnt respond'
+                    print 'waiting', i, '/40'
+                    i=i+1
                 qt.msleep(0.5)
+            if not awg_ready: 
+                raise Exception('AWG not ready')
                
     def generate_sequence(self):
         pass
@@ -155,18 +159,6 @@ class MBI(PulsarMeasurement):
                 self.E_aom.power_to_voltage(
                         self.params['Ex_SP_amplitude'])
 
-        self.adwin_process_params['A_SP_voltage'] = \
-                self.A_aom.power_to_voltage(
-                        self.params['A_SP_amplitude'])
-
-        self.adwin_process_params['Ex_RO_voltage'] = \
-                self.E_aom.power_to_voltage(
-                        self.params['Ex_RO_amplitude'])
-
-        self.adwin_process_params['A_RO_voltage'] = \
-                self.A_aom.power_to_voltage(
-                        self.params['A_RO_amplitude'])
-                       
         self.adwin_process_params['repump_voltage'] = \
                 self.repump_aom.power_to_voltage(
                         self.params['repump_amplitude'])
@@ -248,7 +240,7 @@ class MBI(PulsarMeasurement):
         X = pulselib.MW_IQmod_pulse('MBI MW pulse',
             I_channel = 'MW_Imod', Q_channel = 'MW_Qmod',
             PM_channel = 'MW_pulsemod',
-            frequency = self.params['AWG_MBI_MW_pulse_mod_frq'],
+            frequency = self.params['AWG_MBI_MW_pulse_ssbmod_frq'],
             amplitude = self.params['AWG_MBI_MW_pulse_amp'],
             length = self.params['AWG_MBI_MW_pulse_duration'],
             PM_risetime = self.params['MW_pulse_mod_risetime'])
