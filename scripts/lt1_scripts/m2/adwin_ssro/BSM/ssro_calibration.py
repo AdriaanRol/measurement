@@ -25,7 +25,7 @@ def ssrocalibration(name):
     # ms = 0 calibration
     m.params['A_SP_amplitude'] = 15e-9
     m.params['Ex_SP_amplitude'] = 0.
-    m.params['Ex_RO_amplitude'] = 7e-9 #10e-9
+    m.params['Ex_RO_amplitude'] = 5e-9 #10e-9
 
     #m.autoconfig()
     #m.setup()
@@ -36,7 +36,7 @@ def ssrocalibration(name):
     # ms = 1 calibration
     m.params['A_SP_amplitude'] = 0.
     m.params['Ex_SP_amplitude'] = 10e-9 #10e-9
-    m.params['Ex_RO_amplitude'] = 7e-9 #10e-9
+    m.params['Ex_RO_amplitude'] = 5e-9 #10e-9
 
     m.run()
     m.save('ms1')

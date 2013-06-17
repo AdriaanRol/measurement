@@ -30,16 +30,20 @@ class CORPSEPiCalibration(pulsar_msmt.MBI):
             length_m300 = self.params['CORPSE_pi_m300_duration'],
             length_420 = self.params['CORPSE_pi_420_duration'])
 
+        sync_elt = element.Element('adwin_sync', pulsar=qt.pulsar)
         adwin_sync = pulse.SquarePulse(channel='adwin_sync',
             length = 10e-6, amplitude = 2)
+        sync_elt.append(adwin_sync)
+
+        wait_1us = element.Element('1us_delay', pulsar=qt.pulsar)
+        wait_1us.append(pulse.cp(T, length=1e-6))
 
         elts = []
         for i in range(self.params['pts']):
             e = element.Element('CORPSE-{}'.format(i), pulsar=qt.pulsar)
             e.append(T,
                 pulse.cp(CORPSE_pi,
-                    amplitude=self.params['CORPSE_pi_sweep_amps'][i]),
-                adwin_sync)
+                    amplitude=self.params['CORPSE_pi_sweep_amps'][i]))
             elts.append(e)
 
         # sequence
@@ -47,13 +51,21 @@ class CORPSEPiCalibration(pulsar_msmt.MBI):
         for i,e in enumerate(elts):
             seq.append(name = 'MBI-%d' % i, wfname = mbi_elt.name, 
                 trigger_wait = True, goto_target = 'MBI-%d' % i, 
-                jump_target = e.name)
-            seq.append(name = e.name, wfname = e.name,
-                trigger_wait = True)
+                jump_target = e.name+'-0')
+            
+            for j in range(self.params['multiplicity']):
+                seq.append(name = e.name+'-{}'.format(j), 
+                    wfname = e.name,
+                    trigger_wait = (j==0))
+                seq.append(name = 'wait-{}-{}'.format(i,j), 
+                    wfname = wait_1us.name, 
+                    repetitions = self.params['delay_reps'])
+            seq.append(name = 'sync-{}'.format(i),
+                wfname = sync_elt.name)
 
         # program AWG
         if upload:
-            qt.pulsar.upload(mbi_elt, *elts)
+            qt.pulsar.upload(mbi_elt, sync_elt, wait_1us, *elts)
         qt.pulsar.program_sequence(seq)
 
 # class CORPSEPiCalibration
@@ -68,12 +80,14 @@ def sweep_amplitude(name):
 
     # sweep params
     m.params['CORPSE_pi_sweep_amps'] = np.linspace(0.6, 0.8, pts)
+    m.params['multiplicity'] = 11
+    m.params['delay_reps'] = 15
 
     # for the autoanalysis
     m.params['sweep_name'] = 'CORPSE amplitude (V)'
     m.params['sweep_pts'] = m.params['CORPSE_pi_sweep_amps']
     
-    funcs.finish(m, debug=True)
+    funcs.finish(m, debug=False)
 
 if __name__ == '__main__':
-    sweep_amplitude('SIL2_test')
+    sweep_amplitude('sil2_test')

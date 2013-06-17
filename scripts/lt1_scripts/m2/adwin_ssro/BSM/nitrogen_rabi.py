@@ -10,16 +10,16 @@ def run_nmr_frq_scan(name):
     m = BSM.NRabiMsmt('NMR_frq_scan_'+name) # BSM.ElectronRabiMsmt(name)
     BSM.prepare(m)
 
-    pts = 16
+    pts = 21
     m.params['pts'] = pts
     m.params['reps_per_ROsequence'] = 500
     m.params['RF_pulse_multiplicities'] = np.ones(pts).astype(int) * 1
     m.params['RF_pulse_delays'] = np.ones(pts) * 1e-6
 
     # MW pulses
-    m.params['RF_pulse_durations'] = np.ones(pts) * 80e-6
+    m.params['RF_pulse_durations'] = np.ones(pts) * 70e-6
     m.params['RF_pulse_amps'] = np.ones(pts) * 1
-    m.params['RF_pulse_frqs'] = np.linspace(7.11e6, 7.16e6, pts)
+    m.params['RF_pulse_frqs'] = np.linspace(7.12e6, 7.15e6, pts)
 
     # for the autoanalysis
     m.params['sweep_name'] = 'RF frequency (MHz)'
@@ -31,14 +31,14 @@ def run_nmr_rabi(name):
     m = BSM.NRabiMsmt('Nuclear_rabi_'+name) # BSM.ElectronRabiMsmt(name)
     BSM.prepare(m)
 
-    pts = 16
+    pts = 26
     m.params['pts'] = pts
     m.params['reps_per_ROsequence'] = 500
     m.params['RF_pulse_multiplicities'] = np.ones(pts).astype(int) * 1
     m.params['RF_pulse_delays'] = np.ones(pts) * 1e-6
 
     # MW pulses
-    m.params['RF_pulse_durations'] = np.linspace(1e-6, 301e-6, pts)
+    m.params['RF_pulse_durations'] = np.linspace(1e-6, 361e-6, pts)
     m.params['RF_pulse_amps'] = np.ones(pts) * 1
     m.params['RF_pulse_frqs'] = np.ones(pts) + m.params['N_0-1_splitting_ms-1']
 
@@ -46,8 +46,8 @@ def run_nmr_rabi(name):
     m.params['sweep_name'] = 'RF duration (us)'
     m.params['sweep_pts'] = m.params['RF_pulse_durations'] * 1e6
     
-    funcs.finish(m, debug=False)
+    BSM.finish(m, debug=False)
 
 if __name__ == '__main__':
     # run_nmr_frq_scan('sil2')
-    run_nmr_rabi('sil2_test_max_amp')
+    run_nmr_rabi('sil2')

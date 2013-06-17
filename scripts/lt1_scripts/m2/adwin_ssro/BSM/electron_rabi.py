@@ -15,15 +15,15 @@ def run_electron_rabi(name):
 
     m.params['AWG_MBI_MW_pulse_mod_frq'] = leftline
 
-    pts = 16
+    pts = 21
     m.params['pts'] = pts
-    m.params['reps_per_ROsequence'] = 500
+    m.params['reps_per_ROsequence'] = 1000
     m.params['MW_pulse_multiplicities'] = np.ones(pts).astype(int) * 1
     m.params['MW_pulse_delays'] = np.ones(pts) * 100e-9
 
     # MW pulses
-    m.params['MW_pulse_durations'] = np.linspace(0, 500e-9, pts) + 5e-9
-    m.params['MW_pulse_amps'] = np.ones(pts) * 0.8
+    m.params['MW_pulse_durations'] = np.linspace(0, 150e-9, pts) + 10e-9
+    m.params['MW_pulse_amps'] = np.ones(pts) * 0.7
     m.params['MW_pulse_mod_frqs'] = np.ones(pts) * \
         m.params['AWG_MBI_MW_pulse_mod_frq']
 
@@ -58,9 +58,9 @@ def MBI_fidelity(name):
     m.params['sweep_name'] = 'MW mod frq (MHz)'
     m.params['sweep_pts'] = m.params['MW_pulse_mod_frqs']
     
-    funcs.finish(m, debug=False)
+    BSM.finish(m, debug=False)
 
 if __name__ == '__main__':
-    run_electron_rabi('SIL2_find_hard_pi')
+    run_electron_rabi('SIL2_find_pi2')
     # MBI_fidelity('SIL2_test_MBI_fidelity_no_driving')
 

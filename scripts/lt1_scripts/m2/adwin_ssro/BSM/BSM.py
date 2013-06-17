@@ -34,6 +34,16 @@ def finish(m, upload=True, debug=False):
         m.save()
         m.finish()
 
+def phaseref(frequency, time, offset=0):
+    return ((frequency*time + offset/360.) % 1) * 360.
+
+def missing_grains(time, clock=1e9, granularity=4):
+    if int(time*clock + 0.5) < 960:
+        return 960 - int(time*clock + 0.5)
+
+    grains = int(time*clock + 0.5)
+    return granularity - grains%granularity
+
 ### msmt class
 class BSMMsmt(pulsar_msmt.MBI):
     mprefix = 'BSM'
@@ -120,13 +130,24 @@ class BSMMsmt(pulsar_msmt.MBI):
             length = 100e-9, amplitude = 0)
 
         self.N_pulse = pulselib.RF_erf_envelope(
-            channel = 'RF')
+            channel = 'RF',
+            frequency = self.params['N_0-1_splitting_ms-1'])
 
+        self.N_pi = pulselib.RF_erf_envelope(
+            channel = 'RF',
+            frequency = self.params['N_0-1_splitting_ms-1'],
+            length = self.params['N_pi_duration'],
+            amplitude = self.params['N_pi_amp'])
+
+        self.N_pi2 = pulselib.RF_erf_envelope(
+            channel = 'RF',
+            frequency = self.params['N_0-1_splitting_ms-1'],
+            length = self.params['N_pi2_duration'],
+            amplitude = self.params['N_pi2_amp'])
 
         ### synchronizing, etc
         self.adwin_sync = pulse.SquarePulse(channel='adwin_sync',
             length = 10e-6, amplitude = 2)
-
 
         ### useful elements
         self.mbi_elt = self._MBI_element()
@@ -293,7 +314,7 @@ class ElectronMultiPulses(ElectronReadoutMsmt):
 ### reading out the nuclear spin only
 
 class NReadoutMsmt(ElectronReadoutMsmt):
-    mprefix = 'BSM_Readout'
+    mprefix = 'BSM_NReadout'
 
     def generate_sequence(self, upload=True):
         # load all the other pulsar resources
@@ -301,7 +322,7 @@ class NReadoutMsmt(ElectronReadoutMsmt):
         self.sweep_elements = self.get_sweep_elements()
         
         N_RO_CNOT_elt = element.Element('N-RO CNOT', pulsar=qt.pulsar)
-        N_RO_CNOT_elt.append(self.T)
+        N_RO_CNOT_elt.append(pulse.cp(self.T, length=500e-9))
         N_RO_CNOT_elt.append(self.pi2pi_m1)
 
         # create the sequence
@@ -319,6 +340,8 @@ class NReadoutMsmt(ElectronReadoutMsmt):
                 *flattened_sweep_elements)
         
         qt.pulsar.program_sequence(seq)
+
+# class NReadoutMsmt
 
 class NRabiMsmt(NReadoutMsmt):
     mprefix = 'BSM_NRabi'
@@ -342,17 +365,76 @@ class NRabiMsmt(NReadoutMsmt):
 
         return elts
 
+# class NRabiMsmt
+
+class NTomo(NReadoutMsmt):
+    mprefix = 'BSM_NTomo'
+
+    def autoconfig(self):
+        NReadoutMsmt.autoconfig(self)
+
+        self.params['pts'] = 3
+        self.params['tomo_bases'] = ['Z', 'X', 'Y']
+        self.params['tomo_pulse_amps'] = \
+            [0, self.params['N_pi2_amp'], self.params['N_pi2_amp']]
+
+        # Convention phi=0 makes |x>, i.e., rotates around +y
+        self.params['tomo_pulse_phases'] = [0, 180., 90.]
+
+        # for the autoanalysis
+        self.params['sweep_name'] = 'Readout basis (Z, X, Y)'
+        self.params['sweep_pts'] = range(3)
+
+
+    def get_sweep_elements(self):
+        """
+        to lock phases it's important to set the tomo_time_offset parameter.
+        """
+
+        z_element = element.Element('Z Tomo pulse', pulsar=qt.pulsar)
+        z_element.append(pulse.cp(self.TN, length=1e-6))
+
+        x_element = element.Element('X Tomo pulse', pulsar=qt.pulsar)
+        xn = x_element.append(pulse.cp(self.N_pi2, 
+            phase = phaseref(self.N_pi2.frequency, 
+                self.params['tomo_time_offset']) + \
+                self.params['tomo_pulse_phases'][1]))
+
+        y_element = element.Element('Y Tomo pulse', pulsar=qt.pulsar)
+        yn = y_element.append(pulse.cp(self.N_pi2, 
+            phase = phaseref(self.N_pi2.frequency, 
+                self.params['tomo_time_offset']) + \
+                self.params['tomo_pulse_phases'][2]))
+
+        sweep_elements = []
+        for n, tomo_elt in zip(self.params['tomo_bases'],
+            [z_element, x_element, y_element]):
+
+            if type(self.element) == list:
+                elts = [e for e in self.element]
+                elts.append(tomo_elt)
+                sweep_elements.append(elts)
+            else:
+                elts = [self.element, tomo_elt]
+                sweep_elements.append(elts)
+
+        return sweep_elements
+
+# class NTomo
+
 ### reading out first the electron then the nuclear spin
 
 class ENReadoutMsmt(BSMMsmt):
     mprefix = 'BSM_ENReadout'
 
     def autoconfig(self):
-        BSMMsmt.autoconfig(self)
+        self.params['nr_of_ROsequences'] = 2
 
+        BSMMsmt.autoconfig(self)
+        
         self.params['A_SP_durations'] = [
             self.params['repump_after_MBI_duration'],
-            self.params['repump_afer_E_RO_duration'] ]
+            self.params['repump_after_E_RO_duration'] ]
         self.params['A_SP_amplitudes'] = [
             self.params['repump_after_MBI_amplitude'],
             self.params['repump_after_E_RO_amplitude'] ]
@@ -371,7 +453,7 @@ class ENReadoutMsmt(BSMMsmt):
         self.sweep_elements = self.get_sweep_elements()
 
         # CNOT element for nuclear spin readout
-        N_RO_CNOT_elt = element.Element('N-RO CNOT')
+        N_RO_CNOT_elt = element.Element('N-RO CNOT', pulsar=qt.pulsar)
         N_RO_CNOT_elt.append(self.pi2pi_m1)
 
         # create the sequence
@@ -384,10 +466,11 @@ class ENReadoutMsmt(BSMMsmt):
 
         # program AWG
         if upload:
-            qt.pulsar.upload(mbi_elt, sync_elt, 
+            qt.pulsar.upload(self.mbi_elt, self.sync_elt, 
                 N_RO_CNOT_elt, *flattened_sweep_elements)
         
         qt.pulsar.program_sequence(seq)
+
 
 
 
