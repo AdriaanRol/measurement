@@ -205,7 +205,7 @@ class LabjackAdwinLaserScan(LaserFrequencyScan):
         self.set_laser_voltage = lambda x: self.labjack.__dict__['set_bipolar_dac'+str(labjack_dac_nr)](x)
         self.get_laser_voltage = lambda : self.labjack.__dict__['get_bipolar_dac'+str(labjack_dac_nr)]()
         self.get_frequency = lambda x : \
-                qt.instruments['wavemeter'].get_channel_frequency(x) * 1e3
+                qt.instruments['physical_adwin'].Get_FPar(x+40)
         
             
         self.set_laser_voltage_yellow = lambda x: self.labjack.__dict__['set_bipolar_dac'+str(labjack_dac_nr_yellow)](x)
@@ -251,22 +251,23 @@ class LabjackAdwinLaserScan(LaserFrequencyScan):
 
         if self.use_mw:
             self.mw.set_status('off')
-        self.gate_scan_to_voltage(0.)
+        if self.set_gate:
+            self.gate_scan_to_voltage(0.)
 
 
-def red_yellow_laser_scan(name,gate):
-    labjack_dac_nr=0 # 0 is coarse and 1 is fine for NF
-    labjack_dac_nr_yellow=2 # 2 is coarse and 3 is fine for yellow
+def red_yellow_laser_scan(name,gate=0.):
+    labjack_dac_nr=2 # 2 is coarse and 3 is fine for NF
+    labjack_dac_nr_yellow=0 # 0 is coarse and 1 is fine for yellow
     m = LabjackAdwinLaserScan(name,labjack_dac_nr,labjack_dac_nr_yellow)
     
     # Hardware setup
     m.wm_channel = 3
-    m.frq_offset = 470400
+    m.frq_offset = 0
     m.frq_factor = 1
     m.counter_channel = 0
 
     m.wm_channel_yellow = 2
-    m.frq_offset_yellow = 521220
+    m.frq_offset_yellow = 0
     m.frq_factor_yellow = 1
     
     m.wm_channel_hene = 5
@@ -282,9 +283,9 @@ def red_yellow_laser_scan(name,gate):
     
     #Scan setup red
     m.laser_power = 5e-9
-    m.start_voltage = 0
+    m.start_voltage = 2
     m.pump_voltage = -1.15
-    m.stop_voltage = -6.
+    m.stop_voltage = -4.5
     m.pts = 1000
     m.integration_time = 50 # ms
     

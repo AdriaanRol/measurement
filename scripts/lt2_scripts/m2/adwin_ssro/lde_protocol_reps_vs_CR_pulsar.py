@@ -8,11 +8,66 @@ import measurement.lib.measurement2.measurement as m2
 from measurement.lib.measurement2.adwin_ssro import ssro
 import msvcrt
 from measurement.lib.config import awgchannels_lt2 as awgcfg
+from measurement.lib.measurement2.adwin_ssro import pulsar as pulsar_msmt
+from measurement.lib.pulsar import pulse, pulselib, element, pulsar
 
-from measurement.lib.measurement2.adwin_ssro import sequence
+class EOMAOMPulse(pulse.Pulse):
+    def __init__(self, eom_channel, aom_channel, name, **kw):
+        pulse.Pulse.__init__(self, name)
+        self._eom_channel = eom_channel
+        self._aom_channel = aom_channel
 
-class LDEvsCR(pulsar.PulsarMeasurement):
-    mprefix = 'LDEvsCR'
+        self.channels=[eom_channel,aom_channel] 
+                                               
+        self.eom_pulse_duration        = kw.pop('eom_pulse_duration'                ,2) 
+        self.eom_off_duration          = kw.pop('eom_off_duration'                  ,300)
+        self.eom_off_amplitude         = kw.pop('eom_off_amplitude'                 ,-.25) #NOTE
+        self.eom_pulse_amplitude       = kw.pop('eom_pulse_amplitude'               ,1.2)
+        self.eom_overshoot_duration1   = kw.pop('eom_overshoot_duration1'           ,14)
+        self.eom_overshoot1            = kw.pop('eom_overshoot1'                    ,-0.03)
+        self.eom_overshoot_duration2   = kw.pop('eom_overshoot_duration2'           ,0)
+        self.eom_overshoot2            = kw.pop('eom_overshoot2'                    ,-0.03)
+        self.timebase                  = kw.pop('eom_timebase'                      ,1e-9)
+        self.aom_risetime              = kw.pop('aom_risetime'                      ,23)
+        
+        self.length=2.*(self.eom_off_duration+self.eom_pulse_duration+\
+            self.eom_overshoot_duration1+self.eom_overshoot_duration2)*self.timebase 
+                                                     
+        
+    def __call__(self):
+        return self
+        
+       
+    def wf(self, tvals):#IMPLEMENT
+        
+        self._t0=self._t0-self.eom_off_duration/2*self.timebase
+        #print len(tvals), 2*(self.eom_off_duration+self.eom_pulse_duration+\
+        #        self.eom_overshoot_duration1+self.eom_overshoot_duration2)
+        if len(tvals)!=2*(self.eom_off_duration+self.eom_pulse_duration+\
+                self.eom_overshoot_duration1+self.eom_overshoot_duration2):
+            raise(Exception('error in eom waveform timebase: EOM pulse currently only supports ns timebase.'))
+        
+        eom_wf=np.zeros(0)
+        eom_wf=np.append(eom_wf,np.ones(self.eom_off_duration/2)*self.eom_off_amplitude)
+        eom_wf=np.append(eom_wf,np.ones(self.eom_pulse_duration)*self.eom_pulse_amplitude)
+        eom_wf=np.append(eom_wf,np.ones(self.eom_overshoot_duration1)*self.eom_overshoot1)
+        eom_wf=np.append(eom_wf,np.ones(self.eom_overshoot_duration2)*self.eom_overshoot2)
+        eom_wf=np.append(eom_wf,np.ones(self.eom_off_duration/2)*self.eom_off_amplitude)
+        #compensation_pulse
+        eom_wf=np.append(eom_wf,-eom_wf)
+        
+        aom_wf=np.zeros(self.eom_off_duration/2-self.aom_risetime)
+        aom_wf=np.append(aom_wf,np.ones(2*self.aom_risetime+self.eom_pulse_duration))
+        aom_wf=np.append(aom_wf,np.zeros(len(tvals)-len(aom_wf)))
+        
+
+        return {
+            self._eom_channel : eom_wf,
+            self._aom_channel : aom_wf,
+            }
+
+class LDEvsCR(pulsar_msmt.PulsarMeasurement):
+    mprefix = 'LDEvsCR' 
     
     def setup(self, wait_for_awg=True):
         ssro.IntegratedSSRO.setup(self)
@@ -27,221 +82,107 @@ class LDEvsCR(pulsar.PulsarMeasurement):
                     if self.awg.get_state() == 'Waiting for trigger':
                         awg_ready = True
                 except:
-                    # usually means awg is still busy and doesn't respond
+                    print 'wait for awg, usually means awg is still busy and doesnt respond'
                     pass
                 qt.msleep(0.5)
     
     
     
-    def generate_sequence(self):
+    def generate_sequence(self,upload=True):
         #rewrite
         chan_hhsync = 'HH_sync'         # historically PH_start
         chan_hh_ma1 = 'HH_MA1'          # historically PH_sync
         chan_plusync = 'PLU_gate'
-        chan_adwin='ADwin_trigger'
+        chan_adwin='adwin_sync'
         
         chan_alaser = 'AOM_Newfocus'
+        chan_yellowlaser = 'AOM_Yellow'
         chan_eom = 'EOM_Matisse'
         chan_eom_aom = 'EOM_AOM_Matisse'
         
-        self.seq.add_element('lde', goto_target='idle', 
-                repetitions= self.params['protocol_reps'] ,
-                trigger_wait=True)
-                
-         # 1: spin pumping
-        self.seq.add_pulse('initialdelay', chan_alaser, 'lde',
-                start = 0, duration = 10, amplitude=0, )
-        self.seq.add_pulse('spinpumping', chan_alaser, 'lde', 
-                start = 0, duration = self.params['SP_duration'],
-                start_reference='initialdelay',
-                link_start_to='end', amplitude=1)
-                
-        if self.params['long_histogram']:
-            self.seq.add_pulse('debug_sync',  chan_hhsync, 'lde',         
-                    start = 0, duration = 50, 
-                    amplitude = 2.0)        
-                
-        start_ref='spinpumping'
-         # 3a: optical pi-pulse no 1
+        qt.pulsar.set_channel_opt(chan_alaser,'high', self.params['AWG_A_SP_voltage'])
+        qt.pulsar.set_channel_opt(chan_yellowlaser,'high', self.params['AWG_yellow_voltage'])
+        
+        e_lde = element.Element('lde', pulsar=qt.pulsar)
+        
+        # 1: spin pumping
+        p_wait=pulse.SquarePulse(chan_alaser, 'initialdelay',
+                length = 10e-9, amplitude = 0)
+        last=e_lde.add(p_wait)
+        
+        p_sp=pulse.SquarePulse(chan_alaser, 'spinpumping',
+                length = self.params['AWG_SP_duration'], amplitude = 1)
+        p_yellow=pulse.SquarePulse(chan_yellowlaser, 'yellowpumping',
+                length = self.params['AWG_yellow_duration'], amplitude = 1)
+        e_lde.add(p_yellow, refpulse=last, refpoint='end')
+        last=e_lde.add(p_sp, refpulse=last, refpoint='end')
+        
+        p_sync=pulse.SquarePulse(chan_hhsync,'debug_sync',        
+                length = 50e-9, amplitude = 1)      
+        p_hh_marker=pulse.SquarePulse(chan_hh_ma1, 'hh_marker', length=50e-9,
+                amplitude=1)
+        P_eom_aom=EOMAOMPulse(chan_eom,chan_eom_aom,'opt_pi',**self.eom_pars)
+        
+        # opt pi 1
         i = 1
-
-        #NOTE should be 2.0 amp
-        if  self.params['long_histogram']:
-            hhsync1_amp=0.0
+        if self.params['long_histogram']:
+            e_lde.add(p_sync)
+            hhsync_amp=0
         else:
-            hhsync1_amp=2.0
+            hhsync_amp=1
+            
+        last=e_lde.add(pulse.cp(p_sync(amplitude=hhsync_amp)),name='start'+str(i), t0= self.params['wait_after_sp'],
+                refpulse=last, refpoint='end')   
+        e_lde.add(p_hh_marker,name='mrkr'+str(i), t0 = -20e-9,
+                refpulse=last, refpoint='start') 
+        last=e_lde.add(pulse.cp(p_sync(amplitude=0)),name='start'+str(i)+'delay',
+                refpulse=last, refpoint='end') 
+        
 
-        self.seq.add_pulse('start'+str(i),  chan_hhsync, 'lde',         
-                start = self.params['wait_after_sp'], duration = 50, 
-                amplitude = hhsync1_amp, start_reference = start_ref,  
-                link_start_to = 'end')
-        last = 'start'+str(i)
-
-        self.seq.add_pulse('mrkr'+str(i), chan_hh_ma1, 'lde',
-                start=-20, duration=50,
-                amplitude=2.0, start_reference=last,
-                link_start_to='start')
-
-        self.seq.add_pulse('start'+str(i)+'delay',  chan_hhsync, 'lde', 
-                start = 0, duration = 50, amplitude = 0,
-                start_reference = last,  link_start_to = 'end') 
-        last = 'start'+str(i)+'delay'
-
-        self.seq.add_pulse('AOM'+str(i),  chan_eom_aom, 'lde', 
-                start = self.params['aom_start'], duration = self.params['aom_duration'], 
-                start_reference = last, link_start_to = 'start')
-
-        self.seq.add_pulse('EOM_off'+str(i),  chan_eom, 'lde', 
-                amplitude = self.params['eom_off_amplitude'],
-                start = self.params['eom_start'], duration = self.params['eom_off_duration'], 
-                start_reference = last, link_start_to = 'start')
-
-        self.seq.add_pulse('EOM_pulse'+str(i),  chan_eom, 'lde', 
-                amplitude = self.params['eom_pulse_amplitude'] - self.params['eom_off_amplitude'],
-                start = self.params['eom_start']+ self.params['eom_off_duration']/2 + \
-                        self.params['eom_pulse_offset'], duration = self.params['eom_pulse_duration'], 
-                start_reference = last, link_start_to = 'start')
-
-        self.seq.add_pulse('EOM_overshoot1'+str(i),  chan_eom, 'lde', 
-                amplitude = self.params['eom_overshoot1'],
-                start = self.params['eom_start'] + self.params['eom_off_duration']/2 + \
-                        self.params['eom_pulse_offset'] + self.params['eom_pulse_duration'], 
-                duration = self.params['eom_overshoot_duration1'], 
-                start_reference = last, link_start_to = 'start')
-
-        self.seq.add_pulse('EOM_overshoot2'+str(i),  chan_eom, 'lde', 
-                amplitude = self.params['eom_overshoot2'],
-                start = self.params['eom_start'] + self.params['eom_off_duration']/2 + \
-                        self.params['eom_pulse_offset'] + self.params['eom_pulse_duration'] + \
-                        self.params['eom_overshoot_duration1'], 
-                duration = self.params['eom_overshoot_duration2'], 
-                start_reference = last, link_start_to = 'start')
-
-        self.seq.add_pulse('EOM_off_comp'+str(i),  chan_eom, 'lde', 
-                amplitude = -self.params['eom_off_amplitude'],
-                start = self.params['eom_start']+self.params['eom_off_duration'], 
-                duration = self.params['eom_off_duration'], 
-                start_reference = last, link_start_to = 'start')
-
-        self.seq.add_pulse('EOM_pulse_comp'+str(i),  chan_eom, 'lde', 
-                amplitude = -self.params['eom_pulse_amplitude'] + self.params['eom_off_amplitude'],
-                start = self.params['eom_start']+self.params['eom_off_duration'] + \
-                        int(self.params['eom_off_duration']/2) + self.params['eom_pulse_offset'], 
-                duration = self.params['eom_pulse_duration'], 
-                start_reference = last, link_start_to = 'start')
-
-        self.seq.add_pulse('EOM_overshoot1_comp'+str(i),  chan_eom, 'lde', 
-                amplitude = -self.params['eom_overshoot1'], 
-                start = self.params['eom_start']+self.params['eom_off_duration'] + \
-                        int(self.params['eom_off_duration']/2) + self.params['eom_pulse_offset'] + \
-                        self.params['eom_pulse_duration'], 
-                duration = self.params['eom_overshoot_duration1'], 
-                start_reference = last, link_start_to = 'start')
-
-        self.seq.add_pulse('EOM_overshoot2_comp'+str(i),  chan_eom, 'lde', 
-                amplitude = -self.params['eom_overshoot2'], 
-                start = self.params['eom_start']+self.params['eom_off_duration'] + \
-                        int(self.params['eom_off_duration']/2) + self.params['eom_pulse_offset'] + \
-                        self.params['eom_pulse_duration'] + self.params['eom_overshoot_duration1'], 
-                duration = self.params['eom_overshoot_duration2'], 
-                start_reference = last, link_start_to = 'start')
-        last = 'EOM_pulse'+str(i)
-
-        if  self.params['long_histogram']:
-            hhsync2_amp=0.0
-        else:
-            hhsync2_amp=2.0
+        last=e_lde.add(P_eom_aom, name='eom_pulse'+str(i), t0= self.params['eom_start'],
+                refpulse=last, refpoint = 'start')
+        
+        # opt pi 2
+        
         i = 2    
             
-        self.seq.add_pulse('start'+str(i),  chan_hhsync, 'lde',         
-                start = self.params['opt_pi_separation'], duration = 50, 
-                amplitude = hhsync2_amp, start_reference = 'start'+str(i-1),  
-                link_start_to = 'start') 
-        last = 'start'+str(i)
+        last=e_lde.add(pulse.cp(p_sync(amplitude=hhsync_amp)),name='start'+str(i), t0= self.params['opt_pi_separation'],
+                refpulse='start'+str(i-1), refpoint='start')  
+        last=e_lde.add(pulse.cp(p_sync(amplitude=0)),name='start'+str(i)+'delay',
+                refpulse=last, refpoint='end') 
+        
+        last=e_lde.add(P_eom_aom, name='eom_pulse'+str(i), t0= self.params['eom_start'],
+                refpulse=last, refpoint = 'start')
+        
 
-        self.seq.add_pulse('start'+str(i)+'delay',  chan_hhsync, 'lde', 
-                start = 0, duration = 50, amplitude = 0,
-                start_reference = last,  link_start_to = 'end') 
-        last = 'start'+str(i)+'delay'
-
-        self.seq.add_pulse('AOM'+str(i),  chan_eom_aom, 'lde', 
-                start = self.params['aom_start'], duration = self.params['aom_duration'], 
-                start_reference = last, link_start_to = 'start')
-
-        self.seq.add_pulse('EOM_off'+str(i),  chan_eom, 'lde', 
-                amplitude = self.params['eom_off_amplitude'],
-                start = self.params['eom_start'], duration = self.params['eom_off_duration'], 
-                start_reference = last, link_start_to = 'start')
-
-        self.seq.add_pulse('EOM_pulse'+str(i),  chan_eom, 'lde', 
-                amplitude = self.params['eom_pulse_amplitude'] - self.params['eom_off_amplitude'],
-                start = self.params['eom_start'] + self.params['eom_off_duration']/2 + \
-                        self.params['eom_pulse_offset'], duration = self.params['eom_pulse_duration'], 
-                start_reference = last, link_start_to = 'start')
-
-        self.seq.add_pulse('EOM_overshoot1'+str(i),  chan_eom, 'lde', 
-                amplitude = self.params['eom_overshoot1'],
-                start = self.params['eom_start'] + self.params['eom_off_duration']/2 + \
-                        self.params['eom_pulse_offset'] + self.params['eom_pulse_duration'], 
-                duration = self.params['eom_overshoot_duration1'], 
-                start_reference = last, link_start_to = 'start')
-
-        self.seq.add_pulse('EOM_overshoot2'+str(i),  chan_eom, 'lde', 
-                amplitude = self.params['eom_overshoot2'],
-                start = self.params['eom_start'] + self.params['eom_off_duration']/2 + \
-                        self.params['eom_pulse_offset'] + self.params['eom_pulse_duration'] + \
-                        self.params['eom_overshoot_duration1'], 
-                duration = self.params['eom_overshoot_duration2'], 
-                start_reference = last, link_start_to = 'start')
-
-        self.seq.add_pulse('EOM_off_comp'+str(i),  chan_eom, 'lde', 
-                amplitude = -self.params['eom_off_amplitude'],
-                start = self.params['eom_start']+self.params['eom_off_duration'], 
-                duration = self.params['eom_off_duration'], 
-                start_reference = last, link_start_to = 'start')
-
-        self.seq.add_pulse('EOM_pulse_comp'+str(i),  chan_eom, 'lde', 
-                amplitude = -self.params['eom_pulse_amplitude'] + self.params['eom_off_amplitude'],
-                start = self.params['eom_start']+self.params['eom_off_duration'] + \
-                        int(self.params['eom_off_duration']/2) + self.params['eom_pulse_offset'], 
-                duration = self.params['eom_pulse_duration'], 
-                start_reference = last, link_start_to = 'start')
-
-        self.seq.add_pulse('EOM_overshoot1_comp'+str(i),  chan_eom, 'lde', 
-                amplitude = -self.params['eom_overshoot1'], 
-                start = self.params['eom_start']+self.params['eom_off_duration'] + \
-                        int(self.params['eom_off_duration']/2) + self.params['eom_pulse_offset'] + \
-                        self.params['eom_pulse_duration'], 
-                duration = self.params['eom_overshoot_duration1'], 
-                start_reference = last, link_start_to = 'start')
-
-        self.seq.add_pulse('EOM_overshoot2_comp'+str(i),  chan_eom, 'lde', 
-                amplitude = -self.params['eom_overshoot2'], 
-                start = self.params['eom_start']+self.params['eom_off_duration'] + \
-                        int(self.params['eom_off_duration']/2) + self.params['eom_pulse_offset'] + \
-                        self.params['eom_pulse_duration'] + self.params['eom_overshoot_duration1'], 
-                duration = self.params['eom_overshoot_duration2'], 
-                start_reference = last, link_start_to = 'start')
-        last = 'EOM_pulse'+str(i)                   
-                    
-        self.seq.add_pulse('final delay', chan_hhsync, 'lde',
-                amplitude = 0,
-                duration = self.params['finaldelay'],
-                start = 0,
-                start_reference = last,
-                link_start_to = 'end' )
+        #final delay
+        e_lde.add(pulse.cp(p_wait(length=self.params['finaldelay'])), refpulse=last, refpoint = 'end')
 
         # idle element
-        self.seq.add_element('idle', goto_target='lde')
-        self.seq.add_pulse('empty', chan_alaser, 'idle', start=0, duration = 200, 
-            amplitude = 0)
-        self.seq.add_pulse('trigger_adwin', chan_adwin, 'idle', start=50,
-            start_reference='empty',link_start_to='end', duration = 2000, amplitude = 1)
+        e_idle=element.Element('idle', pulsar=qt.pulsar)
+        last=e_idle.add(pulse.cp(p_wait(length=200e-9)))
+        p_adwin=pulse.SquarePulse(chan_adwin,'adwin_sync',        
+                length = 2000e-9, amplitude = 1) 
+        e_idle.add(p_adwin, refpulse=last, refpoint = 'end', t0 = 50e-9)
+                    
+        
+        seq = pulsar.Sequence('LDE protocol test sequence wo MW')
+        
+        
+        for i,r in enumerate(self.params['protocol_reps_sweep']):
+            #print i, r
+            seq.append(name = 'LDE-%d' % i, wfname = e_lde.name, 
+                trigger_wait = True,
+                repetitions=r)
             
-            
-            
+            seq.append(name = 'wait-%d' % i, wfname = e_idle.name, 
+                trigger_wait = False)
+        if upload:
+            qt.pulsar.upload(e_lde,e_idle)
+        qt.pulsar.program_sequence(seq)
+        
 current_setting = qt.cfgman['protocols']['current'] 
-def lde_protocol_reps_vs_CR(name):
+def lde_protocol_reps_vs_CR(name,yellow=False):
                   
     m = LDEvsCR(name)
     
@@ -249,42 +190,45 @@ def lde_protocol_reps_vs_CR(name):
     m.params.from_dict(qt.cfgman['protocols'][current_setting]['AdwinSSRO'])
     m.params.from_dict(qt.cfgman['protocols'][current_setting]['AdwinSSRO-integrated'])
     
-    _set_repump_settings(m,False)
+    _set_repump_settings(m,yellow)
     
     m.params['long_histogram']=False
     
-    m.params['eom_pulse_duration']        = 3
-    m.params['eom_pulse_offset']          = 0    
-
-    m.params['eom_aom_amplitude']         = 1.0
-    m.params['eom_off_amplitude']         = -.25 #NOTE
-    m.params['eom_pulse_amplitude']       = 1.2
-    m.params['eom_overshoot_duration1']   = 10
-    m.params['eom_overshoot1']            = -0.03
-    m.params['eom_overshoot_duration2']   = 4
-    m.params['eom_overshoot2']            = -0.03
-    m.params['eom_start']                 = 40
-    m.params['eom_off_duration']          = 300 #NOTE: change this to duration of CORPSE or regular!
-    m.params['pulse_start']               = m.params['eom_start'] + m.params['eom_off_duration']/2 + \
-                                            m.params['eom_pulse_offset']
-    m.params['aom_start']                 = m.params['pulse_start'] -5 -66 #subtract aom rise time
-    m.params['aom_duration']              = 2*23+m.params['eom_pulse_duration'] #30XXX
-    m.params['rabi_cycle_duration']       = 2*m.params['eom_off_duration']
+    m.eom_pars={}
+    m.eom_pars['eom_pulse_duration']        = 2
+    m.eom_pars['eom_pulse_offset']          = 0    
+    
+    m.eom_pars['eom_aom_amplitude']         = 1.0
+    m.eom_pars['eom_off_amplitude']         = -.25 #NOTE
+    m.eom_pars['eom_pulse_amplitude']       = 1.2
+    m.eom_pars['eom_overshoot_duration1']   = 10
+    m.eom_pars['eom_overshoot1']            = -0.29
+    m.eom_pars['eom_overshoot_duration2']   = 4
+    m.eom_pars['eom_overshoot2']            = -0.29
+    
+    m.eom_pars['eom_off_duration']          = 300 #NOTE: change this to duration of CORPSE or regular!
+    m.eom_pars['aom_risetime']              = 12 #subtract aom rise time
+    m.params.from_dict(m.eom_pars)
+    m.params['eom_start']                 = 190e-9
+    m.params['rabi_cycle_duration']       = 2*m.params['eom_off_duration']*1e-9
     m.params['wait_after_opt_pi']         = 280-40 # 280 for regular, determines start of MW pi pulse NOTE: change this for regular pulses!
     m.params['wait_after_opt_pi2_lt1']    = 220-80+132#164 for regular# determines start of b
     m.params['wait_after_opt_pi2_lt2']    = 238-80+114#114 for regular # determines start of basis rotation NOTE: change this for regular pulses!
-    m.params['opt_pi_separation']         = 2*m.params['eom_off_duration']
-    m.params['A_SP_power']                = 20e-9 
-    m.params['A_SP_amplitude']            = m.A_aom.power_to_voltage(m.params['A_SP_power'])
-    m.params['wait_after_sp']             = 500
-    m.params['finaldelay']                = 1000
-    m.params['SP_duration']               = 9000 #changed this for second spin photon try
-    
+    m.params['opt_pi_separation']         = 2*m.params['eom_off_duration']*1e-9
+    m.params['AWG_A_SP_power']            = 170e-9 
+    m.params['AWG_A_SP_voltage']          = get_AWG_AOM_voltage(m.A_aom,m.params['AWG_A_SP_power'] )
+    m.params['AWG_yellow_power']          = 300e-9#m.params['yellow_repump_amplitude'] if yellow else 0
+    m.params['AWG_yellow_voltage']        = get_AWG_AOM_voltage(qt.instruments['YellowAOM'],m.params['AWG_yellow_power'])
+    m.params['wait_after_sp']             = 500e-9
+    m.params['finaldelay']                = 1000e-9
+    m.params['AWG_SP_duration']           = 9000e-9 #changed this for second spin photon try
+    m.params['AWG_yellow_duration']       = 9000e-9 #changed this for second spin photon try
+     
+    m.params['Ex_RO_amplitude']            = 0
     m.params['SSRO_repetitions'] = 1000
-    m.params['protocol_reps_sweep'] = np.linspace(1,100,10)
     m.params['send_AWG_start'] = 1
     m.params['wait_for_AWG_done'] = 1
-    m.params['pts'] = 1
+    
     m.params['repetitions'] = m.params['SSRO_repetitions'] 
      
     m.awgcfg_args=['hydraharp']
@@ -293,19 +237,29 @@ def lde_protocol_reps_vs_CR(name):
                 'AOM_Newfocus': { 'high' : m.params['A_SP_amplitude'], }
                 }}
     
-    m.params['protocol_reps'] = 1
+    m.params['protocol_reps_sweep'] = [1,50,100,500,1000,5000,10000,50000]
+    m.params['pts'] = len(m.params['protocol_reps_sweep'])
+    
+    m.params['sweep_pts']=m.params['protocol_reps_sweep']
+    m.params['sweep_name']='Number of LDE repetitions'
     m.autoconfig()
-    #for r in m.params['protocol_reps_sweep']:
-    #    if (msvcrt.kbhit() and (msvcrt.getch() == 'c')): break
-    #    m.params['protocol_reps'] = r
-    #    m.generate_sequence()
-    #    m.run()
-    #    m.save('reps_%d' % (r))
+
     m.generate_sequence()
+    m.setup()
     m.run()    
     m.save()
     m.finish()
-    
+
+def get_AWG_AOM_voltage(aom,power):
+    ret=0.0
+    if aom.get_cur_controller()=='AWG':
+        ret= aom.power_to_voltage(power)
+    else:
+        aom.apply_voltage(0)
+        aom.set_cur_controller('AWG')
+        ret = aom.power_to_voltage(power)
+        aom.set_cur_controller('ADWIN')
+    return ret    
     
 def _set_repump_settings(m,yellow):
     if yellow:

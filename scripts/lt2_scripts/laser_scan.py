@@ -155,7 +155,7 @@ class LabjackAdwinLaserScan(LaserFrequencyScan):
         self.set_laser_voltage = lambda x: self.labjack.__dict__['set_bipolar_dac'+str(labjack_dac_nr)](x)
         self.get_laser_voltage = lambda : self.labjack.__dict__['get_bipolar_dac'+str(labjack_dac_nr)]()
         self.get_frequency = lambda x : \
-                qt.instruments['wavemeter'].get_channel_frequency(x) * 1e3
+                qt.instruments['physical_adwin'].Get_FPar(x+40)
         self.get_counts = self.adwin.measure_counts
         self.set_gate_voltage = lambda x: self.adwin.set_dac_voltage(('gate',x))
         self.get_gate_voltage = lambda: self.adwin.get_dac_voltage('gate')
@@ -234,12 +234,12 @@ class RedLaserScan(LabjackAdwinLaserScan):
 
             
 def yellow_laser_scan(name):
-    labjack_dac_nr=2 # 2 is coarse and 3 is fine for yellow
+    labjack_dac_nr=0 # 0 is coarse and 1 is fine for yellow
     m = YellowLaserScan(name, labjack_dac_nr)
 
     # Hardware setup
     m.wm_channel = 2
-    m.frq_offset = 521220
+    m.frq_offset = 0
     m.frq_factor = 1
     m.counter_channel = 0    
    
@@ -276,12 +276,12 @@ def yellow_laser_scan(name):
     m.finish_scan()    
     
 def red_laser_scan(name):
-    labjack_dac_nr=0 # 0 is coarse and 1 is fine for NF
+    labjack_dac_nr=2 # 2 is coarse and 3 is fine for NF
     m = RedLaserScan(name,labjack_dac_nr)
     
     # Hardware setup
     m.wm_channel = 3
-    m.frq_offset = 470400
+    m.frq_offset = 0
     m.frq_factor = 1
     m.counter_channel = 0
 
@@ -302,16 +302,16 @@ def red_laser_scan(name):
     
     #Scan setup
     m.laser_power = 3e-9
-    m.start_voltage = 1
-    m.stop_voltage = -5.
+    m.start_voltage = 2
+    m.stop_voltage = -4.5
     m.pts = 900
     m.integration_time = 50 # ms
     
     #Gate scan setup
-    m.set_gate_to_zero_before_repump=False
-    m.set_gate=False
-    m.gate_start_voltage=0
-    m.gate_stop_voltage=0
+    m.set_gate_to_zero_before_repump=True
+    m.set_gate=True
+    m.gate_start_voltage=-0.5
+    m.gate_stop_voltage=-0.5
     m.gate_pts=1
     
     #strain lines
@@ -325,7 +325,7 @@ def red_laser_scan(name):
 if __name__=='__main__':
     
     stools.turn_off_lasers()
-    red_laser_scan('red_scan_coarse_repump_100nW')
+    red_laser_scan('red_scan_coarse')
     #yellow_laser_scan('yellow_1nW')
 
         

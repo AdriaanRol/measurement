@@ -293,7 +293,7 @@ def lde_protocol_reps_vs_CR(name):
                 'AOM_Newfocus': { 'high' : m.params['A_SP_amplitude'], }
                 }}
     
-    m.params['protocol_reps'] = 1
+    m.params['protocol_reps'] = 1000
     m.autoconfig()
     #for r in m.params['protocol_reps_sweep']:
     #    if (msvcrt.kbhit() and (msvcrt.getch() == 'c')): break
