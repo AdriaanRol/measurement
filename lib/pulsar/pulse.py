@@ -39,6 +39,11 @@ class Pulse:
         self.name = name
         self.channels = []
 
+        self.start_offset = 0 # the time within (or outside) the pulse that is the
+                              # 'logical' start of the pulse (for referencing)
+        self.stop_offset = 0  # the time within (or outside) the pulse that is the
+                              # 'logical' stop of the pulse (for referencing)
+
         self._t0 = None
         self._clock = None
 
@@ -55,9 +60,12 @@ class Pulse:
     def t0(self):
         """
         returns start time of the pulse. This is typically
-        set by the sequence element at the time the pulse is added to the 
+        set by the sequence element at the time the pulse is added to the
         element.
         """
+        return self._t0
+
+    def effective_start(self):
         return self._t0
 
     def end(self):
@@ -65,6 +73,12 @@ class Pulse:
         returns the end time of the pulse.
         """
         return self._t0 + self.length
+
+    def effective_stop(self):
+        return self.end() - self.stop_offset
+
+    def effective_length(self):
+        return self.length - self.start_offset - self.stop_offset
 
 ### Some simple pulse definitions.
 class SquarePulse(Pulse):
@@ -109,7 +123,6 @@ class SinePulse(Pulse):
         return self
 
     def wf(self, tvals):
-        tvals = tvals - tvals[0]
         return {
             self.channel : self.amplitude * np.sin(2*np.pi * \
                 (self.frequency * tvals + self.phase/360.))
