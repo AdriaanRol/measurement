@@ -16,5 +16,9 @@ sequence.SequenceSSRO.awgcfg_module = awgcfg
 sequence.SequenceSSRO.awgcfg_args = ['spin','optical_rabi']
 
 mbi.MBIMeasurement.chan_RF  = 'RF' 
-mbi.MBIMeasurement.chan_adwin_sync = 'ADwin_trigger'
+mbi.MBIMeasurement.chan_adwin_sync = 'adwin_sync'
 mbi.MBIMeasurement.physical_adwin = qt.instruments['physical_adwin']
+
+pulsar_msmt.PulsarMeasurement.mwsrc = qt.instruments['SMB100']
+pulsar_msmt.PulsarMeasurement.awg = qt.instruments['AWG']
+pulsar_msmt.PulsarMeasurement.physical_adwin = qt.instruments['physical_adwin']
