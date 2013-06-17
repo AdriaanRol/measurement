@@ -123,7 +123,6 @@ class SinePulse(Pulse):
         return self
 
     def wf(self, tvals):
-        tvals = tvals - tvals[0]
         return {
             self.channel : self.amplitude * np.sin(2*np.pi * \
                 (self.frequency * tvals + self.phase/360.))
