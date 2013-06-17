@@ -187,16 +187,16 @@ class MBI(PulsarMeasurement):
                 np.array(self.params['A_SP_durations'], dtype=int), 28, 1, length)
         self.physical_adwin.Set_Data_Long(
                 np.array(self.params['E_RO_durations'], dtype=int), 29, 1, length)
-        self.physical_adwin.Set_Data_Float(
-                self.A_aom.power_to_voltage(
-                        np.array(self.params['A_SP_amplitudes'])), 
-                    30, 1, length)
-        self.physical_adwin.Set_Data_Float(
-                self.E_aom.power_to_voltage(
-                        np.array(self.params['E_RO_amplitudes'])), 
-                    31, 1, length)
+        
+        v = [ self.A_aom.power_to_voltage(p) for p in self.params['A_SP_amplitudes'] ]
+        self.physical_adwin.Set_Data_Float(np.array(v), 30, 1, length)
+        
+        v = [ self.E_aom.power_to_voltage(p) for p in self.params['E_RO_amplitudes'] ]
+        self.physical_adwin.Set_Data_Float(np.array(v), 31, 1, length)
+        
         self.physical_adwin.Set_Data_Long(
                 np.array(self.params['send_AWG_start'], dtype=int), 32, 1, length)
+        
         self.physical_adwin.Set_Data_Long(
                 np.array(self.params['sequence_wait_time'], dtype=int), 33, 1, length)
                 
