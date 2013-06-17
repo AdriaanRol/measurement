@@ -50,7 +50,7 @@ class SomePulse(pulse.Pulse):
             }
 
 
-e = element.Element('sequence_element', clock=5e9, min_samples=0)
+e = element.Element('sequence_element', clock=1e9, min_samples=0)
 e.define_channel('ch1', delay=1e-9)
 e.define_channel('ch2', delay=10e-9)
 e.define_channel('ch3', delay=15e-9)
@@ -63,16 +63,16 @@ p2 = SomePulse('what a useless pulse')
 # a difference with Lucio's sequencer: the reference time is evaluated
 # at insertion time, i.e. manipulation of pulses inside the element
 # (they are deep copies) can break the reference relation!
-e.add(pulse.cp(p1, amplitude=1, length=10e-8), name='reference')
-e.add(pulse.cp(p1, amplitude=0.5, length=10e-9), t0=10e-9, 
-    refpulse='reference', refpoint='end')
-e.add(pulse.cp(p2, 1e7, 1, 1e-7), t0=10e-9)
+# e.add(pulse.cp(p1, amplitude=1, length=10e-8), name='reference')
+# e.add(pulse.cp(p1, amplitude=0.5, length=10e-9), t0=10e-9, 
+    # refpulse='reference', refpoint='end')
+# e.add(pulse.cp(p2, 1e7, 1, 1e-7), t0=10e-9)
 
 # e.print_overview()
 # view.show_element(e, delay=True) # if delay is false, the channel delay shift
                          # is omitted in the plots (channels are offset then)
 
-e2 = element.Element('sequence_element', clock=1e9, min_samples=0)
+e2 = element.Element('sequence_element', clock=1e8, min_samples=0)
 e2.define_channel('ch1', delay=0e-9)
 e2.define_channel('ch2', delay=0e-9)
 e2.define_channel('ch3', delay=0e-9)
