@@ -18,10 +18,7 @@ class MW_IQmod_pulse(pulse.Pulse):
         self.length = kw.pop('length', 1e-6)
         self.phase = kw.pop('phase', 0.)
         self.PM_risetime = kw.pop('PM_risetime', 0)
-        self.lock_phase_to_element_time = kw.pop(
-            'lock_phase_to_element_time', True)
-        self.phase_lock_time_offset = kw.pop(
-            'phase_lock_time_offset', 0)
+        self.phaselock = kw.pop('phaselock', True)
 
         self.length += 2*self.PM_risetime
         self.start_offset = self.PM_risetime
@@ -34,46 +31,34 @@ class MW_IQmod_pulse(pulse.Pulse):
         self.length = kw.pop('length', self.length-2*self.PM_risetime) + \
             2*self.PM_risetime
         self.phase = kw.pop('phase', self.phase)
-        self.lock_phase_to_element_time = kw.pop(
-            'lock_phase_to_element_time', self.lock_phase_to_element_time)
-        self.phase_lock_time_offset = kw.pop(
-            'phase_lock_time_offset', self.phase_lock_time_offset)
+        self.phaselock = kw.pop('phaselock', self.phaselock)
 
         return self
 
-    def wf(self, tvals):
-        PM_wf = np.ones(len(tvals))     
-        idx0 = np.where(tvals >= self.PM_risetime)[0][0]
-        idx1 = np.where(tvals <= self.length - self.PM_risetime)[0][-1]
+    def chan_wf(self, chan, tvals):
+        if chan == self.PM_channel:
+            return np.ones(len(tvals))
 
-        # DEBUG
-        # print len(tvals), tvals
-        # print idx0, idx1
-        # print len(tvals[idx0:idx1]), tvals[idx0:idx1]
+        else:  
+            idx0 = np.where(tvals >= tvals[0] + self.PM_risetime)[0][0]
+            idx1 = np.where(tvals <= tvals[0] + self.length - self.PM_risetime)[0][-1]
 
-        # correct the time axis -- we want the IQ pulses to be the reference
-        tvals -= tvals[idx0] # for the calculation of the wf
-        
-        # DEBUG
-        # print tvals[idx0]
+            wf = np.zeros(len(tvals))
+            
+            # in this case we start the wave with zero phase at the effective start time
+            # (up to the specified phase)
+            if not self.phaselock:
+                tvals = tvals.copy() - tvals[idx0]
 
-        if self.lock_phase_to_element_time:
-            self.phase += ((self.frequency * \
-                (self._t0 + self.phase_lock_time_offset)) % 1) * 360
+            if chan == self.I_channel:
+                wf[idx0:idx1] += self.amplitude * np.cos(2 * np.pi * \
+                    (self.frequency * tvals[idx0:idx1] + self.phase/360.))
 
-        I_wf = np.zeros(len(tvals))
-        I_wf[idx0:idx1] += self.amplitude * np.cos(2 * np.pi * \
-                (self.frequency * tvals[idx0:idx1] + self.phase/360.))
+            if chan == self.Q_channel:
+                wf[idx0:idx1] += self.amplitude * np.sin(2 * np.pi * \
+                    (self.frequency * tvals[idx0:idx1] + self.phase/360.))
 
-        Q_wf = np.zeros(len(tvals))
-        Q_wf[idx0:idx1] += self.amplitude * np.sin(2 * np.pi * \
-                (self.frequency * tvals[idx0:idx1] + self.phase/360.))
-
-        return {
-            self.I_channel : I_wf,
-            self.Q_channel : Q_wf,
-            self.PM_channel : PM_wf,
-            }
+            return wf
 
 # class MW_IQmod_pulse
 
@@ -109,49 +94,50 @@ class IQ_CORPSE_pi_pulse(MW_IQmod_pulse):
 
         return self
 
-    def wf(self, tvals):
-        PM_wf = np.ones(len(tvals))
-        idx0 = np.where(tvals >= self.PM_risetime)[0][0]
-        idx1 = np.where(tvals <= self.length - self.PM_risetime)[0][-1] + 1
+    def chan_wf(self, chan, tvals):
+        if chan == self.PM_channel:
+            return np.ones(len(tvals))
 
-        start_420 = np.where(tvals <= (self.PM_risetime))[0][-1]
-        end_420 = np.where(tvals <= (self.length_420 + self.PM_risetime))[0][-1]
-        start_m300 = np.where(tvals <= (self.PM_risetime + self.length_420 + \
-            self.pulse_delay))[0][-1]
-        end_m300 = np.where(tvals <= (self.PM_risetime + self.length_420 + \
-            self.pulse_delay + self.length_m300))[0][-1]
-        start_60 = np.where(tvals <= (self.PM_risetime + self.length_420 + \
-            self.pulse_delay + self.length_m300 + self.pulse_delay))[0][-1]
-        end_60 = np.where(tvals <= (self.PM_risetime + self.length_420 + \
-            self.pulse_delay + self.length_m300 + self.pulse_delay + \
-            self.length_60))[0][-1]
+        else:
+            idx0 = np.where(tvals >= tvals[0] + self.PM_risetime)[0][0]
+            idx1 = np.where(tvals <= tvals[0] + self.length - self.PM_risetime)[0][-1] + 1
 
-        # correct the time axis -- we want the IQ pulses to be the reference
-        tvals -= tvals[start_420] # for the calculation of the wf
+            start_420 = np.where(tvals <= (tvals[0] + self.PM_risetime))[0][-1]
+            end_420 = np.where(tvals <= (tvals[0] + self.length_420 + self.PM_risetime))[0][-1]
+            start_m300 = np.where(tvals <= (tvals[0] + self.PM_risetime + self.length_420 + \
+                self.pulse_delay))[0][-1]
+            end_m300 = np.where(tvals <= (tvals[0] + self.PM_risetime + self.length_420 + \
+                self.pulse_delay + self.length_m300))[0][-1]
+            start_60 = np.where(tvals <= (tvals[0] + self.PM_risetime + self.length_420 + \
+                self.pulse_delay + self.length_m300 + self.pulse_delay))[0][-1]
+            end_60 = np.where(tvals <= (tvals[0] + self.PM_risetime + self.length_420 + \
+                self.pulse_delay + self.length_m300 + self.pulse_delay + \
+                self.length_60))[0][-1]
 
-        I_wf = np.zeros(len(tvals))
-        Q_wf = np.zeros(len(tvals))
+            wf = np.zeros(len(tvals))
+            
+            # in this case we start the wave with zero phase at the effective start time
+            # (up to the specified phase)
+            if not self.phaselock:
+                tvals = tvals.copy() - tvals[idx0]
 
-        I_wf[start_420:end_420] += self.amplitude * np.cos(2 * np.pi * \
-                (self.frequency * tvals[start_420:end_420] + self.phase/360.))
-        Q_wf[start_420:end_420] += self.amplitude * np.sin(2 * np.pi * \
-                (self.frequency * tvals[start_420:end_420] + self.phase/360.))
+            if chan == self.I_channel:
+                wf[start_420:end_420] += self.amplitude * np.cos(2 * np.pi * \
+                    (self.frequency * tvals[start_420:end_420] + self.phase/360.))
+                wf[start_m300:end_m300] -= self.amplitude * np.cos(2 * np.pi * \
+                    (self.frequency * tvals[start_m300:end_m300] + self.phase/360.))
+                wf[start_60:end_60] += self.amplitude * np.cos(2 * np.pi * \
+                    (self.frequency * tvals[start_60:end_60] + self.phase/360.))
 
-        I_wf[start_m300:end_m300] -= self.amplitude * np.cos(2 * np.pi * \
-                (self.frequency * tvals[start_m300:end_m300] + self.phase/360.))
-        Q_wf[start_m300:end_m300] -= self.amplitude * np.sin(2 * np.pi * \
-                (self.frequency * tvals[start_m300:end_m300] + self.phase/360.))
+            if chan == self.Q_channel:
+                wf[start_420:end_420] += self.amplitude * np.sin(2 * np.pi * \
+                    (self.frequency * tvals[start_420:end_420] + self.phase/360.))
+                wf[start_m300:end_m300] -= self.amplitude * np.sin(2 * np.pi * \
+                    (self.frequency * tvals[start_m300:end_m300] + self.phase/360.))
+                wf[start_60:end_60] += self.amplitude * np.sin(2 * np.pi * \
+                    (self.frequency * tvals[start_60:end_60] + self.phase/360.))
 
-        I_wf[start_60:end_60] += self.amplitude * np.cos(2 * np.pi * \
-                (self.frequency * tvals[start_60:end_60] + self.phase/360.))
-        Q_wf[start_60:end_60] += self.amplitude * np.sin(2 * np.pi * \
-                (self.frequency * tvals[start_60:end_60] + self.phase/360.))
-
-        return {
-            self.I_channel : I_wf,
-            self.Q_channel : Q_wf,
-            self.PM_channel : PM_wf,
-            }
+            return wf
 
 class RF_erf_envelope(pulse.SinePulse):
     def __init__(self, *arg, **kw):
@@ -159,14 +145,12 @@ class RF_erf_envelope(pulse.SinePulse):
 
         self.envelope_risetime = kw.pop('envelope_risetime', 500e-9)
 
-    def wf(self, tvals):
-        wf = pulse.SinePulse.wf(self, tvals)[self.channel]
+    def chan_wf(self, chan, tvals):
+        wf = pulse.SinePulse.chan_wf(self, chan, tvals)
         
         # TODO make this nicer
         rt = self.envelope_risetime
-        env = (ssp.erf(2./rt*(tvals-rt))/2.+0.5) * \
-                (ssp.erf(-2./rt*(tvals-tvals[-1]+rt))/2. + 0.5)
+        env = (ssp.erf(2./rt*(tvals-tvals[0]-rt))/2.+0.5) * \
+                (ssp.erf(-2./rt*(tvals-tvals[0]-tvals[-1]+rt))/2. + 0.5)
 
-        return {
-            self.channel : wf * env
-            }
+        return wf * env

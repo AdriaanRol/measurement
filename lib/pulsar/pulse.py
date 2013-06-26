@@ -50,12 +50,24 @@ class Pulse:
     def __call__(self):
         return self
 
-    def wf(self, tvals):
+    def get_wfs(self, tvals):
         """
-        The time values in tvals always start with 0. The relative time
-        inside an element is given by self._t0 (can be negative!)
+        The time values in tvals can always be given as one array of time
+        values, or as a separate array for each channel of the pulse.
         """
-        raise NotImplementedError       
+        wfs = {}
+        for c in self.channels:
+            if type(tvals) == dict:
+                wfs[c] = self.chan_wf(c, tvals[c])
+            else:
+                if hasattr(self, 'chan_wf'):
+                    wfs[c] = self.chan_wf(c, tvals)
+                elif hasattr(self, 'wf'):
+                    wfs = self.wf(tvals)
+                else:
+                    raise Exception('Could not find a waveform-generator function!')
+
+        return wfs
 
     def t0(self):
         """
@@ -66,7 +78,7 @@ class Pulse:
         return self._t0
 
     def effective_start(self):
-        return self._t0
+        return self._t0 + self.start_offset
 
     def end(self):
         """
@@ -96,10 +108,8 @@ class SquarePulse(Pulse):
         self.length = kw.pop('length', self.length)
         return self
 
-    def wf(self, tvals):
-        return {
-            self.channel : np.ones(len(tvals)) * self.amplitude,
-            }
+    def chan_wf(self, chan, tvals):
+        return np.ones(len(tvals)) * self.amplitude
 
 
 class SinePulse(Pulse):
@@ -122,9 +132,7 @@ class SinePulse(Pulse):
 
         return self
 
-    def wf(self, tvals):
-        return {
-            self.channel : self.amplitude * np.sin(2*np.pi * \
+    def chan_wf(self, chan, tvals):
+        return self.amplitude * np.sin(2*np.pi * \
                 (self.frequency * tvals + self.phase/360.))
-            }
 

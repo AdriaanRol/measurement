@@ -21,6 +21,9 @@ class Element:
         self.min_samples = kw.pop('min_samples', 960)
         self.pulsar = kw.pop('pulsar', None)
 
+        self.global_time = kw.pop('global_time', False)
+        self.time_offset = kw.pop('time_offset', 0)
+
         self.pulses = {}
         self._channels = {}
         self._last_added_pulse = None
@@ -118,6 +121,9 @@ class Element:
             'low' : low,
             }
 
+    def channel_delay(self, cname):
+        return self._channels[cname]['delay']
+
     ### pulse management
     def _auto_pulse_name(self, base='pulse'):
         i = 0
@@ -126,7 +132,7 @@ class Element:
         return base+'-'+str(i)
 
     def add(self, pulse, name=None, start=0, 
-            refpulse=None, refpoint=None):
+            refpulse=None, refpoint='end'):
 
         pulse = deepcopy(pulse)
         if name == None:
@@ -167,6 +173,24 @@ class Element:
                     refpoint='end')
         return n
 
+    def next_pulse_time(self, cname, t0=0):
+        refpulse = self._last_added_pulse
+
+        if refpulse == None:
+            return 0
+
+        t0 += self.pulses[refpulse].effective_stop()
+        return t0 - self.channel_delay(cname) - self.offset()
+
+    def next_pulse_global_time(self, cname, t0=0):
+        refpulse = self._last_added_pulse
+
+        if refpulse == None:
+            return self.time_offset - self.channel_delay(cname)
+
+        t0 += self.pulses[refpulse].effective_stop()
+        return t0 + self.time_offset - self.offset()
+
     def pulse_start_time(self, pname, cname):
         return self.pulses[pname].t0() - self._channels[cname]['delay'] - \
             self.offset()
@@ -174,6 +198,9 @@ class Element:
     def pulse_end_time(self, pname, cname):
         return self.pulses[pname].end() - self._channels[cname]['delay'] - \
             self.offset()
+
+    def pulse_global_end_time(self, pname, cname):
+        return self.pulse_end_time(pname, cname) + self.time_offset - self.offset()
 
     def pulse_length(self, pname):
         return self.pulses[pname].length
@@ -188,20 +215,43 @@ class Element:
         return self.pulse_start_sample(pname, cname) + \
             self.pulse_samples(pname) - 1
 
+    def effective_pulse_start_time(self, pname, cname):
+        return self.pulse_start_time(pname, cname) + \
+            self.pulses[pname].start_offset
+
+    def effective_pulse_end_time(self, pname, cname):
+        return self.pulse_end_time(pname, cname) - \
+            self.pulses[pname].stop_offset
+
     
     ### computing the numerical waveform
     def ideal_waveforms(self):
         # tvals = np.arange(self.samples())/self.clock
         wfs = {}
+        tvals = np.arange(self.samples())/self.clock  
 
         # use channels on demand, i.e., only create data when there's a pulse
         # in that channel.
 
         # we first compute the ideal function values
         for p in self.pulses:
-            tvals = np.arange(self.samples())/self.clock
-            psamples = self.pulse_samples(p)
-            pulsewfs = self.pulses[p].wf(tvals[:psamples])
+            psamples = self.pulse_samples(p)            
+
+            if not self.global_time:                
+                pulse_tvals = tvals.copy()[:psamples]
+                pulsewfs = self.pulses[p].get_wfs(pulse_tvals)
+            else:                
+                chan_tvals = {}
+                
+                for c in self.pulses[p].channels:
+                    idx0 = self.pulse_start_sample(p,c)
+                    idx1 = self.pulse_end_sample(p,c) + 1
+                    c_tvals = tvals.copy()[idx0:idx1] + \
+                        self.channel_delay(c) + self.time_offset 
+                    chan_tvals[c] = c_tvals
+                
+                pulsewfs = self.pulses[p].get_wfs(chan_tvals)
+
             for c in self.pulses[p].channels:
                 if not c in wfs:
                     wfs[c] = np.zeros(self.samples()) + \
