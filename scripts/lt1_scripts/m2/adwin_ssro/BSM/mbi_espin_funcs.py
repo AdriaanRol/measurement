@@ -4,6 +4,8 @@ import numpy as np
 from measurement.lib.measurement2.adwin_ssro import ssro, pulsar_mbi_espin
 
 def prepare(m):
+    m.params.from_dict(qt.cfgman.get('samples/sil2'))
+
     m.params.from_dict(qt.cfgman.get('protocols/AdwinSSRO'))
     m.params.from_dict(qt.cfgman.get('protocols/sil2-default/AdwinSSRO'))
     m.params.from_dict(qt.cfgman.get('protocols/sil2-default/AdwinSSRO-integrated'))
@@ -12,6 +14,8 @@ def prepare(m):
     m.params.from_dict(qt.cfgman.get('protocols/sil2-default/AdwinSSRO+MBI'))
 
     m.params.from_dict(qt.cfgman.get('protocols/sil2-default/pulses'))
+
+    m.params.from_dict(qt.cfgman.get('protocols/sil2-default/BSM'))
 
     ssro.AdwinSSRO.repump_aom = qt.instruments['GreenAOM']
     m.params['repump_duration'] = m.params['green_repump_duration']

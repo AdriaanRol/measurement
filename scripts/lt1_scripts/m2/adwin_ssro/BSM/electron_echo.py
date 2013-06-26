@@ -56,11 +56,12 @@ class Echo(BSM.ElectronReadoutMsmt):
             missing_grains(fill_pi2_outer + self.pi2_4MHz.effective_length() \
                 + fill_pi2_inner) * 1e-9
 
-        first_pi2_elt = element.Element('first_pi2', pulsar=qt.pulsar)
+        first_pi2_elt = element.Element('first_pi2', pulsar=qt.pulsar,
+            global_time = True)
+        
         first_pi2_elt.append(
             pulse.cp(self.TIQ, length=fill_first_pi2_outer),
-            pulse.cp(self.pi2_4MHz, 
-                lock_phase_to_element_time = False),
+            pulse.cp(self.pi2_4MHz),
             pulse.cp(self.TIQ, length=fill_pi2_inner))
         
         elements.append(first_pi2_elt)
@@ -86,18 +87,19 @@ class Echo(BSM.ElectronReadoutMsmt):
 
             # calculate the phase of the pi pulse - want it to be in phase
             # with the pi/2 pulse
-            pi_phase = phaseref(self.pi2_4MHz.frequency, 
-                self.pi2_4MHz.effective_length() + d * 1e-6)
+            # pi_phase = phaseref(self.pi2_4MHz.frequency, 
+            #     self.pi2_4MHz.effective_length() + d * 1e-6)
 
             fill_pi_after = fill_pi + missing_grains(2 * fill_pi + \
                 self.pi_4MHz.effective_length()) * 1e-9
 
-            pi_elt = element.Element('pi-{}'.format(i), pulsar=qt.pulsar)
+            pi_elt = element.Element('pi-{}'.format(i), pulsar=qt.pulsar,
+                global_time = True, 
+                time_offset = first_pi2_elt.length() + (d-1)*1e-6)
+            
             pi_elt.append(
                 pulse.cp(self.TIQ, length=fill_pi),
-                pulse.cp(self.pi_4MHz, 
-                    lock_phase_to_element_time = False,
-                    phase = pi_phase),
+                pulse.cp(self.pi_4MHz), # , phase = pi_phase),
                 pulse.cp(self.TIQ, length=fill_pi_after))
 
             elements.append(pi_elt)
@@ -111,20 +113,22 @@ class Echo(BSM.ElectronReadoutMsmt):
                     repetitions = (d-1))
 
             # the second pi/2 pulse
-            pi2_phase = phaseref(self.pi2_4MHz.frequency,
-                self.pi2_4MHz.effective_length() + 2*d*1e-6 + \
-                    self.pi_4MHz.effective_length()) + \
-                self.params['second_pi2_phases'][i]
+            #pi2_phase = phaseref(self.pi2_4MHz.frequency,
+            #    self.pi2_4MHz.effective_length() + 2*d*1e-6 + \
+            #        self.pi_4MHz.effective_length()) + \
+            #    self.params['second_pi2_phases'][i]
 
             fill_second_pi2_inner = 1e-6 - fill_pi_after
 
             second_pi2_elt = element.Element('second_pi2-{}'.format(i),
-                pulsar=qt.pulsar)
+                pulsar = qt.pulsar, global_time = True,
+                time_offset = first_pi2_elt.length() + 2*(d-1)*1e-6 + pi_elt.length() )
+            
             second_pi2_elt.append(
                 pulse.cp(self.TIQ, length = fill_second_pi2_inner),
-                pulse.cp(self.pi2_4MHz, 
-                    lock_phase_to_element_time = False,
-                    phase = pi2_phase),
+                pulse.cp(self.pi2_4MHz), # , 
+                #     lock_phase_to_element_time = False,
+                #     phase = pi2_phase),
                 pulse.cp(self.TIQ, length=fill_pi2_outer))
 
             elements.append(second_pi2_elt)
@@ -622,7 +626,7 @@ def echo_delay_sweep(name):
 
     pts = len(reps)
     m.params['pts'] = pts
-    m.params['reps_per_ROsequence'] = 500
+    m.params['reps_per_ROsequence'] = 1000
 
     m.params['delay_repetitions'] = reps
     m.params['second_pi2_phases'] = zeros(pts)
@@ -683,7 +687,7 @@ def run_CORPSE_echo_phase_sweep(name):
     m.params['pts'] = pts
     m.params['reps_per_ROsequence'] = 500
 
-    m.params['delay'] = 50.9e-6
+    m.params['delay'] = 51e-6
     m.params['phases'] = phases
 
     # for the autoanalysis
@@ -692,7 +696,7 @@ def run_CORPSE_echo_phase_sweep(name):
     
     BSM.finish(m, debug=False)
 
-def run_N_uncond_rot_calib(name):
+def run_UNROT_calib(name):
     m = NitrogenUnconditonalRotationCalib(name)
     BSM.prepare(m)
 
@@ -714,7 +718,7 @@ def run_N_uncond_rot_calib(name):
     
     BSM.finish(m, debug=False)
 
-def run_NUrot_vs_timing(name):
+def run_UNROT_vs_timing(name):
     m = NitrogenURotVsTiming(name)
     BSM.prepare(m)
 
@@ -740,11 +744,12 @@ def run_NUrot_vs_timing(name):
     BSM.finish(m, debug=True)
 
 if __name__ == '__main__':
-    # echo_delay_sweep('sil2_first_revival')
+    echo_delay_sweep('sil2_zeroth_revival')
     # echo_phase_sweep('sil2_first_revival')
-    pi_position_sweep('sil2_short_delay_CORPSE_pi')
+    # pi_position_sweep('sil2_short_delay_CORPSE_pi')
+    
     # run_CORPSE_echo_phase_sweep('sil2_first_revival')
     
     # BEFORE USING FIX TIMINGS run_N_uncond_rot_calib('sil2_test')
     
-    # run_NUrot_vs_timing('sil2_try1')
+    # BEFORE USING FIX TIMINGS run_NUrot_vs_timing('sil2_try1')

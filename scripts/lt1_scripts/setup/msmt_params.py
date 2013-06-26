@@ -4,14 +4,23 @@ cfg = qt.cfgman
 
  
 ### sample settings
-cfg.set('samples/sil2/ms-1_cntr_frq',  2.82707e9)
-cfg.set('samples/sil2/N_0-1_splitting_ms-1', 7.13433e6)
-cfg.set('samples/sil2/N_HF_frq',  2.19290e6)
+f_msm1_cntr = 2.827050e9
+N_frq = 7.13444e6
+N_HF_frq = 2.19290e6
+
+cfg.set('samples/sil2/ms-1_cntr_frq',  f_msm1_cntr)
+cfg.set('samples/sil2/N_0-1_splitting_ms-1', N_frq)
+cfg.set('samples/sil2/N_HF_frq', N_HF_frq)
 
 mw0 = 2.8e9
 f0 = cfg.get('samples/sil2/ms-1_cntr_frq') - mw0
 Nsplit = cfg.get('samples/sil2/N_HF_frq')
 finit = f0 - Nsplit
+
+cfg.set('samples/sil2/mIm1_mod_frq',  f_msm1_cntr - mw0 - N_HF_frq)
+cfg.set('samples/sil2/mI0_mod_frq',  f_msm1_cntr - mw0)
+cfg.set('samples/sil2/mIp1_mod_frq',  f_msm1_cntr - mw0 + N_HF_frq)
+
 
 ### protocol settings ###
 
@@ -61,46 +70,58 @@ tof = 11e-9
 cfg.set('protocols/sil2-default/pulses/t_offset', tof)
 
 cfg.set('protocols/sil2-default/pulses/4MHz_pi_duration', tof + 125e-9)
-cfg.set('protocols/sil2-default/pulses/4MHz_pi_amp',  0.679)
+cfg.set('protocols/sil2-default/pulses/4MHz_pi_amp',  0.697)
 cfg.set('protocols/sil2-default/pulses/4MHz_pi_mod_frq',  finit)
 
 cfg.set('protocols/sil2-default/pulses/4MHz_pi2_duration',  tof + 62e-9)
-cfg.set('protocols/sil2-default/pulses/4MHz_pi2_amp',  0.679)
+cfg.set('protocols/sil2-default/pulses/4MHz_pi2_amp',  0.697)
 cfg.set('protocols/sil2-default/pulses/4MHz_pi2_mod_frq',  finit)
 
-cfg.set('protocols/sil2-default/pulses/selective_pi_duration',  2250e-9)
+cfg.set('protocols/sil2-default/pulses/selective_pi_duration',  2300e-9)
 cfg.set('protocols/sil2-default/pulses/selective_pi_amp',  0.02)
 cfg.set('protocols/sil2-default/pulses/selective_pi_mod_frq',  finit)
 
-CORPSE_frq = 3.98e6
+CORPSE_frq = 4.009e6
 cfg.set('protocols/sil2-default/pulses/CORPSE_pi_60_duration', tof/2. + 1./CORPSE_frq/6.)
 cfg.set('protocols/sil2-default/pulses/CORPSE_pi_m300_duration', 5./CORPSE_frq/6.)
 cfg.set('protocols/sil2-default/pulses/CORPSE_pi_420_duration', tof/2. + 7./CORPSE_frq/6.)
 cfg.set('protocols/sil2-default/pulses/CORPSE_pi_mod_frq', finit + Nsplit/2.)
-cfg.set('protocols/sil2-default/pulses/CORPSE_pi_amp',  0.7)
-cfg.set('protocols/sil2-default/pulses/CORPSE_pi_phase_shift', 65.2)
+cfg.set('protocols/sil2-default/pulses/CORPSE_pi_amp',  0.692)
+cfg.set('protocols/sil2-default/pulses/CORPSE_pi_phase_shift', 72.0)
+cfg.set('protocols/sil2-default/pulses/CORPSE_pi_center_shift', 13e-9)
 
 cfg.set('protocols/sil2-default/pulses/pi2pi_mIm1_duration', tof + 395e-9)
-cfg.set('protocols/sil2-default/pulses/pi2pi_mIm1_amp', 0.166)
+cfg.set('protocols/sil2-default/pulses/pi2pi_mIm1_amp', 0.167)
 cfg.set('protocols/sil2-default/pulses/pi2pi_mIm1_mod_frq', finit)
 
+cfg.set('protocols/sil2-default/pulses/pi2pi_mI0_duration', tof + 395e-9)
+cfg.set('protocols/sil2-default/pulses/pi2pi_mI0_amp', 0.173)
+cfg.set('protocols/sil2-default/pulses/pi2pi_mI0_mod_frq', f0)
+
 ### set some other pulses that determinine their values from the ones above
-cfg.set('protocols/sil2-default/pulses/AWG_N_CNOT_pulse_duration', cfg.get('protocols/sil2-default/pulses/pi2pi_mI1_duration'))
-cfg.set('protocols/sil2-default/pulses/AWG_N_CNOT_pulse_amp', cfg.get('protocols/sil2-default/pulses/pi2pi_mI1_amp'))
-cfg.set('protocols/sil2-default/pulses/AWG_N_CNOT_pulse_mod_frq', cfg.get('protocols/sil2-default/pulses/pi2pi_mI1_mod_frq'))
+cfg.set('protocols/sil2-default/pulses/AWG_N_CNOT_pulse_duration', 
+    cfg.get('protocols/sil2-default/pulses/pi2pi_mI1_duration'))
+cfg.set('protocols/sil2-default/pulses/AWG_N_CNOT_pulse_amp', 
+    cfg.get('protocols/sil2-default/pulses/pi2pi_mI1_amp'))
+cfg.set('protocols/sil2-default/pulses/AWG_N_CNOT_pulse_mod_frq', 
+    cfg.get('protocols/sil2-default/pulses/pi2pi_mI1_mod_frq'))
 
 cfg.set('protocols/sil2-default/pulses/AWG_MBI_MW_pulse_mod_frq',  finit)
-cfg.set('protocols/sil2-default/pulses/AWG_MBI_MW_pulse_amp', cfg.get('protocols/sil2-default/pulses/selective_pi_amp'))
-cfg.set('protocols/sil2-default/pulses/AWG_MBI_MW_pulse_duration', cfg.get('protocols/sil2-default/pulses/selective_pi_duration'))
+cfg.set('protocols/sil2-default/pulses/AWG_MBI_MW_pulse_amp', 
+    cfg.get('protocols/sil2-default/pulses/selective_pi_amp'))
+cfg.set('protocols/sil2-default/pulses/AWG_MBI_MW_pulse_duration', 
+    cfg.get('protocols/sil2-default/pulses/selective_pi_duration'))
 
-cfg.set('protocols/sil2-default/pulses/AWG_shelving_pulse_duration', cfg.get('protocols/sil2-default/pulses/4MHz_pi_duration'))
-cfg.set('protocols/sil2-default/pulses/AWG_shelving_pulse_amp', cfg.get('protocols/sil2-default/pulses/4MHz_pi_amp'))
+cfg.set('protocols/sil2-default/pulses/AWG_shelving_pulse_duration', 
+    cfg.get('protocols/sil2-default/pulses/4MHz_pi_duration'))
+cfg.set('protocols/sil2-default/pulses/AWG_shelving_pulse_amp', 
+    cfg.get('protocols/sil2-default/pulses/4MHz_pi_amp'))
 
 ### Nitrogen pulses
-cfg.set('protocols/sil2-default/pulses/N_pi_duration', 90.36e-6 + 1e-6)
+cfg.set('protocols/sil2-default/pulses/N_pi_duration', 91.4e-6)
 cfg.set('protocols/sil2-default/pulses/N_pi_amp', 1)
 
-cfg.set('protocols/sil2-default/pulses/N_pi2_duration', 90.36e-6/2. + 1e-6)
+cfg.set('protocols/sil2-default/pulses/N_pi2_duration', 91.4e-6/2.)
 cfg.set('protocols/sil2-default/pulses/N_pi2_amp', 1)
 
 ### sil2, AdwinSSRO ###
@@ -124,7 +145,7 @@ cfg.set('protocols/sil2-default/AdwinSSRO-integrated/SSRO_duration',  15)
 
 ### sil2, Adwin MBI ###
 cfg.set('protocols/sil2-default/AdwinSSRO+MBI/mw_frq',  mw0)
-cfg.set('protocols/sil2-default/AdwinSSRO+MBI/mw_power',  20)    
+cfg.set('protocols/sil2-default/AdwinSSRO+MBI/mw_power',  20)
 cfg.set('protocols/sil2-default/AdwinSSRO+MBI/Ex_MBI_amplitude',  5e-9)
 cfg.set('protocols/sil2-default/AdwinSSRO+MBI/Ex_SP_amplitude',  10e-9)
 cfg.set('protocols/sil2-default/AdwinSSRO+MBI/MBI_duration',  4)
@@ -141,13 +162,10 @@ cfg.set('protocols/sil2-default/AdwinSSRO+MBI/repump_after_E_RO_amplitude', 25e-
 cfg.set('protocols/sil2-default/AdwinSSRO+MBI/AWG_wait_duration_before_MBI_MW_pulse',  50e-9)
 cfg.set('protocols/sil2-default/AdwinSSRO+MBI/AWG_wait_for_adwin_MBI_duration', 15e-6)
 
-# shelving pulse    
-#cfg.set('protocols/sil2-default/AdwinSSRO+MBI/AWG_RF_pipulse_duration',  87e3
-#cfg.set('protocols/sil2-default/AdwinSSRO+MBI/AWG_RF_pipulse_amp',  1.
-#cfg.set('protocols/sil2-default/AdwinSSRO+MBI/AWG_RF_pipulse_frq',  7.135e6
-#cfg.set('protocols/sil2-default/AdwinSSRO+MBI/AWG_RF_p2pulse_duration',  \
-#    cfg.set('protocols/sil2-default/AdwinSSRO+MBI/AWG_RF_pipulse_duration']/2
-#cfg.set('protocols/sil2-default/AdwinSSRO+MBI/AWG_RF_p2pulse_amp',  1.
-#cfg.set('protocols/sil2-default/AdwinSSRO+MBI/AWG_RF_p2pulse_frq',  7.135e6
+### sil2, BSM
+cfg.set('protocols/sil2-default/BSM/N_ref_frq', N_frq)
+cfg.set('protocols/sil2-default/BSM/e_ref_frq', finit)
 
-#cfg.save_all()
+
+
+cfg.save_all()
