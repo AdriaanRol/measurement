@@ -28,7 +28,8 @@ class ElectronRabi(pulsar_msmt.MBI):
         # electron manipulation elements
         elts = []
         for i in range(self.params['pts']):
-            e = element.Element('ERabi_pt-%d' % i, pulsar=qt.pulsar)
+            e = element.Element('ERabi_pt-%d' % i, pulsar=qt.pulsar,
+                global_time = True)
             e.append(T)
             
             for j in range(self.params['MW_pulse_multiplicities'][i]):
