@@ -5,10 +5,10 @@
 ' Control_long_Delays_for_Stop   = No
 ' Priority                       = High
 ' Version                        = 1
-' ADbasic_Version                = 5.0.6
+' ADbasic_Version                = 5.0.8
 ' Optimize                       = Yes
 ' Optimize_Level                 = 1
-' Info_Last_Save                 = TUD276629  TUD276629\localadmin
+' Info_Last_Save                 = TUD10238  TUD10238\localadmin
 '<Header End>
 ' MBI with the adwin, with dynamic CR-preparation, dynamic MBI-success/fail
 ' recognition, and SSRO at the end. 
@@ -28,12 +28,12 @@
 ' integer parameters: DATA_20[i]
 ' index i   description
 '   1       counter_channel
-'   2       green_laser_DAC_channel
+'   2       repump_laser_DAC_channel
 '   3       Ex_laser_DAC_channel
 '   4       A_laser_DAC_channel
 '   5       AWG_start_DO_channel
 '   6       AWG_done_DI_channel
-'   7       green_repump_duration       (durations in process cycles)
+'   7       repump_duration       (durations in process cycles)
 '   8       CR_duration 
 '   9       SP_E_duration               (pumping time into +/-1 at the beginning)
 '  10       wait_after_pulse_duration   (waiting time after MBI AWG pulse ??)
@@ -48,11 +48,13 @@
 '  19       MBI_threshold               (photon threshold to assume success (given n, >= n is accepted))
 '  20       nr_of_ROsequences           (how many sequences we run after MBI, each of them can contain pumping back on A and readout on E)
 '  21       wait_after_RO_pulse_duration
+'  22       CR_repump
+'  23       repump_after_repetitions
 
 ' float parameters: DATA_21[i]
 ' index i   description
-'   1       green_repump_voltage
-'   2       green_off_voltage
+'   1       repump_voltage
+'   2       repump_off_voltage
 '   3       Ex_CR_voltage
 '   4       A_CR_voltage
 '   5       Ex_SP_voltage
@@ -66,6 +68,7 @@
 ' Data_26[...]               statistics : how often we entered each mode
 
 #INCLUDE ADwinGoldII.inc
+#Include Math.inc
 
 #DEFINE max_SP_bins       500
 #DEFINE max_RO_dim     200000
@@ -91,14 +94,14 @@ DIM DATA_32[max_sequences] AS LONG                ' send AWG start
 DIM DATA_33[max_sequences] AS LONG                ' sequence wait times
 
 DIM counter_channel AS LONG
-DIM green_laser_DAC_channel AS LONG
+DIM repump_laser_DAC_channel AS LONG
 DIM Ex_laser_DAC_channel AS LONG
 DIM A_laser_DAC_channel AS LONG
 DIM AWG_start_DO_channel AS LONG
 DIM AWG_event_jump_DO_channel AS LONG
 DIM AWG_done_DI_channel AS LONG
 DIM send_AWG_start AS LONG
-DIM green_repump_duration AS LONG
+DIM repump_duration AS LONG
 DIM CR_duration AS LONG
 DIM SP_E_duration AS LONG
 DIM SP_filter_duration AS LONG
@@ -114,9 +117,10 @@ DIM A_SP_duration AS LONG
 DIM MBI_threshold AS LONG
 DIM nr_of_ROsequences AS LONG
 DIM wait_after_RO_pulse_duration AS LONG
+DIM repump_after_repetitions AS LONG
 
-DIM green_repump_voltage AS FLOAT
-DIM green_off_voltage AS FLOAT
+DIM repump_voltage AS FLOAT
+DIM repump_off_voltage AS FLOAT
 DIM Ex_CR_voltage AS FLOAT
 DIM A_CR_voltage AS FLOAT
 DIM Ex_SP_voltage AS FLOAT
@@ -148,6 +152,7 @@ dim MBI_attempts as long
 DIM current_cr_threshold AS LONG
 DIM CR_probe AS LONG
 DIM CR_preselect AS LONG
+DIM CR_repump AS LONG
 DIM cr_counts AS LONG
 
 dim awg_in_is_hi, awg_in_was_hi, awg_in_switched_to_hi as long
@@ -155,12 +160,12 @@ dim awg_in_is_hi, awg_in_was_hi, awg_in_switched_to_hi as long
 INIT:
   
   counter_channel              = DATA_20[1]
-  green_laser_DAC_channel      = DATA_20[2]
+  repump_laser_DAC_channel      = DATA_20[2]
   Ex_laser_DAC_channel         = DATA_20[3]
   A_laser_DAC_channel          = DATA_20[4]
   AWG_start_DO_channel         = DATA_20[5]
   AWG_done_DI_channel          = DATA_20[6]
-  green_repump_duration        = DATA_20[7]
+  repump_duration        = DATA_20[7]
   CR_duration                  = DATA_20[8]
   SP_E_duration                = DATA_20[9]
   wait_after_pulse_duration    = DATA_20[10]
@@ -175,9 +180,11 @@ INIT:
   MBI_threshold                = DATA_20[19]
   nr_of_ROsequences            = DATA_20[20]
   wait_after_RO_pulse_duration = DATA_20[21]
+  CR_repump                    = DATA_20[22]
+  repump_after_repetitions     = DATA_20[23]
   
-  green_repump_voltage         = DATA_21[1]
-  green_off_voltage            = DATA_21[2]
+  repump_voltage               = DATA_21[1]
+  repump_off_voltage           = DATA_21[2]
   Ex_CR_voltage                = DATA_21[3]
   A_CR_voltage                 = DATA_21[4]
   Ex_SP_voltage                = DATA_21[5]
@@ -216,7 +223,7 @@ INIT:
   current_MBI_step = 1
   next_MBI_laser_stop = -2
       
-  dac(green_laser_DAC_channel, 3277*green_off_voltage+32768) ' turn off green
+  dac(repump_laser_DAC_channel, 3277*repump_off_voltage+32768) ' turn off green
   dac(Ex_laser_DAC_channel, 32768) ' turn off Ex laser
   dac(A_laser_DAC_channel, 32768) ' turn off Ex laser
 
@@ -238,6 +245,7 @@ INIT:
   ' init parameters
   ' Y after the comment means I (wolfgang) checked whether they're actually used
   ' during the modifications of 2013/01/11
+  par_67 = CR_repump  
   par_68 = CR_probe               ' Y
   PAR_70 = 0                      ' cumulative counts from probe intervals Y
   PAR_71 = 0                      ' below CR threshold events Y
@@ -282,6 +290,7 @@ EVENT:
   ' communication with the outside world for user convenience
   CR_preselect = PAR_75
   CR_probe = PAR_68
+  CR_repump = PAR_67
   PAR_77 = mode
   
   IF (wait_time > 0) THEN
@@ -294,19 +303,25 @@ EVENT:
                
         ' turn on the green laser and start counting
         IF (timer = 0) THEN
-          inc(data_26[mode+1])
-          
-          cnt_clear(counter_pattern)    'clear counter
-          cnt_enable(counter_pattern)	  'turn on counter
-          dac(green_laser_DAC_channel, 3277*green_repump_voltage+32768) ' turn on green
-          repumps = repumps + 1
+          IF ((Mod(repetition_counter,repump_after_repetitions)=0) OR (cr_counts < CR_repump))  THEN  'only repump after x SSRO repetitions
+            inc(data_26[mode+1])
+            
+            cnt_clear(counter_pattern)    'clear counter
+            cnt_enable(counter_pattern)    'turn on counter
+            dac(repump_laser_DAC_channel, 3277*repump_voltage+32768) ' turn on green
+            repumps = repumps + 1
+          ELSE
+            mode = 1
+            timer = -1
+            current_CR_threshold = CR_preselect
+          ENDIF
         
         ELSE 
           
           ' turn off the green laser and get the counts
           ' in any case, we proceed to the CR checking
-          IF (timer = green_repump_duration) THEN
-            dac( green_laser_DAC_channel, 3277*green_off_voltage+32768) ' turn off green
+          IF (timer = repump_duration) THEN
+            dac( repump_laser_DAC_channel, 3277*repump_off_voltage+32768) ' turn off green
             counts = cnt_read( counter_channel)
             cnt_enable(0)
             par_76 = par_76 + counts
@@ -325,7 +340,7 @@ EVENT:
           dac( Ex_laser_DAC_channel, 3277*Ex_CR_voltage+32768) ' turn on Ex laser
           dac( A_laser_DAC_channel, 3277*A_CR_voltage+32768) ' turn on A laser
           cnt_clear(  counter_pattern)    'clear counter
-          cnt_enable( counter_pattern)	  'turn on counter
+          cnt_enable( counter_pattern)    'turn on counter
           
         ELSE 
           
@@ -373,7 +388,7 @@ EVENT:
           inc(data_26[mode+1])
           dac( Ex_laser_DAC_channel, 3277*Ex_SP_voltage+32768) ' turn on Ex laser
           cnt_clear(counter_pattern)    'clear counter
-          cnt_enable(counter_pattern)	  'turn on counter
+          cnt_enable(counter_pattern)    'turn on counter
         
         ELSE          
           ' turn off the lasers, and read the counter
@@ -416,14 +431,14 @@ EVENT:
             
             next_MBI_stop = timer + MBI_duration
             cnt_clear(counter_pattern)    'clear counter
-            cnt_enable(counter_pattern)	  'turn on counter
+            cnt_enable(counter_pattern)    'turn on counter
             dac(Ex_laser_DAC_channel, 3277*Ex_MBI_voltage+32768) ' turn on Ex laser
                       
           else            
             IF (timer = next_MBI_stop) THEN
               dac( Ex_laser_DAC_channel, 32768) ' turn off Ex laser
               counts = cnt_read( counter_channel)
-              cnt_enable(0)	  'turn on counter
+              cnt_enable(0)    'turn on counter
                               
               ' MBI succeeds if the counts surpass the threshold;
               ' we then trigger an AWG jump (sequence has to be long enough!) and move on to SP on A
@@ -517,7 +532,7 @@ EVENT:
           inc(data_26[mode+1])
           
           cnt_clear(counter_pattern)    'clear counter
-          cnt_enable(counter_pattern)	  'turn on counter
+          cnt_enable(counter_pattern)    'turn on counter
           dac(Ex_laser_DAC_channel, 3277 * Ex_RO_voltage + 32768) ' turn on Ex laser
         
         ELSE

@@ -5,7 +5,7 @@
 ' Control_long_Delays_for_Stop   = No
 ' Priority                       = High
 ' Version                        = 1
-' ADbasic_Version                = 5.0.5
+' ADbasic_Version                = 5.0.8
 ' Optimize                       = Yes
 ' Optimize_Level                 = 1
 ' Info_Last_Save                 = TUD10238  TUD10238\localadmin
@@ -28,7 +28,7 @@
 ' integer parameters: DATA_20[i]
 ' index i   description
 '   1       counter_channel
-'   2       green_laser_DAC_channel
+'   2       repump_laser_DAC_channel
 '   3       Ex_laser_DAC_channel
 '   4       A_laser_DAC_channel
 '   5       AWG_start_DO_channel
@@ -48,11 +48,12 @@
 '  19       cycle_duration              (in processor clock cycles, 3.333ns)
 '  20       CR_probe                   
 '  21       repump_after_repetitions
+'  22       CR_repump 
 
 ' float parameters: DATA_21[i]
 ' index i   description
-'   1       green_repump_voltage
-'   2       green_off_voltage
+'   1       repump_voltage
+'   2       repump_off_voltage
 '   3       Ex_CR_voltage
 '   4       A_CR_voltage
 '   5       Ex_SP_voltage
@@ -71,6 +72,7 @@
 '   3   CR_failed
 
 #INCLUDE ADwinGoldII.inc
+#Include Math.inc
 
 #DEFINE max_repetitions 20000
 #DEFINE max_SP_bins       500
@@ -78,22 +80,22 @@
 #DEFINE max_stat           10
 
 DIM DATA_20[25] AS LONG               ' integer parameters
-DIM DATA_21[10] AS FLOAT              ' float parameters
+DIM DATA_21[20] AS FLOAT              ' float parameters
 DIM DATA_22[max_repetitions] AS LONG AT EM_LOCAL  ' CR counts before sequence
-DIM DATA_23[max_repetitions] AS LONG AT EM_LOCAL  ' CR counts after sequence
+DIM DATA_23[max_repetitions] AS LONG AT EM_LOCAL ' CR counts after sequence
 DIM DATA_24[max_SP_bins] AS LONG AT EM_LOCAL      ' SP counts
 DIM DATA_25[max_SSRO_dim] AS LONG AT DRAM_EXTERN  ' SSRO counts
 DIM DATA_26[max_stat] AS LONG AT EM_LOCAL         ' statistics
 
 DIM counter_channel AS LONG
-DIM green_laser_DAC_channel AS LONG
+DIM repump_laser_DAC_channel AS LONG
 DIM Ex_laser_DAC_channel AS LONG
 DIM A_laser_DAC_channel AS LONG
 DIM AWG_start_DO_channel AS LONG
 DIM AWG_done_DI_channel AS LONG
 DIM send_AWG_start AS LONG
 DIM wait_for_AWG_done AS LONG
-DIM green_repump_duration AS LONG
+DIM repump_duration AS LONG
 DIM CR_duration AS LONG
 DIM SP_duration AS LONG
 DIM SP_filter_duration AS LONG
@@ -105,8 +107,8 @@ DIM SSRO_stop_after_first_photon AS LONG
 DIM cycle_duration AS LONG
 DIM repump_after_repetitions AS LONG
 
-DIM green_repump_voltage AS FLOAT
-DIM green_off_voltage AS FLOAT
+DIM repump_voltage AS FLOAT
+DIM repump_off_voltage AS FLOAT
 DIM Ex_CR_voltage AS FLOAT
 DIM A_CR_voltage AS FLOAT
 DIM Ex_SP_voltage AS FLOAT
@@ -126,23 +128,24 @@ DIM CR_failed AS LONG
 DIM total_repump_counts AS LONG
 DIM counter_pattern AS LONG
 DIM AWG_done_DI_pattern AS LONG
-DIM counts, old_counts AS LONG
+DIM counts, old_counts, cr_counts AS LONG
 DIM first AS LONG
 
 DIM current_cr_threshold AS LONG
 DIM CR_probe AS LONG
 DIM CR_preselect AS LONG
+DIM CR_repump AS LONG
 
 INIT:
   counter_channel              = DATA_20[1]
-  green_laser_DAC_channel      = DATA_20[2]
+  repump_laser_DAC_channel     = DATA_20[2]
   Ex_laser_DAC_channel         = DATA_20[3]
   A_laser_DAC_channel          = DATA_20[4]
   AWG_start_DO_channel         = DATA_20[5]
   AWG_done_DI_channel          = DATA_20[6]
   send_AWG_start               = DATA_20[7]
   wait_for_AWG_done            = DATA_20[8]
-  green_repump_duration        = DATA_20[9]
+  repump_duration              = DATA_20[9]
   CR_duration                  = DATA_20[10]
   SP_duration                  = DATA_20[11]
   SP_filter_duration           = DATA_20[12]
@@ -155,9 +158,10 @@ INIT:
   cycle_duration               = DATA_20[19]
   CR_probe                     = DATA_20[20]
   repump_after_repetitions     = DATA_20[21]
+  CR_repump                    = DATA_20[22]
   
-  green_repump_voltage         = DATA_21[1]
-  green_off_voltage            = 0 ' DATA_21[2]
+  repump_voltage               = DATA_21[1]
+  repump_off_voltage           = DATA_21[2]
   Ex_CR_voltage                = DATA_21[3]
   A_CR_voltage                 = DATA_21[4]
   Ex_SP_voltage                = DATA_21[5]
@@ -194,7 +198,7 @@ INIT:
   first               = 0
   wait_after_pulse    = 0
     
-  DAC(green_laser_DAC_channel, 3277*green_off_voltage+32768) ' turn off green
+  DAC(repump_laser_DAC_channel, 3277*repump_off_voltage+32768) ' turn off green
   DAC(Ex_laser_DAC_channel, 3277*Ex_off_voltage+32768) ' turn off Ex laser
   DAC(A_laser_DAC_channel, 3277*A_off_voltage+32768) ' turn off Ex laser
 
@@ -216,6 +220,7 @@ INIT:
   PAR_72 = 0                      ' number of CR checks performed (lt1)
   Par_75 = CR_preselect
   Par_68 = CR_probe
+  par_69 = CR_repump
   par_76 = 0                      ' cumulative counts during repumping
   Par_80 = 0                      ' cumulative counts in PSB when not CR chekging or repummping 
  
@@ -223,6 +228,7 @@ INIT:
 EVENT:
   CR_preselect                 = PAR_75
   CR_probe                     = PAR_68
+  CR_repump                    = PAR_69
 
   IF (wait_after_pulse > 0) THEN
     wait_after_pulse = wait_after_pulse - 1
@@ -230,13 +236,19 @@ EVENT:
     SELECTCASE mode
       CASE 0    ' green repump
         IF (timer = 0) THEN
-          CNT_CLEAR( counter_pattern)    'clear counter
-          CNT_ENABLE(counter_pattern)	  'turn on counter
-          DAC(green_laser_DAC_channel, 3277*green_repump_voltage+32768) ' turn on green
-          repumps = repumps + 1
+          IF ((Mod(repetition_counter,repump_after_repetitions)=0) OR (cr_counts < CR_repump))  THEN  'only repump after x SSRO repetitions
+            CNT_CLEAR( counter_pattern)    'clear counter
+            CNT_ENABLE(counter_pattern)    'turn on counter
+            DAC(repump_laser_DAC_channel, 3277*repump_voltage+32768) ' turn on green
+            repumps = repumps + 1
+          ELSE
+            mode = 1
+            timer = -1
+            current_CR_threshold = CR_preselect
+          ENDIF
         ELSE 
-          IF (timer = green_repump_duration) THEN
-            DAC(green_laser_DAC_channel, 3277*green_off_voltage+32768) ' turn off green
+          IF (timer = repump_duration) THEN
+            DAC(repump_laser_DAC_channel, 3277*repump_off_voltage+32768) ' turn off green
             counts = CNT_READ(counter_channel)
             CNT_ENABLE(0)
             total_repump_counts = total_repump_counts + counts
@@ -252,28 +264,28 @@ EVENT:
           DAC(Ex_laser_DAC_channel, 3277*Ex_CR_voltage+32768) ' turn on Ex laser
           DAC(A_laser_DAC_channel, 3277*A_CR_voltage+32768) ' turn on A laser
           CNT_CLEAR( counter_pattern)    'clear counter
-          CNT_ENABLE(counter_pattern)	  'turn on counter
+          CNT_ENABLE(counter_pattern)    'turn on counter
           INC(PAR_72)
         ELSE 
           IF (timer = CR_duration) THEN
             DAC(Ex_laser_DAC_channel, 3277*Ex_off_voltage+32768) ' turn off Ex laser
             DAC(A_laser_DAC_channel, 3277*A_off_voltage+32768) ' turn off A laser
-            counts = CNT_READ(counter_channel)
+            cr_counts = CNT_READ(counter_channel)
             CNT_ENABLE(0)
-            PAR_70 = PAR_70 + counts
+            PAR_70 = PAR_70 + cr_counts
             
             IF (first > 0) THEN ' first CR after SSRO sequence
-              DATA_23[repetition_counter] = counts
+              DATA_23[repetition_counter] = cr_counts
               first = 0
             ENDIF
             
-            IF (counts < current_cr_threshold) THEN
+            IF (cr_counts < current_cr_threshold) THEN
               mode = 0
               inc(CR_failed)
               inc(PAR_71)
             ELSE
               mode = 2
-              DATA_22[repetition_counter+1] = counts  ' CR before next SSRO sequence
+              DATA_22[repetition_counter+1] = cr_counts  ' CR before next SSRO sequence
               current_cr_threshold = CR_probe
             ENDIF
             
@@ -286,7 +298,7 @@ EVENT:
           DAC(Ex_laser_DAC_channel, 3277*Ex_SP_voltage+32768) ' turn on Ex laser
           DAC(A_laser_DAC_channel, 3277*A_SP_voltage+32768)   ' turn on A laser
           CNT_CLEAR( counter_pattern)    'clear counter
-          CNT_ENABLE(counter_pattern)	  'turn on counter
+          CNT_ENABLE(counter_pattern)    'turn on counter
           old_counts = 0
         ELSE 
           counts = CNT_READ(counter_channel)
@@ -313,7 +325,7 @@ EVENT:
       CASE 3    ' SP filter (postselection)
         IF (timer = 0) THEN
           CNT_CLEAR( counter_pattern)    'clear counter
-          CNT_ENABLE(counter_pattern)	  'turn on counter
+          CNT_ENABLE(counter_pattern)    'turn on counter
         ELSE 
           IF (timer = SP_filter_duration) THEN
             DAC(Ex_laser_DAC_channel, 32768) ' turn off Ex laser
@@ -376,7 +388,7 @@ EVENT:
       CASE 5    ' spin readout
         IF (timer = 0) THEN
           CNT_CLEAR( counter_pattern)    'clear counter
-          CNT_ENABLE(counter_pattern)	  'turn on counter
+          CNT_ENABLE(counter_pattern)    'turn on counter
           DAC(Ex_laser_DAC_channel, 3277*Ex_RO_voltage+32768) ' turn on Ex laser
           DAC(A_laser_DAC_channel, 3277*A_RO_voltage+32768) ' turn on A laser
           old_counts = 0
