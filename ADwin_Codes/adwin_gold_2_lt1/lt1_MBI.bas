@@ -189,8 +189,8 @@ INIT:
   A_CR_voltage                 = DATA_21[4]
   Ex_SP_voltage                = DATA_21[5]
   Ex_MBI_voltage               = DATA_21[6]  
-  Ex_off_voltage               = DATA_21[9]
-  A_off_voltage                = DATA_21[10]
+  Ex_off_voltage               = DATA_21[7]
+  A_off_voltage                = DATA_21[8]
   ' initialize the data arrays
   FOR i = 1 TO max_sweep_dim
     DATA_22[i] = 0
@@ -224,8 +224,8 @@ INIT:
   next_MBI_laser_stop = -2
       
   dac(repump_laser_DAC_channel, 3277*repump_off_voltage+32768) ' turn off green
-  dac(Ex_laser_DAC_channel, 32768) ' turn off Ex laser
-  dac(A_laser_DAC_channel, 32768) ' turn off Ex laser
+  dac(Ex_laser_DAC_channel,3277*Ex_off_voltage+32768) ' turn off Ex laser
+  dac(A_laser_DAC_channel, 3277*A_off_voltage+32768) ' turn off Ex laser
 
   cnt_enable(0000b)'turn off all counters
   cnt_mode(counter_channel,00001000b) 'configure counter
@@ -352,8 +352,8 @@ EVENT:
             PAR_70 = PAR_70 + cr_counts
             INC(PAR_72)
             
-            dac( Ex_laser_DAC_channel, 32768) ' turn off Ex laser
-            dac( A_laser_DAC_channel, 32768) ' turn off A laser
+            dac( Ex_laser_DAC_channel,3277*Ex_off_voltage+ 32768) ' turn off Ex laser
+            dac( A_laser_DAC_channel,3277*A_off_voltage+32768) ' turn off A laser
             DATA_22[seq_cntr] = cr_counts  ' CR before next SSRO sequence
             
             ' if it's the first attempt after a full sequence, we save it.
@@ -394,8 +394,8 @@ EVENT:
           ' turn off the lasers, and read the counter
           IF (timer = SP_E_duration) THEN
             cnt_enable(0)
-            dac( Ex_laser_DAC_channel, 32768) ' turn off Ex laser
-            dac( A_laser_DAC_channel, 32768) ' turn off A laser
+            dac( Ex_laser_DAC_channel, 3277*Ex_off_voltage+32768) ' turn off Ex laser
+            dac( A_laser_DAC_channel, 3277*A_off_voltage+32768) ' turn off A laser
             
             mode = 3
             wait_time = wait_after_pulse_duration
@@ -436,7 +436,7 @@ EVENT:
                       
           else            
             IF (timer = next_MBI_stop) THEN
-              dac( Ex_laser_DAC_channel, 32768) ' turn off Ex laser
+              dac( Ex_laser_DAC_channel,3277*Ex_off_voltage+ 32768) ' turn off Ex laser
               counts = cnt_read( counter_channel)
               cnt_enable(0)    'turn on counter
                               
@@ -481,8 +481,8 @@ EVENT:
           
           ' when we're done, turn off the laser and proceed to the sequence
           IF (timer = A_SP_duration) THEN
-            dac( Ex_laser_DAC_channel, 32768) ' turn off Ex laser
-            dac( A_laser_DAC_channel, 32768) ' turn off A laser
+            dac( Ex_laser_DAC_channel,3277*Ex_off_voltage+ 32768) ' turn off Ex laser
+            dac( A_laser_DAC_channel, 3277*A_off_voltage+32768) ' turn off A laser
             wait_time = wait_after_pulse_duration
             
             mode = 5
@@ -539,7 +539,7 @@ EVENT:
           counts = cnt_read(counter_channel) 
           
           IF ((timer = RO_duration) OR counts > 0) THEN
-            dac(Ex_laser_DAC_channel, 32768) ' turn off Ex laser
+            dac(Ex_laser_DAC_channel,3277*Ex_off_voltage+ 32768) ' turn off Ex laser
 
             IF (counts > 0) THEN
               i = repetition_counter

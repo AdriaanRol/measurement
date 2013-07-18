@@ -6,7 +6,7 @@ from measurement.lib.measurement2.adwin_ssro import pulsar as pulsar_msmt
 from measurement.lib.pulsar import pulse, pulselib, element, pulsar
 
 
-def prepare(m):
+def prepare(m, yellow = False):
     m.params.from_dict(qt.cfgman.get('samples/sil2'))
 
     m.params.from_dict(qt.cfgman.get('protocols/AdwinSSRO'))
@@ -19,12 +19,21 @@ def prepare(m):
     m.params.from_dict(qt.cfgman.get('protocols/sil2-default/pulses'))
 
     m.params.from_dict(qt.cfgman.get('protocols/sil2-default/BSM'))
+    
+    if yellow:
+        ssro.AdwinSSRO.repump_aom = qt.instruments['YellowAOM']
+        m.params['repump_duration']=m.params['yellow_repump_duration']
+        m.params['repump_amplitude']=m.params['yellow_repump_amplitude']
+        m.params['CR_repump']=m.params['yellow_CR_repump']
+        m.params['repump_after_repetitions']=m.params['yellow_repump_after_repetitions']
+    else:
+        ssro.AdwinSSRO.repump_aom = qt.instruments['GreenAOM']
+        m.params['repump_duration']=m.params['green_repump_duration']
+        m.params['repump_amplitude']=m.params['green_repump_amplitude']
+        m.params['CR_repump']=m.params['green_CR_repump']
+        m.params['repump_after_repetitions']=m.params['green_repump_after_repetitions']
 
-    ssro.AdwinSSRO.repump_aom = qt.instruments['GreenAOM']
-    m.params['repump_duration'] = m.params['green_repump_duration']
-    m.params['repump_amplitude'] = m.params['green_repump_amplitude']
-
-    m.params['MW_pulse_mod_risetime'] = 2e-9
+    # m.params['MW_pulse_mod_risetime'] = 2e-9
 
 def finish(m, sequence=True, upload=True, debug=False):
     m.autoconfig()
@@ -57,7 +66,7 @@ class BSMMsmt(pulsar_msmt.MBI):
         
         # a waiting pulse on the MW pulsemod channel
         self.T = pulse.SquarePulse(channel='MW_pulsemod',
-            length = 10e-9, amplitude = 0)
+            length = 50e-9, amplitude = 0)
 
         self.TIQ = pulse.SquarePulse(channel='MW_Imod',
             length = 10e-9, amplitude = 0)
@@ -137,6 +146,15 @@ class BSMMsmt(pulsar_msmt.MBI):
             frequency = self.params['pi2pi_mI0_mod_frq'],
             amplitude = self.params['pi2pi_mI0_amp'],
             length = self.params['pi2pi_mI0_duration'])
+            
+        self.pi2pi_p1 = pulselib.MW_IQmod_pulse('pi2pi pulse mI=0',
+            I_channel = 'MW_Imod',
+            Q_channel = 'MW_Qmod',
+            PM_channel = 'MW_pulsemod',
+            PM_risetime = self.params['MW_pulse_mod_risetime'],
+            frequency = self.params['pi2pi_mIp1_mod_frq'],
+            amplitude = self.params['pi2pi_mIp1_amp'],
+            length = self.params['pi2pi_mIp1_duration'])
 
         ### nuclear spin manipulation pulses
         self.TN = pulse.SquarePulse(channel='RF',
@@ -514,6 +532,11 @@ class TheRealBSM(ENReadoutMsmt):
         For the N phase to match, we'll insert waiting time.
         """
 
+        #include the possibility to do only one Nitrogen pulse (no CORPSE or 2nd):
+        first_N_pulse_only = kw.pop('first_N_pulse_only', False)
+        #include the possibility to do no second Nitrogen pulse (only 1st and CORPSE):
+        no_second_N_pulse = kw.pop('no_second_N_pulse', False)
+
         # to make sure that the zero-time of the element
         # is zero-time on the IQ channels
         start_buffer = kw.pop('start_buffer', 200e-9)
@@ -573,78 +596,90 @@ class TheRealBSM(ENReadoutMsmt):
                         # first_op_phase = op_phase
                         first_op_name = n
         
-        # the CORPSE pi-pulse
-        delta_t_CORPSE = - self.CORPSE_pi.effective_length()/2. + \
+        if first_N_pulse_only == True:
+            elt.add(self.TIQ)
+
+        else:
+
+            # the CORPSE pi-pulse
+            delta_t_CORPSE = - self.CORPSE_pi.effective_length()/2. + \
             self.params['CORPSE_pi_center_shift']
         
-        # t_CORPSE = evolution_time + delta_t_CORPSE
-        # CORPSE_phase = e_ref_phase + phaseref(
-        #     self.params['e_ref_frq'], t_CORPSE) + \
-        #     CORPSE_pi_phase_shift
+            # t_CORPSE = evolution_time + delta_t_CORPSE
+            # CORPSE_phase = e_ref_phase + phaseref(
+            #     self.params['e_ref_frq'], t_CORPSE) + \
+            #     CORPSE_pi_phase_shift
 
-        # want to have the CORPSE phase as a shift with respect to the current
-        # rotating frame phase.
-        CORPSE_phase = phaseref(self.params['e_ref_frq'],
-            elt.pulse_global_end_time(delay1_name, 'MW_Imod') + delta_t_CORPSE) \
-            + CORPSE_pi_phase_shift
+            # want to have the CORPSE phase as a shift with respect to the current
+            # rotating frame phase.
+            CORPSE_phase = phaseref(self.params['e_ref_frq'],
+                elt.pulse_global_end_time(delay1_name, 'MW_Imod') + delta_t_CORPSE) \
+                + CORPSE_pi_phase_shift
 
-        # if verbose:
-        #     print 'Start time of the CORPSE:', t_CORPSE
-        #     print 'Phase of the CORPSE:', CORPSE_phase
+            # if verbose:
+            #     print 'Start time of the CORPSE:', t_CORPSE
+            #     print 'Phase of the CORPSE:', CORPSE_phase
 
-        pi_name = elt.add(pulse.cp(self.CORPSE_pi,
-            phaselock = False,
-            phase = CORPSE_phase),
-            start = delta_t_CORPSE,
-            refpulse = delay1_name)
+            pi_name = elt.add(pulse.cp(self.CORPSE_pi,
+                phaselock = False,
+                phase = CORPSE_phase),
+                start = delta_t_CORPSE,
+                refpulse = delay1_name)
 
-        # second part of the evolution starts at the measured center of the
-        # pi pulse. (note that delta_t_CORPSE is negative)
-        delta_t_delay2 = self.CORPSE_pi.effective_length() + delta_t_CORPSE
-        elt.add(pulse.cp(self.TIQ, 
-            length = evolution_time + end_offset_time),
-            start = -delta_t_delay2,
-            refpulse = pi_name)
-
-        if N_pulse != None:
-            # second Nitrogen operation; start at evolution time
-            # after the start of the first.
-            
-            if type(N_pulse) != list:
-                
-                t_op2 = evolution_time + self.CORPSE_pi.effective_length()/2.
-                
-                # op2_phase = op1_phase + phaseref(N_pulse.frequency, t_op2)
-
-                elt.add(N_pulse,
-                    start = t_op2,
-                    refpulse = op1_name,
-                    refpoint = 'start')
-
-                # if verbose:
-                #     print 'Phase of the second NROT:', op2_phase
-
+            if no_second_N_pulse == True:
+                elt.add(self.TIQ)
             else:
-                for i,op in enumerate(N_pulse):
-                    if i == 0:
-                        t_op = evolution_time + \
-                            self.CORPSE_pi.effective_length()/2.
-                    else:
-                        t_op += N_pulse[i-1].length
+                # second part of the evolution starts at the measured center of the
+                # pi pulse. (note that delta_t_CORPSE is negative)
+                delta_t_delay2 = self.CORPSE_pi.effective_length() + delta_t_CORPSE
+                elt.add(pulse.cp(self.TIQ, 
+                    length = evolution_time + end_offset_time),
+                    start = -delta_t_delay2,
+                    refpulse = pi_name)
 
-                    # op_phase = first_op_phase + \
-                    #     phaseref(op.frequency, t_op)
+                if N_pulse != None:
+                    # second Nitrogen operation; start at evolution time
+                    # after the start of the first.
+            
+                    if type(N_pulse) != list:
+                
+                        t_op2 = evolution_time + self.CORPSE_pi.effective_length()/2.
+                
+                        # op2_phase = op1_phase + phaseref(N_pulse.frequency, t_op2)
+
+                        elt.add(N_pulse,
+                            start = t_op2,
+                            refpulse = op1_name,
+                            refpoint = 'start')
+
+                        # if verbose:
+                        #     print 'Phase of the second NROT:', op2_phase
+
+                    else:
+                        for i,op in enumerate(N_pulse):
+                            if i == 0:
+                                t_op = evolution_time + \
+                                    self.CORPSE_pi.effective_length()/2.
+                            else:
+                                t_op += N_pulse[i-1].length
+
+                            # op_phase = first_op_phase + \
+                            #     phaseref(op.frequency, t_op)
                     
-                    elt.add(op,
-                        start = t_op,
-                        refpulse = first_op_name,
-                        refpoint = 'start')
+                            elt.add(op,
+                                start = t_op,
+                                refpulse = first_op_name,
+                                refpoint = 'start')
         return elt
 
     def BS_element(self, name, bs, **kw):
         ### some options
         CNOT_phase = kw.pop('CNOT_phase', 0)
-
+        N_frq = kw.pop('N_frq', self.N_pi2.frequency)
+        pi2_phase_phi = kw.pop('pi2_phase_phi', 0)
+        pi2_phase_psi = kw.pop('pi2_phase_psi', 0)
+        BS_CNOT_amp = kw.pop('BS_CNOT_amp', self.params['pi2pi_mIm1_amp'])
+        
         ### make the element
         BS_elt = element.Element('BS-{}'.format(name), 
             pulsar = qt.pulsar,
@@ -653,24 +688,31 @@ class TheRealBSM(ENReadoutMsmt):
         BS_elt.append(self.shelving_pulse)
         BS_elt.append(pulse.cp(self.TIQ, length = 200e-9))
 
-        if bs in ['phi+', 'psi+']:
-            phase = 0
-        
-        elif bs in ['phi-', 'psi-']:
-            phase = 180
+        if 'phi' in bs:
+            pi2_phase = pi2_phase_phi
+        elif 'psi' in bs:
+            pi2_phase = pi2_phase_psi
 
+        if '+' in bs:
+            phase = pi2_phase + 0
+        elif '-' in bs:
+            phase = pi2_phase + 180 
+        
         N_rot_name = BS_elt.append(pulse.cp(self.N_pi2,
+            frequency = N_frq,
             phase = phase))
         BS_elt.append(self.TIQ)
-
+        
         if bs in ['phi+', 'phi-']:
             CNOT = pulse.cp(self.pi2pi_0,
-                phase = CNOT_phase)
-        
+                phase = CNOT_phase,
+                amplitude = BS_CNOT_amp)
+            
         elif bs in ['psi+', 'psi-']:
             CNOT = pulse.cp(self.pi2pi_m1,
-                phase = CNOT_phase)
-
+                phase = CNOT_phase,
+                amplitude = BS_CNOT_amp)
+            
         CNOT_name = BS_elt.append(CNOT)
 
         # N_phase_ref = phaseref(self.N_pi2.frequency, 
@@ -693,8 +735,11 @@ class TheRealBSM(ENReadoutMsmt):
         evo_offset = kw.pop('evo_offset', 1000e-9)
         CNOT_offset = kw.pop('CNOT_offset', 0)
         CNOT_phase_shift = kw.pop('CNOT_phase_shift', 0)
-
-        evo_time = self.params['H_evolution_time']
+        evo_time = kw.pop('evolution_time', self.params['H_evolution_time'])
+        H_phase = kw.pop('H_phase', 0)
+        BSM_CNOT_amp = kw.pop('BSM_CNOT_amp', self.params['pi2pi_mIm1_amp'])
+        # N_frq = kw.pop('N_frq', self.N_pi2.frequency)
+        
         eff_evo_time = evo_time - evo_offset
 
         # we make the evolution time a bit shorter (default 1000 ns), 
@@ -715,7 +760,9 @@ class TheRealBSM(ENReadoutMsmt):
 
         CNOT_elt.append(pulse.cp(self.TIQ, 
             length = t_CNOT))
-        CNOT_elt.append(self.pi2pi_m1)
+        CNOT_elt.append(pulse.cp(self.pi2pi_m1,
+            phase = CNOT_phase_shift,
+            amplitude = BSM_CNOT_amp))
         CNOT_elt.append(pulse.cp(self.TIQ,
             length = evo_offset + start_buffer_time - \
                 self.pi2pi_m1.effective_length() - t_CNOT))
@@ -725,13 +772,45 @@ class TheRealBSM(ENReadoutMsmt):
         # UNROT_N_ref_phase = N_ref_phase + phaseref(self.params['N_ref_frq'],
         #     CNOT_elt.length())
         
-        H_pulses = [ pulse.cp(self.N_pi2, phase=0),
-            pulse.cp(self.N_pi, phase=90.) ]
+        #do the BSM with just a pi/2 along the y axis.
+        H_pulses = [ pulse.cp(self.N_pi2, phase=H_phase) ]#,
+        #    pulse.cp(self.N_pi, phase= H_phase+90.) ]
 
         UNROT_elt = self.UNROT_element('{}_BSM-UNROT-H'.format(name),
             H_pulses, eff_evo_time, time_offset+CNOT_elt.length(), **kw)
 
         return CNOT_elt, UNROT_elt
+
+    def tomo_element(self, basis, time_offset):
+
+        if basis == 'z':
+            z_element = element.Element('Z Tomo pulse', pulsar=qt.pulsar,
+                global_time = True, 
+                time_offset = time_offset)
+            z_element.append(pulse.cp(self.TN, length=1e-6))
+
+            return z_element
+
+        elif basis == 'x':
+            x_element = element.Element('X Tomo pulse', pulsar=qt.pulsar,
+                global_time = True, 
+                time_offset = time_offset)
+            x_element.append(pulse.cp(self.N_pi2, 
+                phase = 180.))
+
+            return x_element
+
+        elif basis == 'y':
+            y_element = element.Element('Y Tomo pulse', pulsar=qt.pulsar,
+                global_time = True,
+                time_offset = self.params['tomo_time_offset'])
+            y_element.append(pulse.cp(self.N_pi2, 
+                phase = 90.))
+
+            return y_element
+
+        else:
+            raise Exception('Unknown tomography basis')
 
     ### test/calibration and debug functions
 
@@ -751,6 +830,73 @@ class TheRealBSM(ENReadoutMsmt):
             time_offset, verbose=True)
 
         elt.print_overview()
+
+    # NOT USEFUL LIKE THIS -- TIME IN ms=0 NOT MATCHED
+    def test_UNROT_H_phase(self, ms, input):
+        self._pulse_defs()
+        sweep_elements = []
+        self.flattened_elements = []
+        self.seq = pulsar.Sequence('{}_{}-Sequence'.format(self.mprefix, 
+            self.name))
+
+        prep_elt = element.Element('UNROT-prep', pulsar=qt.pulsar,
+            global_time = True)
+        prep_elt.append(self.T)
+        prep_elt.append(pulse.cp(self.pi_4MHz,
+            amplitude=1.))
+        prep_elt.append(pulse.cp(self.T, length=200e-9))
+
+
+        amplitude = 1
+        phase = 0.
+        if input == 'z':
+            amplitude = 0
+        elif input == 'y':
+            phase = -90.
+
+        prep_elt.append(pulse.cp(self.N_pi2,
+            phase = phase,
+            amplitude = amplitude))
+
+        if ms == '0':
+            prep_elt.append(pulse.cp(self.TIQ))
+            prep_elt.append(pulse.cp(self.CORPSE_pi,
+                phaselock = False))
+            prep_elt.append(pulse.cp(self.TIQ, 
+                length=200e-9))
+
+        self.flattened_elements.append(prep_elt)
+
+        # UNROT-H
+        H_pulses = [ pulse.cp(self.N_pi2, phase=0),
+            pulse.cp(self.N_pi, phase=90.) ]
+
+        unrot_elt = self.UNROT_element('UNROT-H',
+            H_pulses, self.params['H_evolution_time'], prep_elt.length())
+
+        self.flattened_elements.append(unrot_elt)
+
+        for i,phi in enumerate(self.params['analysis_phases']):
+            analysis_elt = element.Element('UNROT-analysis-{}'.format(i), 
+                pulsar = qt.pulsar,
+                global_time = True,
+                time_offset = prep_elt.length()+unrot_elt.length())
+            
+            if ms == '1':
+                analysis_elt.append(pulse.cp(self.TIQ))
+                analysis_elt.append(pulse.cp(self.CORPSE_pi,
+                    phaselock = False))
+                analysis_elt.append(pulse.cp(self.TIQ, 
+                    length=200e-9))
+
+            analysis_elt.append(pulse.cp(self.N_pi2,
+                phase = phi))
+
+            self.flattened_elements.append(analysis_elt)
+            sweep_elements.append([prep_elt, unrot_elt, analysis_elt])
+
+        self.seq = self._add_MBI_and_sweep_elements_to_sequence(
+            sweep_elements, self.N_RO_CNOT_elt, self.sync_elt)
 
     def test_BS_ZZ_correlations(self):
         self._pulse_defs()
@@ -775,8 +921,8 @@ class TheRealBSM(ENReadoutMsmt):
             self.name))
         
         for bs in self.params['bellstates']:
-            bs_elt, N_phase, e_phase = self.BS_element(bs, bs)
-            CNOT, UNROT_H = self.BSM_elements(bs, N_phase, e_phase)
+            bs_elt = self.BS_element(bs, bs)
+            CNOT, UNROT_H = self.BSM_elements(bs, bs_elt.length())
 
             self.flattened_elements.append(bs_elt)
             self.flattened_elements.append(CNOT)
@@ -794,17 +940,41 @@ class TheRealBSM(ENReadoutMsmt):
             self.name))
         
         bs = self.params['bellstate']
-        bs_elt, N_phase, e_phase = self.BS_element(bs, bs)
+        bs_elt = self.BS_element(bs, bs)
         self.flattened_elements.append(bs_elt)
 
         for i in range(self.params['pts']):
 
             CNOT, UNROT_H = self.BSM_elements('{}-{}'.format(bs,i), 
-                N_phase, e_phase,
+                time_offset = bs_elt.length(),
                 CORPSE_pi_phase_shift = \
                     self.params['CORPSE_pi_phase_shifts'][i],
                 CNOT_phase_shift = \
                     self.params['BSM_CNOT_phase_shifts'][i])
+
+            self.flattened_elements.append(CNOT)
+            self.flattened_elements.append(UNROT_H)
+            sweep_elements.append([bs_elt, CNOT, UNROT_H])
+
+        self.seq = self._add_MBI_and_sweep_elements_to_sequence(
+            sweep_elements, self.N_RO_CNOT_elt, self.sync_elt)
+
+    def test_BSM_vs_evolution_time(self):
+        self._pulse_defs()
+        sweep_elements = []
+        self.flattened_elements = []
+        self.seq = pulsar.Sequence('{}_{}-Sequence'.format(self.mprefix, 
+            self.name))
+        
+        bs = self.params['bellstate']
+        bs_elt = self.BS_element(bs, bs)
+        self.flattened_elements.append(bs_elt)
+
+        for i in range(self.params['pts']):
+
+            CNOT, UNROT_H = self.BSM_elements('{}-{}'.format(bs,i), 
+                time_offset = bs_elt.length(),
+                evolution_time = self.params['H_evolution_times'][i])
 
             self.flattened_elements.append(CNOT)
             self.flattened_elements.append(UNROT_H)
@@ -838,6 +1008,30 @@ class TheRealBSM(ENReadoutMsmt):
         self.seq = self._add_MBI_and_sweep_elements_to_sequence(
             sweep_elements, self.N_RO_CNOT_elt, self.sync_elt)
 
+    def test_BSM_vs_BS_N_frq(self):
+        self._pulse_defs()
+        sweep_elements = []
+        self.flattened_elements = []
+        self.seq = pulsar.Sequence('{}_{}-Sequence'.format(self.mprefix, 
+            self.name))
+        
+        bs = self.params['bellstate']
+        for i in range(self.params['pts']):
+            
+            bs_elt = self.BS_element('{}-{}'.format(bs,i), bs,
+                N_frq = self.params['BS_N_frqs'][i])
+
+            CNOT, UNROT_H = self.BSM_elements('{}-{}'.format(bs,i), 
+                time_offset = bs_elt.length())
+
+            self.flattened_elements.append(bs_elt)
+            self.flattened_elements.append(CNOT)
+            self.flattened_elements.append(UNROT_H)
+            sweep_elements.append([bs_elt, CNOT, UNROT_H])
+
+        self.seq = self._add_MBI_and_sweep_elements_to_sequence(
+            sweep_elements, self.N_RO_CNOT_elt, self.sync_elt)
+
     def test_BSM_CNOT(self):
         self._pulse_defs()
         sweep_elements = []
@@ -854,6 +1048,165 @@ class TheRealBSM(ENReadoutMsmt):
                 N_phase, e_phase, 
                 CNOT_offset = self.params['CNOT_offsets'][i])
             
+            self.flattened_elements.append(CNOT)
+            self.flattened_elements.append(UNROT_H)
+            sweep_elements.append([bs_elt, CNOT, UNROT_H])
+
+        self.seq = self._add_MBI_and_sweep_elements_to_sequence(
+            sweep_elements, self.N_RO_CNOT_elt, self.sync_elt)
+
+
+    def test_BSM_vs_Hadamard_phase(self):
+        self._pulse_defs()
+        sweep_elements = []
+        self.flattened_elements = []
+        self.seq = pulsar.Sequence('{}_{}-Sequence'.format(self.mprefix, 
+            self.name))
+        
+        bs = self.params['bellstate']       
+
+        for i in range(self.params['pts']):
+            
+            bs_elt = self.BS_element('{}-{}'.format(bs,i), bs, 
+                pi2_phase_psi = self.params['bs_psi_pi2_phases'][i],
+                pi2_phase_phi = self.params['bs_phi_pi2_phases'][i])
+
+            CNOT, UNROT_H = self.BSM_elements('{}-{}'.format(bs,i), 
+                time_offset = bs_elt.length(),
+                H_phase = self.params['H_phases'][i],
+                start_buffer_time = 259e-9 ) #= 1/A - 1/2*pi2pi.length
+
+            self.flattened_elements.append(bs_elt)
+            self.flattened_elements.append(CNOT)
+            self.flattened_elements.append(UNROT_H)
+            sweep_elements.append([bs_elt, CNOT, UNROT_H])
+
+        self.seq = self._add_MBI_and_sweep_elements_to_sequence(
+            sweep_elements, self.N_RO_CNOT_elt, self.sync_elt)
+
+    def test_BSM_eigenstates_in(self):
+        self._pulse_defs()
+        sweep_elements = []
+        self.flattened_elements = []
+        self.seq = pulsar.Sequence('{}_{}-Sequence'.format(self.mprefix, 
+            self.name))
+        
+        es = self.params['eigenstate']       
+
+        for i in range(self.params['pts']):
+            
+            CNOT, UNROT_H = self.BSM_elements('{}-{}'.format(es,i), 
+                time_offset = 0,
+                H_phase = self.params['H_phases'][i])
+
+            self.flattened_elements.append(CNOT)
+            self.flattened_elements.append(UNROT_H)
+            sweep_elements.append([CNOT, UNROT_H])
+
+        self.seq = self._add_MBI_and_sweep_elements_to_sequence(
+            sweep_elements, self.N_RO_CNOT_elt, self.sync_elt)
+
+    def test_BSM_superposition_in(self):
+        self._pulse_defs()
+        sweep_elements = []
+        self.flattened_elements = []
+        self.seq = pulsar.Sequence('{}_{}-Sequence'.format(self.mprefix, 
+            self.name))
+ 
+        e_pi2_elt = element.Element('e_pi2', pulsar = qt.pulsar, 
+            global_time = True, time_offset =0)
+
+        e_pi2_elt.append(pulse.cp(self.TIQ, 
+            length = 800e-9))
+
+        e_pi2_elt.append(self.pi2_4MHz)
+
+        e_pi2_elt.append(pulse.cp(self.TIQ, 
+            length = 200e-9))
+
+        
+        UNROT_N_init = self.UNROT_element('N_init',
+            self.N_pi2, 
+            self.params['pi2_evolution_time']-self.pi2_4MHz.length/2 -200E-9, 
+            #Above time: to start time at centre pi/2, and to subtract waiting time after pi/2
+            e_pi2_elt.length(), 
+            end_offset_time = self.pi2_4MHz.length/2 + 200e-9 - 240e-9)
+            #end_offset time: to get 'pi2_evolution_time', 
+            #and compensate for CNOT time in next element 
+        
+        for i in range(self.params['pts']):
+            
+            CNOT, UNROT_H = self.BSM_elements('{}'.format(i), 
+                time_offset = e_pi2_elt.length()+UNROT_N_init.length(),
+                H_phase = self.params['H_phases'][i])
+            
+            self.flattened_elements.append(e_pi2_elt)
+            self.flattened_elements.append(UNROT_N_init)
+            self.flattened_elements.append(CNOT)
+            self.flattened_elements.append(UNROT_H)
+            sweep_elements.append([e_pi2_elt,UNROT_N_init,CNOT, UNROT_H])
+            
+        self.seq = self._add_MBI_and_sweep_elements_to_sequence(
+            sweep_elements, self.N_RO_CNOT_elt, self.sync_elt)
+
+
+    def test_BSM_without_CORPSE_and_2nd_H(self):
+        """
+        Test the BSM by putting in a BS, and leaving out the CORPSE and 2nd Hadamard.
+        The script below only works when putting in the psi+ state! 
+        """
+        self._pulse_defs()
+        sweep_elements = []
+        self.flattened_elements = []
+        self.seq = pulsar.Sequence('{}_{}-Sequence'.format(self.mprefix, 
+            self.name))
+        
+        bs = self.params['bellstate']      
+
+        for i in range(self.params['pts']):
+            
+            bs_elt = self.BS_element('{}-{}'.format(bs,i), bs, 
+                pi2_phase_psi = self.params['bs_pi2_phases'][i],
+                BS_CNOT_amp = self.params['BS_CNOT_amp'])
+            
+            CNOT, UNROT_H = self.BSM_elements('{}-{}'.format(bs,i), 
+                time_offset = bs_elt.length(),
+                H_phase = self.params['H_phases'][i],
+                BSM_CNOT_amp = self.params['BSM_CNOT_amp'],
+                first_N_pulse_only = True)
+
+            self.flattened_elements.append(bs_elt)
+            self.flattened_elements.append(CNOT)
+            self.flattened_elements.append(UNROT_H)
+            sweep_elements.append([bs_elt, CNOT, UNROT_H])
+        
+        self.seq = self._add_MBI_and_sweep_elements_to_sequence(
+            sweep_elements, self.N_RO_CNOT_elt, self.sync_elt)
+
+    def test_BSM_without_2nd_H(self):
+        """
+        Test the BSM by putting in a BS, and leaving out the CORPSE and 2nd Hadamard.
+        The script below only works when putting in the psi+ state! 
+        """
+        self._pulse_defs()
+        sweep_elements = []
+        self.flattened_elements = []
+        self.seq = pulsar.Sequence('{}_{}-Sequence'.format(self.mprefix, 
+            self.name))
+        
+        bs = self.params['bellstate']       
+
+        for i in range(self.params['pts']):
+            
+            bs_elt = self.BS_element('{}-{}'.format(bs,i), bs, 
+                pi2_phase_psi = self.params['bs_pi2_phases'][i])
+
+            CNOT, UNROT_H = self.BSM_elements('{}-{}'.format(bs,i), 
+                time_offset = bs_elt.length(),
+                H_phase = self.params['H_phases'][i],
+                no_second_N_pulse = True)
+
+            self.flattened_elements.append(bs_elt)
             self.flattened_elements.append(CNOT)
             self.flattened_elements.append(UNROT_H)
             sweep_elements.append([bs_elt, CNOT, UNROT_H])
@@ -961,7 +1314,7 @@ class TheRealBSM(ENReadoutMsmt):
         for i,t in enumerate(self.params['evolution_times']):
             e = self.UNROT_element('UNROT-{}'.format(i),
                 self.N_pi2, t, prep_elt.length(), 
-                end_offset_time = 1e-6)
+                end_offset_time = -1e-6)
 
             self.flattened_elements.append(e)
 
@@ -1012,7 +1365,6 @@ class TheRealBSM(ENReadoutMsmt):
         self.flattened_elements.append(self.N_RO_CNOT_elt)
         self.flattened_elements.append(self.wait_1us_elt)
         
-
         # program AWG
         if upload:
             qt.pulsar.upload(*self.flattened_elements)
@@ -1035,6 +1387,26 @@ def bsm_test_print_UNROT_element(name):
     m.test_UNROT_element_overview()
 
     finish(m, sequence=False, debug=True, upload=False)
+
+# NOT USEFUL LIKE THIS -- TIME IN ms=0 NOT MATCHED
+def bsm_test_UNROT_H_phase(name):
+    m = TheRealBSM('TestBSM_UNROT_H_phase_'+name)
+    prepare(m)
+
+    pts = 9
+    m.params['analysis_phases'] = np.linspace(0,360,pts)
+
+    m.params['pts'] = pts
+    m.params['reps_per_ROsequence'] = 1000
+
+    m.params['H_evolution_time'] = 139.797e-6
+
+    m.params['sweep_name'] = 'final pi/2 phase (deg)'
+    m.params['sweep_pts'] = m.params['analysis_phases']
+
+    m.test_UNROT_H_phase('1', 'z')
+
+    finish(m, debug=False, upload=True)
 
 def bsm_test_BS_ZZ_correlations():
     m = TheRealBSM('test_BS_ZZ_correlations')
@@ -1062,7 +1434,7 @@ def bsm_calibrate_CORPSE_pi_phase_shift():
     m.params['reps_per_ROsequence'] = 500
 
     m.params['CORPSE_pi_phase_shifts'] = np.linspace(0,180,pts)
-    m.params['interpulse_delay'] = 154e-6
+    m.params['interpulse_delay'] = 51e-6
     m.calibrate_CORPSE_pi_phase_shift()
 
     # for the autoanalysis
@@ -1079,7 +1451,7 @@ def bsm_calibrate_UNROT_X_timing(name):
     m.params['pts'] = pts
     m.params['reps_per_ROsequence'] = 500
 
-    m.params['evolution_times'] = 140e-6 + np.linspace(-400e-9,400e-9,pts)
+    m.params['evolution_times'] = 191e-6 + np.linspace(-400e-9,400e-9,pts)
     m.calibrate_UNROT_X_timing(eigenstate='-1')
 
     # for the autoanalysis
@@ -1097,7 +1469,7 @@ def bsm_test_BSM():
     m.params['reps_per_ROsequence'] = 1000
 
     m.params['bellstates'] = ['phi+', 'phi-', 'psi+', 'psi-']
-    m.params['H_evolution_time'] = 144.825e-6
+    m.params['H_evolution_time'] = 139.797e-6
 
     m.params['sweep_name'] = 'Bell state'
     m.params['sweep_pts'] = np.arange(4)
@@ -1115,7 +1487,7 @@ def bsm_test_BSM_vs_CORPSE_phase(name):
     m.params['reps_per_ROsequence'] = 1000
 
     m.params['bellstate'] = 'psi+'
-    m.params['H_evolution_time'] = 139.814e-6
+    m.params['H_evolution_time'] = 139.797e-6
     
     m.params['CORPSE_pi_phase_shifts'] = np.linspace(0,360,pts)
     m.params['BSM_CNOT_phase_shifts'] = np.zeros(pts)
@@ -1131,22 +1503,41 @@ def bsm_test_BSM_vs_CNOT_phase(name):
     m = TheRealBSM('TestBSM_vs_CNOT_phase_'+name)
     prepare(m)
 
-    pts = 1
+    pts = 9
     m.params['pts'] = pts
     m.params['reps_per_ROsequence'] = 1000
 
     m.params['bellstate'] = 'psi+'
-    m.params['H_evolution_time'] = 139.792e-6
+    m.params['H_evolution_time'] = 139.797e-6
     
     m.params['CORPSE_pi_phase_shifts'] = np.ones(pts) * m.params['CORPSE_pi_phase_shift']
-    m.params['BSM_CNOT_phase_shifts'] = np.array([0]) # np.linspace(0,360,pts)
+    m.params['BSM_CNOT_phase_shifts'] = np.linspace(0,360,pts)
 
     m.params['sweep_name'] = 'CNOT relative phase shift (deg)'
     m.params['sweep_pts'] = m.params['BSM_CNOT_phase_shifts']
 
     m.test_BSM_vs_BSM_params()
 
-    finish(m, debug=True, upload=False)
+    finish(m, debug=False, upload=True)
+
+def bsm_test_BSM_vs_evolution_time(name):
+    m = TheRealBSM('TestBSM_vs_evolution_time_'+name)
+    prepare(m)
+
+    pts = 17
+    m.params['pts'] = pts
+    m.params['reps_per_ROsequence'] = 1000
+
+    m.params['bellstate'] = 'psi+'
+    m.params['H_evolution_time'] = 139.797e-6
+    m.params['H_evolution_times'] = 139.797e-6 + np.linspace(-400e-9,400e-9,pts)    
+
+    m.params['sweep_name'] = 'CORPSE-UNROT-H evolution time (us)'
+    m.params['sweep_pts'] = m.params['H_evolution_times'] * 1e6
+
+    m.test_BSM_vs_evolution_time()
+
+    finish(m, debug=False, upload=True)
 
 def bsm_test_BSM_vs_BS_CNOT_phase(name):
     m = TheRealBSM('TestBSM_vs_BS_CNOT_phase_'+name)
@@ -1160,7 +1551,7 @@ def bsm_test_BSM_vs_BS_CNOT_phase(name):
     m.params['reps_per_ROsequence'] = 1000
 
     m.params['bellstate'] = 'psi+'
-    m.params['H_evolution_time'] = 139.791e-6
+    m.params['H_evolution_time'] = 139.797e-6
 
     m.params['sweep_name'] = 'CNOT phase (deg)'
     m.params['sweep_pts'] = m.params['CNOT_phases']
@@ -1169,8 +1560,28 @@ def bsm_test_BSM_vs_BS_CNOT_phase(name):
 
     finish(m, debug=False, upload=True)
 
-def bsm_test_BSM_and_BS_vs_delay(name):
-    m = TheRealBSM('TestBSM+BS_vs_delay_'+name)
+def bsm_test_BSM_vs_BS_N_frq(name):
+    m = TheRealBSM('TestBSM_vs_BS_N_frq_'+name)
+    prepare(m)
+
+    pts = 17
+    m.params['BS_N_frqs'] = 7.13444e6 + np.linspace(-1e3,1e3,pts)
+
+    m.params['pts'] = pts
+    m.params['reps_per_ROsequence'] = 1000
+
+    m.params['bellstate'] = 'psi+'
+    m.params['H_evolution_time'] = 139.797e-6
+
+    m.params['sweep_name'] = 'BS N driving frq (MHz)'
+    m.params['sweep_pts'] = m.params['BS_N_frqs'] * 1e-6
+
+    m.test_BSM_vs_BS_N_frq()
+
+    finish(m, debug=False, upload=True)
+
+def bsm_test_BSM_vs_BS_delay(name):
+    m = TheRealBSM('TestBSM_vs_BS_delay_'+name)
     prepare(m)
 
     m.params['CNOT_phases'] = np.zeros(11) # np.linspace(0,360,9)
@@ -1181,7 +1592,7 @@ def bsm_test_BSM_and_BS_vs_delay(name):
     m.params['reps_per_ROsequence'] = 1000
 
     m.params['bellstate'] = 'psi+'
-    m.params['H_evolution_time'] = 139.814e-6
+    m.params['H_evolution_time'] = 139.797e-6
 
     m.params['sweep_name'] = 'Post-BS generation delay'
     m.params['sweep_pts'] = m.params['BSM_start_buffer_times']
@@ -1201,7 +1612,7 @@ def bsm_test_BSM_vs_CNOT_offset(name):
     m.params['reps_per_ROsequence'] = 1000
 
     m.params['bellstate'] = 'psi+'
-    m.params['H_evolution_time'] = 144.825e-6
+    m.params['H_evolution_time'] = 139.797e-6
 
     m.params['sweep_name'] = 'CNOT time offset (ns)'
     m.params['sweep_pts'] = m.params['CNOT_offsets'] * 1e9
@@ -1210,18 +1621,159 @@ def bsm_test_BSM_vs_CNOT_offset(name):
 
     finish(m, debug=False, upload=True)
 
+def bsm_test_BSM_vs_Hadamard_phase(name):
+    m = TheRealBSM('TestBSM_vs_Hadamard_phase_'+name)
+    prepare(m, yellow=True)
+
+    pts = 11
+    m.params['pts'] = pts
+    m.params['reps_per_ROsequence'] = 1000
+
+    m.params['bellstate'] = 'psi+'
+    m.params['H_evolution_time'] = 51.070e-6
+    m.params['H_phases'] = np.linspace(0,360,pts) 
+    m.params['bs_psi_pi2_phases'] = 0. * np.ones(pts) #62
+    m.params['bs_phi_pi2_phases'] = 0. * np.ones(pts) #71
+
+    m.params['sweep_name'] = 'CORPSE-UNROT-H phase'
+    m.params['sweep_pts'] = m.params['H_phases'] 
+
+    m.test_BSM_vs_Hadamard_phase()
+
+    finish(m, debug=False, upload=True)
+  
+
+def bsm_test_BSM_eigenstates_in(name):
+    m = TheRealBSM('TestBSM_eigenstates_in_'+name)
+    prepare(m)
+
+    pts = 11
+    m.params['pts'] = pts
+    m.params['reps_per_ROsequence'] = 1000
+
+    m.params['eigenstate'] = '-1,0'
+    m.params['H_evolution_time'] = 139.797e-6
+    m.params['H_phases'] = np.linspace(0,360,pts) 
+
+    m.params['sweep_name'] = 'CORPSE-UNROT-H phase'
+    m.params['sweep_pts'] = m.params['H_phases'] 
+
+    m.test_BSM_eigenstates_in()
+
+    finish(m, debug=False, upload=True)
+  
+
+def bsm_test_BSM_superposition_in(name):
+    m = TheRealBSM('TestBSM_superposition_in_'+name)
+    prepare(m)
+    
+    pts = 17
+    m.params['pts'] = pts
+    m.params['reps_per_ROsequence'] = 1000
+
+    m.params['pi2_evolution_time'] = 51.070e-6 #calibrated value
+    m.params['H_evolution_time'] = 51.070e-6 #139.995e-6 + 194e-9#calibrated value + correction (234 deg).
+    m.params['H_phases'] = np.linspace(0,720,pts) 
+
+    m.params['sweep_name'] = 'CORPSE-UNROT-H phase'
+    m.params['sweep_pts'] = m.params['H_phases'] 
+
+    m.test_BSM_superposition_in()
+    
+    finish(m, debug=False, upload=True)    
+
+
+def bsm_test_BSM_w_time_corr_superposition_in(name):
+    m = TheRealBSM('TestBSM_w_time_corr_superposition_in_'+name)
+    prepare(m)
+    
+    #this mmt tests the BSM by feeding in a superposition of psi+ and phi+.
+    #here the time t_pi - t_0 is corrected for the expected difference 
+    #between phi_00 and phi_01: t_pi - t_0 = 
+    pts = 11
+    m.params['pts'] = pts
+    m.params['reps_per_ROsequence'] = 1000
+
+    m.params['pi2_evolution_time'] = 50.162e-6 #110/A
+    m.params['phi_00'] = 14 #+- 3
+    m.params['phI_01'] = 190 #+- 5
+    m.params['H_evolution_time'] = 139.997e-6 + 220e-9 #307/A + (phi_00-phi_01)/360 *1/A
+    m.params['H_phases'] = np.linspace(0,360,pts) 
+
+    m.params['sweep_name'] = 'CORPSE-UNROT-H phase'
+    m.params['sweep_pts'] = m.params['H_phases'] 
+
+    m.test_BSM_superposition_in()
+    
+    finish(m, debug=False, upload=True)  
+
+
+def bsm_test_BSM_without_CORPSE_and_2nd_H(name):
+    m = TheRealBSM('TestBSM_without_CORPSE_and_2nd_H_'+name)
+    prepare(m, yellow = True)
+    
+    pts = 11
+    m.params['pts'] = pts
+    m.params['reps_per_ROsequence'] = 1000
+
+    #option to also not do the BS and BSM CNOTs.
+    m.params['N_pi2_amp'] = 0.
+    m.params['BSM_CNOT_amp'] = 0.#m.params['pi2pi_mIm1_amp']
+    m.params['BS_CNOT_amp'] = 0.#m.params['pi2pi_mIm1_amp']
+    
+    m.params['bellstate'] = 'psi+'
+    m.params['H_evolution_time'] = 51.070e-6
+    m.params['H_phases'] = np.linspace(0,360,pts) 
+    m.params['bs_pi2_phases'] = 0. * np.ones(pts)
+
+    m.params['sweep_name'] = 'CORPSE-UNROT-H phase'
+    m.params['sweep_pts'] = m.params['H_phases'] 
+    
+    m.test_BSM_without_CORPSE_and_2nd_H()
+    
+    finish(m, debug=False, upload=False)
+
+def bsm_test_BSM_without_2nd_H(name):
+    m = TheRealBSM('TestBSM_without_2nd_H'+name)
+    prepare(m)
+
+    pts = 11
+    m.params['pts'] = pts
+    m.params['reps_per_ROsequence'] = 1000
+
+    m.params['bellstate'] = 'psi+'
+    m.params['H_evolution_time'] = 51.070e-6
+    m.params['H_phases'] = np.linspace(0,360,pts) 
+    m.params['bs_pi2_phases'] = 0. * np.ones(pts)
+
+    m.params['sweep_name'] = 'CORPSE-UNROT-H phase'
+    m.params['sweep_pts'] = m.params['H_phases'] 
+
+    m.test_BSM_without_2nd_H()
+
+    finish(m, debug=False, upload=True)
+
 
 if __name__ == '__main__':
     # bsm_test_print_UNROT_element('testing')
+    # NOT USEFUL LIKE THIS bsm_test_UNROT_H_phase('input=Z_ms=1')
     # bsm_calibrate_CORPSE_pi_phase_shift()
-    bsm_calibrate_UNROT_X_timing('test_H_timing_ms=-1_140us')
+    # bsm_calibrate_UNROT_X_timing('test_H_timing_ms=-1_191us')
     # bsm_test_BS_ZZ_correlations()
     # bsm_test_BSM()
     # bsm_test_BSM_vs_CORPSE_phase('psi+')
     # bsm_test_BSM_vs_CNOT_phase('psi+')
+    # bsm_test_BSM_vs_evolution_time('psi+')
     # bsm_test_BSM_vs_BS_CNOT_phase('psi+')
-    # bsm_test_BSM_and_BS_vs_delay('psi+')
+    # bsm_test_BSM_vs_BS_N_frq('psi+')
+    # bsm_test_BSM_vs_BS_delay('psi+')
     # bsm_test_BSM_vs_CNOT_offset('psi+')
+    # bsm_test_BSM_vs_Hadamard_phase('psi+')
+    bsm_test_BSM_without_CORPSE_and_2nd_H('_and_nothing_else_psi+')
+    # bsm_test_BSM_without_2nd_H('psi+')
+    # bsm_test_BSM_eigenstates_in('-1,0')
+    # bsm_test_BSM_superposition_in('sil2_pi2_as_H_no_time_corr')
+    # bsm_test_BSM_w_time_corr_superposition_in('sil2')
 
 
 

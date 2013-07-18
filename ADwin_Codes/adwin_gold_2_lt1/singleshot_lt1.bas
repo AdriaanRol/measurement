@@ -168,8 +168,8 @@ INIT:
   A_SP_voltage                 = DATA_21[6]
   Ex_RO_voltage                = DATA_21[7]
   A_RO_voltage                 = DATA_21[8]
-  Ex_off_voltage               = 0 'DATA_21[9]
-  A_off_voltage                = 0 'DATA_21[10]
+  Ex_off_voltage               = DATA_21[9]
+  A_off_voltage                = DATA_21[10]
   
   FOR i = 1 TO SSRO_repetitions
     DATA_22[i] = 0

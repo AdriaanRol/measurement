@@ -29,3 +29,8 @@ qt.pulsar.define_channel(id='ch4', name='MW_Qmod', type='analog', high=0.9,
 qt.pulsar.define_channel(id='ch3_marker2', name='adwin_sync', type='marker', 
     high=2.0, low=0, offset=0., delay=0., active=True)
 
+# light
+qt.pulsar.define_channel(id='ch1_marker2', name='Velocity1AOM', type='marker', 
+    high=0.4, low=0, offset=0., delay=(690)*1e-9, active=True) #delay not yet calibrated
+qt.pulsar.define_channel(id='ch2_marker2', name='YellowAOM', type='marker', 
+    high=0.4, low=0, offset=0., delay=(690)*1e-9, active=True) #delay not yet calibrated

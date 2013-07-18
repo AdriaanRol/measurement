@@ -16,9 +16,9 @@ reload(funcs)
 name = 'sil2'
 
 ### Calibration stage 1
-def cal_slow_pi(name):
+def cal_slow_pi(name, yellow):
     m = pulsar_mbi_espin.ElectronRabi('cal_slow_pi_'+name)
-    funcs.prepare(m)
+    funcs.prepare(m, yellow)
     
     # measurement settings
     pts = 21
@@ -40,9 +40,9 @@ def cal_slow_pi(name):
     funcs.finish(m)
 
 ### Calibration stage 2
-def cal_4mhz_rabi(name):
+def cal_4mhz_rabi(name, yellow):
     m = pulsar_mbi_espin.ElectronRabi('cal_4mhz_rabi'+name)
-    funcs.prepare(m)
+    funcs.prepare(m, yellow)
 
     pts = 21
     m.params['pts'] = pts
@@ -64,10 +64,10 @@ def cal_4mhz_rabi(name):
 
 
 ### Calibration stage 3
-def cal_4mhz_pi(name, mult=1):
+def cal_4mhz_pi(name, yellow, mult=1):
     m = pulsar_mbi_espin.ElectronRabiSplitMultElements(
         'cal_4MHz_pi_'+name+'_M=%d' % mult)
-    funcs.prepare(m)
+    funcs.prepare(m, yellow)
     
     # measurement settings
     pts = 11
@@ -88,10 +88,10 @@ def cal_4mhz_pi(name, mult=1):
 
     funcs.finish(m)
 
-def cal_4mhz_pi2(name,  mult=1):
+def cal_4mhz_pi2(name, yellow, mult=1):
     m = pulsar_mbi_espin.ElectronRabi(
         'cal_4MHz_pi_over_2_'+name+'_M=%d' % mult)
-    funcs.prepare(m)    
+    funcs.prepare(m, yellow)    
     
     # measurement settings
     pts = 11
@@ -102,7 +102,7 @@ def cal_4mhz_pi2(name,  mult=1):
     
     # pulses
     m.params['MW_pulse_durations'] = 1e-9 * (np.ones(pts) * 62 + 11)
-    m.params['MW_pulse_amps'] = np.linspace(0.65, 0.7, pts)
+    m.params['MW_pulse_amps'] = np.linspace(0.7, 0.75, pts)
     m.params['MW_pulse_mod_frqs'] = np.ones(pts) * \
         m.params['AWG_MBI_MW_pulse_mod_frq']
 
@@ -112,9 +112,9 @@ def cal_4mhz_pi2(name,  mult=1):
     
     funcs.finish(m)
 
-def cal_CORPSE_pi(name):
+def cal_CORPSE_pi(name, yellow):
     m = CORPSEPiCalibration(name)
-    funcs.prepare(m)
+    funcs.prepare(m,yellow)
 
     pts = 11
     m.params['pts'] = pts
@@ -131,10 +131,10 @@ def cal_CORPSE_pi(name):
     
     funcs.finish(m)
 
-def cal_pi2pi_pi(name, mult=1):
+def cal_pi2pi_pi(name, yellow, mult=1):
     m = pulsar_mbi_espin.ElectronRabiSplitMultElements(
         'cal_pi2pi_pi_'+name+'_M=%d' % mult)
-    funcs.prepare(m)
+    funcs.prepare(m,yellow)
     
     # measurement settings
     pts = 11
@@ -155,10 +155,10 @@ def cal_pi2pi_pi(name, mult=1):
 
     funcs.finish(m)
 
-def cal_pi2pi_pi_mI0(name, mult=1):
+def cal_pi2pi_pi_mI0(name, yellow, mult=1):
     m = pulsar_mbi_espin.ElectronRabiSplitMultElements(
         'cal_pi2pi_pi_mI0_'+name+'_M=%d' % mult)
-    funcs.prepare(m)
+    funcs.prepare(m,yellow)
     
     # measurement settings
     pts = 11
@@ -182,10 +182,11 @@ def cal_pi2pi_pi_mI0(name, mult=1):
 
     funcs.finish(m)
 
-def cal_hard_pi(name, mult=1):
+def cal_hard_pi(name, yellow, mult=1):
     m = pulsar_mbi_espin.ElectronRabiSplitMultElements(
         'cal_hard_pi_'+name+'_M=%d' % mult)
-    funcs.prepare(m)
+    funcs.prepare(m,yellow)
+    print 'calibrate hard pi pulse'
     
     # measurement settings
     pts = 11
@@ -196,7 +197,7 @@ def cal_hard_pi(name, mult=1):
     
     # hard pi pulses
     m.params['MW_pulse_durations'] = 1e-9 * (11 + np.ones(pts) + 115)
-    m.params['MW_pulse_amps'] = np.linspace(0.75,0.9,pts)
+    m.params['MW_pulse_amps'] = np.linspace(0.65,0.8,pts)
     m.params['MW_pulse_mod_frqs'] = np.ones(pts) * \
         m.params['AWG_MBI_MW_pulse_mod_frq']
         
@@ -208,25 +209,31 @@ def cal_hard_pi(name, mult=1):
 
 
 ### master function
-def run_calibrations(stage):
+def run_calibrations(stage, yellow):
     if stage == 1:        
-        cal_slow_pi(name)
+        cal_slow_pi(name, yellow)
 
     if stage == 2:
-        cal_4mhz_rabi(name)
+        cal_4mhz_rabi(name, yellow)
     
     if stage == 3:    
-        cal_4mhz_pi(name, mult=11)
-        cal_4mhz_pi2(name)
-        cal_CORPSE_pi(name)
-        cal_pi2pi_pi(name, mult=11)
-        cal_pi2pi_pi_mI0(name, mult=5)
-        cal_hard_pi(name, mult=15)
+        cal_4mhz_pi(name, yellow, mult=11)
+        #cal_4mhz_pi2(name, yellow)
+        cal_CORPSE_pi(name, yellow)
+        cal_pi2pi_pi(name, yellow, mult=11)
+        cal_pi2pi_pi_mI0(name, yellow, mult=5)
+        #cal_hard_pi(name, yellow, mult=15)
 
 
 if __name__ == '__main__':
-    # run_calibrations(1)
-    # run_calibrations(2)
-    run_calibrations(3)
+    #run_calibrations(1, yellow = True)
+    #run_calibrations(2, yellow = True)
+    run_calibrations(3, yellow = True)
 
-    
+    """
+    stage 0.0: do a ssro calibration
+    stage 0.5: do a dark ESR --> f_msm1_cntr
+    stage 1: slow pi pulse --> 'protocols/sil2-default/pulses/selective_pi_duration'
+    stage 2: 4 mhz rabi --> CORPSE_frq
+    stage 3: 
+    """
