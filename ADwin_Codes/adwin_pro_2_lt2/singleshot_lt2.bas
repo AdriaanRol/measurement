@@ -140,7 +140,7 @@ DIM CR_repump AS LONG
 
 INIT:
   counter_channel              = DATA_20[1]
-  repump_laser_DAC_channel      = DATA_20[2]
+  repump_laser_DAC_channel     = DATA_20[2]
   Ex_laser_DAC_channel         = DATA_20[3]
   A_laser_DAC_channel          = DATA_20[4]
   AWG_start_DO_channel         = DATA_20[5]
@@ -285,7 +285,7 @@ EVENT:
               inc(par_71)
             ELSE
               mode = 2
-              DATA_22[repetition_counter+1] = counts  ' CR before next SSRO sequence
+              DATA_22[repetition_counter+1] = cr_counts  ' CR before next SSRO sequence
               current_cr_threshold = CR_probe      
             ENDIF
             
