@@ -49,5 +49,5 @@ def run_nmr_rabi(name):
     BSM.finish(m, debug=False)
 
 if __name__ == '__main__':
-    # run_nmr_frq_scan('sil2')
+    #run_nmr_frq_scan('sil2')
     run_nmr_rabi('sil2')

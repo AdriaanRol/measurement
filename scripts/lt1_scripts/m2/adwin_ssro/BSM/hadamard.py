@@ -16,20 +16,6 @@ class HadamardTomo(BSM.NTomo):
         e.append(self.shelving_pulse)
         e.append(pulse.cp(self.T, length=100e-9))
         
-        # this is for using the detuned pi pulse
-        # prep_name = e.append(pulse.cp(self.N_pi2,
-        #     phase = BSM.phaseref(self.N_pi2.frequency, 
-        #         -self.N_pi2.length) - 90.,
-        #     amplitude = 1))
-
-        # hadamard_name = e.append(pulse.cp(self.N_pulse,
-        #     frequency = self.N_pi.frequency - self.params['N_rabi_frequency'],
-        #     length = self.N_pi.length / np.sqrt(2),
-        #     amplitude = 1,
-        #     phase = 36.5))
-
-        # t = e.length()-e.pulse_start_time(hadamard_name, 'RF')
-
         # this is by using two rotations around x/y -- This works much better!
         # phase of 0 makes x (rotate around +Y), -90 makes y (rotate around -X)
         prep_name = e.append(pulse.cp(self.N_pi2,
