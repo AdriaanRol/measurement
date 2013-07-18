@@ -306,11 +306,22 @@ class AOM(Instrument):
         self.save_cfg()
         print (self._name+' calibration finished')
 
-    def power_to_voltage(self, p):
-        a = self.get_cal_a()
-        xc = self.get_cal_xc()
-        k = self.get_cal_k()
-
+    def power_to_voltage(self, p, controller='cur'):
+        if controller=='cur':
+            a = self.get_cal_a()
+            xc = self.get_cal_xc()
+            k = self.get_cal_k()
+        elif controller=='pri':
+            a = self.get_pri_cal_a()
+            xc = self.get_pri_cal_xc()
+            k = self.get_pri_cal_k()
+        elif controller=='sec':
+            a = self.get_sec_cal_a()
+            xc = self.get_sec_cal_xc()
+            k = self.get_sec_cal_k()
+        else:
+            print 'Error: controller', controller, 'not registered.'
+            
         if p <= 0:
             voltage = 0
         else:

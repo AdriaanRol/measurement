@@ -18,17 +18,16 @@ class laser_reject0r(Instrument):
         
         self.rotator = qt.instruments['positioner']
         self.red = qt.instruments['Velocity1AOM']
-        self.arduino = qt.instruments['arduino']
         self.adwin = qt.instruments['adwin']
         
         self.optim_sets = {
                         'half' : {
                             'channel' : 2,
-                            'stepsize' : 2000,
+                            'stepsize' : 700,
                             'noof_points' : 11}, 
                         'quarter' : {
                             'channel' : 1,
-                            'stepsize' : 2000,
+                            'stepsize' : 700,
                             'noof_points' : 11},
                         'first_time' : {
                             'channel' : 0,
@@ -37,8 +36,9 @@ class laser_reject0r(Instrument):
                         }
 
         self.check_noof_steps = 10000    #ask before changing this number of steps
-        self.opt_threshold = 1E5
+        self.opt_threshold = 5E5
         self.opt_red_power = 1E-9 #NOTE!!
+        self.first_opt_red_power = 1E-9
         self.zpl_counter = 2
         self._is_running = False
         self.plot_degrees = True
@@ -91,8 +91,12 @@ class laser_reject0r(Instrument):
         return self.opt_red_power
 
     def do_set_opt_red_power(self, val):
-        self.opt_red_power = val
-
+        
+        if self.red.get_cal_a() > val:
+            self.opt_red_power = val
+        else:
+            print "Trying to set red optimization power outside of AOM range!"
+        
     def do_get_opt_scan_range(self):
         hwp_factor = self.optim_sets['half']['noof_points']\
                 * self.get_conversion_factor('half') #noof_steps * deg/steps
@@ -182,7 +186,7 @@ class laser_reject0r(Instrument):
                         str(self.optim_sets[w]['channel']))()
                 
                 #turn waveplat2es
-                data, qtdata, dataplot, premature_quit = self.run(w)
+                data, qtdata, dataplot, premature_quit = self.run(w, self.get_opt_red_power())
                 if not premature_quit:
                     qtdata, fitres = self.fit(w, data, qtdata, dataplot)
                 qtdata.close_file()
@@ -266,11 +270,15 @@ class laser_reject0r(Instrument):
         return rel_array.astype(int)
 
 
-    def run(self, w):
+    def run(self, w, red_power):
         """
         The actual optimization procedure. Input: waveplate ('half'/'quarter').
         Produces a plot of measured counts vs. rotation step.
         """
+        
+        #turn off red
+        self.red.set_power(0)
+        
         self.set_is_running(True)
 
         dx = self.optim_sets[w]['stepsize']
@@ -302,7 +310,7 @@ class laser_reject0r(Instrument):
             self.rotator.quick_scan(X, self.optim_sets[w]['channel'])
 
             #turn on red
-            self.red.set_power(self.get_opt_red_power())
+            self.red.set_power(red_power)
             qt.msleep(0.1)
 
             #get counts/ voltage
@@ -401,6 +409,7 @@ class laser_reject0r(Instrument):
         """
         For the first time, trace 360 degrees with the waveplate
         """
+                
         if w in ['half', 'quarter']:
             self.optim_sets['first_time']['channel'] = self.optim_sets[w]['channel']
         else:
@@ -412,7 +421,7 @@ class laser_reject0r(Instrument):
                 str(self.optim_sets[w]['channel']))()
 
         #turn waveplates
-        data, qtdata, dataplot, premature_quit = self.run('first_time')
+        data, qtdata, dataplot, premature_quit = self.run('first_time', self.first_opt_red_power)
         qtdata.close_file()
 
         if not premature_quit:
@@ -454,7 +463,7 @@ class laser_reject0r(Instrument):
     def routine(self):
         #idea: turn red on only just before we're at the first point       
         self.set_opt_red_power(self.get_opt_red_power())        
-        self.first_time_run('half')
+        self.first_time_run('half', self.first)
         self.first_time_run('quarter')
 
         #test if initial point is a valid starting point for optimization!
@@ -479,6 +488,21 @@ class laser_reject0r(Instrument):
             return False
         
         return True
+        
+        
+    def randomize_position(self, w, steps = 3):
+        """
+        Mainly used for testing. It randomizes the position of the waveplates
+        specified by "w". w must be a list containing 'half' or 'quarter'.
+        For more randomization choose a higher value for steps.
+        """
+        
+        self.red.set_power(0)
+        
+        for k in range(steps):
+            for idx,waveplate in enumerate(w):
+                print '* Randomizing %s waveplate (step %d) ...'%(waveplate, k)
+                self.rotator.quick_scan(np.random.uniform(low = -20000, high = 20000) ,self.optim_sets[waveplate]['channel'])
 
 
 

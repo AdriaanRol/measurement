@@ -6,92 +6,34 @@ from measurement.lib.pulsar import pulse, pulselib, element
 import BSM
 reload(BSM)
 
-N_rabi_frequency = 5.532e3
-
-class TomoDebug(BSM.NTomo):
-
-    def get_sweep_elements(self):
-        
-        # just make an empty element, i.e., do tomography on the initialized state
-        e = element.Element('Empty', pulsar=qt.pulsar)
-        e.append(self.T)
-        e.append(self.shelving_pulse)
-        e.append(self.T)
-        e.append(pulse.cp(self.N, length=1e-6))
-        self.element = e
-
-        self.params['tomo_time_offset'] = 0
-
-        return BSM.NTomo.get_sweep_elements(self)\
-
-class NPhaseCheck(BSM.NReadoutMsmt):
-    mprefix = 'BSM_PhaseCheck'
-
-    def get_sweep_elements(self):        
-        
-        e = element.Element('e1', pulsar=qt.pulsar)
-        e.append(self.T)
-        e.append(self.shelving_pulse)
-        e.append(pulse.cp(self.T, length=100e-9))
-        n = e.append(self.N_pi2)
-        t = e.length()-e.pulse_start_time(n, 'RF')
-
-        elts = []
-        for i in range(self.params['pts']):            
-            e2 = element.Element('e2-{}'.format(i), 
-                pulsar=qt.pulsar)            
-            e2.append(pulse.cp(self.N_pi2,
-                phase = BSM.phaseref(self.N_pi2.frequency,t) + self.params['phases'][i]))
-            e2.append(self.TN)
-            # e2.append(self.pi2pi_m1)
-            
-            elts.append([e,e2])
-        
-        return elts
-
 class HadamardTomo(BSM.NTomo):
     mprefix = 'BSM_TomoHadamard'
 
     def get_sweep_elements(self):
-        e = element.Element('Hadamard', pulsar=qt.pulsar)
+        e = element.Element('Hadamard', pulsar=qt.pulsar, 
+            global_time = True)
         e.append(self.T)
         e.append(self.shelving_pulse)
         e.append(pulse.cp(self.T, length=100e-9))
         
-        # this is for using the detuned pi pulse
-        # prep_name = e.append(pulse.cp(self.N_pi2,
-        #     phase = BSM.phaseref(self.N_pi2.frequency, 
-        #         -self.N_pi2.length) - 90.,
-        #     amplitude = 1))
-
-        # hadamard_name = e.append(pulse.cp(self.N_pulse,
-        #     frequency = self.N_pi.frequency - self.params['N_rabi_frequency'],
-        #     length = self.N_pi.length / np.sqrt(2),
-        #     amplitude = 1,
-        #     phase = 36.5))
-
-        # t = e.length()-e.pulse_start_time(hadamard_name, 'RF')
-
         # this is by using two rotations around x/y -- This works much better!
-
+        # phase of 0 makes x (rotate around +Y), -90 makes y (rotate around -X)
         prep_name = e.append(pulse.cp(self.N_pi2,
-            phase = -90,
+            phase = -90.,
             amplitude = 1))
 
         # first a pi/2 over +Y
         h_pi2_name = e.append(pulse.cp(self.N_pi2,
-            phase = BSM.phaseref(self.N_pi2.frequency, 
-                e.pulse_length(prep_name)),
+            phase = 0,
             amplitude = 1))
         
         # then a pi over +X
         h_pi_name = e.append(pulse.cp(self.N_pi,
-            phase = BSM.phaseref(self.N_pi2.frequency,
-                e.pulse_length(prep_name)+e.pulse_length(h_pi2_name)) + 90.,
+            phase = 90.,
             amplitude = 1))
 
         self.element = e
-        self.params['tomo_time_offset'] = e.length() - e.pulse_start_time(prep_name, 'RF')
+        self.params['tomo_time_offset'] = e.length()
 
         return BSM.NTomo.get_sweep_elements(self)
 
@@ -161,31 +103,6 @@ class HadamardPhaseSweep(BSM.NReadoutMsmt):
         
         qt.pulsar.program_sequence(seq)
 
-
-def tomo_debug():
-    m = TomoDebug('debug')
-    BSM.prepare(m)
-
-    m.params['reps_per_ROsequence'] = 1000
-    m.params['pts'] = 3 # must be 3 for any N-tomography msmt
-    
-    BSM.finish(m, debug=False)
-
-def phase_check(name):
-    m = NPhaseCheck(name)
-    BSM.prepare(m)
-
-    m.params['reps_per_ROsequence'] = 1000
-
-    m.params['phases'] = np.array([0,180,90])
-    m.params['pts'] = len(m.params['phases'])
-
-    # for the autoanalysis
-    m.params['sweep_name'] = 'second pi2 phase (deg)'
-    m.params['sweep_pts'] = m.params['phases']
-
-    BSM.finish(m, debug=False)
-
 def H_phase_sweep(name):
     m = HadamardPhaseSweep(name)
     BSM.prepare(m)
@@ -202,15 +119,12 @@ def H_phase_sweep(name):
 
     BSM.finish(m, debug=False, upload=False)
 
-
 def hadamard_tomo(name):
     m = HadamardTomo(name)
     BSM.prepare(m)
 
     m.params['reps_per_ROsequence'] = 1000
     m.params['pts'] = 3 # must be 3 for any N-tomography msmt
-
-    m.params['N_rabi_frequency'] = 5.532e3
     
     BSM.finish(m, debug=False, upload=True)
 

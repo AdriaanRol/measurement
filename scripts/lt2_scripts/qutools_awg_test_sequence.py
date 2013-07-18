@@ -9,7 +9,7 @@ from measurement.lib.config import awgchannels_lt2 as awgcfg
 Nreps = 50000
 pulses_per_element = 100
 syncs_per_pulse = 1
-interpulse_delay = 2950 #(1000 - (2*syncs_per_pulse-1)*pulse_len) #ns
+interpulse_delay = 5950 #(1000 - (2*syncs_per_pulse-1)*pulse_len) #ns
 presync_delay = 50 #ns
 sync_ch1_delay = 10 #ns
 avg_stop_jitter = 0.0001 #ns

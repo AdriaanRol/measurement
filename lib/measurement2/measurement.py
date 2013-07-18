@@ -196,17 +196,19 @@ class Measurement(object):
 
     keystroke_monitor_interval = 1000 # [ms]
 
-    def __init__(self, name):
+    def __init__(self, name, save=True):
         self.name = name
-        self.dataset_idx = 0
         self.params = MeasurementParameters()
-        self.h5data = h5.HDF5Data(name=self.mprefix+'_'+self.name)
-        self.h5datapath = self.h5data.filepath()
-        self.h5base = '/'+self.name+'/'
-        self.h5basegroup = self.h5data.create_group(self.name)
-        self.datafolder = self.h5data.folder()
-        self.keystroke_monitors = {}
         
+        if save:
+            self.dataset_idx = 0
+            self.h5data = h5.HDF5Data(name=self.mprefix+'_'+self.name)
+            self.h5datapath = self.h5data.filepath()
+            self.h5base = '/'+self.name+'/'
+            self.h5basegroup = self.h5data.create_group(self.name)
+            self.datafolder = self.h5data.folder()
+        
+        self.keystroke_monitors = {}
         self.params['measurement_type'] = self.mprefix
 
         # self.h5data.flush()
@@ -355,8 +357,8 @@ class AdwinControlledMeasurement(Measurement):
     mprefix = 'AdwinMeasurement'
     adwin_process = ''
 
-    def __init__(self, name):
-        Measurement.__init__(self, name)
+    def __init__(self, name, save=True):
+        Measurement.__init__(self, name, save=save)
 
         self.adwin_process_params = MeasurementParameters('AdwinParameters')
 

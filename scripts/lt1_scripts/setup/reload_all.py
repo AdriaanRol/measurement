@@ -42,4 +42,8 @@ reload(pulsar_msmt)
 from measurement.lib.measurement2.adwin_ssro import pulsar_mbi_espin
 reload(pulsar_mbi_espin)
 
+# teleportation measurements
+#from measurement.lib.measurement2.adwin_ssro import teleportation
+#reload(teleportation)
+
 

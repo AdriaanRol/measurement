@@ -194,7 +194,7 @@ def adwin_laser_scan(name):
     m.finish_scan()
 
 def labjack_laser_scan(name):
-    labjack_dac_channel=1
+    labjack_dac_channel=6 #6 is coarse, 7 is fine for NF1 LT1
     m = LabjackLaserScan(name,labjack_dac_channel)
 
     m.frq_offset = 470400 # red 470400
