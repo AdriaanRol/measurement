@@ -9,6 +9,7 @@ import numpy
 import qt
 from qt import *
 from numpy import *
+from measurement.lib.cython.hh_optimize import hht4
 
 LIB_VERSION = "1.2"
 MAXDEVNUM	  = 8		      # max num of USB devices
@@ -644,6 +645,8 @@ class HydraHarp_HH400(Instrument): #1
                 os.makedirs(rawdir)
             rawdat = array([])
             rawidx = 0
+            accumulated_data = array([], dtype = np.uintc) #NOTE
+            sleep_time = 0 #NOTE
             lengths = array([])
             times = array([])
 
@@ -667,6 +670,22 @@ class HydraHarp_HH400(Instrument): #1
                     
                     rawdat = array([])
                     rawidx += 1
+            
+            #NOTE: live data analysis added by Gerwin @ 6/19/2013
+            else:
+                #analyze the entire array or just the new data?
+                prefiltered = hht4.filter_raw_data(data[:length])
+                accumulated_data = np.append(accumulated_data, prefiltered)
+                
+                if len(accumulated_data) > raw_max_len:
+                    savez(os.path.join(rawdir, 
+                        timestamp+'_LDE_rawdata-%.3d'%rawidx), 
+                        length=len(accumulated_data), data=accumulated_data)
+                    
+                    rawidx += 1
+                    accumulated_data = np.array([], dtype = np.uintc)
+
+                qt.msleep(sleep_time)
 
             
 #            for i in arange(0, length):                
