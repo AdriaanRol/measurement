@@ -74,7 +74,7 @@ class MBI(Measurement):
         
         self.par = {}
         
-        self.par['MBI_threshold']    =              1 # pass if counts > (MBI_threshold-1)
+        self.par['MBI_threshold']    =              1# pass if counts > (MBI_threshold-1)
         self.par['RO_repetitions']  =               100
 
     # FIXME: this should be in the measurement class
@@ -82,6 +82,7 @@ class MBI(Measurement):
 
         self.awg = qt.instruments['AWG']
         self.temp = qt.instruments['temperature_lt1']
+        print lt1
         if lt1:
             self.ins_green_aom=qt.instruments['GreenAOM_lt1']
             self.ins_E_aom=qt.instruments['MatisseAOM_lt1']
@@ -94,7 +95,7 @@ class MBI(Measurement):
             self.ctr_channel=2
             self.mwpower = self.MW_power
         else:
-            self.ins_green_aom=qt.instruments['YellowAOM'] #XXX YELLOW XXX
+            self.ins_green_aom=qt.instruments['GreenAOM'] 
             self.ins_E_aom=qt.instruments['MatisseAOM']
             self.ins_A_aom=qt.instruments['NewfocusAOM']
             self.adwin=qt.instruments['adwin']
@@ -105,7 +106,7 @@ class MBI(Measurement):
             self.mwpower = self.MW_power
             self.microwaves.set_status('off')
         self.par['counter_channel'] = self.ctr_channel
-        self.par['green_laser_DAC_channel'] =      self.adwin.get_dac_channels()['yellow_aom'] #XXX YELLOW XXX
+        self.par['green_laser_DAC_channel'] =      self.adwin.get_dac_channels()['green_aom'] 
         self.par['Ex_laser_DAC_channel'] =         self.adwin.get_dac_channels()['matisse_aom']
         self.par['A_laser_DAC_channel'] =          self.adwin.get_dac_channels()['newfocus_aom']
 
@@ -247,7 +248,7 @@ class MBI(Measurement):
             Ex_final_RO_voltage = self.par['Ex_final_RO_voltage'],
             A_final_RO_voltage = self.par['A_final_RO_voltage'],
             )
-
+        print 'end of adwin_start_process'
         if lt1:
             self.adwin_lt2.start_check_trigger_from_lt1()
                 
@@ -274,7 +275,7 @@ class MBI(Measurement):
 
             qt.msleep(2.5)
         self.physical_adwin.Stop_Process(9)
-            
+        print 'getting data'    
         if lt1:
             self.adwin_lt2.stop_check_trigger_from_lt1()
 
@@ -283,7 +284,7 @@ class MBI(Measurement):
 
         sweep_length = len(self.par['sweep_par'])
         par_long   = self.physical_adwin.Get_Data_Long(20,1,35)
-        par_float  = self.physical_adwin.Get_Data_Float(20,1,10)
+        par_float  = self.physical_adwin.Get_Data_Float(21,1,10)
         CR_before = self.physical_adwin.Get_Data_Long(22,1,1)
         CR_after  = self.physical_adwin.Get_Data_Long(23,1,1)
         SP_hist   = self.physical_adwin.Get_Data_Long(24,1,self.ssrodic['SP_A_duration'])
@@ -316,8 +317,10 @@ class MBI(Measurement):
         savdat={}
         savdat['time']=ro_time
 
-        #FIXME: sweep_axis doesnt do anything useful ?
+        savdat['sweep_axis']=self.par['sweep_par']
+        savdat['sweep_par_name'] = self.par['sweep_par_name']
         savdat['SSRO_counts']=SSRO_data
+        
         data.save_dataset(name='Spin_RO', do_plot=False, 
              data = savdat, idx_increment = False)
         savdat['SSRO_weak_counts']=SSRO_weak_data
@@ -366,10 +369,10 @@ class MBI(Measurement):
     def end_measurement(self):
         self.awg.stop()
         self.awg.set_runmode('CONT')
-        self.adwin.set_simple_counting()
+        #self.adwin.set_simple_counting()
         self.counters.set_is_running(1)
         self.counters.set_is_running(1)
-        #self.ins_green_aom.set_power(180e-6) #XXX YELLOW XXX
+        self.ins_green_aom.set_power(180e-6) 
 
         self.microwaves.set_status('off')
         self.microwaves.set_iq('off')
@@ -442,7 +445,7 @@ def get_freq(m,line):
     else:
         f=line
     return f
-def sweep_MW_freq (lt1 = False, name = 'SIL9_lt2_sweep_MW_freq', min_fr = 2.8245E9-exp.sil9['MW_source_freq'], max_fr = 2.8335E9-exp.sil9['MW_source_freq'],nr_of_MW_pulses=1,nr_of_datapoints = 21,reps=500,RO_reps=1,do_shel=False,init_line='-1',RO_line='-1'):
+def sweep_MW_freq (lt1 = False, name = 'SIL9_lt2_sweep_MW_freq', min_fr = 2.8245E9-exp.sil9['MW_source_freq'], max_fr = 2.8335E9-exp.sil9['MW_source_freq'],nr_of_MW_pulses=1,nr_of_datapoints = 21,reps=500,RO_reps=1,do_shel=False,init_line='-1'):
     datafolder= 'D:/measuring/data/'
     date = dtime.strftime('%Y') + dtime.strftime('%m') + dtime.strftime('%d')
     datapath = datafolder+date + '/'
@@ -492,7 +495,7 @@ def sweep_MW_freq (lt1 = False, name = 'SIL9_lt2_sweep_MW_freq', min_fr = 2.8245
     m.MBI_mod_freq = get_freq(m,init_line)*np.ones(nr_of_datapoints)
     
     print 'init on mI = ', init_line, m.MBI_mod_freq
-    print 'RO on mI = ', RO_line, m.MWdic['MW_mod_freq']
+   
     
     m.par['sweep_par'] = (MW_fr+exp.sil9['MW_source_freq'])*1e-9
     m.par['sweep_par_name'] = 'MW frequency (GHz)'
@@ -814,6 +817,7 @@ def sweep_RF_amp (lt1 = False, name = 'SIL9_lt2_sweep_RF_amp', min_amp = 0., max
     m.nr_of_datapoints = nr_of_datapoints
     m.do_incr_RO_steps = 0.
     m.incr_RO_steps=1.
+    m.do_shel=True
     
     RF_amp=np.linspace(min_amp,max_amp,nr_of_datapoints)
     RF_freq = m.sildic['mI_m1_freq']

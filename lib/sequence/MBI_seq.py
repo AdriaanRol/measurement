@@ -656,6 +656,7 @@ def ramsey_CORPSE(seq,d,ret_last=False):
     # vars for the channel names
     chan_mw_pm = 'MW_pulsemod' #is connected to ch1m1
 
+    
     if exp.lt1:
         chan_mwI = 'MW_Imod_lt1'
         chan_mwQ = 'MW_Qmod_lt1'
@@ -871,7 +872,7 @@ def WM_feedback(m, seq):
         chan_mwI = 'MW_Imod'
         chan_mwQ = 'MW_Qmod'
         chan_RF  = 'RF'
-        chan_ADwintrig='ADwin_trigger'
+        chan_ADwintrig='adwin_sync'
  
     if exp.lt1:
         MW_pulse_mod_risetime = 10
@@ -1110,8 +1111,8 @@ def Nucl_Ramsey(m,seq):
 
         el_name='Pi2_pulse_first'+str(i)
         seq.add_element(el_name,trigger_wait=True)
-        last = shelving_pulse(seq, pulse_name = 'shelving_pulse_'+str(i),
-                    freq=m.MBI_mod_freq,el_name = el_name)
+        last,shel_time = shelving_pulse(seq, pulse_name = 'shelving_pulse_'+str(i),
+                    freq=m.MBI_mod_freq,el_name = el_name,ret_time=True)
         
         seq.add_pulse('wait_before_RF', channel = chan_mwI, element = el_name,
                 start = 0,start_reference=last,link_start_to='end', duration = 1000,
@@ -1119,7 +1120,7 @@ def Nucl_Ramsey(m,seq):
         last = 'wait_before_RF'
         seq.add_pulse('RF', channel = chan_RF, element =  el_name,
                 start = 0,start_reference=last,link_start_to='end', duration = pulsescfg['RF_pi2_len'],
-                amplitude = pulsescfg['RF_pi2_amp'],shape='sine',frequency=m.RF_freq[i],envelope='erf')
+                amplitude = pulsescfg['RF_pi2_amp'],shape='sine',frequency=m.RF_freq[i],envelope='erf',phase=0)
         seq.add_pulse('wait_before_readout', channel = chan_mwI, element =  el_name,
                 start = 0, duration =1000., amplitude = 0, start_reference = 'RF',
                 link_start_to = 'end', shape = 'rectangular')
@@ -1128,11 +1129,11 @@ def Nucl_Ramsey(m,seq):
             seq.add_pulse('MW_pulse_I'+str(i),channel=chan_mwI,element=el_name,start=0,
                            start_reference= last,link_start_to='end',
                            duration=m.MW_pulse_len[i], amplitude = m.MW_pulse_amp[i],
-                           shape='cosine',frequency=m.MW_mod_freq[i])
+                           shape='cosine',frequency=m.RO_mod_freq)
             seq.add_pulse('MW_pulse_Q'+str(i),channel=chan_mwQ,element=el_name,start=0,
                            start_reference= last,link_start_to='end',
                            duration=m.MW_pulse_len[i], amplitude = m.MW_pulse_amp[i],
-                           shape='sine',frequency=m.MW_mod_freq[i])
+                           shape='sine',frequency=m.RO_mod_freq)
             seq.add_pulse('MW_pulse_mod'+str(i),channel=chan_mw_pm,element=el_name,
                            start=-MW_pulse_mod_risetime, duration = 2*MW_pulse_mod_risetime,
                            start_reference='MW_pulse_I'+str(i),link_start_to='start',
@@ -1152,11 +1153,11 @@ def Nucl_Ramsey(m,seq):
             seq.add_pulse('MW_pulse_I'+str(i),channel=chan_mwI,element=el_name,start=0,
                            link_start_to='end',start_reference=last,
                            duration=m.MW_pulse_len[i], amplitude = m.MW_pulse_amp[i],
-                           shape='cosine',frequency=m.MW_mod_freq[i])
+                           shape='cosine',frequency=m.RO_mod_freq)
             seq.add_pulse('MW_pulse_Q'+str(i),channel=chan_mwQ,element=el_name,start=0,
                            link_start_to='end', start_reference=last,
                            duration=m.MW_pulse_len[i], amplitude = m.MW_pulse_amp[i],
-                           shape='sine',frequency=m.MW_mod_freq[i])
+                           shape='sine',frequency=m.RO_mod_freq)
             seq.add_pulse('MW_pulse_mod'+str(i),channel=chan_mw_pm,element=el_name,
                            start=-MW_pulse_mod_risetime, duration = 2*MW_pulse_mod_risetime,
                            start_reference='MW_pulse_I'+str(i),link_start_to='start',
@@ -1167,25 +1168,59 @@ def Nucl_Ramsey(m,seq):
                 duration =1000., amplitude = 0, shape = 'rectangular')
         seq.add_pulse('RF', channel = chan_RF, element = el_name, start = 0,
                 start_reference='wait_before_readout',link_start_to='end', 
-                duration = pulsescfg['RF_pi2_len'],amplitude = pulsescfg['RF_pi2_amp'],
+                duration = pulsescfg['RF_pi2_len'],amplitude = 0*pulsescfg['RF_pi2_amp'],
                 shape='sine',frequency=m.RF_freq[i],envelope='erf',phase=m.RF_phase[i])
         seq.add_pulse('wait_after_RF', channel = chan_mwI, element = el_name,
                 start = 0,start_reference='RF',link_start_to='end', duration = 2000,
                 amplitude = 0,shape='rectangular')
         
+
+        '''
+        readout_pulse (seq, freq=m.RO_mod_freq,pulse_name = 'readout_pulse_'+str(i),
+                first = 'wait_before_readout',el_name = el_name)    
+        '''
+        el_name='wait_for_SP'+str(i)
+        seq.add_element(name=el_name,trigger_wait=False,repetitions=exp.ssroprotocol['SP_A_duration']+5)
+        seq.add_pulse('wait_time', channel = chan_mwI, element = el_name,
+                start = 0, duration =1000., amplitude = 0, shape = 'rectangular')
         el_name='readout_pulse'+str(i)
         if i == m.nr_of_datapoints-1:
-            seq.add_element(name = el_name, trigger_wait = True, goto_target = 'MBI_pulse0')
+            seq.add_element(name = el_name, trigger_wait = m.RO_element_do_trigger, goto_target = 'MBI_pulse0')
         else:
-            seq.add_element(name = el_name, trigger_wait=True)
+            seq.add_element(name = el_name, trigger_wait=m.RO_element_do_trigger)
 
         seq.add_pulse('wait_before_readout', channel = chan_mwI, element = el_name,
                 start = 0, duration =1000., amplitude = 0, shape = 'rectangular')    
-        readout_pulse (seq, freq=m.RO_mod_freq,pulse_name = 'readout_pulse_'+str(i),
-                first = 'wait_before_readout',el_name = el_name)    
-        
-    seq_wait_time = (pulsescfg['RF_pi2_len']/1000)+7
-
+        last='wait_before_readout'
+        d={}
+        d['el_name']=el_name
+        d['do_shelv_pulse']=False
+        d['first']='wait_before_readout'
+        d['pulse_name']='RO_ramsey'
+        d['tau']=exp.pulses['tau_strong_meas']
+        d['phase'] = 90
+        d['weak']=0
+        d['CORPSE_frabi']=exp.pulses['CORPSE_nsel_frabi']
+        d['CORPSE_amp']=exp.pulses['CORPSE_nsel_amp']
+        d['freq']=m.RO_mod_freq
+        d['finalwait_dur']=10
+        last,time = ramsey_CORPSE(seq,d,ret_last=True)
+        '''
+        seq.add_pulse('MW_pulse_I_2'+str(i),channel=chan_mwI,element=el_name,start=0,
+            start_reference= last,link_start_to='end',
+            duration=m.RF_phase[i]/2., amplitude = m.MW_pulse_amp[i],
+            shape='cosine',frequency=m.MW_mod_freq[i])
+        seq.add_pulse('MW_pulse_Q_2'+str(i),channel=chan_mwQ,element=el_name,start=0,
+            start_reference= last,link_start_to='end',
+            duration=m.RF_phase[i]/2., amplitude = m.MW_pulse_amp[i],
+            shape='sine',frequency=m.MW_mod_freq[i])
+        seq.add_pulse('MW_pulse_mod_2'+str(i),channel=chan_mw_pm,element=el_name,
+            start=-MW_pulse_mod_risetime, duration = 2*MW_pulse_mod_risetime,
+            start_reference='MW_pulse_I_2'+str(i),link_start_to='start',
+            duration_reference='MW_pulse_I_2'+str(i),link_duration_to='duration', amplitude=2.0)
+        time=max(m.RF_phase)/1000.
+        '''
+    seq_wait_time = ((2*pulsescfg['RF_pi2_len']+2*max(m.MW_pulse_len))/1000)+7+shel_time+time+m.rep_wait_el
 
     return seq_wait_time
 

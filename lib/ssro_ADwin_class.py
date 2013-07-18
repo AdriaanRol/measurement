@@ -11,7 +11,7 @@ import inspect
 import time
 import msvcrt
 from measurement import Measurement
-from analysis.lib.ssro import ssro_adwin as ssro_analyse
+#from analysis.lib.ssro import ssro_adwin as ssro_analyse
 from config import experiment_lt2 as expdict
 
 
@@ -45,8 +45,8 @@ class ssroADwinMeasurement(Measurement):
             self.ctr_channel=2
         else:
             self.ins_green_aom=qt.instruments['GreenAOM']
-            self.ins_E_aom=qt.instruments['NewfocusAOM']
-            self.ins_A_aom=qt.instruments['MatisseAOM']
+            self.ins_E_aom=qt.instruments['MatisseAOM']
+            self.ins_A_aom=qt.instruments['NewfocusAOM']
             self.adwin= qt.instruments['adwin']
             self.counters=qt.instruments['counters']
             self.physical_adwin=qt.instruments['physical_adwin']
@@ -65,8 +65,8 @@ class ssroADwinMeasurement(Measurement):
         self.par = {}
         self.par['counter_channel'] =              self.ctr_channel
         self.par['green_laser_DAC_channel'] =      self.adwin.get_dac_channels()['green_aom']
-        self.par['Ex_laser_DAC_channel'] =         self.adwin.get_dac_channels()['newfocus_aom']
-        self.par['A_laser_DAC_channel'] =          self.adwin.get_dac_channels()['matisse_aom']
+        self.par['Ex_laser_DAC_channel'] =         self.adwin.get_dac_channels()['matisse_aom']
+        self.par['A_laser_DAC_channel'] =          self.adwin.get_dac_channels()['newfocus_aom']
         self.par['AWG_start_DO_channel'] =         1
         self.par['AWG_done_DI_channel'] =          8
         self.par['send_AWG_start'] =               0
@@ -79,7 +79,7 @@ class ssroADwinMeasurement(Measurement):
         self.par['wait_after_pulse_duration'] =    self.d['wait_after_pulse_duration']
         self.par['CR_preselect'] =                 self.d['CR_preselect']
         self.par['SSRO_repetitions'] =             10000
-        self.par['SSRO_duration'] =                50 #NOTE this times reps must not exceed 1E6
+        self.par['SSRO_duration'] =                250 #NOTE this times reps must not exceed 1E6
         self.par['SSRO_stop_after_first_photon'] = 0
         self.par['cycle_duration'] =               300
 
@@ -133,21 +133,21 @@ class ssroADwinMeasurement(Measurement):
         #print 'SP E amplitude: %s'%self.par['Ex_SP_voltage']
         #print 'SP A amplitude: %s'%self.par['A_SP_voltage']
 
-        if not(self.lt1):
-            self.adwin.set_singleshot_var(set_phase_locking_on = self.set_phase_locking_on)
-            self.adwin.set_singleshot_var(set_gate_good_phase =  self.set_gate_good_phase)            
-
+        #if not(self.lt1):
+            #self.adwin.set_singleshot_var(set_phase_locking_on = self.set_phase_locking_on)
+            #self.adwin.set_singleshot_var(set_gate_good_phase =  self.set_gate_good_phase)            
+            
         self.adwin.start_singleshot(
                 load=True, stop_processes=['counter'],
                 counter_channel = self.par['counter_channel'],
-                green_laser_DAC_channel = self.par['green_laser_DAC_channel'],
+                repump_laser_DAC_channel = self.par['green_laser_DAC_channel'],
                 Ex_laser_DAC_channel = self.par['Ex_laser_DAC_channel'],
                 A_laser_DAC_channel = self.par['A_laser_DAC_channel'],
                 AWG_start_DO_channel = self.par['AWG_start_DO_channel'],
                 AWG_done_DI_channel = self.par['AWG_done_DI_channel'],
                 send_AWG_start = self.par['send_AWG_start'],
                 wait_for_AWG_done = self.par['wait_for_AWG_done'],
-                green_repump_duration = self.par['green_repump_duration'],
+                repump_duration = self.par['green_repump_duration'],
                 CR_duration = self.par['CR_duration'],
                 SP_duration = self.par['SP_duration'],
                 SP_filter_duration = self.par['SP_filter_duration'],
@@ -158,8 +158,8 @@ class ssroADwinMeasurement(Measurement):
                 SSRO_duration = self.par['SSRO_duration'],
                 SSRO_stop_after_first_photon = self.par['SSRO_stop_after_first_photon'],
                 cycle_duration = self.par['cycle_duration'],
-                green_repump_voltage = self.par['green_repump_voltage'],
-                green_off_voltage = self.par['green_off_voltage'],
+                repump_voltage = self.par['green_repump_voltage'],
+                #green_off_voltage = self.par['green_off_voltage'],
                 Ex_CR_voltage = self.par['Ex_CR_voltage'],
                 A_CR_voltage = self.par['A_CR_voltage'],
                 Ex_SP_voltage = self.par['Ex_SP_voltage'],
@@ -185,8 +185,8 @@ class ssroADwinMeasurement(Measurement):
         
         reps_completed      = self.physical_adwin.Get_Par(73)
         print('completed %s / %s readout repetitions'%(reps_completed,self.par['SSRO_repetitions']))
-        if not(self.lt1):
-            self.adwin.set_singleshot_var(set_phase_locking_on = 0)
+        #if not(self.lt1):
+            #self.adwin.set_singleshot_var(set_phase_locking_on = 0)
 
         self.par_long   = self.physical_adwin.Get_Data_Long(20,1,25)
         self.par_float  = self.physical_adwin.Get_Data_Float(20,1,10)
@@ -238,6 +238,7 @@ class ssroADwinMeasurement(Measurement):
             data = self.par, idx_increment = True)
        
         return 
+
         
     def ssro_vs_Ex_amplitude(self,name, data, min_power, max_power, steps, reps_per_point, do_ms0 = True, do_ms1=True):
 
@@ -502,5 +503,5 @@ def ssro_ADwin_Cal(reps=5000,Ex_p='exp_dic',A_p=0,sweep_power=False,lt1=False,ph
     if A_SP_power != 'exp_dic':
         m.par['A_SP_amplitude']=A_SP_power    
     m.measure(m,name,sweep_power)
-    ssro_analyse.run_all(ssro_analyse.get_latest_data())
+    #ssro_analyse.run_all(ssro_analyse.get_latest_data())
 
