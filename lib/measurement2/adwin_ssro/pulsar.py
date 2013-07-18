@@ -17,14 +17,15 @@ class PulsarMeasurement(ssro.IntegratedSSRO):
         
         self.params['measurement_type'] = self.mprefix
                
-    def setup(self, wait_for_awg=True):
+    def setup(self, wait_for_awg=True, mw=True):
         ssro.IntegratedSSRO.setup(self)
         
-        self.mwsrc.set_iq('on')
-        self.mwsrc.set_pulm('on')
-        self.mwsrc.set_frequency(self.params['mw_frq'])
-        self.mwsrc.set_power(self.params['mw_power'])
-        self.mwsrc.set_status('on')
+        if mw:
+            self.mwsrc.set_iq('on')
+            self.mwsrc.set_pulm('on')
+            self.mwsrc.set_frequency(self.params['mw_frq'])
+            self.mwsrc.set_power(self.params['mw_power'])
+            self.mwsrc.set_status('on')
         
         self.awg.set_runmode('SEQ')
         self.awg.start()
