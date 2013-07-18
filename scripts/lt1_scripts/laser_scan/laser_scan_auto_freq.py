@@ -175,7 +175,7 @@ class LabjackAdwinLaserScan(LaserFrequencyScan):
         print 'scan to frequency',f
         v=self.get_laser_voltage()
         succes=False
-        while ((v < self.max_v-tolerance) and (v> self.min_v+tolerance)):
+        while ((v < self.max_v-0.3) and (v> self.min_v+0.3)):
             if (msvcrt.kbhit() and msvcrt.getch()=='q'): 
                 break
             cur_f=self.get_frequency(self.wm_channel)
