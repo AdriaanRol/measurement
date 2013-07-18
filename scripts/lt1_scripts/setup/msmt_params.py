@@ -30,7 +30,7 @@ cfg.set(branch+'mIp1_mod_frq',  f_msm1_cntr - mw0 + N_HF_frq)
 branch='protocols/AdwinSSRO/'
 cfg.set(branch+        'AWG_done_DI_channel',          16)
 cfg.set(branch+        'AWG_event_jump_DO_channel',    7)
-cfg.set(branch+        'AWG_start_DO_channel',         1)
+cfg.set(branch+        'AWG_start_DO_channel',         10)
 cfg.set(branch+        'A_laser_DAC_channel',          6)
 cfg.set(branch+        'Ex_laser_DAC_channel',         7)
 cfg.set(branch+        'counter_channel',              1)
@@ -72,9 +72,6 @@ cfg.set(branch+        'MW_pulse_mod_risetime',                    10e-9)
 cfg.set(branch+        'AWG_to_adwin_ttl_trigger_duration',        2e-6)
 cfg.set(branch+        'repump_after_MBI_duration',                100)
 cfg.set(branch+        'repump_after_MBI_amp',                     15e-9)
-
-
-
 
 
 ### more specfic settings
@@ -187,44 +184,41 @@ cfg.set(branch+        'AWG_wait_duration_before_MBI_MW_pulse',     50e-9)
 cfg.set(branch+        'AWG_wait_for_adwin_MBI_duration',           15e-6)
 
 ### sil2, Teleportation ###
-branch='protocols/sil2-default/Teleportation/'
-cfg.set(branch+        'A_CR_amplitude',                10e-9)
-cfg.set(branch+        'A_RO_amplitude',                0.)
-cfg.set(branch+        'A_SP_amplitude',                15e-9)
-cfg.set(branch+        'Ex_CR_amplitude',               10e-9)
-cfg.set(branch+        'Ex_RO_amplitude',               5e-9)
-cfg.set(branch+        'Ex_SP_amplitude',               0.)
-cfg.set(branch+        'yellow_repump_amplitude',       0)
-cfg.set(branch+        'yellow_repump_duration',        3) 
-cfg.set(branch+        'CR_duration',                   100)
-cfg.set(branch+        'CR_threshold_preselect',        40)
-cfg.set(branch+        'CR_threshold_probe',            40)
-cfg.set(branch+        'time_before_forced_CR',         500000)
-cfg.set(branch+        'teleportation_repetitions',     1000)
-
-
+# branch='protocols/sil2-default/Teleportation/'
+# cfg.set(branch+        'A_CR_amplitude',                10e-9)
+# cfg.set(branch+        'A_RO_amplitude',                0.)
+# cfg.set(branch+        'A_SP_amplitude',                15e-9)
+# cfg.set(branch+        'Ex_CR_amplitude',               10e-9)
+# cfg.set(branch+        'Ex_RO_amplitude',               5e-9)
+# cfg.set(branch+        'Ex_SP_amplitude',               0.)
+# cfg.set(branch+        'yellow_repump_amplitude',       0)
+# cfg.set(branch+        'yellow_repump_duration',        3) 
+# cfg.set(branch+        'CR_duration',                   100)
+# cfg.set(branch+        'CR_threshold_preselect',        40)
+# cfg.set(branch+        'CR_threshold_probe',            40)
+# cfg.set(branch+        'time_before_forced_CR',         500000)
+# cfg.set(branch+        'teleportation_repetitions',     1000)
 
 ### sil2, BSM
 cfg.set('protocols/sil2-default/BSM/N_ref_frq', N_frq)
 cfg.set('protocols/sil2-default/BSM/e_ref_frq', finit)
 
-
 ### General settings for ADWIN Teleportation
-branch='protocols/Teleportation/'
-cfg.set(branch+        'AWG_done_DI_channel',                      16)
-cfg.set(branch+        'AWG_event_jump_DO_channel',                7)
-cfg.set(branch+        'AWG_start_DO_channel',                     1)
-cfg.set(branch+        'A_laser_DAC_channel',                      6)
-cfg.set(branch+        'Ex_laser_DAC_channel',                     7)
-cfg.set(branch+        'counter_channel',                          1)
-cfg.set(branch+        'yellow_laser_DAC_channel',                 3)
-cfg.set(branch+        'green_laser_DAC_channel',                  4)
-cfg.set(branch+        'green_off_amplitude',                      0.0)
-cfg.set(branch+        'green_repump_amplitude',                   100e-6)
-cfg.set(branch+        'green_repump_duration',                    10)
-cfg.set(branch+        'yellow_repump_duration',                   500)
-cfg.set(branch+        'yellow_off_voltage',                       0)
-cfg.set(branch+        'green_off_voltage',                        0)
+# branch='protocols/Teleportation/'
+# cfg.set(branch+        'AWG_done_DI_channel',                      16)
+# cfg.set(branch+        'AWG_event_jump_DO_channel',                7)
+# cfg.set(branch+        'AWG_start_DO_channel',                     1)
+# cfg.set(branch+        'A_laser_DAC_channel',                      6)
+# cfg.set(branch+        'Ex_laser_DAC_channel',                     7)
+# cfg.set(branch+        'counter_channel',                          1)
+# cfg.set(branch+        'yellow_laser_DAC_channel',                 3)
+# cfg.set(branch+        'green_laser_DAC_channel',                  4)
+# cfg.set(branch+        'green_off_amplitude',                      0.0)
+# cfg.set(branch+        'green_repump_amplitude',                   100e-6)
+# cfg.set(branch+        'green_repump_duration',                    10)
+# cfg.set(branch+        'yellow_repump_duration',                   500)
+# cfg.set(branch+        'yellow_off_voltage',                       0)
+# cfg.set(branch+        'green_off_voltage',                        0)
 
 
 cfg.save_all()
