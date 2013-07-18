@@ -184,6 +184,7 @@ config['adwin_lt2_processes'] = {
                 },
         
                 # ADwin single-shot readout with yellow freq aom scan
+        
         'singleshot_yellow_scan' : {
                 'index' : 9,
                 'file' : 'singleshot_lt2_ys.TB9',
@@ -310,9 +311,7 @@ config['adwin_lt2_processes'] = {
                     'segmented_RO_data' : 29,
                     }, 
                 },
-
-
-                
+             
         # ADwin single-shot readout
         'integrated_ssro' : {
                 'index' : 9,
@@ -373,6 +372,7 @@ config['adwin_lt2_processes'] = {
                     'statistics' : 26,
                     }, 
                 },
+        
         'MBI' : {
                 'info' : """
                     Conditional repumping, and resonant readout at the end.
@@ -471,7 +471,8 @@ config['adwin_lt2_processes'] = {
                     'sweep_durations'           : 27,
                     },
                 },
-         'general_pulses_repeat' : { 
+       
+        'general_pulses_repeat' : { 
                 'index' : 9,
                 'file' : 'general_pulses_repeat.TB9',
                 'params_long' : [           # keep order!!!!!!!!!!!!!
@@ -504,7 +505,8 @@ config['adwin_lt2_processes'] = {
                     'first_count'               : 32,
                     },
                 },
-         'spincontrol' : {  #with conditional repump, resonant
+      
+        'spincontrol' : {  #with conditional repump, resonant
                 'index' : 9,
                 'file' : 'spincontrol_lt2.TB9',
                 'params_long' : [           # keep order!!!!!!!!!!!!!
@@ -547,8 +549,7 @@ config['adwin_lt2_processes'] = {
                     'set_gate_good_phase'       : 18,}
                 },
 
-                
-         'spincontrol_MBI' : {  #with conditional repump, resonant, MBI
+        'spincontrol_MBI' : {  #with conditional repump, resonant, MBI
                 'index' : 9,
                 'file' : 'MBI_spincontrol_lt2.TB9',
                 'params_long' : [           # keep order!!!!!!!!!!!!!
@@ -596,6 +597,7 @@ config['adwin_lt2_processes'] = {
                     'set_phase_locking_on'      : 19,
                     'set_gate_good_phase'       : 18,}
                 },
+        
         'MBI_Multiple_RO' : {  #with conditional repump, resonant, MBI
                 'index' : 9,
                 'file' : 'MBI_Multiple_RO_lt2.TB9',
@@ -651,6 +653,7 @@ config['adwin_lt2_processes'] = {
                     'set_phase_locking_on'      : 19,
                     'set_gate_good_phase'       : 18,}
                 },
+       
         'MBI_feedback' : {  #with conditional repump, resonant, MBI,and addaptive feedback
                 'index' : 9,
                 'file' : 'MBI_Feedback_lt2.TB9',
@@ -718,8 +721,9 @@ config['adwin_lt2_processes'] = {
                     'FinalRO_FF'                : 37,
                     },
                 },        
-            #MBI + segmented RO (Can in the future be included with other adwin program - Machiel)
-            'MBI_segmented_ssro' : {
+        #MBI + segmented RO (Can in the future be included with other adwin program - Machiel)
+        
+        'MBI_segmented_ssro' : {
                 'index' : 9,
                 'file' : 'ssro_MBI_segmented_RO_lt2.TB9',
                 'params_long' : [           # keep order!!!!!!!!!!!!!
@@ -1042,7 +1046,6 @@ config['adwin_lt1_processes'] = {
                 'params_float_length' : 10,                
                 },
 
-
         'singleshot_altern_CR' : {
                 'index' : 9,
                 'file' : 'singleshot_lt1_altern_cr.tb9', 
@@ -1225,7 +1228,13 @@ config['adwin_lt1_processes'] = {
                     'ssro_results' : 27,
                     },
                 },
+        
         'teleportation' : {
+
+                # TODO
+                # - better names for the lasers
+
+
                 'info' : """
                     Teleportation master control. LT1 is local, LT2 is remote.
                     """,
@@ -1244,20 +1253,39 @@ config['adwin_lt1_processes'] = {
                     ['green_repump_duration'        ,      10],
                     ['time_before_forced_CR'        , 1000000],
                     ['teleportation_repetitions'    ,    1000],
+                    ['SSRO1_duration'               ,      50],
+                    ['ADwin_lt2_trigger_do_channel' ,       2],
+                    ['ADWin_lt2_di_channel_in_bit'  ,       1],
+                    ['AWG_lt1_trigger_do_channel'   ,       1],
+                    ['AWG_lt1_di_channel_in_bit'    ,       3],
+                    ['PLU_arm_do_channel'           ,      10],
+                    ['PLU_di_channel_in_bit'        ,       2],
+                    ['wait_before_SSRO1'            ,       3],
+                    ['wait_before_SP_after_RO'      ,       3],
+                    ['SP_after_RO_duration'         ,      50],
+                    ['wait_before_SSRO2'            ,       3],
+                    ['SSRO2_duration'               ,      50],
+                    ['repump_after_repetitions'     ,       1],
+                    ['CR_repump'                    ,    1000],
+                    ['AWG_lt1_event_do_channel'     ,       3],
+                    ['debug_CR_only'                ,       0],
+                    ['debug_eSSRO_only'             ,       0],
+                    ['debug_NSSRO_only'             ,       0],
+                    ['debug_eNSSRO_only'            ,       0]             
                     ],
                 'params_long_index'    : 20,
-                'params_long_length'   : 25,
+                'params_long_length'   : 30,
                 'params_float' : [          
-                    ['yellow_repump_voltage'        ,   0.0],
-                    ['yellow_off_voltage'           ,     0],
-                    ['green_repump_voltage'         ,   0.0],
-                    ['green_off_voltage'            ,     0],
+                    ['repump_voltage'              ,     0.0],
+                    ['repump_off_voltage'            ,     0],
                     ['Ex_CR_voltage'                ,   0.0],
                     ['A_CR_voltage'                 ,   0.0],
                     ['Ex_SP_voltage'                ,   0.0],
                     ['A_SP_voltage'                 ,   0.0],
                     ['Ex_RO_voltage'                ,   0.0],
-                    ['A_RO_voltage'                 ,   0.0],                    
+                    ['A_RO_voltage'                 ,   0.0],       
+                    ['Ex_off_voltage'                ,   0.0],
+                    ['A_off_voltage'                 ,   0.0],                        
                     ],
                 'params_float_index'    : 21,
                 'params_float_length'   : 10,
