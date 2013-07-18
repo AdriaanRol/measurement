@@ -5,7 +5,7 @@
 ' Control_long_Delays_for_Stop   = No
 ' Priority                       = High
 ' Version                        = 1
-' ADbasic_Version                = 5.0.6
+' ADbasic_Version                = 5.0.8
 ' Optimize                       = Yes
 ' Optimize_Level                 = 1
 ' Info_Last_Save                 = TUD276629  TUD276629\localadmin
@@ -40,8 +40,9 @@ DIM DATA_7[100] AS LONG
 'DIM DATA_45[4] AS LONG
 
 'Singleshot adwin:
-DIM DATA_20[25] AS LONG
-DIM DATA_21[10] AS FLOAT
+DIM DATA_19[1000] AS FLOAT AT EM_LOCAL 
+DIM DATA_20[35] AS LONG
+DIM DATA_21[20] AS FLOAT
 'DIM DATA_22[10000] AS LONG AT EM_LOCAL  
 'DIM DATA_23[10000] AS LONG AT EM_LOCAL  
 'DIM DATA_24[500] AS LONG AT EM_LOCAL      
