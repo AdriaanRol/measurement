@@ -1,5 +1,0 @@
-execfile('laser_scan.py')
-qt.msleep(60)
-execfile('laser_scan_red_yellow_up_downv2.py')
-qt.msleep(60)
-execfile('laser_scan_red_yellow_up_down_gate.py')
