@@ -26,9 +26,6 @@ class AdwinSSRO(m2.AdwinControlledMeasurement):
     A_aom = None
     repump_aom = None
     adwin = None
-    
-    def __init__(self, name):
-        m2.AdwinControlledMeasurement.__init__(self, name)
         
     def autoconfig(self):
         """
@@ -49,7 +46,7 @@ class AdwinSSRO(m2.AdwinControlledMeasurement):
     def setup(self):
         """
         sets up the hardware such that the msmt can be run
-        (i.e., turn of the lasers, prepare MW src, etc)
+        (i.e., turn off the lasers, prepare MW src, etc)
         """
         
         self.repump_aom.set_power(0.)
