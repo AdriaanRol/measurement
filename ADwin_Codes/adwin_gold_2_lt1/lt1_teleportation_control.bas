@@ -13,22 +13,25 @@
 ' Teleportation master controller program. lt1 is in charge, lt2 is remote
 
 ' modes:
-' 0 : do local yellow repumping / resonance check
-' 1 : do local red CR check
-' 2 : wait for N polarization
-' 3 : local CR OK, wait for remote
-' 4 : run LDE
-' 5 : run nitrogen initialization, BSM
-' 6 : do SSRO 1 + SP
-' 7 : run nitrogen RO pulse
-' 8 : do SSRO 2
-' 9 : run U and RO basis rotation
-' 10: wait for remote SSRO
+' 0 : start
+' 1 : do local yellow repumping / resonance check
+' 2 : do local red CR check
+' 3 : wait for N polarization
+' 4 : local CR OK, wait for remote
+' 5 : run LDE
+' 6 : run nitrogen initialization, BSM
+' 7 : do SSRO 1 + SP
+' 8 : run nitrogen RO pulse
+' 9 : do SSRO 2
+' 10: run U and RO basis rotation
+' 11: wait for remote SSRO
 ''
 ' remote modes:
 ' 0 : start remote CR check
 ' 1 : remote CR check running
 ' 2 : remote CR OK, waiting
+' 3 : remote SSRO running
+' 4 : remote SSRO OK
 
 '
 ' Resources used:
@@ -87,9 +90,16 @@
 '   23: repump after repetitions (max tele events before always repump yellow). 
 '   24: CR repump (threshold for repump start)
 '   25: AWG lt1 event channel
-'   26: debug_CR_only
-'   27: debug_eSSRO_only
-'   28: debug_NSSRO_only
+'   26: debug mode (0 for no debugging, or 1 to 4)
+'   27: AWG lt2 address input channel 0
+'   28: AWG lt2 address input channel 1
+'   29: AWG lt2 address input channel 2
+'   30: AWG lt2 address input channel 3
+'   31: AWG lt2 address LDE input
+'   32: AWG lt2 address U1 input
+'   33: AWG lt2 address U2 input
+'   34: AWG lt2 address U3 input
+'   35: AWG lt2 address U4 input
 
 ' DATA_21: float parameters
 '   1 : repump voltage
@@ -122,7 +132,7 @@
 #DEFINE max_yellow_hist_cts     100                ' dimension of photon counts histogram for yellow Resonance check
 
 ' parameters
-DIM DATA_20[27] AS LONG               ' integer parameters
+DIM DATA_20[40] AS LONG               ' integer parameters
 DIM DATA_21[10] AS FLOAT               ' float parameters
 DIM DATA_7[max_red_hist_cts] AS LONG           ' histogram of counts during 1st red CR after timed-out lde sequence
 DIM DATA_8[max_red_hist_cts] AS LONG           ' histogram of counts during red CR (all attempts)
@@ -135,11 +145,11 @@ DIM DATA_26[max_repetitions] AS LONG    'BSM SSRO2 (nitrogen) results
 DIM DATA_27[max_repetitions] AS LONG    'CR check counts before teleportation event
 
 ' general variables
-DIM i AS LONG ' counter for array initalization
-DIM mode AS INTEGER
-DIM remote_mode AS INTEGER
-DIM timer AS LONG
-DIM CR_timer AS LONG
+DIM i               AS LONG ' counter for array initalization
+DIM mode            AS INTEGER
+DIM remote_mode     AS INTEGER
+DIM timer           AS LONG
+DIM CR_timer        AS LONG
 
 ' settings for CR checks and repumping
 DIM counter AS LONG                      'select internal ADwin counter 1 - 4 for conditional readout (PSB lt1)
@@ -172,8 +182,26 @@ DIM repump_after_repetitions AS LONG                  'number of attempts, after
 'LDE sequence
 DIM AWG_lt1_trigger_do_channel AS LONG
 DIM AWG_lt1_event_do_channel AS LONG
+DIM AWG_lt1_di_channel AS LONG
 DIM AWG_lt1_di_channel_in_bit AS LONG
+DIM AWG_lt2_address0_do_channel AS LONG
+DIM AWG_lt2_address1_do_channel AS LONG
+DIM AWG_lt2_address2_do_channel AS LONG
+DIM AWG_lt2_address3_do_channel AS LONG
+DIM AWG_lt2_address_all_in_bit AS LONG
+DIM AWG_lt2_address_LDE AS LONG
+DIM AWG_lt2_address_LDE_in_bit AS LONG
+DIM AWG_lt2_address_U AS LONG
+DIM AWG_lt2_address_U1 AS LONG
+DIM AWG_lt2_address_U1_in_bit AS LONG
+DIM AWG_lt2_address_U2 AS LONG
+DIM AWG_lt2_address_U2_in_bit AS LONG
+DIM AWG_lt2_address_U3 AS LONG
+DIM AWG_lt2_address_U3_in_bit AS LONG
+DIM AWG_lt2_address_U4 AS LONG
+DIM AWG_lt2_address_U4_in_bit AS LONG
 DIM PLU_arm_do_channel AS LONG
+DIM PLU_di_channel AS LONG
 DIM PLU_di_channel_in_bit AS LONG
 DIM PLU_Bell_state AS LONG
 
@@ -190,9 +218,13 @@ DIM wait_steps_before_SP AS LONG
 DIM spin_pumping_steps AS LONG 
 
 ' remote things on lt2
+DIM ADwin_LT2_di_channel AS LONG 
 DIM ADwin_LT2_di_channel_in_bit AS LONG 
 DIM ADwin_LT2_trigger_do_channel AS LONG 
-DIM strobe_input AS LONG  ' this is calculated from a function of RO1_ms_result, RO2_ms_result, PLU_Bell_state
+DIM AWG_LT1_address_U AS LONG  ' this is calculated from a function of RO1_ms_result, RO2_ms_result, PLU_Bell_state
+DIM ADwin_in_is_high AS LONG
+DIM ADwin_in_was_high AS LONG
+DIM ADwin_switched_to_high AS LONG
 
 ' Teleportation
 DIM tele_event_id AS LONG 
@@ -205,10 +237,11 @@ DIM DIO_register AS LONG
 DIM timervalue1 AS LONG
 DIM timervalue2 AS LONG
 
-DIM debug_CR_only AS LONG       'CR checking only
-DIM debug_eSSRO_only AS LONG    'CR checking, AWG sequence ('LDE'), SSRO1
-DIM debug_NSSRO_only AS LONG    'CR checking, N pol, AWG sequence ('LDE', incl CNOT), SSRO2. = TPQI debug.  
-DIM debug_eNSSRO_only AS LONG   'CR checking, N pol, AWG seq, SSRO1, CNOT, SSRO2
+DIM debug_mode        AS LONG
+DIM debug_CR_only     AS LONG    'CR checking only
+DIM debug_eSSRO_only  AS LONG    'CR checking, AWG sequence ('LDE'), SSRO1
+DIM debug_NSSRO_only  AS LONG    'CR checking, N pol, AWG sequence ('LDE', incl CNOT), SSRO2. = TPQI debug.  
+DIM debug_eNSSRO_only AS LONG    'CR checking, N pol, AWG seq, SSRO1, CNOT, SSRO2
 
 DIM A AS LONG
 
@@ -252,11 +285,11 @@ INIT:
   teleportation_repetitions     = DATA_20[10]
   electron_RO_steps             = DATA_20[11]
   ADwin_LT2_trigger_do_channel  = DATA_20[12]
-  ADwin_LT2_di_channel_in_bit   = DATA_20[13]
+  ADwin_LT2_di_channel          = DATA_20[13]
   AWG_lt1_trigger_do_channel    = DATA_20[14]
-  AWG_lt1_di_channel_in_bit     = DATA_20[15]
+  AWG_lt1_di_channel            = DATA_20[15]
   PLU_arm_do_channel            = DATA_20[16]
-  PLU_di_channel_in_bit         = DATA_20[17]  
+  PLU_di_channel                = DATA_20[17]  
   wait_steps_before_RO1         = DATA_20[18]
   wait_steps_before_SP          = DATA_20[19]
   spin_pumping_steps            = DATA_20[20]
@@ -265,11 +298,16 @@ INIT:
   repump_after_repetitions      = DATA_20[23]
   CR_repump                     = DATA_20[24]
   AWG_lt1_event_do_channel      = DATA_20[25]
-  'pick one of the following debug modes (or set all to zero for the real thing)
-  debug_CR_only                 = DATA_20[26]     'if 1: debug - CR checking only
-  debug_eSSRO_only              = DATA_20[27]     'if 1: debug - CR checking, single AWG sequence, and SSRO1 only
-  debug_NSSRO_only              = DATA_20[28]     'if 1: debug - CR checking, N pol, single AWG sequence (include CNOT), and SSRO2 only
-  debug_eNSSRO_only             = DATA_20[29]     'if 1: debug - CR checking, N pol, AWG seq, SSRO1, CNOT seq, SSRO2
+  debug_mode                    = DATA_20[26]
+  AWG_lt2_address0_do_channel   = DATA_20[27]
+  AWG_lt2_address1_do_channel   = DATA_20[28]
+  AWG_lt2_address2_do_channel   = DATA_20[29]
+  AWG_lt2_address3_do_channel   = DATA_20[30] 
+  AWG_lt2_address_LDE           = DATA_20[31]
+  AWG_lt2_address_U1            = DATA_20[32]
+  AWG_lt2_address_U2            = DATA_20[33]
+  AWG_lt2_address_U3            = DATA_20[34]
+  AWG_lt2_address_U4            = DATA_20[35]
   
   repump_voltage                = DATA_21[1]
   repump_off_voltage            = DATA_21[2]
@@ -292,7 +330,33 @@ INIT:
   current_RO2_counts            = 0
   RO1_ms_result                 = 0
   RO2_ms_result                 = 0
- 
+  ADwin_in_is_high              = 0
+  ADwin_in_was_high             = 0
+  ADwin_switched_to_high        = 0
+  
+  IF (debug_mode = 0) THEN
+    debug_CR_only        = 0     'if 1: debug - CR checking
+    debug_eSSRO_only     = 0     'if 1: debug - CR checking, single AWG sequence, and SSRO1 only
+    debug_NSSRO_only     = 0     'if 1: debug - CR checking, N pol, single AWG sequence (include CNOT), and SSRO2 only
+    debug_eNSSRO_only    = 0     'if 1: debug - CR checking, N pol, AWG seq, SSRO1, CNOT seq, SSRO2
+  ELSE 
+    IF (debug_mode = 1) THEN
+      debug_CR_only = 1
+    ELSE
+      IF (debug_mode = 2) THEN
+        debug_eSSRO_only = 1
+      ELSE 
+        IF (debug_mode = 3) THEN
+          debug_NSSRO_only = 1
+        ELSE
+          IF (debug_mode = 4) THEN
+            debug_eNSSRO_only = 1
+          ENDIF
+        ENDIF
+      ENDIF
+    ENDIF
+  ENDIF
+     
   ' prepare hardware
   par_60 = 0                      'debug par used for measuring timer
   par_62 = 0                      'debug par used for measuring timer
@@ -314,16 +378,40 @@ INIT:
   par_79 = 0                      ' number of timed out LDE sequences
   par_80 = 0                      ' cumulative counts during RO1 (LT1)
 
-  DAC( repump_aom_channel, 3277*repump_off_voltage+32768) ' turn off repump laser
-  DAC( e_aom_channel, 3277*e_off_voltage + 32768)    'turn off Ey aom 
-  DAC( fb_aom_channel, 3277*fb_off_voltage + 32768)   'turn off FB aom
-  CNT_ENABLE( 0000b)               'turn off all counters
-  CNT_MODE( counter,00001000b)     'configure counter
-  CONF_DIO( 11)                    'configure DIO 16:23 as input, all other ports as output
-  DIGOUT( ADwin_LT2_trigger_do_channel,0)    'trigger to ADwin LT2
-  DIGOUT( AWG_lt1_trigger_do_channel, 0) 'trigger to AWG LT1
-  DIGOUT( AWG_lt1_event_do_channel, 0) 'event to AWG LT1
-  DIGOUT( PLU_arm_do_channel, 0)   'PLU is not armed until just before LDE start trigger **????
+  ADwin_LT2_di_channel_in_bit = 2^ADwin_LT2_di_channel 
+  AWG_LT1_di_channel_in_bit = 2^AWG_LT1_di_channel
+  PLU_di_channel_in_bit = 2^PLU_di_channel
+  AWG_lt2_address_all_in_bit = 2^(AWG_lt2_address0_do_channel)+ 2^(AWG_lt2_address1_do_channel)+ 2^(AWG_lt2_address2_do_channel)+2^(AWG_lt2_address3_do_channel)
+  
+  '' The below specifies the addresses of the AWG lt2 in bits, for easier handling later on. The lines are too long to be on one line.
+  AWG_lt2_address_LDE_in_bit = (AWG_lt2_address_LDE AND 8)/8 * 2^(AWG_lt2_address3_do_channel) + (AWG_lt2_address_LDE AND 4)/4 * 2^(AWG_lt2_address2_do_channel) 
+  AWG_lt2_address_LDE_in_bit = AWG_lt2_address_LDE + (AWG_lt2_address_LDE AND 2)/2 * 2^(AWG_lt2_address1_do_channel) + (AWG_lt2_address_LDE AND 1)/1 * 2^(AWG_lt2_address0_do_channel)
+  
+  AWG_lt2_address_U1_in_bit = (AWG_lt2_address_U1 AND 8)/8 * 2^(AWG_lt2_address3_do_channel) + (AWG_lt2_address_U1 AND 4)/4 * 2^(AWG_lt2_address2_do_channel) 
+  AWG_lt2_address_U1_in_bit = AWG_lt2_address_U1_in_bit + (AWG_lt2_address_U1 AND 2)/2 * 2^(AWG_lt2_address1_do_channel) + (AWG_lt2_address_U1 AND 1)/1 * 2^(AWG_lt2_address0_do_channel)
+  
+  AWG_lt2_address_U2_in_bit = (AWG_lt2_address_U2 AND 8)/8 * 2^(AWG_lt2_address3_do_channel) + (AWG_lt2_address_U2 AND 4)/4 * 2^(AWG_lt2_address2_do_channel) 
+  AWG_lt2_address_U2_in_bit = AWG_lt2_address_U2_in_bit + (AWG_lt2_address_U2 AND 2)/2 * 2^(AWG_lt2_address1_do_channel) + (AWG_lt2_address_U2 AND 1)/1 * 2^(AWG_lt2_address0_do_channel)
+  
+  AWG_lt2_address_U3_in_bit = (AWG_lt2_address_U3 AND 8)/8 * 2^(AWG_lt2_address3_do_channel) + (AWG_lt2_address_U3 AND 4)/4 * 2^(AWG_lt2_address2_do_channel) 
+  AWG_lt2_address_U3_in_bit = AWG_lt2_address_U3_in_bit + (AWG_lt2_address_U3 AND 2)/2 * 2^(AWG_lt2_address1_do_channel) + (AWG_lt2_address_U3 AND 1)/1 * 2^(AWG_lt2_address0_do_channel)
+  
+  AWG_lt2_address_U4_in_bit = (AWG_lt2_address_U4 AND 8)/8 * 2^(AWG_lt2_address3_do_channel) + (AWG_lt2_address_U4 AND 4)/4 * 2^(AWG_lt2_address2_do_channel) 
+  AWG_lt2_address_U4_in_bit = AWG_lt2_address_U4_in_bit + (AWG_lt2_address_U4 AND 2)/2 * 2^(AWG_lt2_address1_do_channel) + (AWG_lt2_address_U4 AND 1)/1 * 2^(AWG_lt2_address0_do_channel)
+
+    
+
+  DAC( repump_aom_channel, 3277*repump_off_voltage+32768)   'turn off repump laser
+  DAC( e_aom_channel, 3277*e_off_voltage + 32768)           'turn off Ey aom 
+  DAC( fb_aom_channel, 3277*fb_off_voltage + 32768)         'turn off FB aom
+  CNT_ENABLE( 0000b)                          'turn off all counters
+  CNT_MODE( counter,00001000b)                'configure counter
+  CONF_DIO( 11)                               'configure DIO 16:23 as input, all other ports as output
+  DIGOUT( ADwin_LT2_trigger_do_channel,0)     'trigger to ADwin LT2
+  DIGOUT( AWG_lt1_trigger_do_channel, 0)      'trigger to AWG LT1
+  DIGOUT( AWG_lt1_event_do_channel, 0)        'event to AWG LT1
+  DIGOUT( PLU_arm_do_channel, 0)              'PLU is not armed until just before LDE start trigger **????
+  DIGOUT_BITS( 0, AWG_lt2_address_all_in_bit)           'clear the output on the DO's that input to the strobe
 
   'debug 
   timervalue1=0
@@ -343,8 +431,7 @@ EVENT:
   
   DIO_register = DIGIN_EDGE(1)
   
-  
-  
+  'The below is designed so that the mutual waiting of the ADwins for each other is dealed with.
   ADwin_in_was_high = ADwin_in_is_high  
   IF (((DIO_register) AND ( ADwin_LT2_di_channel_in_bit)) > 0) THEN
     ADwin_in_is_high = 1 
@@ -352,18 +439,12 @@ EVENT:
     ADwin_in_is_high = 0
   ENDIF 
   
-  IF ((ADwin_in_was_high = 0) AND (ADwin_in_is_high > 0)) THEN ' ADwin switched to high during last round. 
+  IF ((ADwin_in_was_high = 0) AND ( ADwin_in_is_high > 0)) THEN ' ADwin switched to high during last round. 
     ADwin_switched_to_high = 1
   ELSE
     ADwin_switched_to_high = 0
   ENDIF
-  
-  
-  IF (((DIO_register) AND ( PLU_di_channel_in_bit)) > 0) THEN
-    PLU_in_is_high = 1
-  ELSE
-    PLU_in_is_high = 0
-  ENDIF 
+    
   
   'If only one setup is used, remote_mode may be set to 2
   remote_mode = 2
@@ -386,6 +467,13 @@ EVENT:
       ENDIF
     
     case 2 'remote CR OK, waiting
+    
+    case 3 'remote SSRO running
+      IF (ADwin_switched_to_high > 0) THEN
+        remote_mode = 4
+      ENDIF
+      
+    case 4 'remote SSRO OK, waiting
     
   endselect
   
@@ -521,12 +609,15 @@ EVENT:
     
     case 5 'run LDE
       IF (timer = 0) THEN
-        'DIGOUT_BITS( strobe_channel_LDE, 1)   ' put a voltage on the right strobe channel
-        DIGOUT( PLU_arm_do_channel, 1)         ' arm the PLU - or should this happen earlier?
+        DIGOUT( PLU_arm_do_channel, 1)                  ' arm the PLU - or should this happen earlier?
+        DIGOUT_BITS( 0, AWG_LT2_address_all_in_bit)     ' put the output to zero on all address channels to be sure.
+        DIGOUT_BITS( AWG_LT2_address_LDE_in_bit, 0)     ' put the output to high on only the right strobe channels
+        'DIGOUT_BITS has as input (set, clear). 1 in 'set' sets output to high, 1 in 'clear' sets output to low. 0 leaves the output untouched  
         DIGOUT( AWG_lt1_trigger_do_channel, 1) ' trigger the AWG to start the waiting sequence
         CPU_SLEEP(9)      'sleep time is defined in units of 10 ns. We need >= 20 ns pulse width. 
         'adwin needs a value >= 9, so we set 9*10 ns sleep time
         DIGOUT( AWG_lt1_trigger_do_channel, 0) ' stop the trigger
+        DIGOUT_BITS( 0, AWG_LT2_address_all_in_bit)    ' put the output to zero on all address channels again
         INC(par_78)       'number of LDE sequence starts
         IF ((debug_eSSRO_only = 1) OR (debug_eNSSRO_only = 1)) THEN 'go to mode 6 'wait for AWG done' without waiting for PLU trigger
           mode = 6 
@@ -648,14 +739,20 @@ EVENT:
         ENDIF
       ENDIF
             
-    case 10 'run U and RO basis rotation
+    case 10 'run U and RO basis rotation NOT YET FINSIHED PROGRAMMING
       IF (timer = 0) THEN
-        strobe_input = 1 ' this should be a function of RO1_ms_result, RO2_ms_result, PLU_Bell_state
+        AWG_LT2_address_U = 1 ' this should be in an if statement, with RO1_ms_result, RO2_ms_result, PLU_Bell_state
         'DIGOUT( strobe_channel_right_U, 1)              ' put a voltage on the right strobe channel
+        remote_mode = 4
+        timer = -1
       ENDIF
      
-    case 11 'wait for remote SSRO
-
+    case 11 'wait for remote SSRO NOT YET FINSIHED PROGRAMMING
+      IF (remote_mode = 5) THEN
+        remote_mode = 0
+        mode = 0
+        timer = -1
+      ENDIF
   endselect
   
   
