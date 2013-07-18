@@ -54,16 +54,16 @@ config['adwin'] = {
 config['light'] = {
         'velocity1aom' : {
             'AWG_channel' : 'ch1m2',
-            'high' : 1.0,
+            'high' : 0.4,
             'low' : 0.,
             'cable_delay' : 690, },
-        
-        'velocity1mod' : {
-            'AWG_channel' : 'ch2',
-            'high' : 1.0,
-            'low' : -1.0,
-            'cable_delay' : 690, },
-        
+
+        'yellowaom' : {
+            'AWG_channel' : 'ch2m2',
+            'high' : 0.4,
+            'low' : 0.,
+            'cable_delay' : 690, },#cable delay yet to be determined!!
+               
         'psbapdgate' : {
             'AWG_channel' : 'ch2m1',
             'high' : 2.0,
