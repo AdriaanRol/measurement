@@ -29,7 +29,7 @@ def angle_rot_back(theta):
 
 def WM_feedback(lt1 = False, name = 'SIL9_lt2_undo_msmnt_tau50ns_postselected_RO2us_phase',
         min_par = 1, max_par = 360,tau=50,weak_RO_duration=2,sweep_phase=False,undo_msmnt=True,par_name='phase (degree)',
-        nr_of_datapoints = 7, reps=30000):
+        nr_of_datapoints = 7, reps=3000):
 
     datafolder= 'D:/measuring/data/'
     date = dtime.strftime('%Y') + dtime.strftime('%m') + dtime.strftime('%d')
@@ -170,18 +170,53 @@ def optimize():
     qt.msleep(5)
 
 
-#WM_feedback(lt1 = False, name = 'SIL9_lt2_RO6us_postselected_first50ns_sweepPhaseRF_phase270deg',
-#        min_par = 1, max_par = 50,tau=50,weak_RO_duration=6,
-#        sweep_phase=False,undo_msmnt=True,par_name='tau (ns)',
-#        nr_of_datapoints = 4, reps=20000)
+
+
+#for n in [4, 6, 8, 10, 15, 25, 35, 50, 75, 100]:
+'''
+for n in [50]:
+
+    fname = 'SIL10_lt2_feedback_sweep_phase_ROdur='+str(n)+'us_segmRO'
+    WM_feedback(lt1 = False, name = fname,
+        min_par = 1, max_par = 360,tau=50,weak_RO_duration=n,
+        sweep_phase=True,undo_msmnt=False,par_name='tau (ns)',
+        nr_of_datapoints = 11, reps=1000)
+
+    print n
+'''
+for n in [25, 35, 50, 75, 100]:   
+    fname = 'SIL10_lt2_feedback_Z_ROdur='+str(n)+'us_segmRO_SN=noClick'
+    WM_feedback(lt1 = False, name = fname,
+        min_par = 1, max_par = 50,tau=50,weak_RO_duration=n,
+        sweep_phase=False,undo_msmnt=False,par_name='tau (ns)',
+        nr_of_datapoints = 2, reps=5000)
+
+
 
 '''
+#[4, 6, 8, 10, 15, 25, 35, 50, 75, 100]
+for n in [75, 100]:   
+    fname = 'SIL10_lt2_feedback_phase_ROdur='+str(n)+'us_segmRO_SN=noClick'
+    WM_feedback(lt1 = False, name = fname,
+        min_par = 1, max_par = 360,tau=50,weak_RO_duration=n,
+        sweep_phase=True,undo_msmnt=False,par_name='phase (deg)',
+        nr_of_datapoints = 11, reps=1000)
+'''
+'''
+WM_feedback(lt1 = False, name = 'SIL10_lt2_feedback_sweep_phase_ROdur=100us_segmRO',
+        min_par = 1, max_par = 360,tau=50,weak_RO_duration=100,
+        sweep_phase=True,undo_msmnt=False,par_name='tau (ns)',
+        nr_of_datapoints = 11, reps=1000)
+
+
+
+
 WM_feedback (lt1 = False, name = 'SIL9_lt2_RO2us_5nW_tau1=50ns_ROafterclick_lookatfirstmsmnt',
         min_par = 50, max_par = 50.001,tau=50,weak_RO_duration=2,
         sweep_phase=False,undo_msmnt=True,par_name='tau (ns)',
         nr_of_datapoints = 2, reps=25000)
 optimize()
-'''
+
 WM_feedback (lt1 = False, name = 'SIL9_lt2_RO2us_5nW_tau1=50ns_ROafterclick_lookatfirstmsmnt_phase_1',
         min_par = 1, max_par = 360,tau=50,weak_RO_duration=2,
         sweep_phase=True,undo_msmnt=True,par_name='phase (degree)',
@@ -228,3 +263,4 @@ WM_feedback (lt1 = False, name = 'SIL9_lt2_RO2us_5nW_tau1=50ns_ROafterclick_look
         min_par = 50, max_par = 50.001,tau=50,weak_RO_duration=2,
         sweep_phase=False,undo_msmnt=True,par_name='tau (ns)',
         nr_of_datapoints = 2, reps=25000)
+'''

@@ -2,18 +2,19 @@ import time
 import qt
 import data
 from analysis.lib.fitting import fit, common
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 from numpy import *
 
 #measurement parameters
-name = 'LT2-Sil9-PSB-FS-APD'
+name = 'LT2-Sil15-PSB-FS-APD'
 steps=31
-max_power=350e-6       #[w]
+max_power=300e-6       #[w]
 counter=1      #number of counter
-HH_count=True    # counting with the HH, assumes apd on channel 0
+HH_count=False    # counting with the HH, assumes apd on channel 0
 bg_x=2          #delta x position of background [um]
 bg_y=2             #delta y position of background [um]
 LT1 = False
+
 
 #instruments
 

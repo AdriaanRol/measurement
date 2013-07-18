@@ -21,7 +21,7 @@ pi_pulse_length = exp.MBIprotocol['MBI_pulse_len']      #length of MW pi pulse
 mwpower_lt1 = -10        #in dBm
 mwpower_lt2 = 20            #in dBm
 nr_of_datapoints = 101       #max nr_of_datapoints*repetitions_per_datapoint should be < 20000
-repetitions_per_datapoint = 1000 
+repetitions_per_datapoint = 500 
 amplitude_ssbmod = exp.MBIprotocol['MBI_pulse_amp']
 #amplitude_ssbmod = 0.015
 mwfreq = np.linspace(f_start,f_stop,nr_of_datapoints)
@@ -227,6 +227,7 @@ def dark_esr(name, data, par):
     if not(lt1):
         adwin.set_spincontrol_var(set_phase_locking_on = set_phase_locking_on)
         adwin.set_spincontrol_var(set_gate_good_phase =  set_gate_good_phase)
+    print 'start adwin'
 
     adwin.start_spincontrol(load = True, stop_processes=['counter'],
         counter_channel = par['counter_channel'],
@@ -256,7 +257,7 @@ def dark_esr(name, data, par):
         A_SP_voltage = par['A_SP_voltage'],
         Ex_RO_voltage = par['Ex_RO_voltage'],
         A_RO_voltage = par['A_RO_voltage'])
-
+    print 'adwin started'
     if lt1:
         adwin_lt2.start_check_trigger_from_lt1()
 
@@ -281,16 +282,17 @@ def dark_esr(name, data, par):
     sweep_length = par['sweep_length']
     
     par_long   = physical_adwin.Get_Data_Long(20,1,25)
-    par_float  = physical_adwin.Get_Data_Float(20,1,10)
+    par_float  = physical_adwin.Get_Data_Float(21,1,10)
     CR_before = physical_adwin.Get_Data_Long(22,1,1)
     CR_after  = physical_adwin.Get_Data_Long(23,1,1)
     SP_hist   = physical_adwin.Get_Data_Long(24,1,par['SP_duration'])
-    RO_data   = physical_adwin.Get_Data_Long(25,1,
-                    sweep_length * par['RO_duration'])
-    RO_data = reshape(RO_data,(sweep_length,par['RO_duration']))
+    #RO_data   = physical_adwin.Get_Data_Long(25,1,
+    #                sweep_length * par['RO_duration'])
+    #RO_data = reshape(RO_data,(sweep_length,par['RO_duration']))
     # SSRO_data contains adwin decisions for the spin
     SSRO_data   = physical_adwin.Get_Data_Long(27,1,
                     sweep_length * par['RO_duration'])
+    RO_data=SSRO_data
     SSRO_data = reshape(SSRO_data,(sweep_length,par['RO_duration']))
     statistics = physical_adwin.Get_Data_Long(26,1,10)
 

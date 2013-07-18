@@ -1,12 +1,12 @@
 # measure spin photon correlations as test before the actual LDE.
 # v8: this version takes 400 ns interpulse delay
 
-debug_mode = True #debug mode: no MW, nog HH measurent
+debug_mode = False #debug mode: no MW, nog HH measurent
 debug_get_histogram = False #only works with debug_mode, no MW, HH 1d histogram
 long_pulse_settings = True # longer eom pulse settings
-mw_on = True # MW on (SMB status set to on before measurement)
+mw_on = False # MW on (SMB status set to on before measurement)
 long_histogram = False # only use in debug mode!, removes the two HH syncs and puts one sync at the beginning of the sequence
-name = 'Rabi_vs_CR_thresholds_meas' #NOTE: fill in measurement name
+name = 'HH_live_filtering_test' #NOTE: fill in measurement name
 
 import qt
 import numpy as np
@@ -15,11 +15,11 @@ from time import strftime
 import msvcrt
 import shutil
 
-import measurement.measurement as meas
-from measurement.AWG_HW_sequencer_v2 import Sequence
-from measurement.config import awgchannels_lt2 as awgcfg
-from measurement.config import adwins as adwincfg
-from analysis import lde_calibration
+import measurement.lib.measurement as meas
+from measurement.lib.AWG_HW_sequencer_v2 import Sequence
+from measurement.lib.config import awgchannels_lt2 as awgcfg
+from measurement.lib.config import adwins as adwincfg
+#from analysis import lde_calibration
 
 # instruments
 adwin_lt2 = qt.instruments['adwin']

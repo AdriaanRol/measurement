@@ -18,11 +18,11 @@ def calslowpipulse(name):
     m = mbi_espin.ElectronRabi('cal_slow_pi_'+name)
     
     m.params.from_dict(qt.cfgman['protocols']['AdwinSSRO'])
-    m.params.from_dict(qt.cfgman['protocols']['sil2-default']['AdwinSSRO'])
-    m.params.from_dict(qt.cfgman['protocols']['sil2-default']['AdwinSSRO-integrated'])
+    m.params.from_dict(qt.cfgman['protocols']['sil9-default']['AdwinSSRO'])
+    m.params.from_dict(qt.cfgman['protocols']['sil9-default']['AdwinSSRO-integrated'])
     
     m.params.from_dict(qt.cfgman['protocols']['AdwinSSRO+MBI'])
-    m.params.from_dict(qt.cfgman['protocols']['sil2-default']['AdwinSSRO+MBI'])
+    m.params.from_dict(qt.cfgman['protocols']['sil9-default']['AdwinSSRO+MBI'])
     
     # measurement settings
     m.params['reps_per_ROsequence'] = 1000
@@ -53,11 +53,11 @@ def calpi397ns(name):
     m = mbi_espin.ElectronRabi('cal_397ns_pi_'+name)
 
     m.params.from_dict(qt.cfgman['protocols']['AdwinSSRO'])
-    m.params.from_dict(qt.cfgman['protocols']['sil2-default']['AdwinSSRO'])
-    m.params.from_dict(qt.cfgman['protocols']['sil2-default']['AdwinSSRO-integrated'])
+    m.params.from_dict(qt.cfgman['protocols']['sil9-default']['AdwinSSRO'])
+    m.params.from_dict(qt.cfgman['protocols']['sil9-default']['AdwinSSRO-integrated'])
     
     m.params.from_dict(qt.cfgman['protocols']['AdwinSSRO+MBI'])
-    m.params.from_dict(qt.cfgman['protocols']['sil2-default']['AdwinSSRO+MBI'])
+    m.params.from_dict(qt.cfgman['protocols']['sil9-default']['AdwinSSRO+MBI'])
     
     # measurement settings
     pts = 8
@@ -87,11 +87,11 @@ def calhardpipulse(name):
     m = mbi_espin.ElectronRabi('cal_hard_pi_'+name)
 
     m.params.from_dict(qt.cfgman['protocols']['AdwinSSRO'])
-    m.params.from_dict(qt.cfgman['protocols']['sil2-default']['AdwinSSRO'])
-    m.params.from_dict(qt.cfgman['protocols']['sil2-default']['AdwinSSRO-integrated'])
+    m.params.from_dict(qt.cfgman['protocols']['sil9-default']['AdwinSSRO'])
+    m.params.from_dict(qt.cfgman['protocols']['sil9-default']['AdwinSSRO-integrated'])
     
     m.params.from_dict(qt.cfgman['protocols']['AdwinSSRO+MBI'])
-    m.params.from_dict(qt.cfgman['protocols']['sil2-default']['AdwinSSRO+MBI'])
+    m.params.from_dict(qt.cfgman['protocols']['sil9-default']['AdwinSSRO+MBI'])
     
     # measurement settings
     pts = 8
@@ -121,11 +121,11 @@ def calCORPSE60(name):
     m = mbi_espin.ElectronRabi('cal_CORPSE60_'+name)
     
     m.params.from_dict(qt.cfgman['protocols']['AdwinSSRO'])
-    m.params.from_dict(qt.cfgman['protocols']['sil2-default']['AdwinSSRO'])
-    m.params.from_dict(qt.cfgman['protocols']['sil2-default']['AdwinSSRO-integrated'])
+    m.params.from_dict(qt.cfgman['protocols']['sil9-default']['AdwinSSRO'])
+    m.params.from_dict(qt.cfgman['protocols']['sil9-default']['AdwinSSRO-integrated'])
     
     m.params.from_dict(qt.cfgman['protocols']['AdwinSSRO+MBI'])
-    m.params.from_dict(qt.cfgman['protocols']['sil2-default']['AdwinSSRO+MBI'])
+    m.params.from_dict(qt.cfgman['protocols']['sil9-default']['AdwinSSRO+MBI'])
  
     # measurement settings 
     pts = 8
@@ -155,11 +155,11 @@ def calCORPSE300(name):
     m = mbi_espin.ElectronRabi('cal_CORPSE300_'+name)
     
     m.params.from_dict(qt.cfgman['protocols']['AdwinSSRO'])
-    m.params.from_dict(qt.cfgman['protocols']['sil2-default']['AdwinSSRO'])
-    m.params.from_dict(qt.cfgman['protocols']['sil2-default']['AdwinSSRO-integrated'])
+    m.params.from_dict(qt.cfgman['protocols']['sil9-default']['AdwinSSRO'])
+    m.params.from_dict(qt.cfgman['protocols']['sil9-default']['AdwinSSRO-integrated'])
     
     m.params.from_dict(qt.cfgman['protocols']['AdwinSSRO+MBI'])
-    m.params.from_dict(qt.cfgman['protocols']['sil2-default']['AdwinSSRO+MBI'])
+    m.params.from_dict(qt.cfgman['protocols']['sil9-default']['AdwinSSRO+MBI'])
  
     # measurement settings 
     pts = 8
@@ -189,11 +189,11 @@ def calCORPSE420(name):
     m = mbi_espin.ElectronRabi('cal_CORPSE420_'+name)
     
     m.params.from_dict(qt.cfgman['protocols']['AdwinSSRO'])
-    m.params.from_dict(qt.cfgman['protocols']['sil2-default']['AdwinSSRO'])
-    m.params.from_dict(qt.cfgman['protocols']['sil2-default']['AdwinSSRO-integrated'])
+    m.params.from_dict(qt.cfgman['protocols']['sil9-default']['AdwinSSRO'])
+    m.params.from_dict(qt.cfgman['protocols']['sil9-default']['AdwinSSRO-integrated'])
     
     m.params.from_dict(qt.cfgman['protocols']['AdwinSSRO+MBI'])
-    m.params.from_dict(qt.cfgman['protocols']['sil2-default']['AdwinSSRO+MBI'])
+    m.params.from_dict(qt.cfgman['protocols']['sil9-default']['AdwinSSRO+MBI'])
  
     # measurement settings 
     pts = 8

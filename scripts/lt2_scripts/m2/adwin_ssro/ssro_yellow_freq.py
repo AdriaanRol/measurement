@@ -10,19 +10,34 @@ import msvcrt
 # import the msmt class
 from measurement.lib.measurement2.adwin_ssro import ssro
 
-def calibration(name,yellow=False):
+def calibration(name):
 
-    m = ssro.AdwinSSRO('SSROCalibration_'+name)
+    m = ssro.AdwinSSRO('SSROCalibration_yellow_freq_'+name)
+    m.adwin_process = 'singleshot_yellow_scan'
     m.params.from_dict(qt.cfgman['protocols']['AdwinSSRO'])
     m.params.from_dict(qt.cfgman['protocols']['sil9-default']['AdwinSSRO'])
-        
+    
+    #repump settings
+    _set_repump_settings(m,True)
+    
+    m.params['freq_AOM_DAC_channel']=4
+    m.params['repump_freq_control_offset']=5.
+    
+    #the frequency scan
+    amp=4.#V
+    dlen=m.params['repump_duration']
+    xx=np.linspace(0.,2.*np.pi,dlen)
+    m.params['yellow_freq_voltages']=amp*np.sin(xx)
+    m.adwin_process_params['repump_freq_voltages'] = m.params['yellow_freq_voltages']
+    
+    
     # parameters
     m.params['SSRO_repetitions'] = 5000
     
-    #repump settings
-    _set_repump_settings(m,yellow)
-    
     # ms = 0 calibration
+    m.params['A_CR_amplitude'] = 80e-9
+    m.params['Ex_CR_amplitude'] = 50e-9
+    m.params['repump_amplitude']=10e-9 
     m.params['A_SP_amplitude'] = 20e-9
     m.params['Ex_SP_amplitude'] = 0.
     m.params['Ex_RO_amplitude'] = 10e-9

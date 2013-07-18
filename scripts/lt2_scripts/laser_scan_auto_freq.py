@@ -79,27 +79,30 @@ class LaserFrequencyScan:
             p3=qt.Plot3D(d, name='Laser_Scan2D', plottitle=self.mprefix, coorddims=(1,3), valdim=2, clear=True)
 
         qt.mstart()
-######
+#######
         for j,gv in enumerate(np.linspace(self.gate_start_voltage, self.gate_stop_voltage, self.gate_pts)):
             if (msvcrt.kbhit() and (msvcrt.getch() == 'c')): break  
             
-            
-            self.scan_to_voltage(self.start_voltage)
+            prev_v=v=self.scan_to_frequency(self.start_frequency)
+            self.set_laser_power(self.laser_power)
+
             
             if not self.use_repump_during:
                 self.repump_pulse()
             
             if self.set_gate:
                 self.gate_scan_to_voltage(gv)                 
-                        
-            for i,v in enumerate(np.linspace(self.start_voltage, self.stop_voltage, self.pts)):
+            i=0
+            while ((v < self.max_v) and (v> self.min_v)):
+                i=i+1
                 if msvcrt.kbhit():
                     chr=msvcrt.getch()
                     if chr=='q': 
                         break
                     elif chr =='r': 
                         self.repump_pulse()
-                
+                v=prev_v-self.v_step
+                prev_v=v
                 self.set_laser_voltage(v)
                 qt.msleep(stabilizing_time)
 
@@ -111,7 +114,9 @@ class LaserFrequencyScan:
                 d.add_data_point(v, frq, cts, gv)
                 if np.mod(i,10)==0:
                     p.update()
-                
+                if frq>self.stop_frequency:
+                    break
+            self.set_laser_power(0)
             if self.set_gate_to_zero_before_repump:
                 self.gate_scan_to_voltage(0.)
             p.update()
@@ -143,12 +148,12 @@ class LaserFrequencyScan:
         d.close_file()
         
 
-
 class LabjackAdwinLaserScan(LaserFrequencyScan):
     def __init__(self, name,labjack_dac_nr):
         LaserFrequencyScan.__init__(self, name)
         
         self.adwin = qt.instruments['adwin']
+        self.physical_adwin=qt.instruments['physical_adwin']
         self.mw = qt.instruments['SMB100']
         self.labjack= qt.instruments['labjack']
         
@@ -157,15 +162,38 @@ class LabjackAdwinLaserScan(LaserFrequencyScan):
         self.set_laser_voltage = lambda x: self.labjack.__dict__['set_bipolar_dac'+str(labjack_dac_nr)](x)
         self.get_laser_voltage = lambda : self.labjack.__dict__['get_bipolar_dac'+str(labjack_dac_nr)]()
         
-        #matisse NOT TESTED
+                #matisse NOT TESTED
         #self.set_laser_voltage = lambda x : qt.instruments['physical_adwin'].Get_FPar(38)
         #self.get_laser_voltage = lambda : qt.instruments['physical_adwin'].Get_FPar(39)
         self.get_frequency = lambda x : \
-                qt.instruments['physical_adwin'].Get_FPar(x+40)
+                self.physical_adwin.Get_FPar(x+40)
         self.get_counts = self.adwin.measure_counts
         self.set_gate_voltage = lambda x: self.adwin.set_dac_voltage(('gate',x))
         self.get_gate_voltage = lambda: self.adwin.get_dac_voltage('gate')
-      
+    
+    def scan_to_frequency(self,f,stepsize=0.05, dwell_time=0.01, tolerance=0.3):
+        print 'scan to frequency',f
+        v=self.get_laser_voltage()
+        succes=False
+        while ((v < self.max_v-0.3) and (v> self.min_v+0.3)):
+            if (msvcrt.kbhit() and msvcrt.getch()=='q'): 
+                break
+            cur_f=self.get_frequency(self.wm_channel)
+            self.set_laser_voltage(v)
+            v=v+stepsize*np.sign(cur_f-f)*np.sign(self.v_step)
+
+            qt.msleep(dwell_time)
+            if abs(cur_f-f)<tolerance:
+                succes=True
+                break
+        if not succes:
+             print 'WARNING: could not reach target frequency', f
+        else:
+            print 'current frequency:',cur_f
+        return v
+
+
+
     def prepare_scan(self):
 
         if self.use_repump_during:
@@ -178,11 +206,9 @@ class LabjackAdwinLaserScan(LaserFrequencyScan):
             self.mw.set_iq('off')
             self.mw.set_status('on')
             
-        self.set_laser_power(self.laser_power)
 
 
     def finish_scan(self):
-        self.set_laser_power(0)
 
         if self.use_mw:
             self.mw.set_status('off')
@@ -195,15 +221,14 @@ class YellowLaserScan(LabjackAdwinLaserScan):
     def __init__(self, name, labjack_dac_nr):
         LabjackAdwinLaserScan.__init__(self, name, labjack_dac_nr)
         self.set_laser_power = qt.instruments['YellowAOM'].set_power
-        self.set_repump_power = qt.instruments['Velocity1AOM'].set_power
-        self.set_nf_repump_power=qt.instruments['Velocity2AOM'].set_power
+        self.set_repump_power = qt.instruments['MatisseAOM'].set_power
+        self.set_nf_repump_power=qt.instruments['NewfocusAOM'].set_power
         
     def repump_pulse(self):
         qt.msleep(1) 
         self.set_laser_power(0)
         self.set_repump_power(self.repump_power)
         self.set_nf_repump_power(self.nf_repump_power)
-        print power
         qt.msleep(self.repump_duration)
         self.set_repump_power(0)
         self.set_nf_repump_power(0)
@@ -224,7 +249,7 @@ class RedLaserScan(LabjackAdwinLaserScan):
             self.set_laser_power(0)
             self.set_red_repump_power(self.red_repump_power)
             self.set_yellow_repump_power(self.yellow_repump_power)
-            qt.msleep(self.repump_duration)
+            qt.msleep(self.yellow_repump_duration)
             self.set_red_repump_power(0)
             self.set_yellow_repump_power(self.yellow_repump_power)
             qt.msleep(self.yellow_repump_duration)
@@ -255,31 +280,37 @@ def yellow_laser_scan(name):
     m.mw_power = -12
 
     # repump setup
-    m.repump_power=0e-9 # sets the power of the Matisse
+    m.repump_power=100e-9 # sets the power of the Matisse
     m.nf_repump_power=0e-9 # sets the power of the NF
-    m.repump_duration=0.0 #seconds
+    m.repump_duration=3.0 #seconds
     m.use_repump_during = False
     m.repump_power_during = 0.5e-6
       
     #Scan setup
-    m.laser_power = 3e-9
-    m.start_voltage = 2
-    m.stop_voltage = 10
-    m.pts = 1501
-    m.integration_time = 40 # ms
+    m.laser_power = 5e-9
+    m.integration_time = 10 # ms
+    m.min_v = -9
+    m.max_v = 9
+    m.v_step=-0.01
+    
+    m.start_frequency = 28 #GHz
+    m.stop_frequency = 40 #GHz
     
     #Gate scan setup
-    m.set_gate_after_repump=False
-    m.gate_start_voltage=0.
-    m.gate_stop_voltage=0.
+    m.set_gate_to_zero_before_repump=False
+    m.set_gate=False
+    m.gate_start_voltage=0
+    m.gate_stop_voltage=0
     m.gate_pts=1
     
     #strain lines
     m.plot_strain_lines=True
     
-    m.prepare_scan()
-    m.run_scan()
-    m.finish_scan()    
+    try:
+        m.prepare_scan()
+        m.run_scan()
+    finally:
+        m.finish_scan()
     
 def red_laser_scan(name):
     labjack_dac_nr=2 # 2 is coarse and 3 is fine for NF
@@ -292,7 +323,7 @@ def red_laser_scan(name):
     m.counter_channel = 0
 
     # MW setup
-    m.use_mw = False
+    m.use_mw = True
     m.mw_frq =  qt.cfgman['samples']['sil9']['ms-1_cntr_frq']
     m.mw_power = -12
     
@@ -302,19 +333,23 @@ def red_laser_scan(name):
     m.red_repump_power=100e-9
     m.yellow_repump_duration=4 #seconds
     m.repump_power = 150e-6
-    m.use_repump_during = True
+    m.use_repump_during = False
     m.repump_duration = 0.5 # seconds
     m.repump_power_during = 0.02e-6
     
     #Scan setup
-    m.laser_power = 6e-9
-    m.start_voltage = 4
-    m.stop_voltage = -2
-    m.pts = 1800
+    m.laser_power = 4e-9
     m.integration_time = 10 # ms
+    m.min_v = -9
+    m.max_v = 9
+    m.v_step=0.005
+    
+    m.start_frequency = 60 #GHz
+    m.stop_frequency = 71 #GHz
+    
     
     #Gate scan setup
-    m.set_gate_to_zero_before_repump=True
+    m.set_gate_to_zero_before_repump=False
     m.set_gate=False
     m.gate_start_voltage=0
     m.gate_stop_voltage=0
@@ -323,9 +358,11 @@ def red_laser_scan(name):
     #strain lines
     m.plot_strain_lines=True
     
-    m.prepare_scan()
-    m.run_scan()
-    m.finish_scan()
+    try:
+        m.prepare_scan()
+        m.run_scan()
+    finally:
+        m.finish_scan()
 
 
 if __name__=='__main__':
