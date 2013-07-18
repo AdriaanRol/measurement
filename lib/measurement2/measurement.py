@@ -434,6 +434,75 @@ class AdwinControlledMeasurement(Measurement):
         if adsrc != None:
             shutil.copy(adsrc, sdir)
 
+class MultipleAdwinsMeasurement(Measurement):
+
+    mprefix = 'MultipleAdwinsMeasurement'
+    adwins = {}
+
+    def __init__(self, name, save=True):
+        Measurement.__init__(self, name, save=save)
+
+        self.adwin_process_params = {} 
+        for a in self.adwins:
+            self.adwin_process_params[a] = \
+                MeasurementParameters('{}Parameters'.format(a))
+
+    def start_adwin_process(self, adwin, load=True, stop_processes=[]):
+        proc = getattr(self.adwins[adwin]['ins'], 
+            'start_'+self.adwins[adwin]['process'])
+        proc(load=load, stop_processes=stop_processes,
+                **self.adwin_process_params[adwin].to_dict())
+
+    def stop_adwin_process(self, adwin):
+        func = getattr(self.adwins[adwin]['ins'], 
+            'stop_'+self.adwins[adwin]['process'])
+        return func()
+
+    def save_adwin_data(self, adwin, name, variables):
+        grp = h5.DataGroup("{}_{}".format(adwin, name), self.h5data, 
+                base=self.h5base)
+        
+        for v in variables:
+            name = v if type(v) == str else v[0]
+            data = self.adwin_var(adwin, v)
+            if data != None:
+                grp.add(name,data=data)
+
+        # save all parameters in each group (could change per run!)
+        self.save_params(grp=grp.group)  
+
+        # then save all specific adwin params, overwriting other params
+        # if double
+        adwinparams = self.adwin_process_params[adwin].to_dict()
+        for k in adwinparams:
+            grp.group.attrs[k] = adwinparams[k]
+
+        self.h5data.flush()
+
+    def adwin_process_running(self, adwin):
+        func = getattr(self.adwins[adwin]['ins'], 
+            'is_'+self.adwins[adwin]['process']+'_running')
+        return func()
+
+    def adwin_var(self, adwin, var):
+        v = var
+        getfunc = getattr(self.adwins[adwin]['ins'], 
+            'get_'+self.adwins[adwin]['process']+'_var')
+        
+        if type(v) == str:
+                return getfunc(v)
+        elif type(v) == tuple:
+            if len(v) == 2:
+                return getfunc(v[0], length=v[1])
+            elif len(v) == 3:
+                return getfunc(v[0], start=v[1], length=v[2])
+            else:
+                logging.warning('Cannot interpret variable tuple, ignore: %s' % \
+                        str(v))
+        else:
+            logging.warning('Cannot interpret variable, ignore: %s' % \
+                    str(v))
+        return None
 
 class SequencerMeasurement(Measurement):
     
