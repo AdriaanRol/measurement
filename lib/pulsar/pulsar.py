@@ -46,7 +46,7 @@ class Pulsar:
             }
 
     def set_channel_opt(self, name, option, value):
-        self._channels[name][option] = value
+        self.channels[name][option] = value
 
     def get_subchannels(self, id):
         return [id[:3], id[:3]+'_marker1', id[:3]+'_marker2']

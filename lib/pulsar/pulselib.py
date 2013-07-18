@@ -50,6 +50,8 @@ class MW_IQmod_pulse(pulse.Pulse):
             if not self.phaselock:
                 tvals = tvals.copy() - tvals[idx0]
 
+                print self.name, tvals[0]
+
             if chan == self.I_channel:
                 wf[idx0:idx1] += self.amplitude * np.cos(2 * np.pi * \
                     (self.frequency * tvals[idx0:idx1] + self.phase/360.))
@@ -121,6 +123,8 @@ class IQ_CORPSE_pi_pulse(MW_IQmod_pulse):
             if not self.phaselock:
                 tvals = tvals.copy() - tvals[idx0]
 
+                print self.name, tvals[0]
+
             if chan == self.I_channel:
                 wf[start_420:end_420] += self.amplitude * np.cos(2 * np.pi * \
                     (self.frequency * tvals[start_420:end_420] + self.phase/360.))
@@ -151,6 +155,6 @@ class RF_erf_envelope(pulse.SinePulse):
         # TODO make this nicer
         rt = self.envelope_risetime
         env = (ssp.erf(2./rt*(tvals-tvals[0]-rt))/2.+0.5) * \
-                (ssp.erf(-2./rt*(tvals-tvals[0]-tvals[-1]+rt))/2. + 0.5)
+                (ssp.erf(-2./rt*(tvals-tvals[-1]+rt))/2. + 0.5)
 
         return wf * env

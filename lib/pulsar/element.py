@@ -23,6 +23,8 @@ class Element:
 
         self.global_time = kw.pop('global_time', False)
         self.time_offset = kw.pop('time_offset', 0)
+        
+        self.ignore_delays = kw.pop('ignore_delays',False)
 
         self.pulses = {}
         self._channels = {}
@@ -33,9 +35,10 @@ class Element:
 
             for c in self.pulsar.channels:
                 chan = self.pulsar.channels[c]
+                delay=chan['delay'] if not(self.ignore_delays) else 0.
                 self.define_channel(name=c, type=chan['type'], 
                     high=chan['high'], low=chan['low'], offset=chan['offset'], 
-                    delay=chan['delay'])
+                    delay=delay)
 
 
     ### tools for time calculations
