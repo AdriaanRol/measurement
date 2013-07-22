@@ -5,10 +5,10 @@
 ' Control_long_Delays_for_Stop   = No
 ' Priority                       = High
 ' Version                        = 1
-' ADbasic_Version                = 5.0.6
+' ADbasic_Version                = 5.0.8
 ' Optimize                       = Yes
 ' Optimize_Level                 = 1
-' Info_Last_Save                 = TUD276629  TUD276629\localadmin
+' Info_Last_Save                 = TUD277246  TUD277246\localadmin
 '<Header End>
 ' primary purpose of this program: 
 ' get count rates of internal ADwin counters 1 - 4 as 
@@ -24,7 +24,7 @@
 ' - DATA_45[1--4] : counts of the most recent count interval (int time)
 
 #INCLUDE ADwinGoldII.inc
-#INCLUDE configuration.inc
+' #INCLUDE configuration.inc
 
 DIM int_time AS LONG        ' in ms
 DIM avg_steps AS LONG       ' multiples of int_time
