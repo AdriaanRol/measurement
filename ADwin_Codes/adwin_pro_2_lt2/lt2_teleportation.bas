@@ -8,7 +8,7 @@
 ' ADbasic_Version                = 5.0.8
 ' Optimize                       = Yes
 ' Optimize_Level                 = 1
-' Info_Last_Save                 = TUD276629  TUD276629\localadmin
+' Info_Last_Save                 = TUD277246  TUD277246\localadmin
 '<Header End>
 ' this program implements the part of the teleportation protocol controlled by ADwin Pro II
 ' ADwin Gold I is in charge of the experiment.
@@ -112,7 +112,7 @@ INIT:
   Ex_off_voltage               = DATA_21[9]
   A_off_voltage                = DATA_21[10]
    
-  FOR i = 1 TO teleportation_repetitions
+  FOR i = 1 TO max_repetitions
     DATA_22[i] = 0
     DATA_23[i] = 0
     DATA_25[i] = 0
@@ -183,18 +183,18 @@ EVENT:
     ADwin_switched_to_high = 0
   ENDIF
   
-  '  AWG_in_was_high = AWG_in_is_high    'copies information from last round
-  '  IF (((P2_DIGIN_LONG(DIO_MODULE)) AND (AWG_lt2_di_channel)) > 0) THEN
-  '    AWG_in_is_high = 1
-  '  ELSE
-  '    AWG_in_is_high = 0
-  '  ENDIF
-  '  
-  '  IF ((AWG_in_was_high = 0) AND (AWG_in_is_high > 0)) THEN  'adwin switched to high during last round.
-  '    AWG_switched_to_high = 1
-  '  ELSE
-  '    AWG_switched_to_high = 0
-  '  ENDIF    
+  AWG_in_was_high = AWG_in_is_high    'copies information from last round
+  IF (((P2_DIGIN_LONG(DIO_MODULE)) AND (AWG_lt2_di_channel)) > 0) THEN
+    AWG_in_is_high = 1
+  ELSE
+    AWG_in_is_high = 0
+  ENDIF
+    
+  IF ((AWG_in_was_high = 0) AND (AWG_in_is_high > 0)) THEN  'adwin switched to high during last round.
+    AWG_switched_to_high = 1
+  ELSE
+    AWG_switched_to_high = 0
+  ENDIF    
   '  
   '  
   '  SELECTCASE mode
