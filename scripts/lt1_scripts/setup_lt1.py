@@ -40,10 +40,8 @@ pulsar_msmt.MBI.physical_adwin = qt.instruments['physical_adwin']
 #teleportation.Teleportation.green_aom = qt.instruments['GreenAOM']
 #teleportation.Teleportation.yellow_aom = qt.instruments['YellowAOM']
 #teleportation.Teleportation.adwin = qt.instruments['adwin']
-
-
-
 ####
+
 print 'configure the pulsar sequencer and update pulses and elements...'
 execfile("setup/sequence.py")
 
