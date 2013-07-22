@@ -5,17 +5,17 @@
 ' Control_long_Delays_for_Stop   = No
 ' Priority                       = High
 ' Version                        = 1
-' ADbasic_Version                = 5.0.6
+' ADbasic_Version                = 5.0.8
 ' Optimize                       = Yes
 ' Optimize_Level                 = 1
-' Info_Last_Save                 = TUD276629  TUD276629\localadmin
+' Info_Last_Save                 = TUD277246  TUD277246\localadmin
 '<Header End>
 ' This program does a multidimensional line scan; it needs to be given the 
 ' involved DACs, their start voltage, their end voltage and the number of steps
 ' (including start and stop)
 
 #INCLUDE ADwinGoldII.inc
-#INCLUDE configuration.inc
+' #INCLUDE configuration.inc
 
 ' scan settings
 DIM NoOfDACs, i, CurrentStep, NoOfSteps AS INTEGER

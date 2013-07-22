@@ -55,7 +55,7 @@ def check_powers(check_power='max',names=['MatisseAOM', 'NewfocusAOM','YellowAOM
             qt.instruments[n].set_power(check_power)
         qt.instruments['powermeter'].set_wavelength(qt.instruments[n].get_wavelength()*1e9)
         qt.msleep(1)
-        print qt.instruments['powermeter'].get_power(), 'setpoint: ',check_power
+        print qt.instruments['powermeter'].get_power(), 'setpoint: ', check_power
     
     turn_off_lasers()
     qt.instruments['PMServo'].move_out()

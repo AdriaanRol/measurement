@@ -218,8 +218,7 @@ class adwin(Instrument):
             """
             if self.physical_adwin.Process_Status(pidx):
                 self.physical_adwin.Stop_Process(pidx)
-            else:
-                print 'Process not running.'
+            
             return True
 
         f.__name__ = funcname

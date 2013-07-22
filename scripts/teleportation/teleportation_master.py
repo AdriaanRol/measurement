@@ -10,6 +10,27 @@ from measurement.lib.pulsar import pulse, pulselib, element, pulsar
 import sequence as tseq
 reload(tseq)
 
+### CONSTANTS
+
+# ADWIN LT1:
+#DEFINE max_repetitions         10000          ' the maximum number of datapoints taken
+#DEFINE max_red_hist_cts        100            ' dimension of photon counts histogram for red CR
+#DEFINE max_yellow_hist_cts     100            ' dimension of photon counts histogram for yellow Resonance check
+#DEFINE max_statistics          15
+ADWINLT1_MAX_REPS = 10000
+ADWINLT1_MAX_RED_HIST_CTS = 100
+ADWINLT1_MAX_YELLOW_HIST_CTS = 100
+ADWINLT1_MAX_STAT = 15
+
+#DEFINE max_repetitions   20000
+#DEFINE max_CR_hist_bins    100
+#DEFINE max_stat             10
+ADWINLT2_MAX_REPS = 20000
+ADWINLT2_MAX_CR_HIST_CTS = 100
+ADWINLT2_MAX_STAT = 10
+
+
+### CODE
 class TeleportationMaster(m2.MultipleAdwinsMeasurement):
 
     mprefix = 'Teleportation'
@@ -183,7 +204,6 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
         self._auto_adwin_params('adwin_lt1')
         self.start_adwin_process('adwin_lt1', stop_processes=['counter'])
 
-
     def start_lt2_process(self):
         self._auto_adwin_params('adwin_lt2')
         self.start_adwin_process('adwin_lt2', stop_processes=['counter'])
@@ -207,7 +227,7 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
                 self.stop_keystroke_monitor('abort')
                 break
             if use_lt2 and use_lt1:
-                running = self.adwin_process_running('adwin_lt1') and self.adwin_process_runnin('adwin_lt2')
+                running = self.adwin_process_running('adwin_lt1') and self.adwin_process_running('adwin_lt2')
             elif use_lt2 and not use_lt1:
                 running = self.adwin_process_running('adwin_lt2')
             elif use_lt1 and not use_lt2:
@@ -224,14 +244,27 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
 
     def save(self, use_lt1=True, use_lt2=True):
         if use_lt1:
-            self.save_adwin_data('adwin_lt1', 'data', ['CR_preselect','CR_probe','completed_reps',
-                        'total_red_CR_counts', 'CR_hist_time_out' ,'CR_hist_all',
-                        'CR_hist_yellow_time_out', 'CR_hist_yellow_all', 'CR_after', 
-                        'statistics', 'SSRO1_results', 'SSRO2_results', 'PLU_Bell_states', 'CR_before'])
+            reps = self.adwin_var('adwin_lt1', 'completed_reps')
+            self.save_adwin_data('adwin_lt1', 'data', 
+                ['CR_preselect', 'CR_probe', 'completed_reps', 'total_red_CR_counts', 
+                    ('CR_hist_time_out', ADWINLT1_MAX_RED_HIST_CTS),
+                    ('CR_hist_all', ADWINLT1_MAX_RED_HIST_CTS),
+                    ('CR_hist_yellow_time_out', ADWINLT1_MAX_YELLOW_HIST_CTS),
+                    ('CR_hist_yellow_all', ADWINLT1_MAX_YELLOW_HIST_CTS),
+                    ('CR_after', reps),
+                    ('statistics', ADWINLT1_MAX_STAT),
+                    ('SSRO1_results', reps),
+                    ('SSRO2_results', reps),
+                    ('PLU_Bell_states', reps),
+                    ('CR_before', reps) ])
         if use_lt2:
-            self.save_adwin_data('adwin_lt2', 'data', ['completed_reps',
-                        'total_CR_counts', 'CR_before' , 'CR_after',
-                        'CR_hist','SSRO_lt2_data', 'statistics'])
+            reps = self.adwin_var('adwin_lt1', 'completed_reps')
+            self.save_adwin_data('adwin_lt2', 'data', ['completed_reps', 'total_CR_counts',
+                    ('CR_before', reps),
+                    ('CR_after', reps),
+                    ('CR_hist', ADWINLT2_MAX_CR_HIST_CTS),
+                    ('SSRO_lt2_data', reps),
+                    ('statistics', ADWINLT2_MAX_STAT)])
 
         if use_lt1:
             params_lt1 = self.params_lt1.to_dict()
@@ -239,6 +272,7 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
                     base=self.h5base)
             for k in params_lt1:
                 lt1_grp.group.attrs[k] = self.params_lt1[k]
+                self.h5data.flush()
 
         if use_lt2:
             params_lt2 = self.params_lt2.to_dict()
@@ -246,37 +280,57 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
                     base=self.h5base)
             for k in params_lt2:
                 lt2_grp.group.attrs[k] = self.params_lt2[k]
+                self.h5data.flush()
 
+        self.h5data.close()
 
+### CONSTANTS AND FLAGS
+EXEC_FROM = 'lt1'
+USE_LT1 = True
+USE_LT2 = False and (EXEC_FROM == 'lt2')
+YELLOW = True
         
-# configure the hardware (statics)
+### configure the hardware (statics)
 TeleportationMaster.adwins = {
     'adwin_lt1' : {
-        'ins' : qt.instruments['adwin_lt1'],
+        'ins' : qt.instruments['adwin_lt1'] if EXEC_FROM=='lt2' else qt.instruments['adwin'],
         'process' : 'teleportation',
     },
-
-    'adwin_lt2' : {
-        'ins' : qt.instruments['adwin_lt2'],
-        'process' : 'teleportation'
-    }
 }
 
-TeleportationMaster.adwin_dict = adwins_cfg.config
-TeleportationMaster.yellow_aom_lt1 = qt.instruments['YellowAOM_lt1']
-TeleportationMaster.green_aom_lt1 = qt.instruments['GreenAOM_lt1']
-TeleportationMaster.Ey_aom_lt1 = qt.instruments['MatisseAOM_lt1']
-TeleportationMaster.FT_aom_lt1 = qt.instruments['NewfocusAOM_lt1']
-TeleportationMaster.mwsrc_lt1 = qt.instruments['SMB100_lt1']
+if EXEC_FROM == 'lt2':    
+    TeleportationMaster.adwins['adwin_lt2'] = {
+            'ins' : qt.instruments['adwin_lt2'],
+            'process' : 'teleportation'
+        }
 
-TeleportationMaster.green_aom_lt2 = qt.instruments['GreenAOM']
-TeleportationMaster.Ey_aom_lt2 = qt.instruments['MatisseAOM']
-TeleportationMaster.A_aom_lt2 = qt.instruments['NewfocusAOM']
-TeleportationMaster.mwsrc_lt2 = qt.instruments['SMB100']
-TeleportationMaster.awg_lt2 = qt.instruments['AWG']
+if EXEC_FROM == 'lt2':
+    TeleportationMaster.adwin_dict = adwins_cfg.config
+    TeleportationMaster.yellow_aom_lt1 = qt.instruments['YellowAOM_lt1']
+    TeleportationMaster.green_aom_lt1 = qt.instruments['GreenAOM_lt1']
+    TeleportationMaster.Ey_aom_lt1 = qt.instruments['MatisseAOM_lt1']
+    TeleportationMaster.FT_aom_lt1 = qt.instruments['NewfocusAOM_lt1']
+    TeleportationMaster.mwsrc_lt1 = qt.instruments['SMB100_lt1']
 
+    if USE_LT2:
+        TeleportationMaster.green_aom_lt2 = qt.instruments['GreenAOM']
+        TeleportationMaster.Ey_aom_lt2 = qt.instruments['MatisseAOM']
+        TeleportationMaster.A_aom_lt2 = qt.instruments['NewfocusAOM']
+        TeleportationMaster.mwsrc_lt2 = qt.instruments['SMB100']
+        TeleportationMaster.awg_lt2 = qt.instruments['AWG']
 
+elif EXEC_FROM == 'lt1':
+    TeleportationMaster.adwin_dict = adwins_cfg.config
+    TeleportationMaster.yellow_aom_lt1 = qt.instruments['YellowAOM']
+    TeleportationMaster.green_aom_lt1 = qt.instruments['GreenAOM']
+    TeleportationMaster.Ey_aom_lt1 = qt.instruments['Velocity1AOM']
+    TeleportationMaster.FT_aom_lt1 = qt.instruments['Velocity2AOM']
+    TeleportationMaster.mwsrc_lt1 = qt.instruments['SMB100']
 
+if YELLOW:
+    TeleportationMaster.repump_aom_lt1 = TeleportationMaster.yellow_aom_lt1
+
+### tool functions
 def setup_msmt(name): 
     m = TeleportationMaster(name)
     m.load_settings()
@@ -291,87 +345,103 @@ def finish_msmt(m, use_lt1=True, use_lt2=True):
     m.stop(use_lt1, use_lt2)
     m.save(use_lt1, use_lt2)
 
-def get_general_settings_lt1(m):
-    m.params_lt1['counter_channel'] = 1
-    m.params_lt1['CR_duration'] = 50
-    m.params_lt1['CR_threshold_preselect'] = 0
-    m.params_lt1['CR_threshold_probe'] = 0
-    m.params_lt1['repump_duration'] = 1000
-    m.params_lt1['time_before_forced_CR'] = 20000
-    m.params_lt1['teleportation_repetitions'] = 1000
-    m.params_lt1['SSRO1_duration'] = 15
+def get_hardware_settings(m):
+    m.params_lt1['counter_channel'] = 1    
     m.params_lt1['ADwin_lt2_trigger_do_channel'] = 8 # OK
     m.params_lt1['ADWin_lt2_di_channel'] = 17 # OK
     m.params_lt1['AWG_lt1_trigger_do_channel'] = 10 # OK
     m.params_lt1['AWG_lt1_di_channel'] = 16 # OK
-    m.params_lt1['PLU_arm_do_channel'] = 10
-    m.params_lt1['PLU_di_channel'] = 2
-    m.params_lt1['wait_before_SSRO1'] = 3
-    m.params_lt1['wait_before_SP_after_RO'] = 3
-    m.params_lt1['SP_after_RO_duration']            = 50
-    m.params_lt1['wait_before_SSRO2']               = 3
-    m.params_lt1['SSRO2_duration'] = 15
-    m.params_lt1['repump_after_repetitions'] = 1
-    m.params_lt1['CR_repump'] = 1000
-    m.params_lt1['AWG_lt1_event_do_channel'] = 3
-    m.params_lt1['debug_mode'] = 0
+    m.params_lt1['PLU_arm_do_channel'] = 11
+    m.params_lt1['PLU_di_channel'] = 18
+    m.params_lt1['AWG_lt1_event_do_channel'] = 14
     m.params_lt1['AWG_lt2_address0_do_channel'] = 0
     m.params_lt1['AWG_lt2_address1_do_channel'] = 1
-    m.params_lt1['AWG_lt2_address2_do_channel'] =2
-    m.params_lt1['AWG_lt2_address3_do_channel'] =3
+    m.params_lt1['AWG_lt2_address2_do_channel'] = 2
+    m.params_lt1['AWG_lt2_address3_do_channel'] = 3
     m.params_lt1['AWG_lt2_address_LDE'] = 1
     m.params_lt1['AWG_lt2_address_U1'] = 2                    
     m.params_lt1['AWG_lt2_address_U2'] = 3
     m.params_lt1['AWG_lt2_address_U3'] = 4
-    m.params_lt1['AWG_lt2_address_U4'] = 5
-    m.params_lt1['repump_amplitude'] = 0            
+    m.params_lt1['AWG_lt2_address_U4'] = 5       
     m.params_lt1['repump_off_voltage'] = 0         
-    m.params_lt1['Ey_CR_amplitude'] = 0             
+    m.params_lt1['Ey_off_voltage'] = 0 
+    m.params_lt1['FT_off_voltage'] = 0
+
+    m.params_lt2['counter_channel'] = 1
+    m.params_lt2['Adwin_lt1_do_channel'] = 2
+    m.params_lt2['Adwin_lt1_di_channel'] = 17
+    m.params_lt2['AWG_lt2_di_channel'] = 16
+    m.params_lt2['repump_off_voltage'] = 0
+    m.params_lt2['Ey_off_voltage'] = 0 
+    m.params_lt2['A_off_voltage'] = 0
+
+def get_RO_settings(m):
+    m.params_lt1['wait_before_SSRO1'] = 3
+    m.params_lt1['wait_before_SP_after_RO'] = 3
+    m.params_lt1['SP_after_RO_duration'] = 50
+    m.params_lt1['wait_before_SSRO2'] = 3
+    m.params_lt1['SSRO2_duration'] = 15
+    m.params_lt1['SSRO1_duration'] = 15
+
+    m.params_lt2['SSRO_lt2_duration'] = 50
+
+def get_CR_settings(m):
+    m.params_lt1['CR_duration'] = 50
+    m.params_lt1['CR_threshold_preselect'] = 0
+    m.params_lt1['CR_threshold_probe'] = 0
+    m.params_lt1['CR_repump'] = 1000
+    m.params_lt1['repump_duration'] = 1000
+    m.params_lt1['repump_after_repetitions'] = 1
+    m.params_lt1['time_before_forced_CR'] = 20000
+
+    m.params_lt2['repump_duration'] = 50
+    m.params_lt2['CR_duration'] = 50
+    m.params_lt2['CR_preselect'] = 0
+    m.params_lt2['CR_probe'] = 0
+    m.params_lt2['repump_after_repetitions'] = 1
+    m.params_lt2['CR_repump'] = 1000
+
+def get_laser_amplitudes(m):
+    m.params_lt1['Ey_CR_amplitude'] = 0
     m.params_lt1['FT_CR_amplitude'] = 0              
     m.params_lt1['Ey_SP_amplitude'] = 0              
     m.params_lt1['FT_SP_amplitude'] = 0             
     m.params_lt1['Ey_RO_amplitude'] = 0            
-    m.params_lt1['FT_RO_amplitude'] = 0        
-    m.params_lt1['Ey_off_voltage'] = 0 
-    m.params_lt1['FT_off_voltage'] = 0 
+    m.params_lt1['FT_RO_amplitude'] = 0
+    m.params_lt1['repump_amplitude'] = 0
 
-def get_general_settings_lt2(m):
-    m.params_lt2['counter_channel'] =1
-    m.params_lt2['repump_duration'] = 50
-    m.params_lt2['CR_duration'] = 50
-    m.params_lt2['CR_preselect'] = 0
-    m.params_lt2['teleportation_repetitions'] = 5000
-    m.params_lt2['SSRO_lt2_duration'] = 50
-    m.params_lt2['CR_probe'] = 0
-    m.params_lt2['repump_after_repetitions'] = 1
-    m.params_lt2['CR_repump'] = 1000
-    m.params_lt2['Adwin_lt1_do_channel'] = 8
-    m.params_lt2['Adwin_lt1_di_channel'] = 17
-    m.params_lt2['AWG_lt2_di_channel'] = 16
-    m.params_lt2['repump_amplitude'] = 0            
-    m.params_lt2['repump_off_voltage'] = 0         
     m.params_lt2['Ey_CR_amplitude'] = 0             
     m.params_lt2['A_CR_amplitude'] = 0              
     m.params_lt2['Ey_SP_amplitude'] = 0              
     m.params_lt2['A_SP_amplitude'] = 0             
     m.params_lt2['Ey_RO_amplitude'] = 0            
-    m.params_lt2['A_RO_amplitude'] = 0        
-    m.params_lt2['Ey_off_voltage'] = 0 
-    m.params_lt2['A_off_voltage'] = 0 
+    m.params_lt2['A_RO_amplitude'] = 0
+    m.params_lt2['repump_amplitude'] = 0 
 
+def get_process_settings(m):
+    m.params_lt1['max_CR_starts'] = 10000000
+    m.params_lt1['teleportation_repetitions'] = 1000
+    m.params_lt1['run_mode'] = 1
+
+    m.params_lt2['teleportation_repetitions'] = 1000
+
+
+def get_default_settings(m):
+    get_hardware_settings(m)
+    get_RO_settings(m)
+    get_CR_settings(m)
+    get_laser_amplitudes(m)
+    get_process_settings(m)
+
+### measurements
 def CR_check_lt1_only(name):
     m = setup_msmt('CR_check_lt1_only_'+name)
     
-    get_general_settings_lt1(m)
-    
-    m.params['use_yellow_lt1'] = True
-    if m.params['use_yellow_lt1']:
-        m.repump_aom_lt1 = m.yellow_aom_lt1
-    else:
-        m.repump_aom_lt1 = m.green_aom_lt1
+    get_default_settings(m)
+    m.params['use_yellow_lt1'] = YELLOW
 
-    start_msmt(m, use_lt2=False)
-    finish_msmt(m, use_lt2=False)
+    start_msmt(m, use_lt2=USE_LT2)
+    finish_msmt(m, use_lt2=USE_LT2)
 
 
 CR_check_lt1_only('test')

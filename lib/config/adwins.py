@@ -1280,6 +1280,19 @@ config['adwin_lt1_processes'] = {
                     },
                 },
         
+        'set_gate_voltage': {
+
+                'index' : 8,
+                'file' : 'lt1_set_gate_voltage.TB8',
+                'par' : {
+                    'gate_dac' : 50,
+                },
+                'fpar' : {
+                    'current_voltage' : 50,
+                    'target_voltage' : 51,
+                },
+        },
+
         'teleportation' : {
 
                 'info' : """
@@ -1313,7 +1326,7 @@ config['adwin_lt1_processes'] = {
                     ['repump_after_repetitions'     ,       1],
                     ['CR_repump'                    ,    1000],
                     ['AWG_lt1_event_do_channel'     ,       3],
-                    ['debug_mode'                   ,       0], 
+                    ['max_CR_starts'                ,       0], 
                     ['AWG_lt2_address0_do_channel'  ,       0],
                     ['AWG_lt2_address1_do_channel'  ,       1],
                     ['AWG_lt2_address2_do_channel'  ,       2],
@@ -1322,10 +1335,11 @@ config['adwin_lt1_processes'] = {
                     ['AWG_lt2_address_U1'           ,       2],                    
                     ['AWG_lt2_address_U2'           ,       3],
                     ['AWG_lt2_address_U3'           ,       4],
-                    ['AWG_lt2_address_U4'           ,       5]
+                    ['AWG_lt2_address_U4'           ,       5],
+                    ['run_mode'                     ,       1],
                     ],
                 'params_long_index'    : 20,
-                'params_long_length'   : 35,
+                'params_long_length'   : 40,
                 'params_float' : [          
                     ['repump_voltage'              ,     0.0],
                     ['repump_off_voltage'            ,     0],

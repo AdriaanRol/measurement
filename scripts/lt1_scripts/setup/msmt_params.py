@@ -118,11 +118,11 @@ cfg.set(branch+        'pi2pi_mIp1_mod_frq',         fmIp1)
 
 ### set some other pulses that determinine their values from the ones above
 cfg.set(branch+        'AWG_N_CNOT_pulse_duration', 
-    cfg.get(branch+         'pi2pi_mI1_duration'))
+    cfg.get(branch+         'pi2pi_mIm1_duration'))
 cfg.set(branch+        'AWG_N_CNOT_pulse_amp',      
-    cfg.get(branch+         'pi2pi_mI1_amp'))
+    cfg.get(branch+         'pi2pi_mIm1_amp'))
 cfg.set(branch+        'AWG_N_CNOT_pulse_mod_frq',  
-    cfg.get(branch+        'pi2pi_mI1_mod_frq'))
+    cfg.get(branch+        'pi2pi_mIm1_mod_frq'))
 
 cfg.set(branch+        'AWG_MBI_MW_pulse_mod_frq',  
     finit)
@@ -145,9 +145,9 @@ cfg.set(branch+        'N_pi2_amp', 1)
 
 ### sil2, AdwinSSRO ###
 branch='protocols/sil2-default/AdwinSSRO/'  
-cfg.set(branch+        'A_CR_amplitude',            70e-9)
+cfg.set(branch+        'A_CR_amplitude',            10e-9)
 cfg.set(branch+        'A_RO_amplitude',            0.)
-cfg.set(branch+        'A_SP_amplitude',            100e-9)
+cfg.set(branch+        'A_SP_amplitude',            10e-9)
 cfg.set(branch+        'CR_duration',               100)
 cfg.set(branch+        'CR_preselect',              40)
 cfg.set(branch+        'CR_probe',                  40)
