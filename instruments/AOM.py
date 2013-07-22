@@ -155,6 +155,7 @@ class AOM(Instrument):
        
         # override from config       
         cfg_fn = os.path.join(qt.config['ins_cfg_path'], name+'.cfg')
+
         if not os.path.exists(cfg_fn):
             _f = open(cfg_fn, 'w')
             _f.write('')
@@ -171,11 +172,16 @@ class AOM(Instrument):
     
     def load_cfg(self):
         params_from_cfg = self._ins_cfg.get_all()
+
         for p in params_from_cfg:
             val = self._ins_cfg.get(p)
             if type(val) == unicode:
                 val = str(val)
-            self.set(p, value=val)
+            
+            try:
+                self.set(p, value=val)
+            except:
+                pass
 
     def save_cfg(self):
         parlist = self.get_parameters()
