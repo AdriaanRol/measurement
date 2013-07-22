@@ -149,6 +149,7 @@ INIT:
   mode = 0
   timer = 0
   
+  par_67 = 0                      ' number of CR times CR failed.
   par_68 = CR_probe
   par_69 = CR_repump  
   PAR_70 = 0                      ' cumulative counts during red CR check (LT2)

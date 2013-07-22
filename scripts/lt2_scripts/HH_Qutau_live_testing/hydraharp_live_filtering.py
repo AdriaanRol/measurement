@@ -1,12 +1,3 @@
-"""
-TO DO:
-
-* Add a sync offset to data that I append to old data
-* Write a script that processes the raw data
-* Incorporate that I can save raw data but also processed data?
-"""
-
-
 import os, time, msvcrt, qt
 import numpy as np
 from measurement.lib.cython.hh_optimize import hht4
@@ -63,7 +54,7 @@ class PulsedAntibunchMeasurement:
                             amplitude = 0.50)
 
                     seq.add_pulse('Count_ch0_0', 'dummy_chan', ename, 
-                            start = 5,
+                            start = 0,
                             start_reference = 'Sync_0', link_start_to = 'end',
                             duration = 50, amplitude = 0.50)
                 #add the rest of the pulses 
@@ -82,7 +73,7 @@ class PulsedAntibunchMeasurement:
                             amplitude = 0.50)
 
                     seq.add_pulse('Count_ch0_%d'%pulse, 'dummy_chan', ename, 
-                            start = 5,
+                            start = 0,
                             start_reference = 'Sync_%d'%pulse, link_start_to = 'end',
                             duration = 50, amplitude = 0.50)
 
@@ -99,8 +90,7 @@ class PulsedAntibunchMeasurement:
 
 
     def get_T3_pulsed_events(self, sync_period, 
-            start_ch0=0, start_ch1=0, max_pulses = 2, 
-            save_raw=True, raw_max_len=1E6, 
+            start_ch0=0, start_ch1=0, save_raw=True, raw_max_len=1E6, 
             sleep_time = 10E-3):
         """
         Get ch0 and ch1 events in T3 mode.
@@ -126,13 +116,6 @@ class PulsedAntibunchMeasurement:
             print('Warning: resolution is too high to cover entire sync \
                     period in T3 mode, events might get lost.')
 
-        nsync_overflow = 0
-        ch0_sync = 0
-        ch0_time = 0
-        ch1_sync = 0
-        ch1_time = 0
-        nsync_ma1 = -max_pulses
-
         #prepare for saving the data; create directory etc...
         if save_raw:
             rawdir = self.save_folder
@@ -143,6 +126,11 @@ class PulsedAntibunchMeasurement:
             times = np.array([])
             accumulated_data = np.empty((0,4), dtype = np.uintc)
         else:        
+            #initialize the overflow offset number to 0. This will be updated in
+            #the loop everytime the function is called later on. In this way the
+            #sync number increases linearly with time and doesn't fall back 
+            #everytime the function is called.
+            syncnr_offset = 0
             accumulated_data = np.empty((0,4), dtype = np.uintc)
             rawidx = 0
 
@@ -165,20 +153,22 @@ class PulsedAntibunchMeasurement:
             
             #if we first want to filter the data before saving use this
             else:
-                print "Measuring... %d events"%length
+                print "I registered... %d events"%length
                 #analyze the entire array or just the new data?
-                prefiltered = hht4.filter_raw_antibunch_data(data[:length], self.sync_rep_rate, self.sync_rep_rate)
+                prefiltered, syncnr_offset = hht4.filter_raw_antibunch_data(
+                        data[:length], syncnr_offset, int(self.sync_rep_rate/0.256),
+                        int(self.sync_rep_rate/0.256))
                
                 accumulated_data = np.append(accumulated_data, prefiltered, axis = 0)
                 
                 #if the accumulated_data is large enough, save it to a file
                 if len(accumulated_data) > raw_max_len:
-                    np.savez(os.path.join(rawdir, 'LDE_rawdata-%.3d'%rawidx), 
+                    print "Saving accumulated data..."
+                    np.savez(os.path.join(rawdir, 'LDE_prefiltered-%.3d'%rawidx), 
                         length=len(accumulated_data), data=accumulated_data)
                     
                     rawidx += 1
                     accumulated_data = np.array((0,4), dtype = np.uintc)
-                    print "Saving accumulated data..."
             
             #Sleeping might give a bit more stable data acquisition
             #But be careful not to make it too big

@@ -38,7 +38,7 @@ class adwin_lt2(adwin):
 
     # TODO put this into a script
     def set_resonant_counting(self, aom_dac='green_aom', aom_voltage=3.,
-            aom_duration=1, probe_duration=10, red_powers=[5e-9, 5e-9],
+            aom_duration=1, probe_duration=10, red_powers=[20e-9, 20e-9],
             red_aoms=['NewfocusAOM', 'MatisseAOM'], floating_average = 100):
         
         for i,n in enumerate(red_aoms):

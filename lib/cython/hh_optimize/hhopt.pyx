@@ -564,3 +564,41 @@ def get_dts_qutau(cnp.ndarray[cnp.uint_t, ndim = 2, mode="c"] data not None,
     else:
         print "Not yet implemented"
         return 0
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+def throw_away_useless_markers(cnp.ndarray[cnp.uint_t, ndim = 2, mode="c"] data not None,
+        unsigned int mchan):
+    """
+    Only keep markers in the data that are followed by a click 
+    (at the next sync or the sync after that).
+
+    WARNING: SLOW if there are hardly any markers on mchan in the data!
+    FAST if you applied the function filter_counts_on_marker properly and 
+    you use the same marker channel here as you did in that function.
+    """
+
+    cdef unsigned int k, l, click_idx
+    cdef cnp.ndarray[cnp.uint_t, ndim = 1, mode="c"] click_idxs = \
+            (np.where(data[:,3] == 0)[0]).astype(np.uintc)
+    cdef cnp.ndarray[cnp.uint_t, ndim = 1, mode="c"] mask = \
+            np.zeros(data.shape[0], dtype = np.uintc)
+
+    for k in range(click_idxs.shape[0]):
+        click_idx = click_idxs[k]
+
+        #when comes the first marker before the photon?
+        for l in range(click_idx):
+            if data[click_idx-l,3] == 0:
+                mask[click_idx-l] = 1
+            else:
+                #it must be a marker on the right channel though
+                if data[click_idx-l,2] == mchan:
+                    mask[click_idx-l] = 1
+                    break
+                else:
+                    mask[click_idx-l] = 1
+
+    return apply_filter_to_2darray(data, mask)
+    
+
