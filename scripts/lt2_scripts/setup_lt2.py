@@ -1,5 +1,5 @@
 print 'loading setup tools...'
-from measurement.lib import stools
+from tools import stools
 reload(stools)
 
 print 'reload all modules...'
