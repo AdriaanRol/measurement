@@ -6,10 +6,10 @@ from analysis.lib.fitting import fit, common
 from numpy import *
 
 #measurement parameters
-name = 'LT2-Sil15-PSB-FS-APD'
+name = 'LT2-Sil15-ZPL-SK-coupler-1-APD'
 steps=31
-max_power=300e-6       #[w]
-counter=1      #number of counter
+max_power=400e-6       #[w]
+counter=2      #number of counter
 HH_count=False    # counting with the HH, assumes apd on channel 0
 bg_x=2          #delta x position of background [um]
 bg_y=2             #delta y position of background [um]
@@ -80,7 +80,7 @@ if type(fitres) != type(False):
     p1 = fitres['params_dict']
     fit_A = p1['A']
     fit_sat = p1['xsat']
-    #fd = fitres['fitdata']
+    fd = fit_A*x_axis/(x_axis+fit_sat)
     
     print ('maximum count rate: %.1f cps, saturation power: %.1f microwatt'%(fit_A,fit_sat))
    
@@ -88,7 +88,7 @@ if type(fitres) != type(False):
     plt.add_data(dat, coorddim=0, valdim=2)
     dat.add_data_point(x_axis,y_NV-y_BG,fd)
 
-    plt.set_plottitle('power saturation '+name+', P_sat = '+str(int(fit_sat))+'uW, R_sat = '+str(int(A))+' counts/s')
+    plt.set_plottitle('power saturation '+name+', P_sat = '+str(int(fit_sat))+'uW, R_sat = '+str(int(fit_A))+' counts/s')
 
 else:
     dat.add_data_point(x_axis,y_NV-y_BG)

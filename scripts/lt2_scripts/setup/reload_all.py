@@ -30,12 +30,3 @@ reload(mbi_espin)
 # pulsar measurements
 from measurement.lib.measurement2.adwin_ssro import pulsar as pulsar_msmt
 reload(pulsar_msmt)
-
-# default measurement parameters
-execfile(r'd:\measuring\measurement\scripts\lt2_scripts\m2\msmt_params.py')
-
-# set all the static variables for lt2
-execfile(r'd:\measuring\measurement\scripts\lt2_scripts\m2\sequence.py')
-
-# set all the static variables for lt2
-execfile(r'd:\measuring\measurement\scripts\lt2_scripts\m2\lt2_statics.py')
