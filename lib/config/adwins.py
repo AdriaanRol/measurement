@@ -791,6 +791,55 @@ config['adwin_lt2_processes'] = {
                     }, 
                 },
 
+        'teleportation' : {
+                'index' : 9,
+                'file' : 'lt2_teleportation.TB9',
+                'params_long' : [           # keep order!!!!!!!!!!!!!
+                    ['counter_channel'             ,   1],
+                    ['repump_laser_DAC_channel'    ,   7],
+                    ['Ey_laser_DAC_channel'        ,   6],
+                    ['A_laser_DAC_channel'         ,   8],
+                    ['repump_duration'             ,  50],
+                    ['CR_duration'                 ,  50],
+                    ['CR_preselect'                ,  40],
+                    ['teleportation_repetitions'   ,1000],
+                    ['SSRO_lt2_duration'           ,  50],
+                    ['CR_probe'                    ,  40],
+                    ['repump_after_repetitions'    ,   1],
+                    ['CR_repump'                   ,1000],
+                    ['Adwin_lt1_do_channel'        ,   8],
+                    ['Adwin_lt1_di_channel'        ,  17],
+                    ['AWG_lt2_di_channel'          ,  16]
+                    ],
+                'params_long_index' : 20, 
+                'params_long_length': 25,
+                'params_float' : [
+                    ['repump_voltage'              , 0.0],
+                    ['repump_off_voltage'          , 0.0],
+                    ['Ey_CR_voltage'               , 0.0],
+                    ['A_CR_voltage'                , 0.0],
+                    ['Ey_SP_voltage'               , 0.0],
+                    ['A_SP_voltage'                , 0.0],
+                    ['Ey_RO_voltage'               , 0.0],
+                    ['A_RO_voltage'                , 0.0],
+                    ['Ey_off_voltage'              , 0.0],
+                    ['A_off_voltage'               , 0.0]
+                    ],
+                'params_float_index' : 21,
+                'params_float_length': 10,
+                'par': {
+                    'completed_reps' : 77,
+                    'total_CR_counts': 70,
+                    },
+                'data_long' : {
+                    'CR_before' : 22, 
+                    'CR_after'  : 23,
+                    'CR_hist'   : 24,
+                    'SSRO_lt2_data' : 25,
+                    'statistics'    : 26,
+                    },
+                },
+
         #gate modulation
         'check_trigger_from_lt1' : {
                 'index' : 9,
@@ -847,6 +896,7 @@ config['adwin_lt1_processes'] = {
             },
         
         'counter' : {
+
             'doc' : '',
             'info' : {
                 'counters' : 4,
@@ -865,6 +915,7 @@ config['adwin_lt1_processes'] = {
             },
 
         'resonant_counting' : {
+
              'doc' : '',
              'index' : 1,
              'file' : 'lt1_resonant_counting.TB1',
@@ -1231,10 +1282,6 @@ config['adwin_lt1_processes'] = {
         
         'teleportation' : {
 
-                # TODO
-                # - better names for the lasers
-
-
                 'info' : """
                     Teleportation master control. LT1 is local, LT2 is remote.
                     """,
@@ -1244,7 +1291,7 @@ config['adwin_lt1_processes'] = {
                     ['counter_channel'              ,       1],
                     ['repump_laser_DAC_channel'     ,       3],
                     ['Ey_laser_DAC_channel'         ,       6],
-                    ['FB_laser_DAC_channel'         ,       7],
+                    ['FT_laser_DAC_channel'         ,       7],
                     ['CR_duration'                  ,      50],
                     ['CR_threshold_preselect'       ,      30],
                     ['CR_threshold_probe'           ,      10],
@@ -1282,14 +1329,14 @@ config['adwin_lt1_processes'] = {
                 'params_float' : [          
                     ['repump_voltage'              ,     0.0],
                     ['repump_off_voltage'            ,     0],
-                    ['Ex_CR_voltage'                ,   0.0],
-                    ['A_CR_voltage'                 ,   0.0],
-                    ['Ex_SP_voltage'                ,   0.0],
-                    ['A_SP_voltage'                 ,   0.0],
-                    ['Ex_RO_voltage'                ,   0.0],
-                    ['A_RO_voltage'                 ,   0.0],       
-                    ['Ex_off_voltage'                ,   0.0],
-                    ['A_off_voltage'                 ,   0.0],                        
+                    ['Ey_CR_voltage'                ,   0.0],
+                    ['FT_CR_voltage'                 ,   0.0],
+                    ['Ey_SP_voltage'                ,   0.0],
+                    ['FT_SP_voltage'                 ,   0.0],
+                    ['Ey_RO_voltage'                ,   0.0],
+                    ['FT_RO_voltage'                 ,   0.0],       
+                    ['Ey_off_voltage'                ,   0.0],
+                    ['FT_off_voltage'                 ,   0.0],                        
                     ],
                 'params_float_index'    : 21,
                 'params_float_length'   : 10,
@@ -1305,6 +1352,11 @@ config['adwin_lt1_processes'] = {
                     'CR_hist_yellow_time_out' : 9,
                     'CR_hist_yellow_all' : 10,
                     'CR_after' : 23,
+                    'statistics' : 28,
+                    'SSRO1_results' : 24,
+                    'SSRO2_results' : 26,
+                    'PLU_Bell_states' : 25,
+                    'CR_before' : 27,
                     },
                 },        
         }
