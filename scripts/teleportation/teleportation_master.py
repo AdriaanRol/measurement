@@ -108,17 +108,15 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
                     self.repump_aom_lt1.power_to_voltage(
                             self.params_lt1['repump_amplitude'])
 
-
         if use_lt2:
             self.params_lt2['Ey_laser_DAC_channel'] = self.adwins['adwin_lt2']['ins'].get_dac_channels()\
                     [self.Ey_aom_lt2.get_pri_channel()]
-            self.params_lt2['FT_laser_DAC_channel'] = self.adwins['adwin_lt2']['ins'].get_dac_channels()\
-                    [self.FT_aom_lt2.get_pri_channel()]
+            self.params_lt2['A_laser_DAC_channel'] = self.adwins['adwin_lt2']['ins'].get_dac_channels()\
+                    [self.A_aom_lt2.get_pri_channel()]
             self.params_lt2['green_laser_DAC_channel'] = self.adwins['adwin_lt2']['ins'].get_dac_channels()\
                    [self.green_aom_lt2.get_pri_channel()]
 
             self.params_lt2['repump_laser_DAC_channel'] = self.params_lt2['green_laser_DAC_channel']
-
 
             self.params_lt2['Ey_CR_voltage'] = \
                     self.Ey_aom_lt2.power_to_voltage(
@@ -188,11 +186,20 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
             #self.mwsrc_lt2.set_power(self.params_lt2['mw_power'])
             #self.mwsrc_lt2.set_status('on')
             
-            self.awg_lt2.set_runmode('SEQ')
+            # self.awg_lt2.set_runmode('SEQ')
 
     def _auto_adwin_params(self, adwin):
         for key,_val in self.adwin_dict['{}_processes'.format(adwin)]\
             [self.adwins[adwin]['process']]['params_long']:
+            try:
+                self.adwin_process_params[adwin][key] = \
+                    self.params_lt1[key] if adwin == 'adwin_lt1' else self.params_lt2[key]
+            except:
+                logging.error("Cannot set {} process variable '{}'".format(adwin, key))
+                return False
+
+        for key,_val in self.adwin_dict['{}_processes'.format(adwin)]\
+            [self.adwins[adwin]['process']]['params_float']:
             try:
                 self.adwin_process_params[adwin][key] = \
                     self.params_lt1[key] if adwin == 'adwin_lt1' else self.params_lt2[key]
@@ -285,9 +292,9 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
         self.h5data.close()
 
 ### CONSTANTS AND FLAGS
-EXEC_FROM = 'lt1'
+EXEC_FROM = 'lt2'
 USE_LT1 = True
-USE_LT2 = False and (EXEC_FROM == 'lt2')
+USE_LT2 = True # and (EXEC_FROM == 'lt2')
 YELLOW = True
         
 ### configure the hardware (statics)
@@ -300,7 +307,7 @@ TeleportationMaster.adwins = {
 
 if EXEC_FROM == 'lt2':    
     TeleportationMaster.adwins['adwin_lt2'] = {
-            'ins' : qt.instruments['adwin_lt2'],
+            'ins' : qt.instruments['adwin'],
             'process' : 'teleportation'
         }
 
@@ -318,6 +325,7 @@ if EXEC_FROM == 'lt2':
         TeleportationMaster.A_aom_lt2 = qt.instruments['NewfocusAOM']
         TeleportationMaster.mwsrc_lt2 = qt.instruments['SMB100']
         TeleportationMaster.awg_lt2 = qt.instruments['AWG']
+        TeleportationMaster.repump_aom_lt2 = TeleportationMaster.green_aom_lt2
 
 elif EXEC_FROM == 'lt1':
     TeleportationMaster.adwin_dict = adwins_cfg.config
@@ -329,6 +337,8 @@ elif EXEC_FROM == 'lt1':
 
 if YELLOW:
     TeleportationMaster.repump_aom_lt1 = TeleportationMaster.yellow_aom_lt1
+else:
+    TeleportationMaster.repump_aom_lt1 = TeleportationMaster.green_aom_lt1
 
 ### tool functions
 def setup_msmt(name): 
@@ -421,7 +431,7 @@ def get_laser_amplitudes(m):
 def get_process_settings(m):
     m.params_lt1['max_CR_starts'] = 10000000
     m.params_lt1['teleportation_repetitions'] = 1000
-    m.params_lt1['run_mode'] = 1
+    m.params_lt1['run_mode'] = 0
 
     m.params_lt2['teleportation_repetitions'] = 1000
 

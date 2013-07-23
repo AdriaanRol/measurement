@@ -6,10 +6,10 @@ from analysis.lib.fitting import fit, common
 from numpy import *
 
 #measurement parameters
-name = 'LT2-Sil9-ZPL-1-APD'
+name = 'LT2-Sil15-PSB-FS'
 steps=31
 max_power=400e-6       #[w]
-counter=2      #number of counter
+counter=1      #number of counter
 HH_count=False    # counting with the HH, assumes apd on channel 0
 bg_x=2          #delta x position of background [um]
 bg_y=0             #delta y position of background [um]

@@ -2,11 +2,11 @@ import qt
 import msvcrt
 # from measurement.AWG_HW_sequencer_v2 import Sequence
 
-name='ESR_SIL9_LT2'
-start_f = 2.827 - 0.015 #   2.853 #2.85 #  #in GHz
-stop_f  = 2.827 + 0.015 #   2.864 #2.905 #   #in GHz
-steps   = 51
-mw_power = -8  #in dBm
+name='ESR_SIL18_LT2_2-3_strip'
+start_f = 2.8 #2.827 - 0.015 #   2.853 #2.85 #  #in GHz
+stop_f  = 2.96 #2.827 + 0.015 #   2.864 #2.905 #   #in GHz
+steps   = 161
+mw_power = -5 #in dBm
 green_power = 30e-6
 int_time = 30       #in ms
 reps = 5
@@ -43,8 +43,9 @@ for cur_rep in range(reps):
     for i,cur_f in enumerate(f_list):
         if (msvcrt.kbhit() and (msvcrt.getch() == 'q')): stop_scan=True
         ins_smb.set_frequency(cur_f)
-        qt.msleep(0.1)
         
+        qt.msleep(0.2)
+
         total_cnts[i]+=ins_adwin.measure_counts(int_time)[counter-1]
         # qt.msleep(0.01)
 

@@ -40,8 +40,9 @@ class AdwinSSRO(m2.AdwinControlledMeasurement):
                 [self.A_aom.get_pri_channel()]
         self.params['repump_laser_DAC_channel'] = self.adwin.get_dac_channels()\
                 [self.repump_aom.get_pri_channel()]        
-        self.params['gate_DAC_channel'] = self.adwin.get_dac_channels()\
-                ['gate']
+        #NOTE: gate is not none for lt2: maybe an except statement here
+        #self.params['gate_DAC_channel'] = self.adwin.get_dac_channels()\
+        #        ['gate']
 
     def setup(self):
         """

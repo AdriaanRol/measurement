@@ -8,10 +8,10 @@
 ' ADbasic_Version                = 5.0.8
 ' Optimize                       = Yes
 ' Optimize_Level                 = 1
-' Info_Last_Save                 = TUD277246  TUD277246\localadmin
+' Info_Last_Save                 = TUD276629  TUD276629\localadmin
 '<Header End>
 ' this program implements the part of the teleportation protocol controlled by ADwin Pro II
-' ADwin Gold I is in charge of the experiment.
+' ADwin Gold II is in charge of the experiment.
 '
 ' protocol:
 ' mode  0:  green pumping, 
@@ -98,8 +98,8 @@ INIT:
   repump_after_repetitions     = DATA_20[11]
   CR_repump                    = DATA_20[12]
   ADwin_lt1_do_channel         = DATA_20[13]
-  ADwin_lt1_di_channel         = DATA_20[15]
-  AWG_lt2_di_channel           = DATA_20[16]
+  ADwin_lt1_di_channel         = DATA_20[14]
+  AWG_lt2_di_channel           = DATA_20[15]
     
   repump_voltage               = DATA_21[1]
   repump_off_voltage           = DATA_21[2]
@@ -135,6 +135,10 @@ INIT:
   current_ssro_counts     = 0
   counts                  = 0
   cr_counts               = 0
+  
+  ADwin_in_was_high      = 0
+  ADwin_in_is_high       = 0
+  ADwin_switched_to_high = 0
 
   P2_DAC(DAC_MODULE, repump_laser_DAC_channel, 3277*repump_off_voltage+32768) ' turn off green
   P2_DAC(DAC_MODULE, Ex_laser_DAC_channel, 3277*Ex_off_voltage+32768) ' turn off Ex laser
@@ -142,13 +146,15 @@ INIT:
 
   P2_CNT_ENABLE(CTR_MODULE, 0000b)'turn off all counters
   P2_CNT_MODE(CTR_MODULE, counter_channel,00001000b) 'configure counter
-
-  P2_Digprog(DIO_MODULE, 13)      'configure DIO 08:15 as input, all other ports as output
+  P2_Digprog(DIO_MODULE, 11)
   P2_DIGOUT(DIO_MODULE, ADwin_lt1_do_channel, 0)
 
-  mode = 0
+  mode = 2
   timer = 0
   
+  par_64 = 0
+  par_65 = 0
+  par_66 = 0
   par_67 = 0                      ' number of CR times CR failed.
   par_68 = CR_probe
   par_69 = CR_repump  
@@ -171,156 +177,178 @@ EVENT:
   CR_probe                     = PAR_68
   CR_repump                    = PAR_69
 
-  ADwin_in_was_high = ADwin_in_is_high    'copies information from last round
-  IF (((P2_DIGIN_LONG(DIO_MODULE)) AND (ADwin_lt1_di_channel_in_bit)) > 0) THEN
+  ADwin_in_was_high = ADwin_in_is_high    'copies information from last round  
+  if (((P2_DIGIN_LONG(DIO_MODULE)) AND (ADwin_lt1_di_channel_in_bit)) > 0) then
     ADwin_in_is_high = 1
-  ELSE
+  else
     ADwin_in_is_high = 0
-  ENDIF
+  endif  
   
-  IF ((ADwin_in_was_high = 0) AND (ADwin_in_is_high > 0)) THEN  'adwin switched to high during last round.
+  IF ((ADwin_in_was_high = 0) AND (ADwin_in_is_high > 0)) THEN
     ADwin_switched_to_high = 1
   ELSE
     ADwin_switched_to_high = 0
   ENDIF
   
-  AWG_in_was_high = AWG_in_is_high    'copies information from last round
-  IF (((P2_DIGIN_LONG(DIO_MODULE)) AND (AWG_lt2_di_channel)) > 0) THEN
-    AWG_in_is_high = 1
-  ELSE
-    AWG_in_is_high = 0
-  ENDIF
+  par_80 = ADwin_in_is_high
+  par_79 = ADwin_switched_to_high
+  par_78 = P2_DIGIN_LONG(DIO_MODULE)
+  
+  par_64 = mode
+  par_65 = timer
+  
+  '  AWG_in_was_high = AWG_in_is_high    'copies information from last round
+  '  IF (((P2_DIGIN_LONG(DIO_MODULE)) AND (AWG_lt2_di_channel)) > 0) THEN
+  '    AWG_in_is_high = 1
+  '  ELSE
+  '    AWG_in_is_high = 0
+  '  ENDIF
+  '    
+  '  IF ((AWG_in_was_high = 0) AND (AWG_in_is_high > 0)) THEN  'adwin switched to high during last round.
+  '    AWG_switched_to_high = 1
+  '  ELSE
+  '    AWG_switched_to_high = 0
+  '  ENDIF    
+  
+  if (timer = 0) then
+    INC(DATA_26[mode+1]) 'gather statistics on how often entered this mode.
+  endif
     
-  IF ((AWG_in_was_high = 0) AND (AWG_in_is_high > 0)) THEN  'adwin switched to high during last round.
-    AWG_switched_to_high = 1
-  ELSE
-    AWG_switched_to_high = 0
-  ENDIF    
-  '  
-  '  
-  '  SELECTCASE mode
-  '    CASE 0' repump
-  '      INC(DATA_26[mode+1]) 'gather statistics on how often entered this mode.
-  '      
-  '      IF (timer = 0) THEN
-  '        IF ((Mod(tele_event_id,repump_after_repetitions)=0) OR (cr_counts < CR_repump))  THEN  'only repump after x SSRO repetitions
-  '          P2_CNT_CLEAR(CTR_MODULE,  counter_pattern)    'clear counter
-  '          P2_CNT_ENABLE(CTR_MODULE, counter_pattern)    'turn on counter
-  '          P2_DAC(DAC_MODULE, repump_laser_DAC_channel, 3277*repump_voltage+32768) ' turn on green
-  '        ELSE
-  '          mode = 1
-  '          timer = -1
-  '          current_CR_threshold = CR_preselect
-  '        ENDIF
-  '          
-  '      ELSE 
-  '        IF (timer = repump_duration) THEN
-  '          P2_DAC(DAC_MODULE, repump_laser_DAC_channel, 3277*repump_off_voltage+32768) ' turn off green
-  '          counts = P2_CNT_READ(CTR_MODULE, counter_channel)
-  '          P2_CNT_ENABLE(CTR_MODULE, 0)
-  '          total_repump_counts = total_repump_counts + counts
-  '          PAR_76 = total_repump_counts
-  '          mode = 1
-  '          timer = -1
-  '          current_CR_threshold = CR_preselect
-  '        ENDIF
-  '      ENDIF
-  '    CASE 1    ' Ex/A laser CR check
-  '      INC(DATA_26[mode+1]) 'gather statistics on how often entered this mode.
-  '            
-  '      IF (timer = 0) THEN
-  '        P2_DAC(DAC_MODULE, Ex_laser_DAC_channel, 3277*Ex_CR_voltage+32768) ' turn on Ex laser
-  '        P2_DAC(DAC_MODULE, A_laser_DAC_channel, 3277*A_CR_voltage+32768) ' turn on A laser
-  '        P2_CNT_CLEAR(CTR_MODULE,  counter_pattern)    'clear counter
-  '        P2_CNT_ENABLE(CTR_MODULE, counter_pattern)    'turn on counter
-  '        inc(par_72)       'total CR checks performed
-  '      ELSE 
-  '        IF (timer = CR_duration) THEN
-  '          P2_DAC(DAC_MODULE, Ex_laser_DAC_channel, 3277*Ex_off_voltage+32768) ' turn off Ex laser
-  '          P2_DAC(DAC_MODULE, A_laser_DAC_channel, 3277*A_off_voltage+32768) ' turn off A laser
-  '          cr_counts = P2_CNT_READ(CTR_MODULE, counter_channel)
-  '          P2_CNT_ENABLE(CTR_MODULE, 0)  'turn off counter
-  '          PAR_70 = PAR_70 + cr_counts
-  '            
-  '          IF (cr_after_teleportation > 0) THEN ' first CR after lt2 SSRO i.e. teleportation
-  '            DATA_23[tele_event_id] = cr_counts
-  '            cr_after_teleportation = 0
-  '          ENDIF
-  '            
-  '          IF (cr_counts < current_cr_threshold) THEN
-  '            mode = 0
-  '            inc(par_71)     ' below threshold events
-  '          ELSE
-  '            DATA_22[tele_event_id+1] = counts  ' CR before next SSRO sequence
-  '            P2_DIGOUT( DIO_MODULE, ADwin_lt1_do_channel, 1)
-  '            mode = 2
-  '            current_cr_threshold = CR_probe      
-  '          ENDIF
-  '            
-  '          timer = -1
-  '        ENDIF
-  '      ENDIF
-  '      
-  '    case 2      'CR ok, waiting
-  '      INC(DATA_26[mode+1]) 'gather statistics on how often entered this mode.
-  '      
-  '      IF ( ADwin_switched_to_high > 0) THEN  'Adwin triggers to start CR
-  '        P2_DIGOUT( DIO_MODULE, ADwin_lt1_do_channel, 0) ' stop triggering CR done
-  '        INC(par_74)     'Triggers to start CR
-  '        mode = 0
-  '        timer = -1
-  '      ELSE
-  '        IF ( AWG_switched_to_high > 0) THEN   'AWG triggers to start SSRO
-  '          P2_DIGOUT( DIO_MODULE, ADwin_lt1_do_channel, 1) ' stop triggering CR done
-  '          INC(par_78)     'Triggers to start SSRO
-  '          mode = 3
-  '          timer = -1
-  '        ENDIF
-  '      ENDIF
-  '           
-  '    case 3
-  '      INC(DATA_26[mode+1]) 'gather statistics on how often entered this mode.
-  '      
-  '      IF (timer = 0) THEN
-  '        P2_CNT_CLEAR(CTR_MODULE,  counter_pattern)    'clear counter
-  '        P2_CNT_ENABLE(CTR_MODULE, counter_pattern)    'turn on counter
-  '        P2_DAC(DAC_MODULE, Ex_laser_DAC_channel, 3277*Ex_RO_voltage+32768) ' turn on readout laser
-  '      ELSE
-  '        IF (timer = SSRO_duration) THEN
-  '          current_ssro_counts = P2_CNT_READ(CTR_MODULE, counter_channel)
-  '          P2_DAC(DAC_MODULE, Ex_laser_DAC_channel, 3277*Ex_off_voltage+32768) ' turn off readout laser
-  '          P2_CNT_ENABLE(CTR_MODULE, 0)    'turn off counter
-  '
-  '          par_68 = par_68 + current_ssro_counts 'accumulated SSRO counts
-  '          IF (current_ssro_counts > 0) THEN
-  '            INC(DATA_25[tele_event_id]) 'here I save 1 for 'click', which is thus m_s=0, (m_I=0). Agrees with current analysis scripts
-  '          ENDIF
-  '          P2_DIGOUT( DIO_MODULE, ADwin_lt1_do_channel, 1)
-  '          INC(Par_80)   ' number of SSRO done signals to ADwin lt1.
-  '          INC(par_77)   ' number of succesful teleportations.
-  '          INC(tele_event_id)
-  '          IF (tele_event_id = teleportation_repetitions) THEN
-  '            END
-  '          ENDIF
-  '          cr_after_teleportation = 1
-  '          mode = 4
-  '          timer = -1
-  '        ENDIF
-  '      ENDIF
-  '      
-  '    case 4
-  '      INC(DATA_26[mode+1]) 'gather statistics on how often entered this mode.
-  '      
-  '      IF (ADwin_switched_to_high > 0) THEN  'Adwin triggers to start CR
-  '        P2_DIGOUT( DIO_MODULE, ADwin_lt1_do_channel, 0)
-  '        INC(par_74)     'Triggers to start CR
-  '        mode = 0
-  '        timer = -1
-  '      ENDIF
-  '      
-  '  endselect
+  SELECTCASE mode
+    
+    CASE 0' repump
+            
+      IF (timer = 0) THEN
+        inc(par_66)
+        
+        IF (cr_counts < CR_repump)  THEN  'only repump after x SSRO repetitions
+          P2_CNT_CLEAR(CTR_MODULE,  counter_pattern)    'clear counter
+          P2_CNT_ENABLE(CTR_MODULE, counter_pattern)    'turn on counter
+          P2_DAC(DAC_MODULE, repump_laser_DAC_channel, 3277*repump_voltage+32768) ' turn on green
+        ELSE
+          mode = 1
+          timer = -1
+          current_CR_threshold = CR_preselect
+        ENDIF
+                
+      ELSE 
+        
+        IF (timer = repump_duration) THEN
+          P2_DAC(DAC_MODULE, repump_laser_DAC_channel, 3277*repump_off_voltage+32768) ' turn off green
+          counts = P2_CNT_READ(CTR_MODULE, counter_channel)
+          P2_CNT_ENABLE(CTR_MODULE, 0)
+          total_repump_counts = total_repump_counts + counts
+          PAR_76 = total_repump_counts
+          
+          mode = 1
+          timer = -1
+          current_CR_threshold = CR_preselect
+        ENDIF
+      
+      ENDIF
+    
+    CASE 1    ' Ex/A laser CR check
+                  
+      IF (timer = 0) THEN
+        P2_DAC(DAC_MODULE, Ex_laser_DAC_channel, 3277*Ex_CR_voltage+32768) ' turn on Ex laser
+        P2_DAC(DAC_MODULE, A_laser_DAC_channel, 3277*A_CR_voltage+32768) ' turn on A laser
+        P2_CNT_CLEAR(CTR_MODULE,  counter_pattern)    'clear counter
+        P2_CNT_ENABLE(CTR_MODULE, counter_pattern)    'turn on counter
+        inc(par_72)       'total CR checks performed
+      ELSE 
+        
+        IF (timer = CR_duration) THEN
+          P2_DAC(DAC_MODULE, Ex_laser_DAC_channel, 3277*Ex_off_voltage+32768) ' turn off Ex laser
+          P2_DAC(DAC_MODULE, A_laser_DAC_channel, 3277*A_off_voltage+32768) ' turn off A laser
+          cr_counts = P2_CNT_READ(CTR_MODULE, counter_channel)
+          P2_CNT_ENABLE(CTR_MODULE, 0)  'turn off counter
+          PAR_70 = PAR_70 + cr_counts
+                  
+          IF (cr_after_teleportation > 0) THEN ' first CR after lt2 SSRO i.e. teleportation
+            DATA_23[tele_event_id] = cr_counts
+            cr_after_teleportation = 0
+          ENDIF
+                  
+          IF (cr_counts < current_cr_threshold) THEN
+            mode = 0
+            inc(par_71)
+          ELSE
+            DATA_22[tele_event_id+1] = counts  ' CR before next SSRO sequence
+            P2_DIGOUT(DIO_MODULE, ADwin_lt1_do_channel, 1)
+            mode = 2
+            current_cr_threshold = CR_probe
+          ENDIF
+                  
+          timer = -1
+        ENDIF      
+      ENDIF
+     
+    case 2      'CR ok, waiting
+        
+      IF (ADwin_switched_to_high > 0) THEN  'Adwin triggers to start CR
+        P2_DIGOUT(DIO_MODULE, ADwin_lt1_do_channel, 0) ' stop triggering CR done
+        INC(par_74)     'Triggers to start CR
+        mode = 1
+        timer = -1
+        
+        '      ELSE
+        '        IF ( AWG_switched_to_high > 0) THEN   'AWG triggers to start SSRO
+        '          P2_DIGOUT( DIO_MODULE, ADwin_lt1_do_channel, 1) ' stop triggering CR done
+        '          INC(par_78)     'Triggers to start SSRO
+        '          mode = 3
+        '          timer = -1
+        '        ENDIF
+      ENDIF
+      
+      '           
+      '    case 3
+      '      INC(DATA_26[mode+1]) 'gather statistics on how often entered this mode.
+      '      
+      '      IF (timer = 0) THEN
+      '        P2_CNT_CLEAR(CTR_MODULE,  counter_pattern)    'clear counter
+      '        P2_CNT_ENABLE(CTR_MODULE, counter_pattern)    'turn on counter
+      '        P2_DAC(DAC_MODULE, Ex_laser_DAC_channel, 3277*Ex_RO_voltage+32768) ' turn on readout laser
+      '      ELSE
+      '        IF (timer = SSRO_duration) THEN
+      '          current_ssro_counts = P2_CNT_READ(CTR_MODULE, counter_channel)
+      '          P2_DAC(DAC_MODULE, Ex_laser_DAC_channel, 3277*Ex_off_voltage+32768) ' turn off readout laser
+      '          P2_CNT_ENABLE(CTR_MODULE, 0)    'turn off counter
+      '
+      '          par_68 = par_68 + current_ssro_counts 'accumulated SSRO counts
+      '          IF (current_ssro_counts > 0) THEN
+      '            INC(DATA_25[tele_event_id]) 'here I save 1 for 'click', which is thus m_s=0, (m_I=0). Agrees with current analysis scripts
+      '          ENDIF
+      '          P2_DIGOUT( DIO_MODULE, ADwin_lt1_do_channel, 1)
+      '          INC(Par_80)   ' number of SSRO done signals to ADwin lt1.
+      '          INC(par_77)   ' number of succesful teleportations.
+      '          INC(tele_event_id)
+      '          IF (tele_event_id = teleportation_repetitions) THEN
+      '            END
+      '          ENDIF
+      '          cr_after_teleportation = 1
+      '          mode = 4
+      '          timer = -1
+      '        ENDIF
+      '      ENDIF
+      '      
+      '    case 4
+      '      INC(DATA_26[mode+1]) 'gather statistics on how often entered this mode.
+      '      
+      '      IF (ADwin_switched_to_high > 0) THEN  'Adwin triggers to start CR
+      '        P2_DIGOUT( DIO_MODULE, ADwin_lt1_do_channel, 0)
+      '        INC(par_74)     'Triggers to start CR
+      '        mode = 0
+      '        timer = -1
+      '      ENDIF
+      '
+     
+  endselect
   
   INC(timer)
         
-
-
+FINISH:
+  P2_DAC(DAC_MODULE, repump_laser_DAC_channel, 3277*repump_off_voltage+32768) ' turn off green
+  P2_DAC(DAC_MODULE, Ex_laser_DAC_channel, 3277*Ex_off_voltage+32768) ' turn off Ex laser
+  P2_DAC(DAC_MODULE, A_laser_DAC_channel, 3277*A_off_voltage+32768) ' turn off Ex laser
+  P2_CNT_ENABLE(CTR_MODULE, 0000b)'turn off all counters
+  P2_DIGOUT(DIO_MODULE, ADwin_lt1_do_channel, 0)

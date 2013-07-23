@@ -335,10 +335,10 @@ def red_laser_scan(name):
     m.repump_power = 1e-6
     m.use_repump_during = True
     m.repump_duration = 0.5 # seconds
-    m.repump_power_during = 0.02e-6
+    m.repump_power_during = 0.00e-6
     
     #Scan setup
-    m.laser_power = 10e-9
+    m.laser_power = 5e-9
     m.integration_time = 10 # ms
     m.min_v = -9
     m.max_v = 9

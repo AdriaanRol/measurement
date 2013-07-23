@@ -8,7 +8,7 @@
 ' ADbasic_Version                = 5.0.8
 ' Optimize                       = Yes
 ' Optimize_Level                 = 1
-' Info_Last_Save                 = TUD277246  TUD277246\localadmin
+' Info_Last_Save                 = TUD276629  TUD276629\localadmin
 '<Header End>
 ' Teleportation master controller program. lt1 is in charge, lt2 is remote
 
@@ -149,6 +149,7 @@ DIM successful_repetitions as LONG
 DIM max_CR_starts AS LONG
 DIM CR_starts AS LONG
 DIM run_mode as long
+DIM remote_delay as long
 
 ' misc and temporary variables
 DIM DIO_register AS LONG 
@@ -172,6 +173,7 @@ INIT:
   timer                   = 0
   cr_after_teleportation  = 0
   tele_event_id           = 0
+  remote_delay            = 5
   
   max_successful_repetitions = -1
   successful_repetitions = 0
@@ -364,53 +366,53 @@ EVENT:
   par_63 = CR_timer
   par_64 = mode
   par_65 = timer
-    
-  ' check state of other adwin and whether it has changed to ready
-  '  DIO_register = DIGIN_LONG()
-  '  ADwin_in_was_high = ADwin_in_is_high  
-  '  IF (((DIO_register) AND (ADwin_LT2_di_channel_in_bit)) > 0) THEN
-  '    ADwin_in_is_high = 1 
-  '  ELSE
-  '    ADwin_in_is_high = 0
-  '  ENDIF
-  '        
-  '  IF ((ADwin_in_was_high = 0) AND ( ADwin_in_is_high > 0)) THEN ' ADwin switched to high during last round. 
-  '    ADwin_switched_to_high = 1
-  '  ELSE
-  '    ADwin_switched_to_high = 0
-  '  ENDIF    
+  par_62 = remote_mode
       
-  'If only one setup is used, remote_mode may be set to 2. (this works if you are in one of the local debug modes). 
-  remote_mode = 2
-  '  '  
-  '  '  IF (par_77 = teleportation_repetitions) THEN
-  '  '    END
-  '  '  ENDIF
-  '  '  
-  '  '  '  selectcase remote_mode
-  '  '  '    case 0 'start remote CR check
-  '  '  '      INC(par_74)
-  '  '  '      DIGOUT( ADwin_LT2_trigger_do_channel, 1)
-  '  '  '      remote_mode = 1
-  '  '  '                        
-  '  '  '    case 1 'remote CR check running
-  '  '  '      IF (ADwin_switched_to_high > 0) THEN
-  '  '  '        DIGOUT( ADwin_LT2_trigger_do_channel, 0)
-  '  '  '        remote_mode = 2
-  '  '  '        INC(par_73)
-  '  '  '      ENDIF
-  '  '  '    
-  '  '  '    case 2 'remote CR OK, waiting
-  '  '  '    
-  '  '  '    case 3 'remote SSRO running
-  '  '  '      IF (ADwin_switched_to_high > 0) THEN
-  '  '  '        remote_mode = 4
-  '  '  '      ENDIF
-  '  '  '      
-  '  '  '    case 4 'remote SSRO OK, waiting
-  '  '  '    
-  '  '  '  endselect
-  '  '  
+  ' If only one setup is used, remote_mode may be set to 2.
+  ' remote_mode = 2
+
+  selectcase remote_mode
+    
+    case 0 'start remote CR check
+      
+      ' remote delay because it can happen that after getting the signal here that LT2 is done,
+      ' we immediately send a start again. this can lead to LT2 missing the step where the
+      ' the DO is low (because it's very short). therefore wait a tiny bit before sending
+      ' signals.
+      if (remote_delay = 0) then      
+        INC(par_74)
+        DIGOUT(ADwin_LT2_trigger_do_channel, 1)
+        remote_mode = 1
+        remote_delay = 5
+      else
+        dec(remote_delay)
+      endif
+                                      
+    case 1 'remote CR check running
+      ' check state of other adwin and whether it has changed to ready
+      ADwin_in_was_high = ADwin_in_is_high
+      ADwin_in_is_high = DIGIN(ADwin_LT2_di_channel)
+             
+      IF ((ADwin_in_was_high = 0) AND (ADwin_in_is_high > 0)) THEN ' ADwin switched to high during last round. 
+        DIGOUT(ADwin_LT2_trigger_do_channel, 0)
+        remote_mode = 2
+        INC(par_73)
+      ENDIF
+      
+    case 2 'remote CR OK, waiting
+      
+      '    case 3 'remote SSRO running
+      '      ADwin_in_was_high = ADwin_in_is_high
+      '      ADwin_in_is_high = DIGIN(ADwin_LT2_di_channel)
+      '             
+      '      IF ((ADwin_in_was_high = 0) AND (ADwin_in_is_high > 0)) THEN ' ADwin switched to high during last round. 
+      '        remote_mode = 4
+      '      ENDIF
+      '        
+      '    case 4 'remote SSRO OK, waiting
+      
+  endselect 
+    
   
   if (timer=0) then
     INC(DATA_28[mode+1])  'increment for each time mode is entered
@@ -506,7 +508,7 @@ EVENT:
           par_69 = par_69 + current_red_cr_check_counts
                             
           DAC(e_aom_channel,  3277*e_off_voltage +32768)   'turn off red lasers
-          DAC(fb_aom_channel, 3277*fb_off_voltage+32768) 
+          DAC(fb_aom_channel, 3277*fb_off_voltage+32768)
                         
           IF (cr_after_teleportation > 0) THEN    ' save the number of CR counts with teleportation event
             DATA_23[tele_event_id] = current_red_cr_check_counts
@@ -538,16 +540,22 @@ EVENT:
       ENDIF
          
     case 4 'local CR OK, wait for remote
+      
+      ' todo: we could save the waiting times, or at least averages of them.
       IF (remote_mode = 2) THEN
         mode = 0 ' DEBUG should be 5
+        remote_mode = 0
         timer = -1
-      ENDIF  
+      ENDIF
     
   ENDSELECT
   '          
   INC(timer)
   DEC(CR_timer)
-  
+  if (CR_timer < 0) then
+    CR_timer = 0
+  endif
+    
   'some criteria for stopping
   if (max_CR_starts > -1) then
     if (CR_starts >= max_CR_starts) then
@@ -563,4 +571,14 @@ EVENT:
   
   inc(par_60) ' the total time
   
+FINISH:
+  DAC(repump_aom_channel, 3277*repump_off_voltage+32768)   'turn off repump laser
+  DAC(e_aom_channel, 3277*e_off_voltage + 32768)           'turn off Ey aom 
+  DAC(fb_aom_channel, 3277*fb_off_voltage + 32768)         'turn off FB aom
+  CNT_ENABLE(0000b)                          'turn off all counters
+  DIGOUT(ADwin_LT2_trigger_do_channel,0)     'trigger to ADwin LT2
+  DIGOUT(AWG_lt1_trigger_do_channel, 0)      'trigger to AWG LT1
+  DIGOUT(AWG_lt1_event_do_channel, 0)        'event to AWG LT1
+  DIGOUT(PLU_arm_do_channel, 0)              'PLU is not armed until just before LDE start trigger **????
+  DIGOUT_BITS(0, AWG_lt2_address_all_in_bit) 'clear the output on the DO's that input to the strobe
   
