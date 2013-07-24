@@ -151,3 +151,6 @@ def run_default():
     m.load_settings()
     m.lt1_sequence()
 
+
+if __name__ == '__main__':
+    run_default()
