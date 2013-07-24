@@ -86,6 +86,8 @@ class TeleportationSlave:
             amplitude = 0))
         e.append(self.AWG_LT2_trigger_pulse)
 
+        return e
+
 
     def _lt1_LDE_element(self):
         """
@@ -149,7 +151,7 @@ class TeleportationSlave:
             wfname = BSM_element.name,
             goto_target = 'N_pol_decision')
 
-        qt.pulsar.upload(N_pol_decision_element, N_pol_element, LDE_element, BSM_element)
+        qt.pulsar.upload(N_pol_decision_element, N_pol_element, start_LDE_element, BSM_element)
         qt.pulsar.program_sequence(self.lt1_seq)
 
         self.awg.set_runmode('SEQ')
