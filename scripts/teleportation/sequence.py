@@ -30,3 +30,6 @@ def pulse_defs_lt1(msmt):
     # a waiting pulse on the MW pulsemod channel
     msmt.T_pulse = pulse.SquarePulse(channel='MW_pulsemod',
         length = 50e-9, amplitude = 0)
+
+    msmt.AWG_LT2_trigger_pulse = pulse.SquarePulse(channel='AWG_LT2_trigger',
+        length = 100e-9, amplitude = 2)

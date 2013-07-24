@@ -76,7 +76,18 @@ class TeleportationSlave:
 
         return e
 
-    def _lt1_LDE_element(self): # TODO need to be two elements!
+    def _lt1_start_LDE_element(self):
+        """
+        This element triggers the LDE sequence on LT2.
+        """
+        e = element.Element('start_LDE', pulsar = qt.pulsar)
+        e.append(pulse.cp(self.AWG_LT2_trigger_pulse, 
+            length = 1e-6,
+            amplitude = 0))
+        e.append(self.AWG_LT2_trigger_pulse)
+
+
+    def _lt1_LDE_element(self):
         """
         This element contains the LDE part for LT1, i.e., spin pumping and MW pulses
         for the LT1 NV in the real experiment.
@@ -108,20 +119,25 @@ class TeleportationSlave:
 
         N_pol_decision_element = self._lt1_N_polarization_decision_element()
         N_pol_element = self._lt1_N_pol_element()
+        start_LDE_element = self._lt1_start_LDE_element()
         LDE_element = self._lt1_LDE_element()
         BSM_element = self._lt1_BSM_element()
 
         self.lt1_seq.append(name = 'N_pol_decision',
             wfname = N_pol_decision_element.name,
             trigger_wait = True,
-            goto_target = 'N_polarization' if tm.DO_POLARIZE_N else 'LDE_LT1',
-            jump_target = 'LDE_LT1')
+            goto_target = 'N_polarization' if tm.DO_POLARIZE_N else 'start_LDE',
+            jump_target = 'start_LDE')
 
         if tm.DO_POLARIZE_N:
             self.lt1_seq.append(name = 'N_polarization',
                 wfname = N_pol_element.name,
                 trigger_wait = True,
                 repetitions = self.params_lt1['N_pol_element_repetitions'])
+
+        self.lt1_seq.append(name = 'start_LDE',
+            trigger_wait = True,
+            wfname = start_LDE_element.name)
 
         self.lt1_seq.append(name = 'LDE_LT1',
             wfname = LDE_element.name,

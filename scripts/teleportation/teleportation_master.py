@@ -71,7 +71,6 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
         """
         # tseq.pulse_defs_lt2(self)
 
-
     def autoconfig(self, use_lt1=True, use_lt2=True):
         """
         sets/computes parameters (can be from other, user-set params)
@@ -373,7 +372,6 @@ def start_msmt(m, use_lt1=True, use_lt2=True):
 def finish_msmt(m, use_lt1=True, use_lt2=True):
     m.stop(use_lt1, use_lt2)
     m.save(use_lt1, use_lt2)
-
 
 ### measurements
 def CR_checking_debug(name):
