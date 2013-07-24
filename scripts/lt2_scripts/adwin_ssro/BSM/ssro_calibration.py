@@ -16,16 +16,20 @@ def ssrocalibration(name):
     m.params.from_dict(qt.cfgman['protocols']['sil9-default']['AdwinSSRO'])    
         
     ssro.AdwinSSRO.repump_aom = qt.instruments['GreenAOM']
-    m.params['repump_duration']=m.params['green_repump_duration']
-    m.params['repump_amplitude']=m.params['green_repump_amplitude']
+    m.params['repump_duration'] = m.params['green_repump_duration']
+    m.params['repump_amplitude'] = m.params['green_repump_amplitude']
         
     # parameters
+    m.params['CR_preselect'] = 18
+    m.params['CR_probe'] = 18
     m.params['SSRO_repetitions'] = 5000
+    m.params['A_CR_amplitude'] = 20e-9
+    m.params['Ex_CR_amplitude'] = 15e-9
 
     # ms = 0 calibration
-    m.params['A_SP_amplitude'] = 15e-9
+    m.params['A_SP_amplitude'] = 20e-9
     m.params['Ex_SP_amplitude'] = 0.
-    m.params['Ex_RO_amplitude'] = 5e-9 #10e-9
+    m.params['Ex_RO_amplitude'] = 15e-9 #10e-9
 
     #m.autoconfig()
     #m.setup()
@@ -35,15 +39,15 @@ def ssrocalibration(name):
 
     # ms = 1 calibration
     m.params['A_SP_amplitude'] = 0.
-    m.params['Ex_SP_amplitude'] = 10e-9 #10e-9
-    m.params['Ex_RO_amplitude'] = 5e-9 #10e-9
+    m.params['Ex_SP_amplitude'] = 20e-9 #10e-9
+    m.params['Ex_RO_amplitude'] = 15e-9 #10e-9
 
     m.run()
     m.save('ms1')
     m.finish()
 
 if __name__ == '__main__':
-    ssrocalibration('sil9')
+    ssrocalibration('sil15-test2')
  
     
 

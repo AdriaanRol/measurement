@@ -3,10 +3,10 @@ from measurement.lib.pulsar import pulse, pulselib, element, pulsar
 def pulse_defs(msmt):
 
     # a waiting pulse on the MW pulsemod channel
-    msmt.T = pulse.SquarePulse(channel='MW_pulsemod',
+    msmt.T_pulse = pulse.SquarePulse(channel='MW_pulsemod',
         length = 50e-9, amplitude = 0)
 
-    msmt.TIQ = pulse.SquarePulse(channel='MW_Imod',
+    msmt.TIQ_pulse = pulse.SquarePulse(channel='MW_Imod',
         length = 10e-9, amplitude = 0)
 
     # some not yet specified pulse on the electron
