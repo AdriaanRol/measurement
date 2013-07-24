@@ -113,6 +113,60 @@ class DarkESR(PulsarMeasurement):
         # some debugging:
         # elements[-1].print_overview()
 
+
+class ElectronRabi(PulsarMeasurement):
+    mprefix = 'ElectronRabi'
+    
+    def autoconfig(self):
+        PulsarMeasurement.autoconfig(self)
+        
+        self.params['sequence_wait_time'] = \
+            int(np.ceil(self.params['MW_length_stop']*1e6)+10)
+            
+        self.params['sweep_name'] = 'Pulse length (ns)'
+        self.params['sweep_pts'] = (np.linspace(self.params['MW_length_start'],
+            self.params['MW_length_stop'], self.params['pts'])*1e9)
+
+    def generate_sequence(self, upload=True):
+
+        # define the necessary pulses
+        X = pulselib.MW_IQmod_pulse('Weak pi-pulse', 
+            I_channel='MW_Imod', Q_channel='MW_Qmod', 
+            PM_channel='MW_pulsemod',
+            amplitude = self.params['ssbmod_amplitude'],
+            frequency = self.params['ssbmod_frequency'],
+            PM_risetime = self.params['MW_pulse_mod_risetime'])
+
+        T = pulse.SquarePulse(channel='MW_Imod', name='delay')
+        T.amplitude = 0.
+        T.length = 200e-9
+
+        # make the elements - one for each ssb frequency
+        elements = []
+        for i, l in enumerate (np.linspace(self.params['MW_length_start'],
+            self.params['MW_length_stop'], self.params['pts'])):
+
+            e = element.Element('ElectronRabi_length-%d' % i, pulsar=qt.pulsar)
+            e.add(T, name='wait')
+            e.add(X(length = l), refpulse='wait')
+            elements.append(e)
+
+        # create a sequence from the pulses
+        seq = pulsar.Sequence('ElectronRabi sequence')
+        for e in elements:
+            seq.append(name=e.name, wfname=e.name, trigger_wait=True)
+
+        # upload the waveforms to the AWG
+        if upload:
+            qt.pulsar.upload(*elements)
+
+        # program the AWG
+        qt.pulsar.program_sequence(seq)
+
+        # some debugging:
+        # elements[-1].print_overview()
+
+
 class MBI(PulsarMeasurement):
     mprefix = 'PulsarMBI'
     adwin_process = 'MBI'

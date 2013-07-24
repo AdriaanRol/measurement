@@ -6,7 +6,7 @@ name='ESR_SIL15_LT2_2to3_strip'
 start_f = 2.8 #2.827 - 0.015 #   2.853 #2.85 #  #in GHz
 stop_f  = 2.96 #2.827 + 0.015 #   2.864 #2.905 #   #in GHz
 steps   = 161
-mw_power = -2 #in dBm
+mw_power = -5 #in dBm
 green_power = 50e-6
 int_time = 50       #in ms
 reps = 10
@@ -24,7 +24,6 @@ ins_counters.set_is_running(0)
 
 # create data object
 qt.mstart()
-
 
 ins_smb.set_iq('off')
 ins_smb.set_pulm('off')
