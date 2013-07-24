@@ -6,7 +6,6 @@ import measurement.lib.config.adwins as adwins_cfg
 class LaserFrequencyScan:
 
     mprefix = 'LaserFrequencyScan'
-    
 
     def __init__(self, name):
         self.name = name
@@ -150,6 +149,7 @@ class LaserFrequencyScan:
                 d2.add_data_point(v, frq, cts, gv)
                 if np.mod(i,10)==0:
                     p2.update()
+            
             #      YELLOW scan   back +repump
             self.set_laser_power_yellow(self.yellow_repump_power)
             self.scan_to_voltage_yellow(self.start_voltage_yellow)
@@ -164,14 +164,11 @@ class LaserFrequencyScan:
             d2.new_block()
             if self.gate_pts>1 and self.plot_3D: 
                 p3D2.update()
-            #######################
+            #######################           
             
             
-            
-        qt.mend()
-        
-        ##############################################################
-        
+        qt.mend()        
+        ##############################################################       
         
         if self.gate_pts>1 and self.plot_3D:
             p3D.reset()
@@ -180,6 +177,7 @@ class LaserFrequencyScan:
             p3D2.reset()
             qt.msleep(1)
             p3D2.save_png()
+
         np.savez(os.path.splitext(d.get_filepath())[0]+ '.npz', data=d.get_data())
         np.savez(os.path.splitext(d2.get_filepath())[0]+ '.npz', data=d2.get_data())
         np.savez(os.path.splitext(d3.get_filepath())[0]+ '.npz', data=d3.get_data())
@@ -187,8 +185,6 @@ class LaserFrequencyScan:
         d2.close_file()
         d3.close_file()
         
-
-
 class LabjackAdwinLaserScan(LaserFrequencyScan):
     def __init__(self, name,labjack_dac_nr,labjack_dac_nr_yellow):
         LaserFrequencyScan.__init__(self, name)
@@ -215,8 +211,7 @@ class LabjackAdwinLaserScan(LaserFrequencyScan):
         self.set_gate_voltage = lambda x: self.adwin.set_dac_voltage(('gate',x))
         self.get_gate_voltage = lambda: self.adwin.get_dac_voltage('gate')
       
-    def prepare_scan(self):
-        
+    def prepare_scan(self):        
         if self.use_mw:
             self.mw.set_frequency(self.mw_frq)
             self.mw.set_power(self.mw_power)
@@ -248,16 +243,15 @@ class LabjackAdwinLaserScan(LaserFrequencyScan):
         
 
     def finish_scan(self):
-
         if self.use_mw:
             self.mw.set_status('off')
         if self.set_gate:
             self.gate_scan_to_voltage(0.)
 
 
-def red_yellow_laser_scan(name,gate=0.):
-    labjack_dac_nr=4 #4 is coarse, 5 is fine fpr NF2 LT1
-    labjack_dac_nr_yellow=0 # 0 is coarse and 1 is fine for yellow
+def red_yellow_laser_scan(name, gate=0.):
+    labjack_dac_nr = 4               # 4 is coarse, 5 is fine fpr NF2 LT1
+    labjack_dac_nr_yellow = 0        # 0 is coarse and 1 is fine for yellow
     m = LabjackAdwinLaserScan(name,labjack_dac_nr,labjack_dac_nr_yellow)
     
     # Hardware setup
@@ -278,12 +272,12 @@ def red_yellow_laser_scan(name,gate=0.):
     m.mw_power = -12
     
     # repump setup
-    m.yellow_repump_power=50e-9
-    m.red_repump_power=70e-9
+    m.yellow_repump_power = 70e-9
+    m.red_repump_power = 50e-9
     
     #Scan setup red
     m.laser_power = 2e-9
-    m.start_voltage = 1.5
+    m.start_voltage = 0
     m.pump_voltage = -1.15
     m.stop_voltage = -5
     m.pts = 1000
@@ -292,17 +286,17 @@ def red_yellow_laser_scan(name,gate=0.):
     #Scan setup yellow
     m.laser_power_yellow = .2e-9
     m.start_voltage_yellow = -10
-    m.stop_voltage_yellow = 10#XXX
-    m.pts_yellow = 1500
+    m.stop_voltage_yellow = 0 #XXX
+    m.pts_yellow = 1000
     m.integration_time_yellow = 40 # ms
     
     #Gate scan setup
-    m.set_gate_to_zero_before_repump=False #don't use this here.
-    m.set_gate=True
+    m.set_gate_to_zero_before_repump=False 
+    m.set_gate = False
     m.gate_start_voltage=0
     m.gate_stop_voltage=gate
-    m.gate_pts=20
-    m.plot_3D = True
+    m.gate_pts = 1
+    m.plot_3D = False
     
     #strain lines
     m.plot_strain_lines=False
@@ -314,18 +308,18 @@ def red_yellow_laser_scan(name,gate=0.):
 if __name__=='__main__':
 
     stools.turn_off_lasers()
-    red_yellow_laser_scan('red_scan',1.5)
+    red_yellow_laser_scan('Find resonances', 0)
     
-    stools.turn_off_lasers()
-    GreenAOM.set_power(150e-6)
-    qt.msleep(100)
-    GreenAOM.set_power(20e-6)
-    optimiz0r.optimize(dims=['y','x'],cnt=1,cycles=3,int_time=30)
-    GreenAOM.set_power(150e-6)
-    qt.msleep(100)
-    stools.turn_off_lasers()
-    red_yellow_laser_scan('red_scan_',-1.5)
-    stools.turn_off_lasers()
+    # stools.turn_off_lasers()
+    # GreenAOM.set_power(150e-6)
+    # qt.msleep(100)
+    # GreenAOM.set_power(20e-6)
+    # optimiz0r.optimize(dims=['y','x'],cnt=1,cycles=3,int_time=30)
+    # GreenAOM.set_power(150e-6)
+    # qt.msleep(100)
+    # stools.turn_off_lasers()
+    # red_yellow_laser_scan('red_scan_',-1.5)
+    # stools.turn_off_lasers()
     
 
         

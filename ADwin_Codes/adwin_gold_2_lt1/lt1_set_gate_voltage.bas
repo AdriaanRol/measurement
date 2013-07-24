@@ -8,7 +8,7 @@
 ' ADbasic_Version                = 5.0.8
 ' Optimize                       = Yes
 ' Optimize_Level                 = 1
-' Info_Last_Save                 = TUD276629  TUD276629\localadmin
+' Info_Last_Save                 = TUD277246  TUD277246\localadmin
 '<Header End>
 ' scan the gate voltage in small steps to the desired value
 
@@ -37,6 +37,6 @@ event:
   endif
     
   current_voltage = current_voltage + diff_voltage
-  ' dac(gate_dac, 3277 * current_voltage + 32768) TODO put that back in
+  dac(gate_dac, 3277 * current_voltage + 32768) ' TODO put that back in
   fpar_50 = current_voltage
   

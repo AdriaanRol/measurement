@@ -30,8 +30,8 @@ def ssrocalibration(name, yellow=False):
     m.params['SSRO_repetitions'] = 5000
 
     # ms = 0 calibration
-    m.params['A_SP_amplitude'] = 100e-9#100e-9#
-    m.params['A_CR_amplitude'] = 70e-9#70e-9#
+    m.params['A_SP_amplitude'] = 10e-9#100e-9#
+    m.params['A_CR_amplitude'] = 10e-9#70e-9#
     m.params['Ex_SP_amplitude'] = 0.
     m.params['Ex_RO_amplitude'] = 5e-9 #10e-9
 
@@ -51,7 +51,7 @@ def ssrocalibration(name, yellow=False):
     m.finish()
 
 if __name__ == '__main__':
-    ssrocalibration('SIL2_yellow_no_gate',yellow=True)
+    ssrocalibration('SIL2_yellow_no_gate', yellow=True)
  
     
 
