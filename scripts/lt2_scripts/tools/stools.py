@@ -50,9 +50,12 @@ def check_power(name, setpoint, adwin, powermeter, servo):
     qt.instruments[name].set_power(setpoint)
     qt.msleep(1)
 
-    print name, qt.instruments[powermeter].get_power(), 'setpoint: ', setpoint
+    print name, 'setpoint:', setpoint, 'value:', qt.instruments[powermeter].get_power()
 
     qt.instruments[name].apply_voltage(0)
+    qt.instruments[servo].move_out()
+    qt.msleep(1)    
+
 
 def check_lt1_powers(names=['GreenAOM_lt1', 'MatisseAOM_lt1', 'NewfocusAOM_lt1', 'YellowAOM_lt1'],
     setpoints = [50e-6, 10e-9, 100e-9, 50e-9]):

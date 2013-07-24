@@ -14,6 +14,10 @@ cfg['samples']['sil9']['N_HF_frq'] = 2.189e6
 cfg['samples']['sil9']['ms-1_cntr_frq'] =  2.829141e9
 cfg['samples']['sil9']['N_0-1_splitting_ms-1']= 7.13433e6 ###copied from sil2 lt1
 
+### sil 15 ###
+
+
+
 
 ### protocol settings ###
 ### General settings for AdwinSSRO
@@ -62,6 +66,15 @@ cfg['protocols']['AdwinSSRO+MBI']['MW_pulse_mod_risetime'] = 10e-9
 cfg['protocols']['AdwinSSRO+MBI']['AWG_to_adwin_ttl_trigger_duration'] = 2000e-9
 
 ### Specific protocol settings ###
+
+### sil15 ###
+### sil15, AdwinSSRO ###
+
+
+
+
+
+
 
 ### sil9 ###
 if type(cfg['protocols']['sil9-default']) == types.NoneType:
@@ -125,7 +138,6 @@ cfg['protocols']['sil9-default']['AdwinSSRO+MBI']['AWG_MBI_MW_pulse_amp'] = 0.03
 cfg['protocols']['sil9-default']['AdwinSSRO+MBI']['repump_after_MBI_duration'] = 100
 cfg['protocols']['sil9-default']['AdwinSSRO+MBI']['repump_after_MBI_amplitude'] = 20e-9
 cfg['protocols']['sil9-default']['AdwinSSRO+MBI']['AWG_shelving_pulse_duration'] = 64
-
 
 # MBI pulse
 cfg.set('protocols/sil9-default/AdwinSSRO+MBI/AWG_wait_duration_before_MBI_MW_pulse',  50e-9)

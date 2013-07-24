@@ -148,8 +148,11 @@ DIM max_successful_repetitions AS LONG
 DIM successful_repetitions as LONG
 DIM max_CR_starts AS LONG
 DIM CR_starts AS LONG
-DIM run_mode as long
 DIM remote_delay as long
+
+dim do_remote as long
+dim do_N_polarization as long
+
 
 ' misc and temporary variables
 DIM DIO_register AS LONG 
@@ -239,7 +242,8 @@ INIT:
   AWG_lt2_address_U2            = DATA_20[33]
   AWG_lt2_address_U3            = DATA_20[34]
   AWG_lt2_address_U4            = DATA_20[35]
-  run_mode                      = DATA_20[36]
+  do_remote                     = DATA_20[36]
+  do_N_polarization             = DATA_20[37]
     
   repump_voltage                = DATA_21[1]
   repump_off_voltage            = DATA_21[2]
@@ -368,9 +372,13 @@ EVENT:
   par_65 = timer
   par_62 = remote_mode
       
-  ' If only one setup is used, remote_mode may be set to 2.
-  ' remote_mode = 2
+  ' TODO: make this an option that can be accessed from outside
+  ' If only one setup is used, remote_mode is set to 2 => always ready.
 
+  if (do_remote = 0) then
+    remote_mode = 2
+  endif
+  
   selectcase remote_mode
     
     case 0 'start remote CR check
@@ -437,7 +445,7 @@ EVENT:
       else
           
         IF (CR_timer < 1) THEN
-          mode = 2  ' DEBUG go to CR checking
+          mode = 2 
           timer = -1
           CR_timer = time_before_forced_CR
         ELSE
@@ -474,9 +482,11 @@ EVENT:
           DAC(repump_AOM_channel, 3277*repump_voltage+32768)
                           
           IF (current_repump_counts < max_yellow_hist_cts) THEN      'make histograms
+            
             IF (first_cr_probe_after_unsuccessful_lde > 0) THEN
               INC(DATA_9[current_repump_counts+1])
             ENDIF
+            
             INC(DATA_10[current_repump_counts+1])
           ENDIF
           
@@ -516,9 +526,11 @@ EVENT:
           ENDIF
                             
           IF (current_red_cr_check_counts < max_red_hist_cts) THEN      'make histograms
+            
             IF (first_cr_probe_after_unsuccessful_lde > 0) THEN
               INC(DATA_7[current_red_cr_check_counts+1]) 'make histogram for only after unsuccessful lde
             ENDIF
+            
             INC(DATA_8[current_red_cr_check_counts+1]) 'make histogram for all attempts
           ENDIF
                             
@@ -530,9 +542,15 @@ EVENT:
             first_cr_probe_after_unsuccessful_lde = 0
             CR_timer = time_before_forced_CR
             DATA_27[tele_event_id + 1] = current_red_cr_check_counts
-            mode = 4
+            
+            if (do_N_polarization = 0) then
+              mode = 4
+            else
+              mode = 3              
+            endif
+            
             current_cr_threshold = cr_threshold_probe
-            timer = -1
+            timer = -1         
           ENDIF
         
         ENDIF

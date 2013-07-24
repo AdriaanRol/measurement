@@ -240,8 +240,8 @@ class RedLaserScan(LabjackAdwinLaserScan):
     def __init__(self, name, labjack_dac_nr):
         LabjackAdwinLaserScan.__init__(self, name,labjack_dac_nr)
         self.set_laser_power = qt.instruments['NewfocusAOM'].set_power
-        self.set_yellow_repump_power=qt.instruments['YellowAOM'].set_power
-        self.set_red_repump_power=qt.instruments['MatisseAOM'].set_power
+        self.set_yellow_repump_power = qt.instruments['YellowAOM'].set_power
+        self.set_red_repump_power = qt.instruments['MatisseAOM'].set_power
         self.set_repump_power = qt.instruments['GreenAOM'].set_power
             
     def repump_pulse(self):
@@ -313,7 +313,7 @@ def yellow_laser_scan(name):
         m.finish_scan()
     
 def red_laser_scan(name):
-    labjack_dac_nr=2 # 2 is coarse and 3 is fine for NF
+    labjack_dac_nr = 2 # 2 is coarse and 3 is fine for NF
     m = RedLaserScan(name,labjack_dac_nr)
     
     # Hardware setup
@@ -324,28 +324,29 @@ def red_laser_scan(name):
 
     # MW setup
     m.use_mw = True
-    m.mw_frq =  qt.cfgman['samples']['sil9']['ms-1_cntr_frq']
-    m.mw_power = -12
+    m.mw_frq =  2.823e9 # qt.cfgman['samples']['sil9']['ms-1_cntr_frq']
+    m.mw_power = -5
     
     # repump setup
-    m.yellow_repump=False
-    m.yellow_repump_power=180e-9
-    m.red_repump_power=100e-9
-    m.yellow_repump_duration=4 #seconds
-    m.repump_power = 1e-6
-    m.use_repump_during = True
+    m.yellow_repump = False
+    m.yellow_repump_power = 180e-9
+    m.red_repump_power = 0e-9
+    m.yellow_repump_duration = 4 #seconds
+
+    m.repump_power = 100e-6
+    m.use_repump_during = False
     m.repump_duration = 0.5 # seconds
-    m.repump_power_during = 0.00e-6
+    m.repump_power_during = 0.1e-6
     
     #Scan setup
-    m.laser_power = 5e-9
+    m.laser_power = 20e-9
     m.integration_time = 10 # ms
     m.min_v = -9
     m.max_v = 9
-    m.v_step=0.005
+    m.v_step=0.002
     
-    m.start_frequency = 56 #GHz
-    m.stop_frequency = 72 #GHz
+    m.start_frequency = 60 #GHz
+    m.stop_frequency = 64 #GHz
     
     
     #Gate scan setup
@@ -360,7 +361,7 @@ def red_laser_scan(name):
     
     try:
         m.prepare_scan()
-        m.run_scan()
+        m.run_scan(stabilizing_time=0.001)
     finally:
         m.finish_scan()
 
@@ -368,7 +369,7 @@ def red_laser_scan(name):
 if __name__=='__main__':
     
     stools.turn_off_all_lt2_lasers()
-    red_laser_scan('red_scan_coarse')
+    red_laser_scan('red_scan_coarse_sil15')
     #yellow_laser_scan('yellow_1nW')
 
         

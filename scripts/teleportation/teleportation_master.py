@@ -1,3 +1,12 @@
+"""
+This script runs the measurement from the LT2 computer. All adwin programming
+and data handling is done here.
+
+Before running in a mode that requires both AWGs, the Slave script
+on LT1 needs to be run first!
+"""
+
+
 import numpy as np
 import logging
 import qt
@@ -34,13 +43,6 @@ ADWINLT2_MAX_STAT = 10
 class TeleportationMaster(m2.MultipleAdwinsMeasurement):
 
     mprefix = 'Teleportation'
-    # max_successful_attempts = 10000 # after this the adwin stops, in CR debug mode
-    # max_red_hist_bins = 100
-    # max_yellow_hist_bins = 100
-    Ey_aom_lt1 = None
-    FT_aom_lt1 = None
-    green_aom_lt1 = None
-    yellow_aom_lt1 = None
 
     def __init__(self, name):
         m2.MultipleAdwinsMeasurement.__init__(self, name)
@@ -48,6 +50,7 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
         self.params_lt1 = m2.MeasurementParameters('LT1Parameters')
         self.params_lt2 = m2.MeasurementParameters('LT2Parameters')
 
+    ### setting up
     def load_settings(self):
 	    pass
     
@@ -56,7 +59,7 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
     	After setting the measurement parameters, execute this function to
     	update pulses, etc.
     	"""
-    	#tseq.pulse_defs(self) #but not if not use MW's
+    	tseq.pulse_defs(self)
 
     def autoconfig(self, use_lt1=True, use_lt2=True):
         """
@@ -143,7 +146,6 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
                     self.repump_aom_lt2.power_to_voltage(
                             self.params_lt2['repump_amplitude'])
 
-
     def setup(self, use_lt1 = True, use_lt2 = True):
         """
         sets up the hardware such that the msmt can be run
@@ -188,6 +190,16 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
             
             # self.awg_lt2.set_runmode('SEQ')
 
+
+
+    def lt2_sequence(self):     
+        self.lt2_seq = pulsar.Sequence('TeleportationLT2')
+
+        if DO_POLARIZE_N:
+            self.
+
+
+    ### Start and program adwins; Process control
     def _auto_adwin_params(self, adwin):
         for key,_val in self.adwin_dict['{}_processes'.format(adwin)]\
             [self.adwins[adwin]['process']]['params_long']:
@@ -240,7 +252,6 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
             elif use_lt1 and not use_lt2:
                 running = self.adwin_process_running('adwin_lt1')
             qt.msleep(1)
-
 
     def stop(self, use_lt1=True, use_lt2=True):
         if use_lt1:
@@ -296,6 +307,7 @@ EXEC_FROM = 'lt2'
 USE_LT1 = True
 USE_LT2 = True # and (EXEC_FROM == 'lt2')
 YELLOW = True
+DO_POLARIZE_N = True
         
 ### configure the hardware (statics)
 TeleportationMaster.adwins = {
@@ -356,7 +368,7 @@ def finish_msmt(m, use_lt1=True, use_lt2=True):
     m.save(use_lt1, use_lt2)
 
 def get_hardware_settings(m):
-    m.params_lt1['counter_channel'] = 1    
+    m.params_lt1['counter_channel'] = 1
     m.params_lt1['ADwin_lt2_trigger_do_channel'] = 8 # OK
     m.params_lt1['ADWin_lt2_di_channel'] = 17 # OK
     m.params_lt1['AWG_lt1_trigger_do_channel'] = 10 # OK
@@ -431,10 +443,10 @@ def get_laser_amplitudes(m):
 def get_process_settings(m):
     m.params_lt1['max_CR_starts'] = 10000000
     m.params_lt1['teleportation_repetitions'] = 1000
-    m.params_lt1['run_mode'] = 0
+    m.params_lt1['do_remote'] = 1
+    m.params_lt1['do_N_polarization'] = 1
 
     m.params_lt2['teleportation_repetitions'] = 1000
-
 
 def get_default_settings(m):
     get_hardware_settings(m)
@@ -450,11 +462,14 @@ def CR_check_lt1_only(name):
     get_default_settings(m)
     m.params['use_yellow_lt1'] = YELLOW
 
+    m.params_lt1['do_N_polarization'] = 0
+
     start_msmt(m, use_lt2=USE_LT2)
     finish_msmt(m, use_lt2=USE_LT2)
 
 
-CR_check_lt1_only('test')
+if __name__ == '__main__':
+    CR_check_lt1_only('test')
 
 
 

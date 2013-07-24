@@ -33,7 +33,7 @@ def calibration(name,yellow=False):
     # ms = 1 calibration
     m.params['A_SP_amplitude'] = 0
     m.params['Ex_SP_amplitude'] = 20e-9
-    m.params['Ex_RO_amplitude'] = 10e-9
+    m.params['Ex_RO_amplitude'] = 15e-9
 
     m.run()
     m.save('ms1')
