@@ -88,5 +88,14 @@ def gate_scan_to_voltage(voltage, stepsize=0.01, dwell_time=0.05):
 
     print 'done.'
 
+def start_yellow_and_red(powers=(5e-9, 5e-9, 5e-9)):
+    qt.instruments['adwin'].set_simple_counting()
+    qt.instruments['YellowAOM'].set_power(powers[0])
+    qt.instruments['Velocity1AOM'].set_power(powers[1])
+    qt.instruments['Velocity2AOM'].set_power(powers[2])
+
+
+
+
         
     
