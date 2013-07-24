@@ -1338,6 +1338,7 @@ config['adwin_lt1_processes'] = {
                     ['AWG_lt2_address_U4'           ,       5],
                     ['do_remote'                    ,       1],
                     ['do_N_polarization'            ,       1],
+                    ['do_sequences'                 ,       1],
                     ],
                 'params_long_index'    : 20,
                 'params_long_length'   : 40,
@@ -1359,7 +1360,7 @@ config['adwin_lt1_processes'] = {
                     'CR_preselect'  : 75,
                     'CR_probe'      : 76,
                     'completed_reps' : 77,
-                    'total_red_CR_counts' : 69,    
+                    'total_red_CR_counts' : 69,
                     },
                 'data_long' : {
                     'CR_hist_time_out' : 7,

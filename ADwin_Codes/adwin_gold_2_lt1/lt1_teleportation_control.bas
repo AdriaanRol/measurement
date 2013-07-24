@@ -152,6 +152,7 @@ DIM remote_delay as long
 
 dim do_remote as long
 dim do_N_polarization as long
+dim do_sequences as long
 
 
 ' misc and temporary variables
@@ -244,6 +245,7 @@ INIT:
   AWG_lt2_address_U4            = DATA_20[35]
   do_remote                     = DATA_20[36]
   do_N_polarization             = DATA_20[37]
+  do_sequences                  = DATA_20[38]
     
   repump_voltage                = DATA_21[1]
   repump_off_voltage            = DATA_21[2]
@@ -271,29 +273,6 @@ INIT:
   ADwin_switched_to_high        = 0
   CR_timer                      = 0
     
-  '  IF (debug_mode = 0) THEN
-  '  debug_CR_only        = 0     'if 1: debug - CR checking
-  '  debug_eSSRO_only     = 0     'if 1: debug - CR checking, single AWG sequence, and SSRO1 only
-  '  debug_NSSRO_only     = 0     'if 1: debug - CR checking, N pol, single AWG sequence (include CNOT), and SSRO2 only
-  '  debug_eNSSRO_only    = 0     'if 1: debug - CR checking, N pol, AWG seq, SSRO1, CNOT seq, SSRO2
-  '  ELSE 
-  '    IF (debug_mode = 1) THEN
-  '      debug_CR_only = 1
-  '    ELSE
-  '      IF (debug_mode = 2) THEN
-  '        debug_eSSRO_only = 1
-  '      ELSE 
-  '        IF (debug_mode = 3) THEN
-  '          debug_NSSRO_only = 1
-  '        ELSE
-  '          IF (debug_mode = 4) THEN
-  '            debug_eNSSRO_only = 1
-  '          ENDIF
-  '        ENDIF
-  '      ENDIF
-  '    ENDIF
-  '  ENDIF
-       
   ' prepare hardware
   par_60 = 0                      'debug par used for measuring timer
   par_62 = 0                      'debug par used for measuring timer
@@ -435,10 +414,12 @@ EVENT:
       
       if (timer = 0) then
         
-        DIGOUT(AWG_lt1_trigger_do_channel, 1) ' trigger the AWG to start the waiting sequence (decide element)
-        CPU_SLEEP(9)
-        DIGOUT(AWG_lt1_trigger_do_channel, 0)
-        
+        if (do_sequences > 0) then
+          DIGOUT(AWG_lt1_trigger_do_channel, 1) ' trigger the AWG to start the waiting sequence (decide element)
+          CPU_SLEEP(9)
+          DIGOUT(AWG_lt1_trigger_do_channel, 0)
+        endif
+                
         INC(CR_starts) ' number of times we started the CR decision mode
         par_66 = CR_starts
       
@@ -449,9 +430,13 @@ EVENT:
           timer = -1
           CR_timer = time_before_forced_CR
         ELSE
-          DIGOUT(AWG_lt1_event_do_channel, 1) ' event jump to AWG to jump to LDE sequence.
-          CPU_SLEEP(9)
-          DIGOUT(AWG_lt1_event_do_channel, 0)
+          
+          if (do_sequences > 0) then
+            DIGOUT(AWG_lt1_event_do_channel, 1) ' event jump to AWG to jump to LDE sequence.
+            CPU_SLEEP(9)
+            DIGOUT(AWG_lt1_event_do_channel, 0)
+          endif
+          
           mode = 4  ' go to wait for both ready; do not check CR, do not polarize N (it is still polarized)
           timer = -1
         ENDIF
@@ -543,14 +528,14 @@ EVENT:
             CR_timer = time_before_forced_CR
             DATA_27[tele_event_id + 1] = current_red_cr_check_counts
             
-            if (do_N_polarization = 0) then
+            if ((do_N_polarization = 0) or (do_sequences = 0)) then
               mode = 4
             else
               mode = 3              
             endif
             
             current_cr_threshold = cr_threshold_probe
-            timer = -1         
+            timer = -1  
           ENDIF
         
         ENDIF
@@ -561,8 +546,12 @@ EVENT:
       
       ' todo: we could save the waiting times, or at least averages of them.
       IF (remote_mode = 2) THEN
-        mode = 0 ' DEBUG should be 5
-        remote_mode = 0
+        if (do_sequences = 0) then
+          mode = 0 
+          remote_mode = 0
+        else
+          mode = 5
+        endif
         timer = -1
       ENDIF
     

@@ -16,6 +16,9 @@ import measurement.lib.config.adwins as adwins_cfg
 import measurement.lib.measurement2.measurement as m2
 from measurement.lib.pulsar import pulse, pulselib, element, pulsar
 
+import parameters as tparams
+reload(tparams)
+
 import sequence as tseq
 reload(tseq)
 
@@ -52,14 +55,22 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
 
     ### setting up
     def load_settings(self):
-	    pass
+        for k in tparams.params.parameters:
+            self.params[k] = tparams.params[k]
+
+        for k in tparams.params_lt1.parameters:
+            self.params_lt1[k] = tparams.params_lt1[k]
+        
+        for k in tparams.params_lt2.parameters:
+            self.params_lt2[k] = tparams.params_lt2[k]
     
     def update_definitions(self):
-    	"""
-    	After setting the measurement parameters, execute this function to
-    	update pulses, etc.
-    	"""
-    	tseq.pulse_defs(self)
+        """
+        After setting the measurement parameters, execute this function to
+        update pulses, etc.
+        """
+        # tseq.pulse_defs_lt2(self)
+
 
     def autoconfig(self, use_lt1=True, use_lt2=True):
         """
@@ -81,7 +92,7 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
             # self.params['gate_DAC_channel'] = self.adwin.get_dac_channels()\
             #        ['gate']
                  
-            if self.params['use_yellow_lt1']:
+            if self.params_lt1['use_yellow']:
                 self.params_lt1['repump_laser_DAC_channel'] = self.params_lt1['yellow_laser_DAC_channel']
             else:
                 self.params_lt1['repump_laser_DAC_channel'] = self.params_lt1['green_laser_DAC_channel']
@@ -190,14 +201,8 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
             
             # self.awg_lt2.set_runmode('SEQ')
 
-
-
     def lt2_sequence(self):     
         self.lt2_seq = pulsar.Sequence('TeleportationLT2')
-
-        if DO_POLARIZE_N:
-            self.
-
 
     ### Start and program adwins; Process control
     def _auto_adwin_params(self, adwin):
@@ -308,7 +313,9 @@ USE_LT1 = True
 USE_LT2 = True # and (EXEC_FROM == 'lt2')
 YELLOW = True
 DO_POLARIZE_N = True
-        
+DO_SEQUENCES = True
+
+       
 ### configure the hardware (statics)
 TeleportationMaster.adwins = {
     'adwin_lt1' : {
@@ -367,116 +374,24 @@ def finish_msmt(m, use_lt1=True, use_lt2=True):
     m.stop(use_lt1, use_lt2)
     m.save(use_lt1, use_lt2)
 
-def get_hardware_settings(m):
-    m.params_lt1['counter_channel'] = 1
-    m.params_lt1['ADwin_lt2_trigger_do_channel'] = 8 # OK
-    m.params_lt1['ADWin_lt2_di_channel'] = 17 # OK
-    m.params_lt1['AWG_lt1_trigger_do_channel'] = 10 # OK
-    m.params_lt1['AWG_lt1_di_channel'] = 16 # OK
-    m.params_lt1['PLU_arm_do_channel'] = 11
-    m.params_lt1['PLU_di_channel'] = 18
-    m.params_lt1['AWG_lt1_event_do_channel'] = 14
-    m.params_lt1['AWG_lt2_address0_do_channel'] = 0
-    m.params_lt1['AWG_lt2_address1_do_channel'] = 1
-    m.params_lt1['AWG_lt2_address2_do_channel'] = 2
-    m.params_lt1['AWG_lt2_address3_do_channel'] = 3
-    m.params_lt1['AWG_lt2_address_LDE'] = 1
-    m.params_lt1['AWG_lt2_address_U1'] = 2                    
-    m.params_lt1['AWG_lt2_address_U2'] = 3
-    m.params_lt1['AWG_lt2_address_U3'] = 4
-    m.params_lt1['AWG_lt2_address_U4'] = 5       
-    m.params_lt1['repump_off_voltage'] = 0         
-    m.params_lt1['Ey_off_voltage'] = 0 
-    m.params_lt1['FT_off_voltage'] = 0
-
-    m.params_lt2['counter_channel'] = 1
-    m.params_lt2['Adwin_lt1_do_channel'] = 2
-    m.params_lt2['Adwin_lt1_di_channel'] = 17
-    m.params_lt2['AWG_lt2_di_channel'] = 16
-    m.params_lt2['repump_off_voltage'] = 0
-    m.params_lt2['Ey_off_voltage'] = 0 
-    m.params_lt2['A_off_voltage'] = 0
-
-def get_RO_settings(m):
-    m.params_lt1['wait_before_SSRO1'] = 3
-    m.params_lt1['wait_before_SP_after_RO'] = 3
-    m.params_lt1['SP_after_RO_duration'] = 50
-    m.params_lt1['wait_before_SSRO2'] = 3
-    m.params_lt1['SSRO2_duration'] = 15
-    m.params_lt1['SSRO1_duration'] = 15
-
-    m.params_lt2['SSRO_lt2_duration'] = 50
-
-def get_CR_settings(m):
-    m.params_lt1['CR_duration'] = 50
-    m.params_lt1['CR_threshold_preselect'] = 0
-    m.params_lt1['CR_threshold_probe'] = 0
-    m.params_lt1['CR_repump'] = 1000
-    m.params_lt1['repump_duration'] = 1000
-    m.params_lt1['repump_after_repetitions'] = 1
-    m.params_lt1['time_before_forced_CR'] = 20000
-
-    m.params_lt2['repump_duration'] = 50
-    m.params_lt2['CR_duration'] = 50
-    m.params_lt2['CR_preselect'] = 0
-    m.params_lt2['CR_probe'] = 0
-    m.params_lt2['repump_after_repetitions'] = 1
-    m.params_lt2['CR_repump'] = 1000
-
-def get_laser_amplitudes(m):
-    m.params_lt1['Ey_CR_amplitude'] = 0
-    m.params_lt1['FT_CR_amplitude'] = 0              
-    m.params_lt1['Ey_SP_amplitude'] = 0              
-    m.params_lt1['FT_SP_amplitude'] = 0             
-    m.params_lt1['Ey_RO_amplitude'] = 0            
-    m.params_lt1['FT_RO_amplitude'] = 0
-    m.params_lt1['repump_amplitude'] = 0
-
-    m.params_lt2['Ey_CR_amplitude'] = 0             
-    m.params_lt2['A_CR_amplitude'] = 0              
-    m.params_lt2['Ey_SP_amplitude'] = 0              
-    m.params_lt2['A_SP_amplitude'] = 0             
-    m.params_lt2['Ey_RO_amplitude'] = 0            
-    m.params_lt2['A_RO_amplitude'] = 0
-    m.params_lt2['repump_amplitude'] = 0 
-
-def get_process_settings(m):
-    m.params_lt1['max_CR_starts'] = 10000000
-    m.params_lt1['teleportation_repetitions'] = 1000
-    m.params_lt1['do_remote'] = 1
-    m.params_lt1['do_N_polarization'] = 1
-
-    m.params_lt2['teleportation_repetitions'] = 1000
-
-def get_default_settings(m):
-    get_hardware_settings(m)
-    get_RO_settings(m)
-    get_CR_settings(m)
-    get_laser_amplitudes(m)
-    get_process_settings(m)
 
 ### measurements
-def CR_check_lt1_only(name):
+def CR_checking_debug(name):
     m = setup_msmt('CR_check_lt1_only_'+name)
-    
-    get_default_settings(m)
-    m.params['use_yellow_lt1'] = YELLOW
 
+    m.params_lt1['use_yellow'] = YELLOW
     m.params_lt1['do_N_polarization'] = 0
+    m.params_lt1['do_sequences'] = 0
+
+    m.params_lt1['max_CR_starts'] = 10000
+    m.params_lt1['teleportation_repetitions'] = -1
 
     start_msmt(m, use_lt2=USE_LT2)
     finish_msmt(m, use_lt2=USE_LT2)
 
 
 if __name__ == '__main__':
-    CR_check_lt1_only('test')
-
-
-
-
-
-
-
+    CR_checking_debug('test')
 
 
 

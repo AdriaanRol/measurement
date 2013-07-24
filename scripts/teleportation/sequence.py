@@ -1,6 +1,9 @@
 from measurement.lib.pulsar import pulse, pulselib, element, pulsar
 
-def pulse_defs(msmt):
+# import parameters as tparams
+# reload(tparams)
+
+def pulse_defs_lt2(msmt):
 
     # a waiting pulse on the MW pulsemod channel
     msmt.T_pulse = pulse.SquarePulse(channel='MW_pulsemod',
@@ -14,7 +17,7 @@ def pulse_defs(msmt):
         I_channel = 'MW_Imod', 
         Q_channel = 'MW_Qmod',
         PM_channel = 'MW_pulsemod',
-        PM_risetime = msmt.params['MW_pulse_mod_risetime'] )
+        PM_risetime = msmt.params_lt2['MW_pulse_mod_risetime'])
 
     ### synchronizing, etc
     # msmt.adwin_sync = pulse.SquarePulse(channel='adwin_sync',

@@ -7,8 +7,8 @@ The idea, for now, is the following:
 We set all parameters in the master script.
 This script imports the master and gets all the parameters from there.
 
-For future improvement, it'd be even better if all the preparations could be executed on
-a remote machine from the master script in some way.
+(For future improvement, it'd be even better if all the preparations could be executed on
+a remote machine from the master script in some way.)
 """
 
 import numpy as np
@@ -20,6 +20,9 @@ import measurement.lib.config.adwins as adwins_cfg
 import measurement.lib.measurement2.measurement as m2
 from measurement.lib.pulsar import pulse, pulselib, element, pulsar
 
+import parameters as tparams
+reload(tparams)
+
 import sequence as tseq
 reload(tseq)
 
@@ -29,7 +32,17 @@ reload(tm)
 class TeleportationSlave:
 
     def __init__(self):
-        pass
+        self.awg = qt.instruments['AWG']
+
+    def load_settings(self):
+        for k in tparams.params.parameters:
+            self.params[k] = tparams.params[k]
+
+        for k in tparams.params_lt1.parameters:
+            self.params_lt1[k] = tparams.params_lt1[k]
+        
+        for k in tparams.params_lt2.parameters:
+            self.params_lt2[k] = tparams.params_lt2[k]
 
     ### Sequence
     def _lt1_N_polarization_decision_element(self):
@@ -69,6 +82,19 @@ class TeleportationSlave:
 
         return e
 
+    def _lt1_BSM_element(self):
+        """
+        this element contains the BSM element. (Easiest way: only one element, then there's less
+            chance for error when we don't need all the triggers -- however, then we need
+            the timing to be correctly calibrated!)
+        """
+        e = element.Element('BSM', pulsar = qt.pulsar, global_time = True)
+
+        # TODO not yet implemented
+        e.append(pulse.cp(self.T_pulse), length=1e-6)
+
+        return e
+
 
     def lt1_sequence(self):
         self.lt1_seq = pulsar.Sequence('TeleportationLT1')
@@ -76,6 +102,7 @@ class TeleportationSlave:
         N_pol_decision_element = self._lt1_N_polarization_decision_element()
         N_pol_element = self._lt1_N_pol_element()
         LDE_element = self._lt1_LDE_element()
+        BSM_element = self._lt1_BSM_element()
 
         self.lt1_seq.append(name = 'N_pol_decision',
             wfname = N_pol_decision_element.name,
@@ -83,11 +110,44 @@ class TeleportationSlave:
             goto_target = 'N_polarization' if tm.DO_POLARIZE_N else 'LDE_LT1',
             jump_target = 'LDE_LT1')
 
-        self.lt1_seq.append(name = 'N_polarization',
-            wfname = N_pol_element.name,
-            trigger_wait = True,
-            repetitions = self.params['']) ### TODO not sure yet how to transfer params; tomorrow
+        if tm.DO_POLARIZE_N:
+            self.lt1_seq.append(name = 'N_polarization',
+                wfname = N_pol_element.name,
+                trigger_wait = True,
+                repetitions = self.params_lt1['N_pol_element_repetitions'])
 
+        self.lt1_seq.append(name = 'LDE_LT1',
+            wfname = LDE_element.name,
+            jump_target = 'BSM',
+            goto_target = 'N_pol_decision',
+            repetitions = self.params['LDE_attempts_before_CR'])
 
+        self.lt1_seq.append(name = 'BSM',
+            wfname = BSM_element.name,
+            goto_target = 'N_pol_decision')
 
+        qt.pulsar.upload(N_pol_decision_element, N_pol_element, LDE_element, BSM_element)
+        qt.pulsar.program_sequence(self.lt1_seq)
+
+        self.awg.set_runmode('SEQ')
+        self.awg.start()
+
+        i=0
+        awg_ready = False
+        while not awg_ready and i<40:
+            try:
+                if self.awg.get_state() == 'Waiting for trigger':
+                    awg_ready = True
+            except:
+                print 'waiting for awg: usually means awg is still busy and doesnt respond'
+                print 'waiting', i, '/40'
+                i=i+1
+            qt.msleep(0.5)
+        if not awg_ready: 
+            raise Exception('AWG not ready')
+
+def run_default():
+    m = TeleportationSlave()
+    m.load_settings()
+    m.lt1_sequence()
 

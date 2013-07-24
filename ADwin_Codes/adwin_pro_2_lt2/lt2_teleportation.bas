@@ -152,8 +152,8 @@ INIT:
   mode = 2
   timer = 0
   
-  par_64 = 0
-  par_65 = 0
+  par_64 = 0                      ' current mode
+  par_65 = 0                      ' timer value
   par_66 = 0
   par_67 = 0                      ' number of CR times CR failed.
   par_68 = CR_probe
