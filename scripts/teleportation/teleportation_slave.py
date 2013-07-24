@@ -32,6 +32,10 @@ reload(tm)
 class TeleportationSlave:
 
     def __init__(self):
+        self.params = m2.MeasurementParameters('JointParameters')
+        self.params_lt1 = m2.MeasurementParameters('LT1Parameters')
+        self.params_lt2 = m2.MeasurementParameters('LT2Parameters')
+
         self.awg = qt.instruments['AWG']
 
     def load_settings(self):
@@ -43,6 +47,9 @@ class TeleportationSlave:
         
         for k in tparams.params_lt2.parameters:
             self.params_lt2[k] = tparams.params_lt2[k]
+
+    def update_definitions(self):
+        tseq.pulse_defs_lt1(self)
 
     ### Sequence
     def _lt1_N_polarization_decision_element(self):
@@ -65,7 +72,7 @@ class TeleportationSlave:
         e = element.Element('N_pol', pulsar = qt.pulsar)
 
         # TODO not yet implemented
-        e.append(pulse.cp(self.T_pulse), length=1e-6)
+        e.append(pulse.cp(self.T_pulse, length=1e-6))
 
         return e
 
@@ -78,7 +85,7 @@ class TeleportationSlave:
         e = element.Element('LDE_LT1', pulsar = qt.pulsar, global_time = True)
 
         # TODO not yet implemented
-        e.append(pulse.cp(self.T_pulse), length=1e-6)
+        e.append(pulse.cp(self.T_pulse, length=1e-6))
 
         return e
 
@@ -91,7 +98,7 @@ class TeleportationSlave:
         e = element.Element('BSM', pulsar = qt.pulsar, global_time = True)
 
         # TODO not yet implemented
-        e.append(pulse.cp(self.T_pulse), length=1e-6)
+        e.append(pulse.cp(self.T_pulse, length=1e-6))
 
         return e
 
@@ -149,6 +156,7 @@ class TeleportationSlave:
 def run_default():
     m = TeleportationSlave()
     m.load_settings()
+    m.update_definitions()
     m.lt1_sequence()
 
 

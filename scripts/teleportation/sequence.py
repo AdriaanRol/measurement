@@ -25,3 +25,8 @@ def pulse_defs_lt2(msmt):
 
     return True
 
+def pulse_defs_lt1(msmt):
+
+    # a waiting pulse on the MW pulsemod channel
+    msmt.T_pulse = pulse.SquarePulse(channel='MW_pulsemod',
+        length = 50e-9, amplitude = 0)
