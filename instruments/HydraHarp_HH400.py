@@ -563,334 +563,334 @@ class HydraHarp_HH400(Instrument): #1
             self.get_ErrorString(success)
         return data
    
-    def get_T3_pulsed_g2_Histogram(self, hist_length, channel0_delay = 0, channel1_delay = 0):   # in bins
-        histogram = zeros(hist_length, dtype = int)
-        while self._do_get_MeasRunning:
-            length, data = self.get_TTTR_Data()
-            for i in arange(0, length):
-                nsync   = data[i] & (2**10 - 1)
-                time    = (data[i] / 2**10) & (2**15 - 1)
-                channel = (data[i] / 2**25) & (2**6 - 1)
-                special = data[i] / 2**31
+    # def get_T3_pulsed_g2_Histogram(self, hist_length, channel0_delay = 0, channel1_delay = 0):   # in bins
+    #     histogram = zeros(hist_length, dtype = int)
+    #     while self._do_get_MeasRunning:
+    #         length, data = self.get_TTTR_Data()
+    #         for i in arange(0, length):
+    #             nsync   = data[i] & (2**10 - 1)
+    #             time    = (data[i] / 2**10) & (2**15 - 1)
+    #             channel = (data[i] / 2**25) & (2**6 - 1)
+    #             special = data[i] / 2**31
 
-                if special == 1:
-                    if channel == 63:
-                        nsync_overflow += 1
-                    else:
-                        marker = channel & 15
-                else:
-                    if channel == 0:
-                        if time >= channel0_delay:
-                            channel0_time = time
-                            channel0_sync = n_sync
-                    if channel == 1:
-                        if time >= channel1_delay:
-                            channel1_time = time
-                            channel1_sync = n_sync
-                if channel0_sync == channel1_sync:
-                    dt = channel1_time - channel0_time + hist_length/2
-                    if 0 <= dt < hist_length:
-                        histogram[dt] += 1
-        return histogram
+    #             if special == 1:
+    #                 if channel == 63:
+    #                     nsync_overflow += 1
+    #                 else:
+    #                     marker = channel & 15
+    #             else:
+    #                 if channel == 0:
+    #                     if time >= channel0_delay:
+    #                         channel0_time = time
+    #                         channel0_sync = n_sync
+    #                 if channel == 1:
+    #                     if time >= channel1_delay:
+    #                         channel1_time = time
+    #                         channel1_sync = n_sync
+    #             if channel0_sync == channel1_sync:
+    #                 dt = channel1_time - channel0_time + hist_length/2
+    #                 if 0 <= dt < hist_length:
+    #                     histogram[dt] += 1
+    #     return histogram
 
-    def get_T3_pulsed_events(self, sync_period, 
-            range_sync, blocksize=TTREADMAX, start_ch0=0, start_ch1=0, 
-            max_pulses = 2, save_markers=[2,3,4], save_raw=True,
-            raw_max_len=100000):
-        """
-        Get ch0 and ch1 events in T3 mode.
-        Author: Wolfgang, July 1, 2012.
+#     def get_T3_pulsed_events(self, sync_period, 
+#             range_sync, blocksize=TTREADMAX, start_ch0=0, start_ch1=0, 
+#             max_pulses = 2, save_markers=[2,3,4], save_raw=True,
+#             raw_max_len=100000):
+#         """
+#         Get ch0 and ch1 events in T3 mode.
+#         Author: Wolfgang, July 1, 2012.
 
-        Filtering options:
-        range_sync: 
-            how many bins after a sync are accepted
-        start_ch0, start_ch1:
-            minimum event time (in bins) after the sync
-        max_pulses:
-            how many syncs after a marker on channel 1 are taken into
-            account
+#         Filtering options:
+#         range_sync: 
+#             how many bins after a sync are accepted
+#         start_ch0, start_ch1:
+#             minimum event time (in bins) after the sync
+#         max_pulses:
+#             how many syncs after a marker on channel 1 are taken into
+#             account
         
-        other options:
-        save_markers:
-            all markers with channel in that list will be returned.
+#         other options:
+#         save_markers:
+#             all markers with channel in that list will be returned.
 
-        returns:
-            (ch0, ch1, markers)
-            ch0: array with two columns: col1 = absolute sync no, col2 = time
-            ch1: ditto
-            markers: array with three columns:
-                col1 = sync no, col2 = time, col3 = marker channel
-        """
+#         returns:
+#             (ch0, ch1, markers)
+#             ch0: array with two columns: col1 = absolute sync no, col2 = time
+#             ch1: ditto
+#             markers: array with three columns:
+#                 col1 = sync no, col2 = time, col3 = marker channel
+#         """
         
-        if .001*self.get_ResolutionPS() * 2**15 < sync_period:
-            print('Warning: resolution is too high to cover entire sync \
-                    period in T3 mode, events might get lost.')
+#         if .001*self.get_ResolutionPS() * 2**15 < sync_period:
+#             print('Warning: resolution is too high to cover entire sync \
+#                     period in T3 mode, events might get lost.')
 
-        ch0_events = zeros((0,2), dtype=int) # col 1: sync no (abs), col 2: event time
-        ch1_events = zeros((0,2), dtype=int)
-        markers = zeros((0,3), dtype=int) # col1 sync no, col2 time, col3 marker channel
+#         ch0_events = zeros((0,2), dtype=int) # col 1: sync no (abs), col 2: event time
+#         ch1_events = zeros((0,2), dtype=int)
+#         markers = zeros((0,3), dtype=int) # col1 sync no, col2 time, col3 marker channel
         
-        nsync_overflow = 0
-        ch0_sync = 0
-        ch0_time = 0
-        ch1_sync = 0
-        ch1_time = 0
-        nsync_ma1 = -max_pulses
+#         nsync_overflow = 0
+#         ch0_sync = 0
+#         ch0_time = 0
+#         ch1_sync = 0
+#         ch1_time = 0
+#         nsync_ma1 = -max_pulses
 
-        if save_raw:
-            timestamp = strftime('%Y%m%d%H%M%S')
-            rawdir = os.path.join(qt.config['datadir'], strftime('%Y%m%d'), \
-                strftime('%H%M%S')+'_LDE_rawdata')
-            if not os.path.isdir(rawdir):
-                os.makedirs(rawdir)
-            rawdat = array([])
-            rawidx = 0
-            accumulated_data = array([], dtype = np.uintc) #NOTE
-            sleep_time = 0 #NOTE
-            lengths = array([])
-            times = array([])
+#         if save_raw:
+#             timestamp = strftime('%Y%m%d%H%M%S')
+#             rawdir = os.path.join(qt.config['datadir'], strftime('%Y%m%d'), \
+#                 strftime('%H%M%S')+'_LDE_rawdata')
+#             if not os.path.isdir(rawdir):
+#                 os.makedirs(rawdir)
+#             rawdat = array([])
+#             rawidx = 0
+#             accumulated_data = array([], dtype = np.uintc) #NOTE
+#             sleep_time = 0 #NOTE
+#             lengths = array([])
+#             times = array([])
 
-        while self._do_get_MeasRunning() == True:
-            length, data = self.get_TTTR_Data(blocksize)
+#         while self._do_get_MeasRunning() == True:
+#             length, data = self.get_TTTR_Data(blocksize)
 
-            # print length
+#             # print length
 
-            if save_raw:
-                rawdat = append(rawdat, data[:length])
-                lengths = append(lengths, length)
-                times = append(times, int(strftime('%M%S')))
+#             if save_raw:
+#                 rawdat = append(rawdat, data[:length])
+#                 lengths = append(lengths, length)
+#                 times = append(times, int(strftime('%M%S')))
                 
-                if len(rawdat) > raw_max_len:
+#                 if len(rawdat) > raw_max_len:
                     
-                    #print len(rawdat)
+#                     #print len(rawdat)
 
-                    savez(os.path.join(rawdir, 
-                        timestamp+'_LDE_rawdata-%.3d' % rawidx), 
-                        length=len(rawdat), data=rawdat)
+#                     savez(os.path.join(rawdir, 
+#                         timestamp+'_LDE_rawdata-%.3d' % rawidx), 
+#                         length=len(rawdat), data=rawdat)
                     
-                    rawdat = array([])
-                    rawidx += 1
+#                     rawdat = array([])
+#                     rawidx += 1
             
-            #NOTE: live data analysis added by Gerwin @ 6/19/2013
-            else:
-                #analyze the entire array or just the new data?
-                prefiltered = hht4.filter_raw_data(data[:length])
-                accumulated_data = np.append(accumulated_data, prefiltered)
+#             #NOTE: live data analysis added by Gerwin @ 6/19/2013
+#             else:
+#                 #analyze the entire array or just the new data?
+#                 prefiltered = hht4.filter_raw_data(data[:length])
+#                 accumulated_data = np.append(accumulated_data, prefiltered)
                 
-                if len(accumulated_data) > raw_max_len:
-                    savez(os.path.join(rawdir, 
-                        timestamp+'_LDE_rawdata-%.3d'%rawidx), 
-                        length=len(accumulated_data), data=accumulated_data)
+#                 if len(accumulated_data) > raw_max_len:
+#                     savez(os.path.join(rawdir, 
+#                         timestamp+'_LDE_rawdata-%.3d'%rawidx), 
+#                         length=len(accumulated_data), data=accumulated_data)
                     
-                    rawidx += 1
-                    accumulated_data = np.array([], dtype = np.uintc)
+#                     rawidx += 1
+#                     accumulated_data = np.array([], dtype = np.uintc)
 
-                qt.msleep(sleep_time)
+#                 qt.msleep(sleep_time)
 
             
-#            for i in arange(0, length):                
-#                nsync   = data[i] & (2**10 - 1)
-#                event_time = (data[i] >> 10) & (2**15 - 1)
-#                channel = (data[i] >> 25) & (2**6 - 1)
-#                special = (data[i] >> 31) & 1
-#
-#                if special == 1:
-#                    if channel == 63:
-#                        nsync_overflow += 1
-#                    else:
-#                        marker = channel & 15
-#                        
-#                        if marker == 1:
-#                            measuring = True
-#                            nsync_overflow = 0
-#                            nsync_ma1 = nsync
-#                            
-#                            if (nsync_ma1==-max_pulses):
-#                                print 'first marker'
-#                        
-#                        if marker in save_markers:
-#                            markers = vstack((markers, 
-#                                array([nsync+nsync_overflow*2**10, 
-#                                    event_time, marker])))
-#
-#                else:
-#                    if (nsync+nsync_overflow*2**10-nsync_ma1) < max_pulses and \
-#                            event_time < range_sync:
-#                        sync_no = nsync+nsync_overflow*2**10
-#
-#                        if channel == 0 and event_time >= start_ch0:
-#                            ch0_events = vstack((ch0_events,
-#                                array([nsync+nsync_overflow*2**10, event_time])))
-#
-#                        if channel == 1 and event_time >= start_ch1:
-#                            ch1_events = vstack((ch1_events,
-#                                array([nsync+nsync_overflow*2**10, event_time])))
+# #            for i in arange(0, length):                
+# #                nsync   = data[i] & (2**10 - 1)
+# #                event_time = (data[i] >> 10) & (2**15 - 1)
+# #                channel = (data[i] >> 25) & (2**6 - 1)
+# #                special = (data[i] >> 31) & 1
+# #
+# #                if special == 1:
+# #                    if channel == 63:
+# #                        nsync_overflow += 1
+# #                    else:
+# #                        marker = channel & 15
+# #                        
+# #                        if marker == 1:
+# #                            measuring = True
+# #                            nsync_overflow = 0
+# #                            nsync_ma1 = nsync
+# #                            
+# #                            if (nsync_ma1==-max_pulses):
+# #                                print 'first marker'
+# #                        
+# #                        if marker in save_markers:
+# #                            markers = vstack((markers, 
+# #                                array([nsync+nsync_overflow*2**10, 
+# #                                    event_time, marker])))
+# #
+# #                else:
+# #                    if (nsync+nsync_overflow*2**10-nsync_ma1) < max_pulses and \
+# #                            event_time < range_sync:
+# #                        sync_no = nsync+nsync_overflow*2**10
+# #
+# #                        if channel == 0 and event_time >= start_ch0:
+# #                            ch0_events = vstack((ch0_events,
+# #                                array([nsync+nsync_overflow*2**10, event_time])))
+# #
+# #                        if channel == 1 and event_time >= start_ch1:
+# #                            ch1_events = vstack((ch1_events,
+# #                                array([nsync+nsync_overflow*2**10, event_time])))
 
-        if save_raw:
-            savez(os.path.join(rawdir, 'lengths'), lengths=lengths)
-            savez(os.path.join(rawdir, 'times'), times=times)
-            savez(os.path.join(rawdir, timestamp+'_LDE_rawdata-%.3d' % rawidx), 
-                        length=len(rawdat), data=rawdat)
+#         if save_raw:
+#             savez(os.path.join(rawdir, 'lengths'), lengths=lengths)
+#             savez(os.path.join(rawdir, 'times'), times=times)
+#             savez(os.path.join(rawdir, timestamp+'_LDE_rawdata-%.3d' % rawidx), 
+#                         length=len(rawdat), data=rawdat)
                             
-        print "Detected events: %d / %d." % (len(ch0_events), len(ch1_events))
+#         print "Detected events: %d / %d." % (len(ch0_events), len(ch1_events))
 
-        if save_raw:
-            return ch0_events, ch1_events, markers, rawdir
-        return ch0_events, ch1_events, markers
+#         if save_raw:
+#             return ch0_events, ch1_events, markers, rawdir
+#         return ch0_events, ch1_events, markers
 
    
-    def get_T3_pulsed_g2_2DHistogram(self, binsize_sync, range_sync, 
-            binsize_g2, range_g2, sync_period = 100, blocksize = TTREADMAX, 
-            max_pulses = 100, laser_end_ch0 = 0,laser_end_ch1 = 0, 
-            tail_roi = 800, save_raw=""):   # in bins, period in ns
+    # def get_T3_pulsed_g2_2DHistogram(self, binsize_sync, range_sync, 
+    #         binsize_g2, range_g2, sync_period = 100, blocksize = TTREADMAX, 
+    #         max_pulses = 100, laser_end_ch0 = 0,laser_end_ch1 = 0, 
+    #         tail_roi = 800, save_raw=""):   # in bins, period in ns
 	
-        if .001*self.get_ResolutionPS() * 2**15 < sync_period:
-            print('Warning: resolution is too high to cover entire sync period in T3 mode, events might get lost.')
-        histogram = zeros((range_sync,range_g2), dtype = int)
-        hist_ch0 = zeros(range_sync, dtype = int)
-        hist_ch1 = zeros(range_sync, dtype = int)
-        hist_ch1_long = zeros(range_g2, dtype = int)
-        histogram_roi = zeros(range_g2, dtype = int)  # 1d histogram of coincedences inside roi
-        mode = 2    # mode = 0, if a click was received on channel 0, 
-                    #        1, if a click was received on channel 1,
-                    #        2, if no click was detected
+    #     if .001*self.get_ResolutionPS() * 2**15 < sync_period:
+    #         print('Warning: resolution is too high to cover entire sync period in T3 mode, events might get lost.')
+    #     histogram = zeros((range_sync,range_g2), dtype = int)
+    #     hist_ch0 = zeros(range_sync, dtype = int)
+    #     hist_ch1 = zeros(range_sync, dtype = int)
+    #     hist_ch1_long = zeros(range_g2, dtype = int)
+    #     histogram_roi = zeros(range_g2, dtype = int)  # 1d histogram of coincedences inside roi
+    #     mode = 2    # mode = 0, if a click was received on channel 0, 
+    #                 #        1, if a click was received on channel 1,
+    #                 #        2, if no click was detected
 
-        nsync_overflow=0
-        ch0_sync=0
-        ch0_time=0
-        ch1_sync=0
-        ch1_time=0
+    #     nsync_overflow=0
+    #     ch0_sync=0
+    #     ch0_time=0
+    #     ch1_sync=0
+    #     ch1_time=0
        
-        good_events=0
-        noof_tailcts=0
-        ch0_in_roi=False              #flag that marks if an event is in roi
-        ch1_in_roi=False
-        nsync_ma1=-max_pulses
-        timestamp = strftime('%Y%m%d%H%M%S')
-        measuring = False
-        max_length = 100000
-        data_save = []
-        idx = 0
-        save_raw_bool=False
-        if not(save_raw==""):
-            save_raw_bool=True
-            if not(os.path.isdir(save_raw)):
-                print "Raw data save path is not a valid directory, please create it first"
-                return False
+    #     good_events=0
+    #     noof_tailcts=0
+    #     ch0_in_roi=False              #flag that marks if an event is in roi
+    #     ch1_in_roi=False
+    #     nsync_ma1=-max_pulses
+    #     timestamp = strftime('%Y%m%d%H%M%S')
+    #     measuring = False
+    #     max_length = 100000
+    #     data_save = []
+    #     idx = 0
+    #     save_raw_bool=False
+    #     if not(save_raw==""):
+    #         save_raw_bool=True
+    #         if not(os.path.isdir(save_raw)):
+    #             print "Raw data save path is not a valid directory, please create it first"
+    #             return False
         
         
-        while self._do_get_MeasRunning() == True:
-            length, data = self.get_TTTR_Data(blocksize)
-            data_save = append(data_save,data[0:length])
-            if len(data_save) > max_length:
-                if (save_raw_bool):
-                    savez(os.path.join(save_raw, timestamp+'-alldata-'+str(idx)), 
-                            length=len(data_save),data=data_save)
-                data_save = []
-                idx += 1
+    #     while self._do_get_MeasRunning() == True:
+    #         length, data = self.get_TTTR_Data(blocksize)
+    #         data_save = append(data_save,data[0:length])
+    #         if len(data_save) > max_length:
+    #             if (save_raw_bool):
+    #                 savez(os.path.join(save_raw, timestamp+'-alldata-'+str(idx)), 
+    #                         length=len(data_save),data=data_save)
+    #             data_save = []
+    #             idx += 1
 
-            for i in arange(0, length):
-                nsync   = data[i] & (2**10 - 1)
-                event_time = (data[i] >> 10) & (2**15 - 1)
-                channel = (data[i] >> 25) & (2**6 - 1)
-                special = (data[i] >> 31) & 1
+    #         for i in arange(0, length):
+    #             nsync   = data[i] & (2**10 - 1)
+    #             event_time = (data[i] >> 10) & (2**15 - 1)
+    #             channel = (data[i] >> 25) & (2**6 - 1)
+    #             special = (data[i] >> 31) & 1
 
-                self.adwin.set_remote_tpqi_control_var(set_noof_tailcts = noof_tailcts) #writed the noof_tailcts into adwin
+    #             self.adwin.set_remote_tpqi_control_var(set_noof_tailcts = noof_tailcts) #writed the noof_tailcts into adwin
 
-                if special == 1:
-                    if channel == 63:
-                        nsync_overflow += 1
-                    else:
-                        marker = channel & 15
-                        if marker == 1:
-                            measuring = True
-                            nsync_overflow = 0
-                            nsync_ma1 = nsync
-                            if (nsync_ma1==-max_pulses):
-                                print 'first marker'
-                else:
-                    if channel == 0:
-                        good_events+=1
-                        ch0_bin = event_time/(2**binsize_sync)
+    #             if special == 1:
+    #                 if channel == 63:
+    #                     nsync_overflow += 1
+    #                 else:
+    #                     marker = channel & 15
+    #                     if marker == 1:
+    #                         measuring = True
+    #                         nsync_overflow = 0
+    #                         nsync_ma1 = nsync
+    #                         if (nsync_ma1==-max_pulses):
+    #                             print 'first marker'
+    #             else:
+    #                 if channel == 0:
+    #                     good_events+=1
+    #                     ch0_bin = event_time/(2**binsize_sync)
 
-                        ch0_time = event_time
+    #                     ch0_time = event_time
 
-                        if (nsync+nsync_overflow*2**10-nsync_ma1) > max_pulses:
-                            measuring = False
-                            mode = 2
+    #                     if (nsync+nsync_overflow*2**10-nsync_ma1) > max_pulses:
+    #                         measuring = False
+    #                         mode = 2
                         
                         
-                        if measuring:
-                            ch0_sync = int((nsync + nsync_overflow*2**10) * sync_period / (0.001*self.get_ResolutionPS()))
-                            dt_ch0 = (ch1_sync-ch0_sync-ch0_time) / (2**binsize_g2) + range_g2/2
+    #                     if measuring:
+    #                         ch0_sync = int((nsync + nsync_overflow*2**10) * sync_period / (0.001*self.get_ResolutionPS()))
+    #                         dt_ch0 = (ch1_sync-ch0_sync-ch0_time) / (2**binsize_g2) + range_g2/2
                             
-                            if (0 <= ch0_bin) and (ch0_bin < range_sync):
-                                hist_ch0[ch0_bin] += 1
+    #                         if (0 <= ch0_bin) and (ch0_bin < range_sync):
+    #                             hist_ch0[ch0_bin] += 1
                             
                             
-                            if (0 <= dt_ch0) and (dt_ch0 < range_g2):
-                                hist_ch1_long[dt_ch0] += 1
+    #                         if (0 <= dt_ch0) and (dt_ch0 < range_g2):
+    #                             hist_ch1_long[dt_ch0] += 1
 
-                            if (laser_end_ch0 <= ch0_time <= (laser_end_ch0 + tail_roi)):
-                                noof_tailcts += 1
-                                ch0_in_roi = True
-                            else:
-                                ch0_in_roi = False
+    #                         if (laser_end_ch0 <= ch0_time <= (laser_end_ch0 + tail_roi)):
+    #                             noof_tailcts += 1
+    #                             ch0_in_roi = True
+    #                         else:
+    #                             ch0_in_roi = False
 
-                            if mode != 1:
-                                mode = 0
-                            else:
-                                dt = range_g2/2 + ((ch1_time+ch1_sync) - (ch0_time+ch0_sync))/(2**binsize_g2)
-                                if (dt >= 0) and (dt < range_g2) and (ch0_bin < range_sync) and (ch1_bin < range_sync):
-                                    histogram[ch0_bin,dt] += 1
-                                    if ch0_in_roi and ch1_in_roi:
-                                        histogram_roi[dt] += 1                                    
-                                    mode = 2
-                                else:
-                                    mode=0
+    #                         if mode != 1:
+    #                             mode = 0
+    #                         else:
+    #                             dt = range_g2/2 + ((ch1_time+ch1_sync) - (ch0_time+ch0_sync))/(2**binsize_g2)
+    #                             if (dt >= 0) and (dt < range_g2) and (ch0_bin < range_sync) and (ch1_bin < range_sync):
+    #                                 histogram[ch0_bin,dt] += 1
+    #                                 if ch0_in_roi and ch1_in_roi:
+    #                                     histogram_roi[dt] += 1                                    
+    #                                 mode = 2
+    #                             else:
+    #                                 mode=0
 
 
-                    if channel == 1:
-                        good_events+=1
-                        ch1_bin = event_time/(2**binsize_sync)
+    #                 if channel == 1:
+    #                     good_events+=1
+    #                     ch1_bin = event_time/(2**binsize_sync)
 	
-                        ch1_time = event_time
+    #                     ch1_time = event_time
 
-                        if (nsync+nsync_overflow*2**10-nsync_ma1) > max_pulses:
-                            measuring = False
-                            mode = 2
+    #                     if (nsync+nsync_overflow*2**10-nsync_ma1) > max_pulses:
+    #                         measuring = False
+    #                         mode = 2
 
-                        if measuring:
-                            ch1_sync = int((nsync + nsync_overflow*2**10) * sync_period / (0.001*self.get_ResolutionPS()))
-                            dt_ch1 = (ch1_time+ch1_sync-ch0_sync) / (2**binsize_g2) + range_g2/2
+    #                     if measuring:
+    #                         ch1_sync = int((nsync + nsync_overflow*2**10) * sync_period / (0.001*self.get_ResolutionPS()))
+    #                         dt_ch1 = (ch1_time+ch1_sync-ch0_sync) / (2**binsize_g2) + range_g2/2
                             
-                            if (0 <= ch1_bin) and (ch1_bin < range_sync):
-                                hist_ch1[ch1_bin] += 1		
+    #                         if (0 <= ch1_bin) and (ch1_bin < range_sync):
+    #                             hist_ch1[ch1_bin] += 1		
                             
-                            if (0 <= dt_ch1) and (dt_ch1 < range_g2):
-                                hist_ch1_long[dt_ch1] += 1
+    #                         if (0 <= dt_ch1) and (dt_ch1 < range_g2):
+    #                             hist_ch1_long[dt_ch1] += 1
 
-                            if (laser_end_ch1 <= ch1_time <= (laser_end_ch1 + tail_roi)):
-                                noof_tailcts += 1
-                                ch1_in_roi = True
-                            else:
-                                ch1_in_roi = False
+    #                         if (laser_end_ch1 <= ch1_time <= (laser_end_ch1 + tail_roi)):
+    #                             noof_tailcts += 1
+    #                             ch1_in_roi = True
+    #                         else:
+    #                             ch1_in_roi = False
 
-                            if mode != 0:
-                                mode = 1
-                            else:
-                                dt = range_g2/2 + ((ch1_time+ch1_sync) - (ch0_time+ch0_sync))/(2**binsize_g2)
-                                if (dt >= 0) and (dt < range_g2) and (ch0_bin < range_sync) and (ch1_bin < range_sync):
-                                    histogram[ch0_bin,dt] += 1
-                                    if ch0_in_roi and ch1_in_roi:
-                                        histogram_roi[dt] += 1
-                                    mode = 2
-                                else:
-                                    mode=1
+    #                         if mode != 0:
+    #                             mode = 1
+    #                         else:
+    #                             dt = range_g2/2 + ((ch1_time+ch1_sync) - (ch0_time+ch0_sync))/(2**binsize_g2)
+    #                             if (dt >= 0) and (dt < range_g2) and (ch0_bin < range_sync) and (ch1_bin < range_sync):
+    #                                 histogram[ch0_bin,dt] += 1
+    #                                 if ch0_in_roi and ch1_in_roi:
+    #                                     histogram_roi[dt] += 1
+    #                                 mode = 2
+    #                             else:
+    #                                 mode=1
            
-        print 'Total detected coincidences in histogram: %s'%(histogram.sum())
-        print 'Good events during measuring: %s'%good_events
-        return histogram, hist_ch0, hist_ch1, hist_ch1_long, histogram_roi
+    #     print 'Total detected coincidences in histogram: %s'%(histogram.sum())
+    #     print 'Good events during measuring: %s'%good_events
+    #     return histogram, hist_ch0, hist_ch1, hist_ch1_long, histogram_roi
 
     def get_Block(self):
         return self.get_Histogram(0,0)
@@ -945,95 +945,95 @@ class HydraHarp_HH400(Instrument): #1
     def get_DeviceType(self):
         return 'HH_400'
 
-    def get_T3_pulsed_g2_PLU_gated_histogram(self, range_g2, sync_period, blocksize = TTREADMAX, save_raw=""):
-        if .001*self.get_ResolutionPS() * 2**15 < sync_period:
-            print('Warning: resolution is too high to cover entire sync period in T3 mode, events might get lost.')
+#     def get_T3_pulsed_g2_PLU_gated_histogram(self, range_g2, sync_period, blocksize = TTREADMAX, save_raw=""):
+#         if .001*self.get_ResolutionPS() * 2**15 < sync_period:
+#             print('Warning: resolution is too high to cover entire sync period in T3 mode, events might get lost.')
         
        
-        ch0_gated=zeros(range_g2,dtype=int)
-        ch1_gated=zeros(range_g2,dtype=int)
-        ch0_hist=zeros(range_g2,dtype=int)
-        ch1_hist=zeros(range_g2,dtype=int)
+#         ch0_gated=zeros(range_g2,dtype=int)
+#         ch1_gated=zeros(range_g2,dtype=int)
+#         ch0_hist=zeros(range_g2,dtype=int)
+#         ch1_hist=zeros(range_g2,dtype=int)
         
-        ch0_sync=0
-        ch0_time=0
-        ch1_sync=0
-        ch1_time=0
-        marker_sync=-1
-        data_save = []
-        timestamp = strftime('%Y%m%d%H%M%S')
-        max_length = 100000
+#         ch0_sync=0
+#         ch0_time=0
+#         ch1_sync=0
+#         ch1_time=0
+#         marker_sync=-1
+#         data_save = []
+#         timestamp = strftime('%Y%m%d%H%M%S')
+#         max_length = 100000
         
-        idx=0
-        save_raw_bool=False
-        if not(save_raw==""):
-            save_raw_bool=True
-            if not(os.path.isdir(save_raw)):
-                print "Raw data save path is not a valid directory, please create it first"
-                return False
+#         idx=0
+#         save_raw_bool=False
+#         if not(save_raw==""):
+#             save_raw_bool=True
+#             if not(os.path.isdir(save_raw)):
+#                 print "Raw data save path is not a valid directory, please create it first"
+#                 return False
         
-        while self._do_get_MeasRunning() == True:
+#         while self._do_get_MeasRunning() == True:
            
-            length, data = self.get_TTTR_Data(blocksize)
-            data_save = append(data_save,data[0:length])
-            if len(data_save) > max_length:
-                if (save_raw_bool):
-                    savez(os.path.join(save_raw, timestamp+'-alldata-'+str(idx)), 
-                            length=len(data_save),data=data_save)
-                data_save = []
-                idx += 1
+#             length, data = self.get_TTTR_Data(blocksize)
+#             data_save = append(data_save,data[0:length])
+#             if len(data_save) > max_length:
+#                 if (save_raw_bool):
+#                     savez(os.path.join(save_raw, timestamp+'-alldata-'+str(idx)), 
+#                             length=len(data_save),data=data_save)
+#                 data_save = []
+#                 idx += 1
             
-            ch0_tmp = []
-            ch1_tmp = []            
-            for i in arange(0, length):
+#             ch0_tmp = []
+#             ch1_tmp = []            
+#             for i in arange(0, length):
                
-                nsync   = data[i] & (2**10 - 1)
-                event_time = (data[i] >> 10) & (2**15 - 1)
-                channel = (data[i] >> 25) & (2**6 - 1)
-                special = (data[i] >> 31) & 1
+#                 nsync   = data[i] & (2**10 - 1)
+#                 event_time = (data[i] >> 10) & (2**15 - 1)
+#                 channel = (data[i] >> 25) & (2**6 - 1)
+#                 special = (data[i] >> 31) & 1
                 
                              
-                if special == 1:                    
-                    if channel == 63:
-                        pass
-                    else:
-                        marker = channel & 15
-                        if marker == 2:
-                            if nsync==10: 
-                                print 'PLU marker arrived'
-                            for t in ch0_tmp:
-                                if t[0] == nsync:
-                                    ch0_gated[t[1]] += 1
-                            for t in ch1_tmp:
-                                if t[0] == nsync:
-                                    ch1_gated[t[1]] += 1
-                            ch0_tmp = []
-                            ch1_tmp = []
+#                 if special == 1:                    
+#                     if channel == 63:
+#                         pass
+#                     else:
+#                         marker = channel & 15
+#                         if marker == 2:
+#                             if nsync==10: 
+#                                 print 'PLU marker arrived'
+#                             for t in ch0_tmp:
+#                                 if t[0] == nsync:
+#                                     ch0_gated[t[1]] += 1
+#                             for t in ch1_tmp:
+#                                 if t[0] == nsync:
+#                                     ch1_gated[t[1]] += 1
+#                             ch0_tmp = []
+#                             ch1_tmp = []
                 
-                else:
-                    if channel == 0:
-                        ch0_time = event_time
-                        ch0_sync = nsync
-                        if ch0_time<range_g2: 
-                            ch0_hist[ch0_time] += 1
-                            ch0_tmp.append((nsync, ch0_time))
+#                 else:
+#                     if channel == 0:
+#                         ch0_time = event_time
+#                         ch0_sync = nsync
+#                         if ch0_time<range_g2: 
+#                             ch0_hist[ch0_time] += 1
+#                             ch0_tmp.append((nsync, ch0_time))
                         
                         
-#                         if marker_sync==ch0_sync:
-#                             if ch0_time<range_g2: ch0_gated[ch0_time] +=1
-#                         else:
-#                             marker_sync=-1
+# #                         if marker_sync==ch0_sync:
+# #                             if ch0_time<range_g2: ch0_gated[ch0_time] +=1
+# #                         else:
+# #                             marker_sync=-1
 
-                    if channel == 1:
-                        ch1_time = event_time
-                        ch1_sync = nsync
-                        if ch1_time<range_g2:
-                            ch1_hist[ch1_time] += 1
-                            ch1_tmp.append((nsync, ch1_time))
+#                     if channel == 1:
+#                         ch1_time = event_time
+#                         ch1_sync = nsync
+#                         if ch1_time<range_g2:
+#                             ch1_hist[ch1_time] += 1
+#                             ch1_tmp.append((nsync, ch1_time))
                         
-#                         if marker_sync==ch1_sync:
-#                             if ch1_time<range_g2: ch1_gated[ch1_time] +=1
-#                         else:
-#                             marker_sync=-1
+# #                         if marker_sync==ch1_sync:
+# #                             if ch1_time<range_g2: ch1_gated[ch1_time] +=1
+# #                         else:
+# #                             marker_sync=-1
 
-        return ch0_hist, ch1_hist, ch0_gated, ch1_gated
+#         return ch0_hist, ch1_hist, ch0_gated, ch1_gated

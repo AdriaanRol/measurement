@@ -100,7 +100,7 @@ def filter_raw_antibunch_data(rawdata, ch0_lastbin, ch1_lastbin, filter_on_doubl
             data = hhopt.filter_decreasing_syncs(data) 
       
         if filter_on_double_clicks and len(data) != 0: 
-            data = hhopt.filter_double_clicks_per_sync(data) 
+            data = hhopt.filter_double_clicks_per_sync(data)
     else:
         data = np.zeros((0,4), dtype = np.uintc)
   

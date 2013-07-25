@@ -239,7 +239,7 @@ EVENT:
           cr_counts = P2_CNT_READ(CTR_MODULE, counter_channel)
           P2_CNT_ENABLE(CTR_MODULE, 0)  'turn off counter
           PAR_70 = PAR_70 + cr_counts
-                  
+                    
           IF (cr_after_teleportation > 0) THEN ' first CR after lt2 SSRO i.e. teleportation
             DATA_23[tele_event_id] = cr_counts
             cr_after_teleportation = 0

@@ -16,6 +16,8 @@ params_lt1 = m2.MeasurementParameters('LT1Parameters')
 params_lt2 = m2.MeasurementParameters('LT2Parameters')
 
 ### Hardware stuff
+params['HH_binsize_T3'] = 8
+
 params_lt1['counter_channel'] = 1
 params_lt1['ADwin_lt2_trigger_do_channel'] = 8 # OK
 params_lt1['ADWin_lt2_di_channel'] = 17 # OK
@@ -99,12 +101,14 @@ params_lt2['mw_power'] = 20
 params_lt2['MW_pulse_mod_risetime'] = 10e-9
 
 
+### LDE sequence settings
+params['HH_sync_period'] = 400e-9 # in seconds -- important for checking (see measurement_loop())
+
 ### default process settings
 params['LDE_attempts_before_CR'] = 100 # FIXME
 
 params_lt1['max_CR_starts'] = -1
 params_lt1['teleportation_repetitions'] = -1
-
 params_lt1['do_remote'] = 1
 params_lt1['do_N_polarization'] = 1
 

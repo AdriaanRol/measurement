@@ -11,7 +11,9 @@ import numpy as np
 import logging
 import qt
 import hdf5_data as h5
+import time
 
+from measurement.lib.cython.hh_optimize import hht4
 import measurement.lib.config.adwins as adwins_cfg
 import measurement.lib.measurement2.measurement as m2
 from measurement.lib.pulsar import pulse, pulselib, element, pulsar
@@ -21,6 +23,9 @@ reload(tparams)
 
 import sequence as tseq
 reload(tseq)
+
+import misc
+reload(misc)
 
 ### CONSTANTS
 
@@ -207,6 +212,11 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
                 self.mwsrc_lt2.set_status('on' if DO_SEQUENCES else 'off')
                 self.lt2_sequence()
 
+        if HH:
+            self.hharp.start_T3_mode()
+            self.hharp.calibrate()
+            self.hharp.set_Binning(self.params['HH_binsize_T3'])
+
     ### sequence stuff
     def _lt2_sequence_finished_element(self):
         """
@@ -224,7 +234,6 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
         e.append(pulse.cp(self.T_pulse, length=1e-6))
         return e
 
-
     def _lt2_LDE_element(self):
         """
         This element contains the LDE part for LT2, i.e., spin pumping and MW pulses
@@ -237,7 +246,9 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
 
         return e
 
-    def lt2_sequence(self):     
+    def lt2_sequence(self):
+        print "Make sequence... "
+
         self.lt2_seq = pulsar.Sequence('TeleportationLT2')
 
         dummy_element = self._lt2_dummy_element()
@@ -250,11 +261,6 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
             # jump_target = 'DD', TODO: not implemented yet
             goto_target = 'LDE_LT2',
             repetitions = self.params['LDE_attempts_before_CR'])
-
-        # self.lt2_seq.append(name = 'LT2_finished',
-        #     wfname = finished_element.name,
-        #     trigger_wait = False,
-        #     goto_target = 'LDE_LT2')
 
         elements = []
         elements.append(dummy_element)
@@ -280,8 +286,7 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
                 i=i+1
             qt.msleep(0.5)
         if not awg_ready: 
-            raise Exception('AWG not ready')
-
+            raise Exception('AWG not ready')  
 
     ### Start and program adwins; Process control
     def _auto_adwin_params(self, adwin):
@@ -311,86 +316,138 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
         self._auto_adwin_params('adwin_lt2')
         self.start_adwin_process('adwin_lt2', stop_processes=['counter'])
 
-    def start(self, use_lt1=True, use_lt2=True):
-        self.autoconfig(use_lt1,use_lt2)
-        if use_lt2:
-            self.start_lt2_process()
-            qt.msleep(1)
-        if use_lt1:
-            self.start_lt1_process()
-            qt.msleep(1)
+    def stop_adwin_processes(self):
+        self.stop_adwin_process('adwin_lt1')
+        self.stop_adwin_process('adwin_lt2')
 
-        self.start_keystroke_monitor('abort',timer=False)
-        
+    def measurement_loop(self):
+        """
+        The HH related things here are bases on what we had for LDE (lde_spinspin_v8.py)
+        with updates from Gerwin (see lt2_scripts/HH_QUtau_live_testing/hydraharp_live_filtering.py)
+
+        At the moment there's no option to save the raw data from the HH. See the above mentioned
+        scripts if that's desired.
+        """
+
+        hh_sync_period_ns = self.params['HH_sync_period'] * 1e9
+
+        if HH:
+            if .001*self.hharp.get_ResolutionPS() * 2**15 < hh_sync_period_ns:
+                print('WARNING: resolution is too high to cover entire sync period in T3 mode, events might get lost.')
+
+            sync_of = 0
+            accumulated_data = np.empty((0,4), dtype = np.uintc)
+            rawidx = 0
+
         running = True
+
+        # start up:
+        # first the HH. for now, as the main stop condition for the loop use the HH measurement time.
+        # NOTE: would be better to first stop the AWGs --- otherwise it's always possible to miss
+        # successful events with some devices, which can possibly lead to sync issues.
+        if HH:
+            self.hharp.StartMeas(int(self.params['measurement_time']* 1e3)) # this is in ms
+
+        # then the adwins; since the LT1 adwin triggers both adwin LT2 and AWGs, this is the last one
+        self.start_lt2_process()
+        qt.msleep(0.1)
+        self.start_lt1_process()
+
+        # monitor keystrokes
+        self.start_keystroke_monitor('abort')
+
+        print misc.start_msg
         while running:
+
+            # Stop condition: user interrupt
             self._keystroke_check('abort')
             if self.keystroke('abort') in ['q','Q']:
-                print 'aborted.'
+                print 'Measurement aborted.'
                 self.stop_keystroke_monitor('abort')
                 break
-            if use_lt2 and use_lt1:
-                running = self.adwin_process_running('adwin_lt1') and self.adwin_process_running('adwin_lt2')
-            elif use_lt2 and not use_lt1:
-                running = self.adwin_process_running('adwin_lt2')
-            elif use_lt1 and not use_lt2:
-                running = self.adwin_process_running('adwin_lt1')
-            qt.msleep(1)
 
-    def stop(self, use_lt1=True, use_lt2=True):
-        if use_lt1:
-            self.stop_adwin_process('adwin_lt1')
-        if use_lt2:
-            self.stop_adwin_process('adwin_lt2')
-        qt.msleep(1)
+            # Stop condition: HH done
+            if HH:
+                if not self.hharp.get_MeasRunning():
+                    print 'HH done.'
+                    self.stop_keystroke_monitor('abort')
+                    break
 
-    def save(self, use_lt1=True, use_lt2=True):
-        if use_lt1:
-            reps = self.adwin_var('adwin_lt1', 'completed_reps')
-            self.save_adwin_data('adwin_lt1', 'data', 
-                ['CR_preselect', 'CR_probe', 'completed_reps', 'total_red_CR_counts', 
-                    ('CR_hist_time_out', ADWINLT1_MAX_RED_HIST_CTS),
-                    ('CR_hist_all', ADWINLT1_MAX_RED_HIST_CTS),
-                    ('CR_hist_yellow_time_out', ADWINLT1_MAX_YELLOW_HIST_CTS),
-                    ('CR_hist_yellow_all', ADWINLT1_MAX_YELLOW_HIST_CTS),
-                    ('CR_after', reps),
-                    ('statistics', ADWINLT1_MAX_STAT),
-                    ('SSRO1_results', reps),
-                    ('SSRO2_results', reps),
-                    ('PLU_Bell_states', reps),
-                    ('CR_before', reps) ])
-        if use_lt2:
-            reps = self.adwin_var('adwin_lt1', 'completed_reps')
-            self.save_adwin_data('adwin_lt2', 'data', ['completed_reps', 'total_CR_counts',
-                    ('CR_before', reps),
-                    ('CR_after', reps),
-                    ('CR_hist', ADWINLT2_MAX_CR_HIST_CTS),
-                    ('SSRO_lt2_data', reps),
-                    ('statistics', ADWINLT2_MAX_STAT)])
+                length, data = self.hharp.get_TTTR_Data()
+                prefiltered, sync_of = hht4.filter_raw_data(
+                    data[:length],
+                    sync_of,
+                    ch0_lastbin = int(hh_sync_period_ns/0.256),
+                    ch1_lastbin = int(hh_sync_period_ns/0.256),
+                    do_filter_counts_on_mrkr = True,
+                    marker_chan = 1,
+                    dsyncs = np.array([1,2], dtype = np.uintc))
 
-        if use_lt1:
-            params_lt1 = self.params_lt1.to_dict()
-            lt1_grp = h5.DataGroup("lt1_params", self.h5data, 
-                    base=self.h5base)
-            for k in params_lt1:
-                lt1_grp.group.attrs[k] = self.params_lt1[k]
-                self.h5data.flush()
+                accumulated_data = np.append(accumulated_data, 
+                    prefiltered, 
+                    axis = 0)
 
-        if use_lt2:
-            params_lt2 = self.params_lt2.to_dict()
-            lt2_grp = h5.DataGroup("lt2_params", self.h5data, 
-                    base=self.h5base)
-            for k in params_lt2:
-                lt2_grp.group.attrs[k] = self.params_lt2[k]
-                self.h5data.flush()
+                # TODO: maybe save data in between if it reaches a certain size?
+        
+        self.stop_adwin_processes()
 
-        self.h5data.close()
+        if HH:
+            return accumulated_data
+        else:
+            return None        
+
+    def run(self):
+        self.autoconfig()
+        data = self.measurement_loop()
+
+    def save(self, HH_data):
+        reps = self.adwin_var('adwin_lt1', 'completed_reps')
+        self.save_adwin_data('adwin_lt1', 'data', 
+            ['CR_preselect', 'CR_probe', 'completed_reps', 'total_red_CR_counts', 
+                ('CR_hist_time_out', ADWINLT1_MAX_RED_HIST_CTS),
+                ('CR_hist_all', ADWINLT1_MAX_RED_HIST_CTS),
+                ('CR_hist_yellow_time_out', ADWINLT1_MAX_YELLOW_HIST_CTS),
+                ('CR_hist_yellow_all', ADWINLT1_MAX_YELLOW_HIST_CTS),
+                ('CR_after', reps),
+                ('statistics', ADWINLT1_MAX_STAT),
+                ('SSRO1_results', reps),
+                ('SSRO2_results', reps),
+                ('PLU_Bell_states', reps),
+                ('CR_before', reps) ])
+
+        reps = self.adwin_var('adwin_lt1', 'completed_reps')
+        self.save_adwin_data('adwin_lt2', 'data', ['completed_reps', 'total_CR_counts',
+                ('CR_before', reps),
+                ('CR_after', reps),
+                ('CR_hist', ADWINLT2_MAX_CR_HIST_CTS),
+                ('SSRO_lt2_data', reps),
+                ('statistics', ADWINLT2_MAX_STAT)])
+
+        params_lt1 = self.params_lt1.to_dict()
+        lt1_grp = h5.DataGroup("lt1_params", self.h5data, 
+                base=self.h5base)
+        for k in params_lt1:
+            lt1_grp.group.attrs[k] = self.params_lt1[k]
+            self.h5data.flush()
+
+        params_lt2 = self.params_lt2.to_dict()
+        lt2_grp = h5.DataGroup("lt2_params", self.h5data, 
+                base=self.h5base)
+        for k in params_lt2:
+            lt2_grp.group.attrs[k] = self.params_lt2[k]
+            self.h5data.flush()
+
+        self.h5data['HH_data'] = HH_data
+        self.h5data.flush()
+        self.save_params()
+        # self.save_instrument_settings_file()
 
 ### CONSTANTS AND FLAGS
 EXEC_FROM = 'lt2'
 USE_LT1 = True
-USE_LT2 = True # and (EXEC_FROM == 'lt2')
+USE_LT2 = True
 YELLOW = True
+HH = False
 DO_POLARIZE_N = True      # if False, no N-polarization sequence on LT1 will be used
 DO_SEQUENCES = True       # if False, we won't use the AWG at all
 DO_LDE_SEQUENCE = False   # if False, no LDE sequence (both setups) will be done
@@ -401,42 +458,32 @@ TeleportationMaster.adwins = {
         'ins' : qt.instruments['adwin_lt1'] if EXEC_FROM=='lt2' else qt.instruments['adwin'],
         'process' : 'teleportation',
     },
+    'adwin_lt2' : {
+        'ins' : qt.instruments['adwin'],
+        'process' : 'teleportation'
+    }
 }
 
-if EXEC_FROM == 'lt2':    
-    TeleportationMaster.adwins['adwin_lt2'] = {
-            'ins' : qt.instruments['adwin'],
-            'process' : 'teleportation'
-        }
+TeleportationMaster.adwin_dict = adwins_cfg.config
+TeleportationMaster.yellow_aom_lt1 = qt.instruments['YellowAOM_lt1']
+TeleportationMaster.green_aom_lt1 = qt.instruments['GreenAOM_lt1']
+TeleportationMaster.Ey_aom_lt1 = qt.instruments['MatisseAOM_lt1']
+TeleportationMaster.FT_aom_lt1 = qt.instruments['NewfocusAOM_lt1']
+TeleportationMaster.mwsrc_lt1 = qt.instruments['SMB100_lt1']
 
-if EXEC_FROM == 'lt2':
-    TeleportationMaster.adwin_dict = adwins_cfg.config
-    TeleportationMaster.yellow_aom_lt1 = qt.instruments['YellowAOM_lt1']
-    TeleportationMaster.green_aom_lt1 = qt.instruments['GreenAOM_lt1']
-    TeleportationMaster.Ey_aom_lt1 = qt.instruments['MatisseAOM_lt1']
-    TeleportationMaster.FT_aom_lt1 = qt.instruments['NewfocusAOM_lt1']
-    TeleportationMaster.mwsrc_lt1 = qt.instruments['SMB100_lt1']
-
-    if USE_LT2:
-        TeleportationMaster.green_aom_lt2 = qt.instruments['GreenAOM']
-        TeleportationMaster.Ey_aom_lt2 = qt.instruments['MatisseAOM']
-        TeleportationMaster.A_aom_lt2 = qt.instruments['NewfocusAOM']
-        TeleportationMaster.mwsrc_lt2 = qt.instruments['SMB100']
-        TeleportationMaster.awg_lt2 = qt.instruments['AWG']
-        TeleportationMaster.repump_aom_lt2 = TeleportationMaster.green_aom_lt2
-
-elif EXEC_FROM == 'lt1':
-    TeleportationMaster.adwin_dict = adwins_cfg.config
-    TeleportationMaster.yellow_aom_lt1 = qt.instruments['YellowAOM']
-    TeleportationMaster.green_aom_lt1 = qt.instruments['GreenAOM']
-    TeleportationMaster.Ey_aom_lt1 = qt.instruments['Velocity1AOM']
-    TeleportationMaster.FT_aom_lt1 = qt.instruments['Velocity2AOM']
-    TeleportationMaster.mwsrc_lt1 = qt.instruments['SMB100']
+TeleportationMaster.green_aom_lt2 = qt.instruments['GreenAOM']
+TeleportationMaster.Ey_aom_lt2 = qt.instruments['MatisseAOM']
+TeleportationMaster.A_aom_lt2 = qt.instruments['NewfocusAOM']
+TeleportationMaster.mwsrc_lt2 = qt.instruments['SMB100']
+TeleportationMaster.awg_lt2 = qt.instruments['AWG']
+TeleportationMaster.repump_aom_lt2 = TeleportationMaster.green_aom_lt2
 
 if YELLOW:
     TeleportationMaster.repump_aom_lt1 = TeleportationMaster.yellow_aom_lt1
 else:
     TeleportationMaster.repump_aom_lt1 = TeleportationMaster.green_aom_lt1
+
+TeleportationMaster.hharp = qt.instruments['HH_400']
 
 ### tool functions
 def setup_msmt(name): 
@@ -444,25 +491,20 @@ def setup_msmt(name):
     m.load_settings()
     return m
 
-def start_msmt(m, use_lt1=True, use_lt2=True):
+def start_msmt(m):
     m.update_definitions()
-    m.setup(use_lt1, use_lt2)
-    m.start(use_lt1, use_lt2)
-
-def finish_msmt(m, use_lt1=True, use_lt2=True):
-    m.stop(use_lt1, use_lt2)
-    m.save(use_lt1, use_lt2)
+    m.setup()
+    m.run()
 
 ### measurements
 def CR_checking_debug(name):
     m = setup_msmt('CR_check_lt1_only_'+name)    
 
-    m.params_lt1['max_CR_starts'] = 100000
+    m.params_lt1['max_CR_starts'] = -1
     m.params_lt1['teleportation_repetitions'] = -1
+    m.params['measurement_time'] = 10 # seconds; only affects msmt with HH.
 
-    start_msmt(m, use_lt2=USE_LT2)
-    finish_msmt(m, use_lt2=USE_LT2)
-
+    start_msmt(m)
 
 if __name__ == '__main__':
     CR_checking_debug('test')
