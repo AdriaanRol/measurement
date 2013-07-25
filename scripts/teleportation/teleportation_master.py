@@ -392,7 +392,7 @@ USE_LT1 = True
 USE_LT2 = True # and (EXEC_FROM == 'lt2')
 YELLOW = True
 DO_POLARIZE_N = True      # if False, no N-polarization sequence on LT1 will be used
-DO_SEQUENCES = False       # if False, we won't use the AWG at all
+DO_SEQUENCES = True       # if False, we won't use the AWG at all
 DO_LDE_SEQUENCE = False   # if False, no LDE sequence (both setups) will be done
        
 ### configure the hardware (statics)
