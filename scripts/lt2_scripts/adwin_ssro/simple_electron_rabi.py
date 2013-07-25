@@ -16,6 +16,7 @@ def erabi(name):
     m.params.from_dict(qt.cfgman['protocols']['AdwinSSRO'])
     m.params.from_dict(qt.cfgman['protocols']['sil15-default']['AdwinSSRO'])
     m.params.from_dict(qt.cfgman['protocols']['sil15-default']['AdwinSSRO-integrated'])
+    m.params.from_dict(qt.cfgman['samples']['sil15'])
        
     m.params.from_dict(qt.cfgman['protocols']['AdwinSSRO+espin'])
 
@@ -26,13 +27,12 @@ def erabi(name):
     
     m.params['mw_frq'] = 2.80e9
     m.params['MW_length_start'] = 0
-    m.params['MW_length_stop'] = 1000e-9
-    m.params['pts'] = 21
+    m.params['MW_length_stop'] = 2000e-9
+    m.params['pts'] = 51
     m.params['mw_power'] = 20
     m.params['repetitions'] = 500
     m.params['ssbmod_amplitude'] = 0.9
-    m.params['ssbmod_frequency'] = 30e6   #cfg['samples']['sil9']['ms-1_cntr_frq'] - \
-                                          #cfg['protocols']['sil9-default']['AdwinSSRO+MBI']['mw_frq']
+    m.params['ssbmod_frequency'] = m.params['ms-1_cntr_frq'] - m.params['mw_frq']
     m.params['MW_pulse_mod_risetime'] = 10e-9
       
     m.autoconfig()

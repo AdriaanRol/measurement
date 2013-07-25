@@ -89,6 +89,11 @@ params_lt2['Ey_RO_amplitude'] = 0
 params_lt2['A_RO_amplitude'] = 0
 params_lt2['repump_amplitude'] = 0 
 
+### pulses
+params_lt1['MW_pulse_mod_risetime'] = 10e-9
+
+params_lt2['MW_pulse_mod_risetime'] = 10e-9
+
 
 ### default process settings
 params['LDE_attempts_before_CR'] = 100 # FIXME
