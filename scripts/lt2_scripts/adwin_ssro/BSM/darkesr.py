@@ -24,13 +24,13 @@ def darkesr(name):
     m.params['repump_amplitude']=m.params['green_repump_amplitude'] 
 
     m.params['mw_frq'] = 2.8e9
-    m.params['ssbmod_frq_start'] = 23e6
-    m.params['ssbmod_frq_stop'] = 38e6
+    m.params['ssbmod_frq_start'] = 24e6
+    m.params['ssbmod_frq_stop'] = 33e6
     m.params['pts'] = 161
     m.params['mw_power'] = 20
     m.params['pulse_length'] = 2.5e-6
-    m.params['repetitions'] = 1000
-    m.params['ssbmod_amplitude'] = 0.02
+    m.params['repetitions'] = 2000
+    m.params['ssbmod_amplitude'] = 0.072
     m.params['MW_pulse_mod_risetime'] = 10e-9
     
     m.autoconfig()

@@ -39,7 +39,7 @@ class PulsarMeasurement(ssro.IntegratedSSRO):
                         awg_ready = True
                 except:
                     print 'waiting for awg: usually means awg is still busy and doesnt respond'
-                    print 'waiting', i, '/40'
+                    print 'waiting', i, '/ 40'
                     i=i+1
                 qt.msleep(0.5)
             if not awg_ready: 

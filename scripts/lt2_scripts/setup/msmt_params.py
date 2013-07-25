@@ -17,9 +17,9 @@ cfg['samples']['sil9']['N_0-1_splitting_ms-1']= 7.13433e6 ###copied from sil2 lt
 ### sil 15 ###
 branch='samples/sil15/'
 
-f_msm1_cntr = 2.826961e9
+f_msm1_cntr = 2.829113e9
 N_frq = 7.13429e6
-N_HF_frq = 2.19290e6
+N_HF_frq = 2.193e6
 
 cfg.set(branch+'ms-1_cntr_frq', f_msm1_cntr)
 cfg.set(branch+'N_0-1_splitting_ms-1', N_frq)
@@ -82,9 +82,9 @@ cfg.set(branch+'A_CR_amplitude', 20e-9)
 cfg.set(branch+'A_RO_amplitude' , 0)
 cfg.set(branch+'A_SP_amplitude', 20e-9)
 cfg.set(branch+'CR_duration' , 100)
-cfg.set(branch+'CR_preselect', 5)
-cfg.set(branch+'CR_probe', 2)
-cfg.set(branch+'CR_repump', 2)
+cfg.set(branch+'CR_preselect', 12)
+cfg.set(branch+'CR_probe', 12)
+cfg.set(branch+'CR_repump', 100)
 cfg.set(branch+'Ex_CR_amplitude', 20e-9)
 cfg.set(branch+'Ex_RO_amplitude', 20e-9)
 cfg.set(branch+'Ex_SP_amplitude', 0e-9)

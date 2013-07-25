@@ -69,7 +69,7 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
         After setting the measurement parameters, execute this function to
         update pulses, etc.
         """
-        # tseq.pulse_defs_lt2(self)
+        tseq.pulse_defs_lt2(self)
 
     def autoconfig(self, use_lt1=True, use_lt2=True):
         """
@@ -200,8 +200,40 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
             
             # self.awg_lt2.set_runmode('SEQ')
 
+    ### sequence stuff
+    def _lt2_LDE_element(self):
+        """
+        This element contains the LDE part for LT2, i.e., spin pumping and MW pulses
+        for the LT2 NV and the optical pi pulses as well as all the markers for HH and PLU.
+        """
+        e = element.Element('LDE_LT2', pulsar = qt.pulsar, global_time = True)
+
+        # TODO not yet implemented
+        e.append(pulse.cp(self.T_pulse, length=1e-6))
+
+        return e
+
     def lt2_sequence(self):     
         self.lt2_seq = pulsar.Sequence('TeleportationLT2')
+
+        LDE_element = self._lt2_LDE_element()
+
+        self.lt2_seq.append(name = 'LDE_LT2',
+            wfname = LDE_element.name,
+            trigger_wait = True,
+            jump_target = 'DD',
+            goto_target = 'LDE_LT2',
+            repetitions = self.params['LDE_attempts_before_CR'])
+
+        ### TODO -- we should introduce a 'capping' element (always the last) that gives the triggers
+        ### to the adwins (AWG lt1 is waiting automatically after the BSM, lt2 notifies Adwin lt2, who in turn
+        ###     notifies adwin lt1)
+        ### basic functionality for TPQI is capping after the LDE sequence
+        ### for N-polarization checking, need capping instead of LDE (we always need the trigger from AWG lt1 to lt2)
+
+        Im here to break the code!
+
+
 
     ### Start and program adwins; Process control
     def _auto_adwin_params(self, adwin):
@@ -378,8 +410,8 @@ def CR_checking_debug(name):
     m = setup_msmt('CR_check_lt1_only_'+name)
 
     m.params_lt1['use_yellow'] = YELLOW
-    m.params_lt1['do_N_polarization'] = 0
-    m.params_lt1['do_sequences'] = 0
+    m.params_lt1['do_N_polarization'] = 1
+    m.params_lt1['do_sequences'] = 1
 
     m.params_lt1['max_CR_starts'] = 10000
     m.params_lt1['teleportation_repetitions'] = -1

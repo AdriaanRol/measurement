@@ -93,7 +93,6 @@ class TeleportationSlave:
         """
         This element contains the LDE part for LT1, i.e., spin pumping and MW pulses
         for the LT1 NV in the real experiment.
-        Also, this element contains the start trigger for the LT2 AWG.
         """
         e = element.Element('LDE_LT1', pulsar = qt.pulsar, global_time = True)
 

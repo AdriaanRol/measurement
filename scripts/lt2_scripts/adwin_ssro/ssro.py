@@ -11,10 +11,10 @@ import msvcrt
 from measurement.lib.measurement2.adwin_ssro import ssro
 
 def calibration(name,yellow=False):
-
     m = ssro.AdwinSSRO('SSROCalibration_'+name)
+
     m.params.from_dict(qt.cfgman['protocols']['AdwinSSRO'])
-    m.params.from_dict(qt.cfgman['protocols']['sil9-default']['AdwinSSRO'])
+    m.params.from_dict(qt.cfgman['protocols']['sil15-default']['AdwinSSRO'])
         
     # parameters
     m.params['SSRO_repetitions'] = 5000
@@ -25,7 +25,7 @@ def calibration(name,yellow=False):
     # ms = 0 calibration
     m.params['A_SP_amplitude'] = 20e-9
     m.params['Ex_SP_amplitude'] = 0.
-    m.params['Ex_RO_amplitude'] = 10e-9
+    m.params['Ex_RO_amplitude'] = 20e-9
     
     m.run()
     m.save('ms0')
@@ -33,26 +33,71 @@ def calibration(name,yellow=False):
     # ms = 1 calibration
     m.params['A_SP_amplitude'] = 0
     m.params['Ex_SP_amplitude'] = 20e-9
-    m.params['Ex_RO_amplitude'] = 15e-9
+    m.params['Ex_RO_amplitude'] = 20e-9
 
     m.run()
     m.save('ms1')
     m.finish()
     
+def RO_optimal_power(name, yellow=False):
+    m = ssro.AdwinSSRO('RO_saturation_power_'+name)
+    
+    m.params.from_dict(qt.cfgman['protocols']['AdwinSSRO'])
+    m.params.from_dict(qt.cfgman['protocols']['sil15-default']['AdwinSSRO'])
+    
+    #parameters
+    m.params['SSRO_repetitions'] = 5000
+    m.params['pts'] = 5
+    pts = m.params['pts']
+
+    #repump settings
+    _set_repump_settings(m,yellow)
+    
+    m.params['A_SP_amplitude'] = 20e-9
+    m.params['Ex_SP_amplitude'] = 0.
+    m.params['Ex_RO_amplitudes'] = np.arange(pts)*2e-9 + 2e-9
+
+    for p in m.params['Ex_RO_amplitudes']:
+        if (msvcrt.kbhit() and (msvcrt.getch() == 'c')): break
+        print 'ms0 1/{}: P = {} '.format(pts, p)
+        m.params['Ex_RO_amplitude'] = p
+        m.run()
+        m.save('ms0_P_%dnW' % (p*1e9))
+        
+    m.params['A_SP_amplitude'] = 0e-9
+    m.params['Ex_SP_amplitude'] = 20e-9
+    m.params['Ex_RO_amplitudes'] = np.arange(pts)*2e-9 + 2e-9
+
+    for p in m.params['Ex_RO_amplitudes']:
+        if (msvcrt.kbhit() and (msvcrt.getch() == 'c')): break
+        print 'ms1 1/{}: P = {} '.format(pts, p)
+        m.params['Ex_RO_amplitude'] = p
+        m.run()
+        m.save('ms1_P_%dnW' % (p*1e9))
+   
+
+    m.finish()
+
 def RO_saturation_power(name, yellow=False):
     m = ssro.AdwinSSRO('RO_saturation_power_'+name)
     
     m.params.from_dict(qt.cfgman['protocols']['AdwinSSRO'])
-    m.params.from_dict(qt.cfgman['protocols']['sil9-default']['AdwinSSRO'])
+    m.params.from_dict(qt.cfgman['protocols']['sil15-default']['AdwinSSRO'])
     
-    #repump settings
-    _set_repump_settings(m,yellow)
-    
-    m.params['Ex_SP_amplitude'] = 0.
-    m.params['Ex_RO_amplitudes'] = np.arange(20)*2e-9 + 2e-9
+    m.params['SSRO_repetitions'] = 5000
+    m.params['pts'] = 2
+    pts = m.params['pts']
 
-    for p in m.params['Ex_RO_amplitudes']:
+    #repump settings
+    _set_repump_settings(m,yellow) 
+
+    m.params['A_SP_amplitude'] = 20e-9
+    m.params['Ex_SP_amplitude'] = 0.
+    m.params['Ex_RO_amplitudes'] = np.arange(pts)*3e-9 + 2e-9
+
+    for i,p in enumerate(m.params['Ex_RO_amplitudes']):
         if (msvcrt.kbhit() and (msvcrt.getch() == 'c')): break
+        print '{}/{}: P = {} '.format(i+1, pts, p) 
         m.params['Ex_RO_amplitude'] = p
         m.run()
         m.save('P_%dnW' % (p*1e9))
@@ -69,7 +114,7 @@ def SP_RO_saturation_power(name, yellow=False):
     _set_repump_settings(m,yellow)
     
     m.params['Ex_SP_amplitude'] = 0.
-    m.params['Ex_RO_amplitudes'] = np.arange(20)*2e-9 + 2e-9
+    m.params['Ex_RO_amplitudes'] = np.arange(20)*4e-9 + 2e-9
 
     for p in m.params['Ex_RO_amplitudes']:
         if (msvcrt.kbhit() and (msvcrt.getch() == 'c')): break
@@ -93,3 +138,6 @@ def _set_repump_settings(m,yellow):
         ssro.AdwinSSRO.repump_aom = qt.instruments['GreenAOM']
         m.params['repump_duration']=m.params['green_repump_duration']
         m.params['repump_amplitude']=m.params['green_repump_amplitude']
+
+if __name__ == '__main__':
+    RO_saturation_power('sil15')
