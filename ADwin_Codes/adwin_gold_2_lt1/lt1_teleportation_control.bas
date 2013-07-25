@@ -418,11 +418,15 @@ EVENT:
       if (timer = 0) then
         
         if (do_sequences > 0) then
-          DIGOUT(AWG_lt1_trigger_do_channel, 1) ' trigger the AWG to start the waiting sequence (decide element)
-          CPU_SLEEP(9)
-          DIGOUT(AWG_lt1_trigger_do_channel, 0)
+          if(wait_time > 0) then
+            timer = -1
+          else
+            DIGOUT(AWG_lt1_trigger_do_channel, 1) ' trigger the AWG to start the waiting sequence (decide element)
+            CPU_SLEEP(9)
+            DIGOUT(AWG_lt1_trigger_do_channel, 0)
+          endif
         endif
-                
+                        
         INC(CR_starts) ' number of times we started the CR decision mode
         par_66 = CR_starts
       
@@ -599,6 +603,7 @@ EVENT:
           mode = 0
           timer = -1
           remote_mode = 0
+          wait_time = 5
         endif
         
       endif
