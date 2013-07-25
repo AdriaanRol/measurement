@@ -24,7 +24,7 @@
 
 #INCLUDE ADwinPro_All.inc
 #INCLUDE configuration.inc
-#Include Math.inc
+' #Include Math.inc
 
 #DEFINE max_repetitions   20000
 #DEFINE max_CR_hist_bins    100
@@ -46,6 +46,7 @@ DIM ADwin_lt1_di_channel AS LONG       'this is in channel of ADwin Pro, from Ad
 DIM ADwin_lt1_do_channel AS LONG              'this is out channel of ADwin Pro, to Adwin lt1
 DIM ADwin_lt1_di_channel_in_bit as LONG
 DIM AWG_lt2_di_channel AS LONG
+DIM AWG_lt2_di_channel_in_bit AS LONG
 DIM repump_duration AS LONG
 DIM CR_duration AS LONG
 DIM teleportation_repetitions AS LONG
@@ -72,12 +73,13 @@ DIM current_ssro_counts AS LONG
 DIM cr_after_teleportation AS LONG
 DIM time_start, time_stop AS LONG
 
-DIM ADwin_switched_to_high AS LONG
+'DIM ADwin_switched_to_high AS LONG
 DIM ADwin_in_is_high AS LONG
 DIM ADwin_in_was_high AS LONG
-DIM AWG_switched_to_high AS LONG
+'DIM AWG_switched_to_high AS LONG
 DIM AWG_in_is_high AS LONG
 DIM AWG_in_was_high AS LONG
+DIM Alternating AS LONG
 
 DIM current_cr_threshold AS LONG
 DIM CR_probe AS LONG
@@ -128,6 +130,7 @@ INIT:
   
   counter_pattern = 2 ^ (counter_channel-1)
   ADwin_lt1_di_channel_in_bit = 2^ADwin_lt1_di_channel
+  AWG_lt2_di_channel_in_bit = 2^AWG_lt2_di_channel
   
   total_repump_counts     = 0
   tele_event_id           = 0
@@ -138,7 +141,10 @@ INIT:
   
   ADwin_in_was_high      = 0
   ADwin_in_is_high       = 0
-  ADwin_switched_to_high = 0
+  AWG_in_was_high      = 0
+  AWG_in_is_high       = 0
+  Alternating           = 0
+  'ADwin_switched_to_high = 0
 
   P2_DAC(DAC_MODULE, repump_laser_DAC_channel, 3277*repump_off_voltage+32768) ' turn off green
   P2_DAC(DAC_MODULE, Ex_laser_DAC_channel, 3277*Ex_off_voltage+32768) ' turn off Ex laser
@@ -176,40 +182,10 @@ EVENT:
   CR_preselect                 = PAR_75
   CR_probe                     = PAR_68
   CR_repump                    = PAR_69
-
-  ADwin_in_was_high = ADwin_in_is_high    'copies information from last round  
-  if (((P2_DIGIN_LONG(DIO_MODULE)) AND (ADwin_lt1_di_channel_in_bit)) > 0) then
-    ADwin_in_is_high = 1
-  else
-    ADwin_in_is_high = 0
-  endif  
-  
-  IF ((ADwin_in_was_high = 0) AND (ADwin_in_is_high > 0)) THEN
-    ADwin_switched_to_high = 1
-  ELSE
-    ADwin_switched_to_high = 0
-  ENDIF
-  
-  par_80 = ADwin_in_is_high
-  par_79 = ADwin_switched_to_high
-  par_78 = P2_DIGIN_LONG(DIO_MODULE)
   
   par_64 = mode
   par_65 = timer
-  
-  AWG_in_was_high = AWG_in_is_high    'copies information from last round
-  IF (((P2_DIGIN_LONG(DIO_MODULE)) AND (AWG_lt2_di_channel)) > 0) THEN
-    AWG_in_is_high = 1
-  ELSE
-    AWG_in_is_high = 0
-  ENDIF
-      
-  IF ((AWG_in_was_high = 0) AND (AWG_in_is_high > 0)) THEN  'adwin switched to high during last round.
-    AWG_switched_to_high = 1
-  ELSE
-    AWG_switched_to_high = 0
-  ENDIF    
-  
+   
   if (timer = 0) then
     INC(DATA_26[mode+1]) 'gather statistics on how often entered this mode.
   endif
@@ -284,25 +260,36 @@ EVENT:
       ENDIF
      
     case 2      'CR ok, waiting
+      
+      IF (Alternating = 0) THEN 
         
-      IF (ADwin_switched_to_high > 0) THEN  'Adwin triggers to start CR
-        P2_DIGOUT(DIO_MODULE, ADwin_lt1_do_channel, 0) ' stop triggering CR done
-        INC(par_74)     'Triggers to start CR
-        mode = 1
-        timer = -1
-        
+        'checking all the time if adwin switched to high during last round. 
+        Alternating = 1     
+        ADwin_in_was_high = ADwin_in_is_high    'copies information from last round
+        ADwin_in_is_high = ((P2_DIGIN_LONG(DIO_MODULE)) AND (ADwin_lt1_di_channel_in_bit))
+                
+        IF ((ADwin_in_was_high = 0) AND (ADwin_in_is_high > 0)) THEN 'Adwin triggers to start CR
+          P2_DIGOUT(DIO_MODULE, ADwin_lt1_do_channel, 0) ' stop triggering CR done
+          INC(par_74)     'Triggers to start CR
+          mode = 1
+          timer = -1
+        ENDIF
+                        
       ELSE
         
+        Alternating = 0    
+        AWG_in_was_high = AWG_in_is_high    'copies information from last round
+        AWG_in_is_high = ((P2_DIGIN_LONG(DIO_MODULE)) AND (AWG_lt2_di_channel_in_bit))
+                 
         ' TODO: we need a flag whether to do SSRO (not needed for TPQI, for instance)
-        IF (AWG_switched_to_high > 0) THEN 'AWG triggers to start SSRO
+        IF ((AWG_in_was_high = 0) AND (AWG_in_is_high > 0)) THEN  'AWG triggers to start SSRO
           P2_DIGOUT(DIO_MODULE, ADwin_lt1_do_channel, 0)
           INC(par_78) 'Triggers to start SSRO
           mode = 3
-          timer = -1
+          timer = -1                              
         ENDIF
-      
-      ENDIF
-      
+        
+      ENDIF              
                  
     case 3
       
@@ -332,15 +319,17 @@ EVENT:
       
     case 4
                  
-      IF (ADwin_switched_to_high > 0) THEN  'Adwin triggers to start CR
+      'checking all the time if adwin switched to high during last round.       
+      ADwin_in_was_high = ADwin_in_is_high    'copies information from last round       
+      ADwin_in_is_high = ((P2_DIGIN_LONG(DIO_MODULE)) AND (ADwin_lt1_di_channel_in_bit))
+
+      IF ((ADwin_in_was_high = 0) AND (ADwin_in_is_high > 0)) THEN 'Adwin triggers to start CR
         P2_DIGOUT( DIO_MODULE, ADwin_lt1_do_channel, 0)
         INC(par_74)     'Triggers to start CR
         mode = 0
         timer = -1
-      ENDIF      
-        
-        
-      '      
+      ENDIF
+          
       '      IF (timer = 0) THEN
       '        P2_CNT_CLEAR(CTR_MODULE,  counter_pattern)    'clear counter
       '        P2_CNT_ENABLE(CTR_MODULE, counter_pattern)    'turn on counter

@@ -181,11 +181,12 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
             self.Ey_aom_lt1.set_power(0.)
             self.FT_aom_lt1.set_power(0.)
 
-            self.mwsrc_lt1.set_iq('on')
-            self.mwsrc_lt1.set_pulm('on')
-            self.mwsrc_lt1.set_frequency(self.params_lt1['mw_frq'])
-            self.mwsrc_lt1.set_power(self.params_lt1['mw_power'])
-            self.mwsrc_lt1.set_status('on' if DO_SEQUENCES else 'off')
+            if DO_SEQUENCES:
+                self.mwsrc_lt1.set_iq('on')
+                self.mwsrc_lt1.set_pulm('on')
+                self.mwsrc_lt1.set_frequency(self.params_lt1['mw_frq'])
+                self.mwsrc_lt1.set_power(self.params_lt1['mw_power'])
+                self.mwsrc_lt1.set_status('on' if DO_SEQUENCES else 'off')
 
         if use_lt2:
             self.green_aom_lt2.set_power(0.)
@@ -197,14 +198,13 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
             self.green_aom_lt2.set_power(0.)
             self.Ey_aom_lt2.set_power(0.)
             self.A_aom_lt2.set_power(0.)
-
-            self.mwsrc_lt2.set_iq('on')
-            self.mwsrc_lt2.set_pulm('on')
-            self.mwsrc_lt2.set_frequency(self.params_lt2['mw_frq'])
-            self.mwsrc_lt2.set_power(self.params_lt2['mw_power'])
-            self.mwsrc_lt2.set_status('on' if DO_SEQUENCES else 'off')
             
             if DO_SEQUENCES:
+                self.mwsrc_lt2.set_iq('on')
+                self.mwsrc_lt2.set_pulm('on')
+                self.mwsrc_lt2.set_frequency(self.params_lt2['mw_frq'])
+                self.mwsrc_lt2.set_power(self.params_lt2['mw_power'])
+                self.mwsrc_lt2.set_status('on' if DO_SEQUENCES else 'off')
                 self.lt2_sequence()
 
     ### sequence stuff
@@ -392,7 +392,7 @@ USE_LT1 = True
 USE_LT2 = True # and (EXEC_FROM == 'lt2')
 YELLOW = True
 DO_POLARIZE_N = True      # if False, no N-polarization sequence on LT1 will be used
-DO_SEQUENCES = True       # if False, we won't use the AWG at all
+DO_SEQUENCES = False       # if False, we won't use the AWG at all
 DO_LDE_SEQUENCE = False   # if False, no LDE sequence (both setups) will be done
        
 ### configure the hardware (statics)
@@ -466,6 +466,4 @@ def CR_checking_debug(name):
 
 if __name__ == '__main__':
     CR_checking_debug('test')
-
-
 

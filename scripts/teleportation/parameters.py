@@ -87,11 +87,15 @@ params_lt2['Ey_SP_amplitude'] = 0
 params_lt2['A_SP_amplitude'] = 0             
 params_lt2['Ey_RO_amplitude'] = 0
 params_lt2['A_RO_amplitude'] = 0
-params_lt2['repump_amplitude'] = 0 
+params_lt2['repump_amplitude'] = 0
 
-### pulses
+### pulses and MW stuff
+params_lt1['mw_frq'] = 2.8e9
+params_lt1['mw_power'] = 20
 params_lt1['MW_pulse_mod_risetime'] = 10e-9
 
+params_lt2['mw_frq'] = 2.8e9
+params_lt2['mw_power'] = 20
 params_lt2['MW_pulse_mod_risetime'] = 10e-9
 
 
