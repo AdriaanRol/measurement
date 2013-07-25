@@ -21,7 +21,7 @@ def pulse_defs_lt2(msmt):
 
     ### synchronizing, etc
     msmt.adwin_lt2_trigger_pulse = pulse.SquarePulse(channel = 'adwin_sync',
-        length = 10e-6, amplitude = 2)
+        length = 5e-6, amplitude = 2)
 
     return True
 
@@ -30,6 +30,10 @@ def pulse_defs_lt1(msmt):
     # a waiting pulse on the MW pulsemod channel
     msmt.T_pulse = pulse.SquarePulse(channel='MW_pulsemod',
         length = 50e-9, amplitude = 0)
+
+    ### synchronizing, etc
+    msmt.adwin_lt1_trigger_pulse = pulse.SquarePulse(channel = 'adwin_sync',
+        length = 5e-6, amplitude = 2)
 
     msmt.AWG_LT2_trigger_pulse = pulse.SquarePulse(channel='AWG_LT2_trigger',
         length = 10e-9, amplitude = 2)

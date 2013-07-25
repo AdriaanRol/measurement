@@ -101,6 +101,14 @@ class TeleportationSlave:
 
         return e
 
+    def _lt1_adwin_LT1_trigger_element(self):
+        """
+        sends a trigger to Adwin LT1 to notify we go back to CR.
+        """
+        e = element.Element('adwin_LT1_trigger', pulsar = qt.pulsar)
+        e.append(self.adwin_lt1_trigger_pulse)
+        return e
+
     def _lt1_BSM_element(self):
         """
         this element contains the BSM element. (Easiest way: only one element, then there's less
@@ -134,6 +142,7 @@ class TeleportationSlave:
         LDE_element = self._lt1_LDE_element()
         BSM_element = self._lt1_BSM_element()
         dummy_element = self._lt1_dummy_element()
+        adwin_lt1_trigger_element = self._lt1_adwin_LT1_trigger_element()
 
         self.lt1_seq.append(name = 'N_pol_decision',
             wfname = N_pol_decision_element.name,
@@ -146,27 +155,33 @@ class TeleportationSlave:
                 wfname = N_pol_element.name,
                 trigger_wait = True,
                 repetitions = self.params_lt1['N_pol_element_repetitions'])
+            self.lt1_seq.append(name = 'N_polarization_done',
+                wfname = adwin_lt1_trigger_element.name)
 
         self.lt1_seq.append(name = 'start_LDE',
             trigger_wait = True,
             wfname = start_LDE_element.name)
 
         self.lt1_seq.append(name = 'LDE_LT1',
-            wfname = (LDE_element.name if DO_LDE_SEQUENCE else dummy_element.name),
-            # jump_target = 'BSM', 
-            goto_target = 'N_pol_decision',
+            wfname = (LDE_element.name if tm.DO_LDE_SEQUENCE else dummy_element.name),
+            # jump_target = 'BSM',
             repetitions = self.params['LDE_attempts_before_CR'])
+
+        self.lt1_seq.append(name = 'LDE_timeout',
+            wfname = adwin_lt1_trigger_element.name,
+            goto_target = 'N_pol_decision')
 
 
         elements = []
         elements.append(N_pol_decision_element)
-        elements.append(N_pol_element)
+        elements.append(adwin_lt1_trigger_element)
         elements.append(start_LDE_element)
-        #elements.append(BSM_element)
         elements.append(dummy_element)
-        elements.append(finished_element)
-
+        
         if tm.DO_POLARIZE_N:
+            elements.append(N_pol_element)
+        
+        if tm.DO_LDE_SEQUENCE:
             elements.append(LDE_element)
 
         qt.pulsar.upload(*elements)
