@@ -457,7 +457,7 @@ def finish_msmt(m, use_lt1=True, use_lt2=True):
 def CR_checking_debug(name):
     m = setup_msmt('CR_check_lt1_only_'+name)    
 
-    m.params_lt1['max_CR_starts'] = 10000
+    m.params_lt1['max_CR_starts'] = 100000
     m.params_lt1['teleportation_repetitions'] = -1
 
     start_msmt(m, use_lt2=USE_LT2)
