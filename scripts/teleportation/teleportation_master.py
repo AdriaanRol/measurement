@@ -63,6 +63,12 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
         
         for k in tparams.params_lt2.parameters:
             self.params_lt2[k] = tparams.params_lt2[k]
+
+
+        self.params_lt1['use_yellow'] = YELLOW
+        self.params_lt1['do_N_polarization'] = 1 if DO_POLARIZE_N else 0
+        self.params_lt1['do_sequences'] = 1 if DO_SEQUENCES else 0
+        self.params_lt1['do_LDE_sequence'] = 1 if DO_LDE_SEQUENCE else 0
     
     def update_definitions(self):
         """
@@ -175,11 +181,11 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
             self.Ey_aom_lt1.set_power(0.)
             self.FT_aom_lt1.set_power(0.)
 
-            #self.mwsrc_lt1.set_iq('on')                # NOT USING MW YET
-            #self.mwsrc_lt1.set_pulm('on')
-            #self.mwsrc_lt1.set_frequency(self.params_lt1['mw_frq'])
-            #self.mwsrc_lt1.set_power(self.params_lt1['mw_power'])
-            #self.mwsrc_lt1.set_status('on')
+            self.mwsrc_lt1.set_iq('on')
+            self.mwsrc_lt1.set_pulm('on')
+            self.mwsrc_lt1.set_frequency(self.params_lt1['mw_frq'])
+            self.mwsrc_lt1.set_power(self.params_lt1['mw_power'])
+            self.mwsrc_lt1.set_status('on' if DO_SEQUENCES else 'off')
 
         if use_lt2:
             self.green_aom_lt2.set_power(0.)
@@ -192,15 +198,33 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
             self.Ey_aom_lt2.set_power(0.)
             self.A_aom_lt2.set_power(0.)
 
-            #self.mwsrc_lt2.set_iq('on')                 # NOT USING MW YET
-            #self.mwsrc_lt2.set_pulm('on')
-            #self.mwsrc_lt2.set_frequency(self.params_lt2['mw_frq'])
-            #self.mwsrc_lt2.set_power(self.params_lt2['mw_power'])
-            #self.mwsrc_lt2.set_status('on')
+            self.mwsrc_lt2.set_iq('on')
+            self.mwsrc_lt2.set_pulm('on')
+            self.mwsrc_lt2.set_frequency(self.params_lt2['mw_frq'])
+            self.mwsrc_lt2.set_power(self.params_lt2['mw_power'])
+            self.mwsrc_lt2.set_status('on' if DO_SEQUENCES else 'off')
             
-            # self.awg_lt2.set_runmode('SEQ')
+            if DO_SEQUENCES:
+                self.lt2_sequence()
 
     ### sequence stuff
+    def _lt2_sequence_finished_element(self):
+        """
+        last element of a two-setup sequence. Sends a trigger to ADwin LT2.
+        """
+        e = element.Element('LT2_finished', pulsar = qt.pulsar)
+        e.append(self.adwin_lt2_trigger_pulse)
+        return e
+
+    def _lt2_dummy_element(self):
+        """
+        A 1us empty element we can use to replace 'real' elements for certain modes.
+        """
+        e = element.Element('Dummy', pulsar = qt.pulsar)
+        e.append(pulse.cp(self.T_pulse, length=1e-6))
+        return e
+
+
     def _lt2_LDE_element(self):
         """
         This element contains the LDE part for LT2, i.e., spin pumping and MW pulses
@@ -216,23 +240,47 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
     def lt2_sequence(self):     
         self.lt2_seq = pulsar.Sequence('TeleportationLT2')
 
+        dummy_element = self._lt2_dummy_element()
         LDE_element = self._lt2_LDE_element()
+        finished_element = self._lt2_sequence_finished_element()
 
         self.lt2_seq.append(name = 'LDE_LT2',
-            wfname = LDE_element.name,
+            wfname = (LDE_element.name if DO_LDE_SEQUENCE else dummy_element.name),
             trigger_wait = True,
-            jump_target = 'DD',
+            # jump_target = 'DD', TODO: not implemented yet
             goto_target = 'LDE_LT2',
             repetitions = self.params['LDE_attempts_before_CR'])
 
-        ### TODO -- we should introduce a 'capping' element (always the last) that gives the triggers
-        ### to the adwins (AWG lt1 is waiting automatically after the BSM, lt2 notifies Adwin lt2, who in turn
-        ###     notifies adwin lt1)
-        ### basic functionality for TPQI is capping after the LDE sequence
-        ### for N-polarization checking, need capping instead of LDE (we always need the trigger from AWG lt1 to lt2)
+        # self.lt2_seq.append(name = 'LT2_finished',
+        #     wfname = finished_element.name,
+        #     trigger_wait = False,
+        #     goto_target = 'LDE_LT2')
 
-        Im here to break the code!
+        elements = []
+        elements.append(dummy_element)
+        elements.append(finished_element)
 
+        if DO_LDE_SEQUENCE:
+            elements.append(LDE_element)
+
+        qt.pulsar.upload(*elements)
+        qt.pulsar.program_sequence(self.lt2_seq)
+        self.awg_lt2.set_runmode('SEQ')
+        self.awg_lt2.start()
+
+        i=0
+        awg_ready = False
+        while not awg_ready and i<40:
+            try:
+                if self.awg_lt2.get_state() == 'Waiting for trigger':
+                    awg_ready = True
+            except:
+                print 'waiting for awg: usually means awg is still busy and doesnt respond'
+                print 'waiting', i, '/40'
+                i=i+1
+            qt.msleep(0.5)
+        if not awg_ready: 
+            raise Exception('AWG not ready')
 
 
     ### Start and program adwins; Process control
@@ -343,9 +391,9 @@ EXEC_FROM = 'lt2'
 USE_LT1 = True
 USE_LT2 = True # and (EXEC_FROM == 'lt2')
 YELLOW = True
-DO_POLARIZE_N = True
-DO_SEQUENCES = True
-
+DO_POLARIZE_N = True      # if False, no N-polarization sequence on LT1 will be used
+DO_SEQUENCES = True       # if False, we won't use the AWG at all
+DO_LDE_SEQUENCE = False   # if False, no LDE sequence (both setups) will be done
        
 ### configure the hardware (statics)
 TeleportationMaster.adwins = {
@@ -407,11 +455,7 @@ def finish_msmt(m, use_lt1=True, use_lt2=True):
 
 ### measurements
 def CR_checking_debug(name):
-    m = setup_msmt('CR_check_lt1_only_'+name)
-
-    m.params_lt1['use_yellow'] = YELLOW
-    m.params_lt1['do_N_polarization'] = 1
-    m.params_lt1['do_sequences'] = 1
+    m = setup_msmt('CR_check_lt1_only_'+name)    
 
     m.params_lt1['max_CR_starts'] = 10000
     m.params_lt1['teleportation_repetitions'] = -1

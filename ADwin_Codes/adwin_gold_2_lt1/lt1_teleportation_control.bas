@@ -57,6 +57,7 @@ DIM DATA_25[max_repetitions] AS LONG      AT EM_LOCAL 'PLU Bell states
 DIM DATA_26[max_repetitions] AS LONG      AT EM_LOCAL 'BSM SSRO2 (nitrogen) results
 DIM DATA_27[max_repetitions] AS LONG      AT EM_LOCAL    'CR check counts before teleportation event
 DIM DATA_28[max_statistics] AS LONG       AT PM_LOCAL    'statistics on entering modes
+DIM DATA_29[max_repetitions] AS LONG      AT EM_LOCAL    ' CR timer before LDE element of teleportation event
 
 ' general variables
 DIM i               AS LONG ' counter for array initalization
@@ -64,6 +65,7 @@ DIM mode            AS INTEGER
 DIM remote_mode     AS INTEGER
 DIM timer           AS LONG
 DIM CR_timer        AS LONG
+DIM wait_time       AS LONG
 
 ' settings for CR checks and repumping
 DIM counter AS LONG                      'select internal ADwin counter 1 - 4 for conditional readout (PSB lt1)
@@ -140,6 +142,11 @@ DIM ADwin_in_is_high AS LONG
 DIM ADwin_in_was_high AS LONG
 DIM ADwin_switched_to_high AS LONG
 
+' for the N polarization on LT1, AWG needs to tell us it's done
+DIM AWG_LT1_in_is_high AS LONG
+DIM AWG_LT1_in_was_high AS LONG
+DIM AWG_LT1_switched_to_high AS LONG
+
 ' Teleportation
 DIM tele_event_id AS LONG 
 
@@ -161,12 +168,6 @@ DIM DIO_register AS LONG
 ' debug
 DIM timervalue1 AS LONG
 DIM timervalue2 AS LONG
-
-'DIM debug_mode        AS LONG
-'DIM debug_CR_only     AS LONG    'CR checking only
-'DIM debug_eSSRO_only  AS LONG    'CR checking, AWG sequence ('LDE'), SSRO1
-'DIM debug_NSSRO_only  AS LONG    'CR checking, N pol, AWG sequence ('LDE', incl CNOT), SSRO2. = TPQI debug.  
-'DIM debug_eNSSRO_only AS LONG    'CR checking, N pol, AWG seq, SSRO1, CNOT, SSRO2
 
 DIM A AS LONG
 
@@ -201,6 +202,7 @@ INIT:
     DATA_25[i] = 0    'PLU Bell state
     DATA_26[i] = 0    'SSRO2 results
     DATA_27[i] = 0    'CR check counts before event
+    DATA_29[i] = 0    'CR timer before LDE element of teleportation event
   next i
     
   for i=1 to max_statistics
@@ -272,6 +274,9 @@ INIT:
   ADwin_in_was_high             = 0
   ADwin_switched_to_high        = 0
   CR_timer                      = 0
+  AWG_LT1_in_is_high            = 0
+  AWG_LT1_in_was_high           = 0
+  AWG_LT1_switched_to_high      = 0
     
   ' prepare hardware
   par_60 = 0                      'debug par used for measuring timer
@@ -297,8 +302,8 @@ INIT:
   par_80 = 0                      ' cumulative counts during RO1 (LT1)
   
   ADwin_LT2_di_channel_in_bit = 2^ADwin_LT2_di_channel 
-    
-  '  AWG_LT1_di_channel_in_bit = 2^AWG_LT1_di_channel
+  AWG_LT1_di_channel_in_bit = 2^AWG_LT1_di_channel
+  
   '  PLU_di_channel_in_bit = 2^PLU_di_channel
   '  AWG_lt2_address_all_in_bit = 2^(AWG_lt2_address0_do_channel)+ 2^(AWG_lt2_address1_do_channel)+ 2^(AWG_lt2_address2_do_channel)+2^(AWG_lt2_address3_do_channel)
   '  
@@ -351,9 +356,7 @@ EVENT:
   par_65 = timer
   par_62 = remote_mode
       
-  ' TODO: make this an option that can be accessed from outside
   ' If only one setup is used, remote_mode is set to 2 => always ready.
-
   if (do_remote = 0) then
     remote_mode = 2
   endif
@@ -426,7 +429,7 @@ EVENT:
       else
           
         IF (CR_timer < 1) THEN
-          mode = 2 
+          mode = 2
           timer = -1
           CR_timer = time_before_forced_CR
         ELSE
@@ -531,7 +534,7 @@ EVENT:
             if ((do_N_polarization = 0) or (do_sequences = 0)) then
               mode = 4
             else
-              mode = 3              
+              mode = 3
             endif
             
             current_cr_threshold = cr_threshold_probe
@@ -541,6 +544,24 @@ EVENT:
         ENDIF
       
       ENDIF
+      
+    case 3 ' N polarization
+      
+      if (timer = 0) then
+        DIGOUT(AWG_lt1_trigger_do_channel, 1) ' trigger the AWG to start the waiting sequence (decide element)
+        CPU_SLEEP(9)
+        DIGOUT(AWG_lt1_trigger_do_channel, 0)
+      else
+      
+        AWG_LT1_in_was_high = AWG_LT1_in_is_high
+        AWG_LT1_in_is_high = DIGIN(AWG_LT1_di_channel)
+             
+        IF ((AWG_LT1_in_was_high = 0) AND (AWG_LT1_in_is_high > 0)) THEN
+          mode = 4
+          timer = -1
+        endif
+        
+      endif      
          
     case 4 'local CR OK, wait for remote
       
@@ -551,9 +572,37 @@ EVENT:
           remote_mode = 0
         else
           mode = 5
+          wait_time = 5 ' we need to make sure that the AWG is receptive for triggering now!
+          DATA_29[tele_event_id + 1] = CR_timer     
         endif
         timer = -1
-      ENDIF
+      ENDIF      
+    
+    case 5
+      
+      if (timer = 0) then
+        
+        if (wait_time > 0) then
+          timer = -1
+        else
+          DIGOUT(AWG_lt1_trigger_do_channel, 1) ' trigger the AWG to start LDE
+          CPU_SLEEP(9)
+          DIGOUT(AWG_lt1_trigger_do_channel, 0)
+        endif
+        
+      else
+        
+        AWG_LT1_in_was_high = AWG_LT1_in_is_high
+        AWG_LT1_in_is_high = DIGIN(AWG_LT1_di_channel)
+             
+        IF ((AWG_LT1_in_was_high = 0) AND (AWG_LT1_in_is_high > 0)) THEN
+          mode = 0
+          timer = -1
+          remote_mode = 0
+        endif
+        
+      endif
+                    
     
   ENDSELECT
   '          
@@ -562,7 +611,11 @@ EVENT:
   if (CR_timer < 0) then
     CR_timer = 0
   endif
-    
+  
+  if (wait_time > 0) then
+    dec(wait_time)
+  endif
+      
   'some criteria for stopping
   if (max_CR_starts > -1) then
     if (CR_starts >= max_CR_starts) then

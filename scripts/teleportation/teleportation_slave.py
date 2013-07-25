@@ -114,6 +114,16 @@ class TeleportationSlave:
 
         return e
 
+    def _lt1_dummy_element(self):
+        """
+        This is a dummy element. It contains nothing. 
+        It replaces the LDE element if we do not want to do LDE.
+        """
+        e = element.Element('dummy', pulsar = qt.pulsar, global_time = True)
+        
+        e.append(pulse.cp(self.T_pulse, length=1e-6))
+
+        return e
 
     def lt1_sequence(self):
         self.lt1_seq = pulsar.Sequence('TeleportationLT1')
@@ -123,6 +133,7 @@ class TeleportationSlave:
         start_LDE_element = self._lt1_start_LDE_element()
         LDE_element = self._lt1_LDE_element()
         BSM_element = self._lt1_BSM_element()
+        dummy_element = self._lt1_dummy_element()
 
         self.lt1_seq.append(name = 'N_pol_decision',
             wfname = N_pol_decision_element.name,
@@ -141,20 +152,24 @@ class TeleportationSlave:
             wfname = start_LDE_element.name)
 
         self.lt1_seq.append(name = 'LDE_LT1',
-            wfname = LDE_element.name,
-            jump_target = 'BSM',
+            wfname = (LDE_element.name if DO_LDE_SEQUENCE else dummy_element.name),
+            # jump_target = 'BSM', 
             goto_target = 'N_pol_decision',
             repetitions = self.params['LDE_attempts_before_CR'])
 
-        self.lt1_seq.append(name = 'BSM',
-            wfname = BSM_element.name,
-            goto_target = 'N_pol_decision')
 
-        qt.pulsar.upload(N_pol_decision_element, 
-            N_pol_element, 
-            start_LDE_element, 
-            LDE_element, 
-            BSM_element)
+        elements = []
+        elements.append(N_pol_decision_element)
+        elements.append(N_pol_element)
+        elements.append(start_LDE_element)
+        #elements.append(BSM_element)
+        elements.append(dummy_element)
+        elements.append(finished_element)
+
+        if tm.DO_POLARIZE_N:
+            elements.append(LDE_element)
+
+        qt.pulsar.upload(*elements)
         
         qt.pulsar.program_sequence(self.lt1_seq)
         self.awg.set_runmode('SEQ')

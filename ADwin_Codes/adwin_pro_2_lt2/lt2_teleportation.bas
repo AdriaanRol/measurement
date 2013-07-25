@@ -197,18 +197,18 @@ EVENT:
   par_64 = mode
   par_65 = timer
   
-  '  AWG_in_was_high = AWG_in_is_high    'copies information from last round
-  '  IF (((P2_DIGIN_LONG(DIO_MODULE)) AND (AWG_lt2_di_channel)) > 0) THEN
-  '    AWG_in_is_high = 1
-  '  ELSE
-  '    AWG_in_is_high = 0
-  '  ENDIF
-  '    
-  '  IF ((AWG_in_was_high = 0) AND (AWG_in_is_high > 0)) THEN  'adwin switched to high during last round.
-  '    AWG_switched_to_high = 1
-  '  ELSE
-  '    AWG_switched_to_high = 0
-  '  ENDIF    
+  AWG_in_was_high = AWG_in_is_high    'copies information from last round
+  IF (((P2_DIGIN_LONG(DIO_MODULE)) AND (AWG_lt2_di_channel)) > 0) THEN
+    AWG_in_is_high = 1
+  ELSE
+    AWG_in_is_high = 0
+  ENDIF
+      
+  IF ((AWG_in_was_high = 0) AND (AWG_in_is_high > 0)) THEN  'adwin switched to high during last round.
+    AWG_switched_to_high = 1
+  ELSE
+    AWG_switched_to_high = 0
+  ENDIF    
   
   if (timer = 0) then
     INC(DATA_26[mode+1]) 'gather statistics on how often entered this mode.
@@ -291,18 +291,55 @@ EVENT:
         mode = 1
         timer = -1
         
-        '      ELSE
-        '        IF ( AWG_switched_to_high > 0) THEN   'AWG triggers to start SSRO
-        '          P2_DIGOUT( DIO_MODULE, ADwin_lt1_do_channel, 1) ' stop triggering CR done
-        '          INC(par_78)     'Triggers to start SSRO
-        '          mode = 3
-        '          timer = -1
-        '        ENDIF
+      ELSE
+        
+        ' TODO: we need a flag whether to do SSRO (not needed for TPQI, for instance)
+        IF (AWG_switched_to_high > 0) THEN 'AWG triggers to start SSRO
+          P2_DIGOUT(DIO_MODULE, ADwin_lt1_do_channel, 0)
+          INC(par_78) 'Triggers to start SSRO
+          mode = 3
+          timer = -1
+        ENDIF
+      
       ENDIF
       
-      '           
-      '    case 3
-      '      INC(DATA_26[mode+1]) 'gather statistics on how often entered this mode.
+                 
+    case 3
+      
+      if (timer = 0) then
+        P2_CNT_CLEAR(CTR_MODULE, counter_pattern)    ' clear counter
+        ' P2_CNT_ENABLE(CTR_MODULE, counter_pattern)    'turn on counter
+        ' P2_DAC(DAC_MODULE, Ex_laser_DAC_channel, 3277*Ex_RO_voltage+32768) ' turn on readout laser
+      
+      else
+      
+        IF (timer = SSRO_duration) THEN
+          P2_DIGOUT(DIO_MODULE, ADwin_lt1_do_channel, 1) ' Notify ADwin LT1 that we're done.
+          INC(Par_80)   ' number of SSRO done signals to ADwin lt1.
+          INC(par_77)   ' number of succesful teleportations.
+          INC(tele_event_id)
+          
+          IF (tele_event_id = teleportation_repetitions) THEN
+            END
+          ENDIF
+          
+          cr_after_teleportation = 1
+          mode = 4
+          timer = -1
+        endif
+                
+      endif
+      
+    case 4
+                 
+      IF (ADwin_switched_to_high > 0) THEN  'Adwin triggers to start CR
+        P2_DIGOUT( DIO_MODULE, ADwin_lt1_do_channel, 0)
+        INC(par_74)     'Triggers to start CR
+        mode = 0
+        timer = -1
+      ENDIF      
+        
+        
       '      
       '      IF (timer = 0) THEN
       '        P2_CNT_CLEAR(CTR_MODULE,  counter_pattern)    'clear counter

@@ -20,8 +20,8 @@ def pulse_defs_lt2(msmt):
         PM_risetime = msmt.params_lt2['MW_pulse_mod_risetime'])
 
     ### synchronizing, etc
-    # msmt.adwin_sync = pulse.SquarePulse(channel='adwin_sync',
-    #     length = 10e-6, amplitude = 2)
+    msmt.adwin_lt2_trigger_pulse = pulse.SquarePulse(channel = 'adwin_sync',
+        length = 10e-6, amplitude = 2)
 
     return True
 
@@ -32,4 +32,4 @@ def pulse_defs_lt1(msmt):
         length = 50e-9, amplitude = 0)
 
     msmt.AWG_LT2_trigger_pulse = pulse.SquarePulse(channel='AWG_LT2_trigger',
-        length = 100e-9, amplitude = 2)
+        length = 10e-9, amplitude = 2)
