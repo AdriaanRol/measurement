@@ -399,6 +399,19 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
 
                         current_dset_length += newlength
                         self.h5data.flush()
+
+                    if current_dset_length > MAX_HHDATA_LEN:
+                        rawdata_idx += 1
+                        dset_hhtime = self.h5data.create_dataset('HH_time-{}'.format(rawdata_idx), 
+                            (0,), 'u8', maxshape=(None,))
+                        dset_hhchannel = self.h5data.create_dataset('HH_channel-{}'.format(rawdata_idx), 
+                            (0,), 'u1', maxshape=(None,))
+                        dset_hhspecial = self.h5data.create_dataset('HH_special-{}'.format(rawdata_idx), 
+                            (0,), 'u1', maxshape=(None,))
+                        dset_hhsynctime = self.h5data.create_dataset('HH_sync_time-{}'.format(rawdata_idx), 
+                            (0,), 'u8', maxshape=(None,))        
+                        current_dset_length = 0
+
         
         self.stop_adwin_processes()    
 
@@ -460,6 +473,7 @@ HH = True
 DO_POLARIZE_N = True      # if False, no N-polarization sequence on LT1 will be used
 DO_SEQUENCES = True       # if False, we won't use the AWG at all
 DO_LDE_SEQUENCE = False   # if False, no LDE sequence (both setups) will be done
+MAX_HHDATA_LEN = int(1e6)
        
 ### configure the hardware (statics)
 TeleportationMaster.adwins = {
