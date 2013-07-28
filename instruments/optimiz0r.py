@@ -33,17 +33,17 @@ class optimiz0r(Instrument):
             'lt1' : {
                 'x' : {
                     'scan_length' : 1.,
-                    'nr_of_points' : 99,
+                    'nr_of_points' : 31,#99,
 #                    'pixel_time' : 50,
                     },
                 'y' : {
                     'scan_length' : 1.,
-                    'nr_of_points' : 99,
+                    'nr_of_points' : 31,#99,
 #                    'pixel_time' : 50,
                     },
                 'z' : {
                     'scan_length' : 2.,
-                    'nr_of_points' : 99,
+                    'nr_of_points' : 31,#99,
 #                    'pixel_time' : 50,
                     },
                 'zyx' : ['z','y','x'],
