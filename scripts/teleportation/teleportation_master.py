@@ -18,6 +18,8 @@ import measurement.lib.config.adwins as adwins_cfg
 import measurement.lib.measurement2.measurement as m2
 from measurement.lib.pulsar import pulse, pulselib, element, pulsar
 
+from HH import T2_tools
+
 import parameters as tparams
 reload(tparams)
 
@@ -213,9 +215,8 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
                 self.lt2_sequence()
 
         if HH:
-            self.hharp.start_T3_mode()
+            self.hharp.start_T2_mode()
             self.hharp.calibrate()
-            self.hharp.set_Binning(self.params['HH_binsize_T3'])
 
     ### sequence stuff
     def _lt2_sequence_finished_element(self):
@@ -322,22 +323,8 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
 
     def measurement_loop(self):
         """
-        The HH related things here are bases on what we had for LDE (lde_spinspin_v8.py)
-        with updates from Gerwin (see lt2_scripts/HH_QUtau_live_testing/hydraharp_live_filtering.py)
-
-        At the moment there's no option to save the raw data from the HH. See the above mentioned
-        scripts if that's desired.
+        HH stuff based on T2 mode and on Wolfgang's latest tests.
         """
-
-        hh_sync_period_ns = self.params['HH_sync_period'] * 1e9
-
-        if HH:
-            if .001*self.hharp.get_ResolutionPS() * 2**15 < hh_sync_period_ns:
-                print('WARNING: resolution is too high to cover entire sync period in T3 mode, events might get lost.')
-
-            sync_of = 0
-            accumulated_data = np.empty((0,4), dtype = np.uintc)
-            rawidx = 0
 
         running = True
 
@@ -346,6 +333,21 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
         # NOTE: would be better to first stop the AWGs --- otherwise it's always possible to miss
         # successful events with some devices, which can possibly lead to sync issues.
         if HH:
+            rawdata_idx = 1
+            t_ofl = 0
+            t_lastsync = 0
+
+            # note: for the live data, 32 bit is enough ('u4') since timing uses overflows.
+            dset_hhtime = self.h5data.create_dataset('HH_time-{}'.format(rawdata_idx), 
+                (0,), 'u8', maxshape=(None,))
+            dset_hhchannel = self.h5data.create_dataset('HH_channel-{}'.format(rawdata_idx), 
+                (0,), 'u1', maxshape=(None,))
+            dset_hhspecial = self.h5data.create_dataset('HH_special-{}'.format(rawdata_idx), 
+                (0,), 'u1', maxshape=(None,))
+            dset_hhsynctime = self.h5data.create_dataset('HH_sync_time-{}'.format(rawdata_idx), 
+                (0,), 'u8', maxshape=(None,))        
+            current_dset_length = 0
+            
             self.hharp.StartMeas(int(self.params['measurement_time']* 1e3)) # this is in ms
 
         # then the adwins; since the LT1 adwin triggers both adwin LT2 and AWGs, this is the last one
@@ -366,6 +368,9 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
                 self.stop_keystroke_monitor('abort')
                 break
 
+            # Stop condition: Adwin done
+            # TBD.
+
             # Stop condition: HH done
             if HH:
                 if not self.hharp.get_MeasRunning():
@@ -373,32 +378,34 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
                     self.stop_keystroke_monitor('abort')
                     break
 
-                length, data = self.hharp.get_TTTR_Data()
-                prefiltered, sync_of = hht4.filter_raw_data(
-                    data[:length],
-                    sync_of,
-                    ch0_lastbin = int(hh_sync_period_ns/0.256),
-                    ch1_lastbin = int(hh_sync_period_ns/0.256),
-                    do_filter_counts_on_mrkr = True,
-                    marker_chan = 1,
-                    dsyncs = np.array([1,2], dtype = np.uintc))
+                _length, _data = self.HH.get_TTTR_Data()
+            
+                if _length > 0:
+                    _t, _c, _s = self._HH_decode(_data[:_length])
+                    hhtime, hhchannel, hhspecial, sync_time, newlength, t_ofl, t_lastsync = \
+                        T2_tools.LDE_live_filter(_t, _c, _s, t_ofl, t_lastsync)
 
-                accumulated_data = np.append(accumulated_data, 
-                    prefiltered, 
-                    axis = 0)
+                    if newlength > 0:
 
-                # TODO: maybe save data in between if it reaches a certain size?
+                        dset_hhtime.resize((current_dset_length+newlength,))
+                        dset_hhchannel.resize((current_dset_length+newlength,))
+                        dset_hhspecial.resize((current_dset_length+newlength,))
+                        dset_hhsynctime.resize((current_dset_length+newlength,))
+
+                        dset_hhtime[current_dset_length:] = hhtime
+                        dset_hhchannel[current_dset_length:] = hhchannel
+                        dset_hhspecial[current_dset_length:] = hhspecial
+                        dset_hhsynctime[current_dset_length:] = sync_time
+
+                        current_dset_length += newlength
+                        self.h5data.flush()
         
-        self.stop_adwin_processes()
-
-        if HH:
-            return accumulated_data
-        else:
-            return None        
+        self.stop_adwin_processes()    
 
     def run(self):
         self.autoconfig()
         data = self.measurement_loop()
+        self.save(data)
 
     def save(self, HH_data):
         reps = self.adwin_var('adwin_lt1', 'completed_reps')
@@ -437,7 +444,9 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
             lt2_grp.group.attrs[k] = self.params_lt2[k]
             self.h5data.flush()
 
-        self.h5data['HH_data'] = HH_data
+        if HH_data != None:
+            self.h5data['HH_data'] = HH_data
+        
         self.h5data.flush()
         self.save_params()
         # self.save_instrument_settings_file()
@@ -447,7 +456,7 @@ EXEC_FROM = 'lt2'
 USE_LT1 = True
 USE_LT2 = True
 YELLOW = True
-HH = False
+HH = True
 DO_POLARIZE_N = True      # if False, no N-polarization sequence on LT1 will be used
 DO_SEQUENCES = True       # if False, we won't use the AWG at all
 DO_LDE_SEQUENCE = False   # if False, no LDE sequence (both setups) will be done
@@ -502,10 +511,11 @@ def CR_checking_debug(name):
 
     m.params_lt1['max_CR_starts'] = -1
     m.params_lt1['teleportation_repetitions'] = -1
-    m.params['measurement_time'] = 10 # seconds; only affects msmt with HH.
+    m.params['measurement_time'] = 5 # seconds; only affects msmt with HH.
 
     start_msmt(m)
 
 if __name__ == '__main__':
     CR_checking_debug('test')
 
+                                                                                                                                                                                                                                                                                          
