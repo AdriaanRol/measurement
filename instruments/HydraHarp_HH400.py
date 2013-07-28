@@ -159,7 +159,7 @@ class HydraHarp_HH400(Instrument): #1
         self.add_function('StopMeas')
         self.add_function('OpenDevice')
         self.add_function('CloseDevice')
-        self.add_function('get_T3_pulsed_events')
+        # self.add_function('get_T3_pulsed_events')
 
         self._do_set_DeviceIndex(DeviceIndex)
         self.OpenDevice()

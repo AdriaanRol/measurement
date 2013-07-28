@@ -57,30 +57,49 @@ def filter_raw_data(rawdata, sync_offset, do_filter_ofls = True, do_filter_crap 
         data = decode(rawdata.astype(np.uintc))
         sync_nr = data[-1,0]+1
 
+        print len(data)
+        # print data
+
+        # TODO: This loop seems weird to me. rewrite that.
         while len(data) != 0:
+            
             #apply all the filtering here; we jump out of the while loop if there are no 
             #events left to filter, or if the filter routine is complete.
+            
             if do_filter_ofls:
                 data = hhopt.filter_overflows(data.copy(), ofl_offset = sync_offset)
+
+                if len(data) == 0:
+                    break
 
             if ch0_lastbin != None:
                 data = filter_timewindow(data, 0, 0, ch0_lastbin)
 
+                if len(data) == 0:
+                    break
+
             if ch1_lastbin != None:
                 data = filter_timewindow(data, 1, 0, ch1_lastbin)
+
+                if len(data) == 0:
+                    break
 
             if do_filter_crap:
                 data = hhopt.filter_decreasing_syncs(data)
 
+                if len(data) == 0:
+                    break
+
             if do_filter_counts_on_mrkr:
                 data = hhopt.filter_counts_on_marker(data, mchan = np.int(marker_chan),
                         delta_syncs = dsyncs.astype(np.uintc))
+            
             break
     
     else:
         data = np.empty((0,4), dtype = np.uintc)
         sync_nr = sync_offset
-        print "No data to be filtered!"
+        # print "No data to be filtered!"
 
     return data, sync_nr
     

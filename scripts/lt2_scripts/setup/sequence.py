@@ -51,3 +51,8 @@ qt.pulsar.define_channel(id='ch2_marker1', name='AOM_Newfocus', type='marker',
 #PLU
 qt.pulsar.define_channel(id='ch4_marker2', name='plu_sync', type='marker', 
     high=2.0, low=0, offset=0., delay=133e-9, active=True)
+
+
+### TMP HH debug channel -- normally there's RF on this output.
+qt.pulsar.define_channel(id='ch2', name='HH_test', type='analog', high=2.0,
+    low=0, offset=0., delay=0, active=True)
