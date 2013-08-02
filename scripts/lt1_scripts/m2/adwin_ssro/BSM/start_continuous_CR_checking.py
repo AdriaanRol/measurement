@@ -90,7 +90,7 @@ def start_CR_checking(yellow=False):
     m.run()
 
 if __name__ == '__main__':
-    start_CR_checking(yellow=True)
+    start_CR_checking(yellow=False)
  
     
 

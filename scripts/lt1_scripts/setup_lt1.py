@@ -12,8 +12,8 @@ execfile("setup/msmt_params.py")
 ####
 print 'configure the setup-specific hardware...'
 ssro.AdwinSSRO.adwin_processes_key = 'adwin_lt1_processes'
-ssro.AdwinSSRO.E_aom = qt.instruments['Velocity2AOM']
-ssro.AdwinSSRO.A_aom = qt.instruments['Velocity1AOM']
+ssro.AdwinSSRO.E_aom = qt.instruments['Velocity2AOM'] 
+ssro.AdwinSSRO.A_aom = qt.instruments['Velocity1AOM'] 
 ssro.AdwinSSRO.green_aom = qt.instruments['GreenAOM']
 ssro.AdwinSSRO.yellow_aom = qt.instruments['YellowAOM']
 ssro.AdwinSSRO.adwin = qt.instruments['adwin']

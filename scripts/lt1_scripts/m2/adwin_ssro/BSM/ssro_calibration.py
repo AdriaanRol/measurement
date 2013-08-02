@@ -51,7 +51,7 @@ def ssrocalibration(name, yellow=False):
     m.finish()
 
 if __name__ == '__main__':
-    ssrocalibration('SIL2_yellow_no_gate', yellow=True)
+    ssrocalibration('SIL2_normal_5nW_RO', yellow=False)
  
     
 
