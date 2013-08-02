@@ -321,6 +321,18 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
         self.stop_adwin_process('adwin_lt1')
         self.stop_adwin_process('adwin_lt2')
 
+    
+    def _HH_decode(self, data):
+        """
+        Decode the binary data into event time (absolute, highest precision),
+        channel number and special bit. See HH documentation about the details.
+        """
+        event_time = np.bitwise_and(data, 2**25-1)
+        channel = np.bitwise_and(np.right_shift(data, 25), 2**6 - 1)
+        special = np.bitwise_and(np.right_shift(data, 31), 1)
+        return event_time, channel, special
+
+
     def measurement_loop(self):
         """
         HH stuff based on T2 mode and on Wolfgang's latest tests.
@@ -378,7 +390,7 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
                     self.stop_keystroke_monitor('abort')
                     break
 
-                _length, _data = self.HH.get_TTTR_Data()
+                _length, _data = self.hharp.get_TTTR_Data()
             
                 if _length > 0:
                     _t, _c, _s = self._HH_decode(_data[:_length])

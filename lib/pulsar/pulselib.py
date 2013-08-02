@@ -143,6 +143,85 @@ class IQ_CORPSE_pi_pulse(MW_IQmod_pulse):
 
             return wf
 
+class IQ_CORPSE_pi2_pulse(MW_IQmod_pulse):
+    # this is between the driving pulses (not PM)
+
+    def __init__(self, *arg, **kw):
+        MW_IQmod_pulse.__init__(self, *arg, **kw)
+
+        self.length_24p3 = kw.pop('length_24p3', 0)
+        self.length_m318p6 = kw.pop('length_m318p6', 0)
+        self.length_384p3 = kw.pop('length_384p3', 0)
+        self.pulse_delay = kw.pop('pulse_delay', 1e-9)
+
+        self.length = self.length_24p3 + self.length_m318p6 + self.length_384p3 + \
+            2*self.pulse_delay + 2*self.PM_risetime
+
+        self.start_offset = self.PM_risetime
+        self.stop_offset = self.PM_risetime
+
+    def __call__(self, **kw):
+        MW_IQmod_pulse.__call__(self, **kw)
+
+        self.length_24p3 = kw.pop('length_24p3', self.length_24p3)
+        self.length_m318p6 = kw.pop('length_m318p6', self.length_m318p6)
+        self.length_384p3 = kw.pop('length_384p3', self.length_384p3)
+        self.pulse_delay = kw.pop('pulse_delay', self.pulse_delay)
+
+        self.length = self.length_24p3 + self.length_m318p6 + self.length_384p3 + \
+            2*self.pulse_delay + 2*self.PM_risetime
+
+        return self
+
+    def chan_wf(self, chan, tvals):
+        
+        if chan == self.PM_channel:
+            return np.ones(len(tvals))
+
+        else:
+            idx0 = np.where(tvals >= tvals[0] + self.PM_risetime)[0][0]
+            idx1 = np.where(tvals <= tvals[0] + self.length - self.PM_risetime)[0][-1] + 1
+
+            start_384p3 = np.where(tvals <= (tvals[0] + self.PM_risetime))[0][-1]
+            end_384p3 = np.where(tvals <= (tvals[0] + self.length_384p3 + self.PM_risetime))[0][-1]
+            start_m318p6 = np.where(tvals <= (tvals[0] + self.PM_risetime + self.length_384p3 + \
+                self.pulse_delay))[0][-1]
+            end_m318p6 = np.where(tvals <= (tvals[0] + self.PM_risetime + self.length_384p3 + \
+                self.pulse_delay + self.length_m318p6))[0][-1]
+            start_24p3 = np.where(tvals <= (tvals[0] + self.PM_risetime + self.length_384p3 + \
+                self.pulse_delay + self.length_m318p6 + self.pulse_delay))[0][-1]
+            end_24p3 = np.where(tvals <= (tvals[0] + self.PM_risetime + self.length_384p3 + \
+                self.pulse_delay + self.length_m318p6 + self.pulse_delay + \
+                self.length_24p3))[0][-1]
+
+            wf = np.zeros(len(tvals))
+            
+            # in this case we start the wave with zero phase at the effective start time
+            # (up to the specified phase)
+            if not self.phaselock:
+                tvals = tvals.copy() - tvals[idx0]
+
+                print self.name, tvals[0]
+
+            if chan == self.I_channel:
+                wf[start_384p3:end_384p3] += self.amplitude * np.cos(2 * np.pi * \
+                    (self.frequency * tvals[start_384p3:end_384p3] + self.phase/360.))
+                wf[start_m318p6:end_m318p6] -= self.amplitude * np.cos(2 * np.pi * \
+                    (self.frequency * tvals[start_m318p6:end_m318p6] + self.phase/360.))
+                wf[start_24p3:end_24p3] += self.amplitude * np.cos(2 * np.pi * \
+                    (self.frequency * tvals[start_24p3:end_24p3] + self.phase/360.))
+
+            if chan == self.Q_channel:
+                wf[start_384p3:end_384p3] += self.amplitude * np.sin(2 * np.pi * \
+                    (self.frequency * tvals[start_384p3:end_384p3] + self.phase/360.))
+                wf[start_m318p6:end_m318p6] -= self.amplitude * np.sin(2 * np.pi * \
+                    (self.frequency * tvals[start_m318p6:end_m318p6] + self.phase/360.))
+                wf[start_24p3:end_24p3] += self.amplitude * np.sin(2 * np.pi * \
+                    (self.frequency * tvals[start_24p3:end_24p3] + self.phase/360.))
+
+            return wf
+
+
 class RF_erf_envelope(pulse.SinePulse):
     def __init__(self, *arg, **kw):
         pulse.SinePulse.__init__(self, *arg, **kw)
