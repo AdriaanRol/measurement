@@ -5,23 +5,25 @@ cfg = qt.cfgman
 cfg['samples']['current'] = 'sil15'
 cfg['protocols']['current'] = 'sil15-default'
 
-### sample settings ###
-### sil 9 ###
-if type(cfg['samples']['sil9']) == types.NoneType:
-	cfg['samples']['sil9'] = {}
-    
-cfg['samples']['sil9']['N_HF_frq'] = 2.189e6
-cfg['samples']['sil9']['ms-1_cntr_frq'] =  2.829141e9
-cfg['samples']['sil9']['N_0-1_splitting_ms-1']= 7.13433e6 ###copied from sil2 lt1
+# ### sample settings ###
+# ### sil 9 ###
+# if type(cfg['samples']['sil9']) == types.NoneType:
+# 	cfg['samples']['sil9'] = {}
+#     
+# cfg['samples']['sil9']['N_HF_frq'] = 2.189e6
+# cfg['samples']['sil9']['ms-1_cntr_frq'] =  2.829141e9
+# cfg['samples']['sil9']['N_0-1_splitting_ms-1']= 7.13433e6 ###copied from sil2 lt1
 
 ### sil 15 ###
 branch='samples/sil15/'
 
-f_msm1_cntr = 2.829113e9
+f_msm1_cntr = 2.828992e9
+f_msp1_cntr = 2.925823e9
 N_frq = 7.13429e6
 N_HF_frq = 2.193e6
 
 cfg.set(branch+'ms-1_cntr_frq', f_msm1_cntr)
+cfg.set(branch+'ms+1_cntr_frq', f_msp1_cntr)
 cfg.set(branch+'N_0-1_splitting_ms-1', N_frq)
 cfg.set(branch+'N_HF_frq', N_HF_frq)
 
@@ -40,7 +42,7 @@ cfg['protocols']['AdwinSSRO']['A_RO_amplitude'] = 0.
 cfg['protocols']['AdwinSSRO']['counter_channel'] = 1
 cfg['protocols']['AdwinSSRO']['cycle_duration'] = 300
 #cfg['protocols']['AdwinSSRO']['green_laser_DAC_channel'] = 7
-cfg['protocols']['AdwinSSRO']['green_repump_amplitude'] = 100e-6
+cfg['protocols']['AdwinSSRO']['green_repump_amplitude'] = 150e-6
 cfg['protocols']['AdwinSSRO']['green_repump_duration'] = 10
 cfg['protocols']['AdwinSSRO']['send_AWG_start'] = 0
 cfg['protocols']['AdwinSSRO']['sequence_wait_time'] = 1
@@ -93,10 +95,51 @@ cfg.set(branch+'SP_filter_duration', 0)
 cfg.set(branch+'SSRO_duration', 50)
 cfg.set(branch+'SSRO_repetitions', 5000)
 cfg.set(branch+'SSRO_stop_after_first_photon', 0)
+cfg.set(branch+'repump_after_repetitions',1)
+cfg.set(branch+'mw_frq',2.9e9)
+cfg.set(branch+'mw_power',20)
+cfg.set(branch+'MW_pulse_mod_risetime',10e-9)
 
 ### sil15, AdwinSSRO integrated ###
 branch='protocols/sil15-default/AdwinSSRO-integrated/'
 cfg.set(branch+'SSRO_duration', 50)
+
+### sil 15 pulses
+f0 = cfg['samples']['sil15']['ms+1_cntr_frq'] - cfg['protocols']['sil15-default']['AdwinSSRO']['mw_frq']
+
+branch='protocols/sil15-default/pulses/'
+cfg.set(branch+'f0', f0)
+cfg.set(branch+'8MHz_pi_duration', 63e-9)
+cfg.set(branch+'8MHz_pi_amp',  0.677)
+cfg.set(branch+'8MHz_pi_mod_frq',  f0)
+
+# cfg.set('protocols/sil15-default/pulses/4MHz_pi2_duration',  tof + 45e-9)
+# cfg.set('protocols/sil15-default/pulses/4MHz_pi2_amp',  0.698)
+# cfg.set('protocols/sil15-default/pulses/4MHz_pi2_mod_frq',  finit)
+
+# cfg.set('protocols/sil15-default/pulses/hard_pi_duration',  80e-9)
+# cfg.set('protocols/sil15-default/pulses/hard_pi_amp',  0.809)
+# cfg.set('protocols/sil15-default/pulses/hard_pi_frq',  f0)
+
+CORPSE_frq = 8.051e6
+cfg.set(branch+'CORPSE_pi_60_duration', 1./CORPSE_frq/6.)
+cfg.set(branch+'CORPSE_pi_m300_duration', 5./CORPSE_frq/6.)
+cfg.set(branch+'CORPSE_pi_420_duration',  7./CORPSE_frq/6.)
+cfg.set(branch+'CORPSE_pi_mod_frq', f0)
+cfg.set(branch+'CORPSE_pi_amp',  0.598)
+
+cfg.set(branch+'CORPSE_pi2_24p3_duration', 24.3/CORPSE_frq/360.)
+cfg.set(branch+'CORPSE_pi2_m318p6_duration', 318.6/CORPSE_frq/360.)
+cfg.set(branch+'CORPSE_pi2_384p3_duration',  384.3/CORPSE_frq/360.)
+cfg.set(branch+'CORPSE_pi2_mod_frq', f0)
+cfg.set(branch+'CORPSE_pi2_amp',  0.598)
+
+#for dynamical decoupling pulses:
+cfg.set(branch+'first_C_revival', 53.75e-6)
+
+
+
+
 
 # ### sil9 ###
 # if type(cfg['protocols']['sil9-default']) == types.NoneType:

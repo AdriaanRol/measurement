@@ -85,7 +85,7 @@ def RO_saturation_power(name, yellow=False):
     m.params.from_dict(qt.cfgman['protocols']['sil15-default']['AdwinSSRO'])
     
     m.params['SSRO_repetitions'] = 5000
-    m.params['pts'] = 2
+    m.params['pts'] = 10
     pts = m.params['pts']
 
     #repump settings
@@ -93,7 +93,7 @@ def RO_saturation_power(name, yellow=False):
 
     m.params['A_SP_amplitude'] = 20e-9
     m.params['Ex_SP_amplitude'] = 0.
-    m.params['Ex_RO_amplitudes'] = np.arange(pts)*3e-9 + 2e-9
+    m.params['Ex_RO_amplitudes'] = np.arange(pts)*6e-9 + 2e-9
 
     for i,p in enumerate(m.params['Ex_RO_amplitudes']):
         if (msvcrt.kbhit() and (msvcrt.getch() == 'c')): break
@@ -140,4 +140,4 @@ def _set_repump_settings(m,yellow):
         m.params['repump_amplitude']=m.params['green_repump_amplitude']
 
 if __name__ == '__main__':
-    RO_saturation_power('sil15')
+    RO_saturation_power('sil15_A1')

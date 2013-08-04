@@ -117,39 +117,31 @@ class DarkESR(PulsarMeasurement):
 class ElectronRabi(PulsarMeasurement):
     mprefix = 'ElectronRabi'
     
-    def autoconfig(self):
-        PulsarMeasurement.autoconfig(self)
-        
-        self.params['sequence_wait_time'] = \
-            int(np.ceil(self.params['MW_length_stop']*1e6)+10)
-            
-        self.params['sweep_name'] = 'Pulse length (ns)'
-        self.params['sweep_pts'] = (np.linspace(self.params['MW_length_start'],
-            self.params['MW_length_stop'], self.params['pts'])*1e9)
-
     def generate_sequence(self, upload=True):
 
         # define the necessary pulses
         X = pulselib.MW_IQmod_pulse('Weak pi-pulse', 
             I_channel='MW_Imod', Q_channel='MW_Qmod', 
             PM_channel='MW_pulsemod',
-            amplitude = self.params['ssbmod_amplitude'],
-            frequency = self.params['ssbmod_frequency'],
+            frequency = self.params['MW_pulse_frequency'],
             PM_risetime = self.params['MW_pulse_mod_risetime'])
 
-        T = pulse.SquarePulse(channel='MW_Imod', name='delay')
-        T.amplitude = 0.
-        T.length = 200e-9
-
+        T = pulse.SquarePulse(channel='MW_Imod', name='delay', 
+            length = 200e-9, amplitude = 0.)
+        
         # make the elements - one for each ssb frequency
         elements = []
-        for i, l in enumerate (np.linspace(self.params['MW_length_start'],
-            self.params['MW_length_stop'], self.params['pts'])):
+        for i in range(self.params['pts']):
 
-            e = element.Element('ElectronRabi_length-%d' % i, pulsar=qt.pulsar)
-            e.add(T, name='wait')
-            e.add(X(length = l), refpulse='wait')
+            e = element.Element('ElectronRabi_pt-%d' % i, pulsar=qt.pulsar)
+            e.append(T)
+            
+            e.append(pulse.cp(X,
+                length = self.params['MW_pulse_durations'][i], 
+                amplitude = self.params['MW_pulse_amplitudes'][i]))
+
             elements.append(e)
+    
 
         # create a sequence from the pulses
         seq = pulsar.Sequence('ElectronRabi sequence')
@@ -166,6 +158,61 @@ class ElectronRabi(PulsarMeasurement):
         # some debugging:
         # elements[-1].print_overview()
 
+class ElectronRamsey(PulsarMeasurement):
+    mprefix = 'ElectronRamsey'
+    
+    def generate_sequence(self, upload=True):
+
+        # define the necessary pulses
+        X = pulselib.IQ_CORPSE_pi2_pulse('CORPSE pi2-pulse', 
+            I_channel='MW_Imod', 
+            Q_channel='MW_Qmod', 
+            PM_channel='MW_pulsemod',
+            PM_risetime = self.params['MW_pulse_mod_risetime'],
+            frequency = self.params['CORPSE_pi2_mod_frq'],
+            amplitude = self.params['CORPSE_pi2_amp'],
+            length_24p3 = self.params['CORPSE_pi2_24p3_duration'],
+            length_m318p6 = self.params['CORPSE_pi2_m318p6_duration'],
+            length_384p3 = self.params['CORPSE_pi2_384p3_duration'])
+
+        T = pulse.SquarePulse(channel='MW_Imod', name='delay', 
+            length = 200e-9, amplitude = 0.)
+        
+        # make the elements - one for each ssb frequency
+        elements = []
+        for i in range(self.params['pts']):
+
+            e = element.Element('ElectronRamsey_pt-%d' % i, pulsar=qt.pulsar,
+                global_time = True)
+            e.append(T)
+            
+            e.append(pulse.cp(X,
+                amplitude = self.params['CORPSE_pi2_amps'][i],
+                phase = self.params['CORPSE_pi2_phases1'][i]))
+
+            e.append(pulse.cp(T,
+                length = self.params['evolution_times'][i]))
+
+            e.append(pulse.cp(X,
+                amplitude = self.params['CORPSE_pi2_amps'][i],
+                phase = self.params['CORPSE_pi2_phases2'][i]))
+    
+            elements.append(e)
+
+        # create a sequence from the pulses
+        seq = pulsar.Sequence('ElectronRamsey sequence')
+        for e in elements:
+            seq.append(name=e.name, wfname=e.name, trigger_wait=True)
+
+        # upload the waveforms to the AWG
+        if upload:
+            qt.pulsar.upload(*elements)
+
+        # program the AWG
+        qt.pulsar.program_sequence(seq)
+
+        # some debugging:
+        # elements[-1].print_overview()
 
 class MBI(PulsarMeasurement):
     mprefix = 'PulsarMBI'
