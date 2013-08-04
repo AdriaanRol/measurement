@@ -103,6 +103,7 @@ params_lt2['MW_pulse_mod_risetime'] = 10e-9
 
 ### LDE sequence settings
 params['HH_sync_period'] = 400e-9 # in seconds -- important for checking (see measurement_loop())
+									#Question from hannes: is this the separation of the optical pi pulses?
 
 ### default process settings
 params['LDE_attempts_before_CR'] = 100 # FIXME
