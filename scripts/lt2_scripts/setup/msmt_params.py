@@ -18,7 +18,7 @@ cfg['protocols']['current'] = 'sil15-default'
 branch='samples/sil15/'
 
 f_msm1_cntr = 2.828992e9
-f_msp1_cntr = 2.925823e9
+f_msp1_cntr = 2.925693e9
 N_frq = 7.13429e6
 N_HF_frq = 2.193e6
 
@@ -121,18 +121,18 @@ cfg.set(branch+'8MHz_pi_mod_frq',  f0)
 # cfg.set('protocols/sil15-default/pulses/hard_pi_amp',  0.809)
 # cfg.set('protocols/sil15-default/pulses/hard_pi_frq',  f0)
 
-CORPSE_frq = 8.051e6
+CORPSE_frq = 8.035e6
 cfg.set(branch+'CORPSE_pi_60_duration', 1./CORPSE_frq/6.)
 cfg.set(branch+'CORPSE_pi_m300_duration', 5./CORPSE_frq/6.)
 cfg.set(branch+'CORPSE_pi_420_duration',  7./CORPSE_frq/6.)
 cfg.set(branch+'CORPSE_pi_mod_frq', f0)
-cfg.set(branch+'CORPSE_pi_amp',  0.598)
+cfg.set(branch+'CORPSE_pi_amp',  0.605)
 
 cfg.set(branch+'CORPSE_pi2_24p3_duration', 24.3/CORPSE_frq/360.)
 cfg.set(branch+'CORPSE_pi2_m318p6_duration', 318.6/CORPSE_frq/360.)
 cfg.set(branch+'CORPSE_pi2_384p3_duration',  384.3/CORPSE_frq/360.)
 cfg.set(branch+'CORPSE_pi2_mod_frq', f0)
-cfg.set(branch+'CORPSE_pi2_amp',  0.598)
+cfg.set(branch+'CORPSE_pi2_amp',  0.639)
 
 #for dynamical decoupling pulses:
 cfg.set(branch+'first_C_revival', 53.75e-6)
