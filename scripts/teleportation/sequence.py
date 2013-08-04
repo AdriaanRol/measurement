@@ -48,6 +48,12 @@ def pulse_defs_lt2(msmt):
     msmt.adwin_lt2_trigger_pulse = pulse.SquarePulse(channel = 'adwin_sync',
         length = 5e-6, amplitude = 2)
 
+    ###begin Hannes LDE attempt
+    msmt.eom_aom_pulse = pulselib.EOMAOMPulse('Eom Aom Pulse', 
+        eom_channel = 'EOM_Matisse',
+        aom_channel = 'EOM_AOM_Matisse')
+    ###end Hannes LDE attempt
+
     return True
 
 def pulse_defs_lt1(msmt):
