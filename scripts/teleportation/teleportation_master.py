@@ -76,6 +76,10 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
         self.params_lt1['do_N_polarization'] = 1 if DO_POLARIZE_N else 0
         self.params_lt1['do_sequences'] = 1 if DO_SEQUENCES else 0
         self.params_lt1['do_LDE_sequence'] = 1 if DO_LDE_SEQUENCE else 0
+        self.params['single_sync'] = 1 if LDE_SINGLE_SYNC else 0
+        self.params['long_histogram'] =1 if LDE_LONG_HIST else 0
+        self.params['MW_during_LDE'] = 1 if LDE_DO_MW else 0
+
     
     def update_definitions(self):
         """
@@ -240,10 +244,56 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
         This element contains the LDE part for LT2, i.e., spin pumping and MW pulses
         for the LT2 NV and the optical pi pulses as well as all the markers for HH and PLU.
         """
-        e = element.Element('LDE_LT2', pulsar = qt.pulsar, global_time = True)
+        e = element.Element('LDE_LT2', pulsar = qt.pulsar)#, global_time = True)
 
-        # TODO not yet implemented
-        e.append(pulse.cp(self.T_pulse, length=1e-6))
+        #1 SP
+        e.add(self.SP_pulse(amplitude = 0, length = self.params['initial_delay']), name = 'initial delay')
+        e.add(self.SP_pulse(length = self.params['LDE_SP_duration'], amplitude = 1.0), 
+                name = 'spinpumping', refpulse = 'initial delay')
+
+        #2 Long histogram        
+        if LDE_LONG_HIST:
+            e.add(self.HH_sync, refpulse = 'spinpumping', refpoint = 'start', refpoint_new = 'end')
+        
+        #3 opt puls 1    
+        e.add(self.eom_aom_pulse, name = 'opt pi 1', start = self.params['wait_after_sp'],
+                        refpulse = 'spinpumping')
+        
+        #4 MW pi/2
+        if LDE_DO_MW:
+            e.add(self.CORPSE_pi2, start = - self.params_lt2['MW_opt_puls1_separation'],
+                    refpulse = 'opt pi 1', refpoint = 'start', refpoint_new = 'end')
+        #5 HHsync
+        if not LDE_LONG_HIST:
+            e.add(self.HH_sync, refpulse = 'opt pi 1', refpoint = 'start', refpoint_new = 'end')
+        
+        #6 plugate 1
+        e.add(self.plu_gate, name = 'plu gate 1', refpulse = 'opt pi 1')
+
+        #7 opt puls 2
+        e.add(self.eom_aom_pulse, name = 'opt pi 2', start = self.params_lt2['opt_puls_separation'],
+                refpulse = 'opt pi 1')        
+
+        #8 MW pi
+        if LDE_DO_MW:
+            e.add(self.CORPSE_pi, start = - self.params_lt2['MW_opt_puls2_separation'],
+                    refpulse = 'opt pi 2', refpoint = 'start', refpoint_new = 'end')
+
+        #9 HH sync 2 optional
+        if not LDE_LONG_HIST and not LDE_SINGLE_SYNC:
+            e.add(self.HH_sync, refpulse = 'opt pi 2', refpoint = 'start', refpoint_new = 'end')
+        
+        #10 plugate 2
+        e.add(self.plu_gate, name = 'plu gate 2', refpulse = 'opt pi 2')
+        #11 plugate 3
+        e.add(self.plu_gate(length = self.params_lt2['PLU_gate_3_duration']), 
+                name = 'plu gate 3', start = self.params_lt2['PLU_3_delay'], refpulse = 'plu gate 2')
+        #12 plugate 4
+        e.add(self.plu_gate, name = 'plu gate 4', start = self.params_lt2['PLU_4_delay'],
+                refpulse = 'plu gate 3')
+        #13 final delay
+        e.add(self.plu_gate(amplitude = 0, length = self.params['finaldelay']), refpulse = 'plu gate 4')
+        #14 optional more opt pulses for TPQI
 
         return e
 
@@ -484,7 +534,10 @@ YELLOW = True
 HH = True
 DO_POLARIZE_N = True      # if False, no N-polarization sequence on LT1 will be used
 DO_SEQUENCES = True       # if False, we won't use the AWG at all
-DO_LDE_SEQUENCE = False   # if False, no LDE sequence (both setups) will be done
+DO_LDE_SEQUENCE = True   # if False, no LDE sequence (both setups) will be done
+LDE_LONG_HIST = False     # if True there will be only 1 HH sync at the beginning of LDE
+LDE_SINGLE_SYNC = True    # if False, every opt puls has its own sync
+LDE_DO_MW = False         # if True, there will be MW in the LDE seq
 MAX_HHDATA_LEN = int(1e6)
        
 ### configure the hardware (statics)

@@ -135,7 +135,7 @@ class Element:
         return base+'-'+str(i)
 
     def add(self, pulse, name=None, start=0, 
-            refpulse=None, refpoint='end'):
+            refpulse=None, refpoint='end', refpoint_new='start'):
 
         pulse = deepcopy(pulse)
         if name == None:
@@ -147,12 +147,31 @@ class Element:
             if refpoint == None:
                 refpoint = 'end'
 
-            t0 += self.pulses[refpulse].effective_stop()
+            if refpoint_new == 'start':
+                t0 += self.pulses[refpulse].effective_stop()
 
-            if refpoint == 'start':
-                t0 -= self.pulses[refpulse].effective_length()
-            elif refpoint == 'center':
-                t0 -= self.pulses[refpulse].effective_length()/2.
+                if refpoint == 'start':
+                    t0 -= self.pulses[refpulse].effective_length()
+                elif refpoint == 'center':
+                    t0 -= self.pulses[refpulse].effective_length()/2.
+
+            elif refpoint_new == 'end':
+                t0 += (self.pulses[refpulse].effective_stop() - pulse.effective_length())
+
+                if refpoint == 'start':
+                    t0 -= self.pulses[refpulse].effective_length()
+                elif refpoint == 'center':
+                    t0 -= self.pulses[refpulse].effective_length()/2.
+            
+            elif refpoint_new == 'center':
+                t0 += (self.pulses[refpulse].effective_stop()- pulse.effective_length()/2.)
+
+                if refpoint == 'start':
+                    t0 -= self.pulses[refpulse].effective_length()
+                elif refpoint == 'center':
+                    t0 -= self.pulses[refpulse].effective_length()/2.                   
+
+
 
         pulse._t0 = t0
         self.pulses[name] = pulse

@@ -106,6 +106,11 @@ class SquarePulse(Pulse):
     def __call__(self, **kw):
         self.amplitude = kw.pop('amplitude', self.amplitude)
         self.length = kw.pop('length', self.length)
+        self.channel = kw.pop('channel', self.channel)
+
+        self.channels = []
+        self.channels.append(self.channel)
+
         return self
 
     def chan_wf(self, chan, tvals):

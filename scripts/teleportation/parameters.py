@@ -101,9 +101,68 @@ params_lt2['mw_power'] = 20
 params_lt2['MW_pulse_mod_risetime'] = 10e-9
 
 
+## Hannes: i just copied these corpse parameters from msmt_params in setup
+
+CORPSE_frq = 8.035e6
+params_lt2['CORPSE_pi2_mod_frq'] = params_lt2['mw_frq']
+params_lt2['CORPSE_pi2_amp'] = 0.639
+params_lt2['CORPSE_pi2_24p3_duration'] = 24.3/CORPSE_frq/360.
+params_lt2['CORPSE_pi2_m318p6_duration'] = 318.6/CORPSE_frq/360.
+params_lt2['CORPSE_pi2_384p3_duration'] = 384.3/CORPSE_frq/360.
+
+params_lt2['CORPSE_pi_mod_frq'] = params_lt2['mw_frq']
+params_lt2['CORPSE_pi_amp'] = 0.605
+params_lt2['CORPSE_pi_60_duration'] =1./CORPSE_frq/6.
+params_lt2['CORPSE_pi_m300_duration'] = 5./CORPSE_frq/6.
+params_lt2['CORPSE_pi_420_duration'] = 7./CORPSE_frq/6.
+
+
 ### LDE sequence settings
 params['HH_sync_period'] = 400e-9 # in seconds -- important for checking (see measurement_loop())
 									#Question from hannes: is this the separation of the optical pi pulses?
+
+
+#EOM stuff:
+
+params_lt2['eom_pulse_duration']        = 2e-9
+params_lt2['eom_off_duration']          = 150e-9
+params_lt2['eom_off_amplitude']         = -.25 
+params_lt2['eom_pulse_amplitude']       = 1.2
+params_lt2['eom_overshoot_duration1']   = 10e-9
+params_lt2['eom_overshoot1']            = -0.03
+params_lt2['eom_overshoot_duration2']   = 4e-9
+params_lt2['eom_overshoot2']            = -0.03
+params_lt2['aom_risetime']              = 23e-9 
+
+
+
+params_lt2['AWG_SP_power']            = 30e-9
+params_lt2['opt_puls_separation']     = 600e-9
+params_lt2['MW_opt_puls1_separation'] = 50e-9 #distance between the end of the MW and the start of opt puls1
+params_lt2['MW_opt_puls2_separation'] = 50e-9
+
+params_lt2['PLU_gate_duration']       = 70e-9
+params_lt2['PLU_gate_3_duration']     = 40e-9
+params_lt2['PLU_3_delay']             = 50e-9
+params_lt2['PLU_4_delay']             = 150e-9
+
+
+params_lt1['AWG_SP_power']            = 50e-9 #this should be on the FT
+params_lt1['AWG_yellow_power']        = 300e-9 #yellow power during SP in LDE on LT1
+params_lt1['MW_wait_after_SP']        = 20e-9 #wait time between end of SP_lt1 and start of first MW
+params_lt1['MW_separation']           = 600e-9 # separation between the two MW pulses on LT1
+
+params['single_sync']                 = 1 #if ==1 then there will only be 1 sync otherwise 1 for each puls
+params['long_histogram']              = 0 #if ==1 there will be only one sync at the beginning of LDE
+params['MW_during_LDE']               = 0 #NOTE:MW stuff not implemented, yet
+
+params['initial_delay']               = 10e-9
+params['LDE_SP_duration']             = 9e-6
+
+params['wait_after_sp']               = 500e-9 #this should be large enough, so that the MW puls fits
+
+params['finaldelay']                  = 1000e-9
+
 
 ### default process settings
 params['LDE_attempts_before_CR'] = 100 # FIXME
