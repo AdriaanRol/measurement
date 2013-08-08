@@ -74,8 +74,8 @@ class adwin_lt2(adwin):
             'none' : adwin only steps
             'counts+suppl' : counts per pixel, plus adwin will record
                 the value of FPar #2 as supplemental data
-            'resonant' : counts per pixel attained from resonant counting process
-            which should be running on the adwin simultanious
+            'counter_process' : counts per pixel attained from counting process
+                which should be running on the adwin simultanious
 
             in any case, the pixel clock will be incremented for each step.
         scan_to_start = False : bool
@@ -128,7 +128,7 @@ class adwin_lt2(adwin):
                 'none' : 0,
                 'counts' : 1,
                 'counts+suppl' : 2,
-                'resonant' : 3,
+                'counter_process' : 3,
                 }
         self.physical_adwin.Set_Par(p['par']['set_px_action'],px_actions[value])
         self.physical_adwin.Start_Process(p['index'])

@@ -13,3 +13,6 @@ Labview*
 *.png
 CPLD
 config
+*.pyd
+*.def
+*.o

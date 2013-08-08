@@ -19,8 +19,6 @@ def pulse_defs_lt2(msmt):
         PM_channel = 'MW_pulsemod',
         PM_risetime = msmt.params_lt2['MW_pulse_mod_risetime'])
 
-
-
     # CORPSE pulses
     msmt.CORPSE_pi = pulselib.IQ_CORPSE_pi_pulse('CORPSE pi-pulse',
         I_channel = 'MW_Imod', 
@@ -49,7 +47,7 @@ def pulse_defs_lt2(msmt):
         length = 5e-6, amplitude = 2)
 
 
-    ###begin Hannes LDE attempt
+    ### LDE attempt
     msmt.eom_aom_pulse = pulselib.EOMAOMPulse('Eom Aom Pulse', 
         eom_channel = 'EOM_Matisse',
         aom_channel = 'EOM_AOM_Matisse',
@@ -67,9 +65,9 @@ def pulse_defs_lt2(msmt):
     msmt.SP_pulse = pulse.SquarePulse(channel = 'AOM_Newfocus', amplitude = 1.0)
     msmt.plu_gate = pulse.SquarePulse(channel = 'plu_sync', amplitude = 1.0, 
                                     length = msmt.params_lt2['PLU_gate_duration'])
+    msmt.HH_marker = pulse.SquarePulse(channel = 'HH_MA1', length = 50e-9, amplitude = 1.0)
 
-
-    ###end Hannes LDE attempt
+    ### LDE attempt
 
     return True
 

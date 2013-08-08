@@ -158,9 +158,13 @@ INIT:
   mode = 2
   timer = 0
   
+  fpar_63 = 0                      ' debug fpars
+  fpar_64 = 0       
+  fpar_65 = 0
+  
   par_64 = 0                      ' current mode
   par_65 = 0                      ' timer value
-  par_66 = 0
+  par_66 = 0                      ' number of repumps
   par_67 = 0                      ' number of CR times CR failed.
   par_68 = CR_probe
   par_69 = CR_repump  
@@ -185,7 +189,12 @@ EVENT:
   
   par_64 = mode
   par_65 = timer
-   
+  
+  fpar_63 = repump_voltage
+  fpar_64 = A_CR_voltage
+  fpar_65 = Ex_CR_voltage 
+  
+  
   if (timer = 0) then
     INC(DATA_26[mode+1]) 'gather statistics on how often entered this mode.
   endif

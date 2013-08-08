@@ -7,9 +7,15 @@ adwin = qt.instruments['adwin']
 reload(adwins_cfg)
 qt.instruments.reload(adwin)
 
-# reload AWG channel config
+# reload AWG channel config and pulsar config
 import measurement.lib.config.awgchannels_lt2 as awgcfg
 reload(awgcfg)
+
+from measurement.lib.pulsar import pulse, element, pulsar, pulselib
+reload(pulse)
+reload(element)
+reload(pulsar)
+reload(pulselib)
 
 # measurement classes
 from measurement.lib.measurement2 import measurement
