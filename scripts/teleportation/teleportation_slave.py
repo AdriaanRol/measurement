@@ -97,7 +97,7 @@ class TeleportationSlave:
         e = element.Element('LDE_LT1', pulsar = qt.pulsar, global_time = True)
 
         # TODO not yet implemented
-        e.append(pulse.cp(self.T_pulse, length=1e-6))
+        e.append(pulse.cp(self.T_pulse, length=11816e-9))
 
         return e
 
