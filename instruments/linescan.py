@@ -53,7 +53,6 @@ class linescan(CyclopeanInstrument):
                 flags=Instrument.FLAG_GETSET,
                 units='ms')
 
-        #BH30-03-2012 we now need value paramater to distinguish between simple and resonant counting
         self.add_parameter('scan_value',
                 type=types.StringType,
                 flags=Instrument.FLAG_GETSET)

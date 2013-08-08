@@ -259,12 +259,12 @@ class EOMAOMPulse(pulse.Pulse):
 
         self.start_offset   = self.eom_off_duration
         self.stop_offset    = 3*self.eom_off_duration+self.eom_pulse_duration
-        self.length         = 4*self.eom_off_duration+2*self.eom_pulse_duration                                       
+        self.length         = 4*self.eom_off_duration+2*self.eom_pulse_duration                                      
         
     def __call__(self,  **kw):
         self.eom_pulse_duration        = kw.pop('eom_pulse_duration'      ,self.eom_pulse_duration) 
         self.eom_off_duration          = kw.pop('eom_off_duration'        ,self.eom_off_duration)
-        self.eom_off_amplitude         = kw.pop('eom_off_amplitude'       ,eom_off_amplitude)
+        self.eom_off_amplitude         = kw.pop('eom_off_amplitude'       ,self.eom_off_amplitude)
         self.eom_pulse_amplitude       = kw.pop('eom_pulse_amplitude'     ,self.eom_pulse_amplitude)
         self.eom_overshoot_duration1   = kw.pop('eom_overshoot_duration1' ,self.eom_overshoot_duration1)
         self.eom_overshoot1            = kw.pop('eom_overshoot1'          ,self.eom_overshoot1)
@@ -281,21 +281,24 @@ class EOMAOMPulse(pulse.Pulse):
        
     def chan_wf(self, channel, tvals):
         
+        tvals -= tvals[0]
         if channel == self.eom_channel:
 
             off_time1_start     = 0
             off_time1_stop      = np.where(tvals <= self.eom_off_duration)[0][-1]
-            opt_pulse_stop      = np.where(tvals <= round(self.eom_off_duration + \
-                                                    self.eom_pulse_duration, 9))[0][-1]   
-            overshoot1_stop     = np.where(tvals <= round(self.eom_off_duration + \
-                                    self.eom_pulse_duration + self.eom_overshoot_duration1,9))[0][-1]
-            overshoot2_stop     = np.where(tvals <= round(self.eom_off_duration + \
-                                    self.eom_pulse_duration + self.eom_overshoot_duration1 + \
-                                    self.eom_overshoot_duration2, 9 ))[0][-1]
-            off_time2_stop      = np.where(tvals <= round(self.eom_off_duration + \
-                                    self.eom_pulse_duration +  self.eom_off_duration, 9))[0][-1]
+            opt_pulse_stop      = np.where(tvals <= int(self.eom_off_duration*1e9 + \
+                                                    self.eom_pulse_duration*1e9+0.5)*1e-9)[0][-1]   
+            overshoot1_stop     = np.where(tvals <= int(self.eom_off_duration*1e9 + \
+                                    self.eom_pulse_duration*1e9 + \
+                                    self.eom_overshoot_duration1*1e9 + 0.5)*1e-9)[0][-1]
+            overshoot2_stop     = np.where(tvals <= int(self.eom_off_duration*1e9 + \
+                                    self.eom_pulse_duration*1e9 + self.eom_overshoot_duration1*1e9 + \
+                                    self.eom_overshoot_duration2*1e9+0.5)*1e-9)[0][-1]
+            off_time2_stop      = np.where(tvals <= int(self.eom_off_duration*1e9 + \
+                                    self.eom_pulse_duration*1e9 + \
+                                     self.eom_off_duration*1e9+0.5)*1e-9)[0][-1]
     
-
+            #print len(tvals)
             wf = np.zeros(len(tvals)/2)
             wf[off_time1_start:off_time1_stop] += self.eom_off_amplitude
             wf[off_time1_stop:opt_pulse_stop]  += self.eom_pulse_amplitude
@@ -304,7 +307,8 @@ class EOMAOMPulse(pulse.Pulse):
             wf[opt_pulse_stop:off_time2_stop]  += self.eom_off_amplitude
 
             #compensation_pulse
-            wf = np.append(wf,-wf) 
+            wf = np.append(wf,-wf)
+
 
         if channel == self.aom_channel:
 

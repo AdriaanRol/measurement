@@ -216,7 +216,12 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
                 self.mwsrc_lt2.set_frequency(self.params_lt2['mw_frq'])
                 self.mwsrc_lt2.set_power(self.params_lt2['mw_power'])
                 self.mwsrc_lt2.set_status('on' if DO_SEQUENCES else 'off')
-                self.lt2_sequence()
+                
+                # have different types of sequences we can load.
+                if DO_OPT_RABI_MSMT:
+                    self.lt2_opt_rabi_sequence()
+                else:
+                    self.lt2_sequence()
 
         if HH:
             self.hharp.start_T2_mode()
@@ -239,12 +244,18 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
         e.append(pulse.cp(self.T_pulse, length=1e-6))
         return e
 
-    def _lt2_LDE_element(self):
+    def _lt2_LDE_element(self, **kw):
         """
         This element contains the LDE part for LT2, i.e., spin pumping and MW pulses
         for the LT2 NV and the optical pi pulses as well as all the markers for HH and PLU.
         """
-        e = element.Element('LDE_LT2', pulsar = qt.pulsar)#, global_time = True)
+
+        # variable parameters
+        name = kw.pop('name', 'LDE_LT2')
+        eom_pulse_amplitude = kw.pop('eom_pulse_amplitude', self.params_lt2['eom_pulse_amplitude'])
+
+        ###
+        e = element.Element(name, pulsar = qt.pulsar)#, global_time = True)
 
         #1 SP
         e.add(self.SP_pulse(amplitude = 0, length = self.params['initial_delay']), name = 'initial delay')
@@ -253,11 +264,14 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
 
         #2 Long histogram        
         if LDE_LONG_HIST:
-            e.add(self.HH_sync, refpulse = 'spinpumping', refpoint = 'start', refpoint_new = 'end')
+            syncpulse_name = e.add(self.HH_sync, refpulse = 'spinpumping', refpoint = 'start', refpoint_new = 'end')
         
         #3 opt puls 1    
-        e.add(self.eom_aom_pulse, name = 'opt pi 1', start = self.params['wait_after_sp'],
-                        refpulse = 'spinpumping')
+        e.add(pulse.cp(self.eom_aom_pulse, 
+                eom_pulse_amplitude = eom_pulse_amplitude),
+            name = 'opt pi 1', 
+            start = self.params['wait_after_sp'],
+            refpulse = 'spinpumping')
         
         #4 MW pi/2
         if LDE_DO_MW:
@@ -265,14 +279,14 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
                     refpulse = 'opt pi 1', refpoint = 'start', refpoint_new = 'end')
         #5 HHsync
         if not LDE_LONG_HIST:
-            e.add(self.HH_sync, refpulse = 'opt pi 1', refpoint = 'start', refpoint_new = 'end')
+            syncpulse_name = e.add(self.HH_sync, refpulse = 'opt pi 1', refpoint = 'start', refpoint_new = 'end')
         
         #6 plugate 1
         e.add(self.plu_gate, name = 'plu gate 1', refpulse = 'opt pi 1')
 
         #7 opt puls 2
         e.add(self.eom_aom_pulse, name = 'opt pi 2', start = self.params_lt2['opt_puls_separation'],
-                refpulse = 'opt pi 1')        
+                refpulse = 'opt pi 1', refpoint = 'start')        
 
         #8 MW pi
         if LDE_DO_MW:
@@ -294,6 +308,11 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
         #13 final delay
         e.add(self.plu_gate(amplitude = 0, length = self.params['finaldelay']), refpulse = 'plu gate 4')
         #14 optional more opt pulses for TPQI
+
+        # if required, insert a marker after the sync pulse
+        if DO_LDE_ATTEMPT_MARKER:
+            e.add(self.HH_marker, name = 'attempt marker', start = 10e-9,
+                refpulse = syncpulse_name, refpoint = 'start')
 
         return e
 
@@ -337,7 +356,50 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
                 i=i+1
             qt.msleep(0.5)
         if not awg_ready: 
-            raise Exception('AWG not ready')  
+            raise Exception('AWG not ready')
+
+
+    def lt2_opt_rabi_sequence(self):
+        """
+        Generates a sequence for calibration of optical rabi oscillations.
+        We sweep the power of an optical pulse of a certain length here.
+        """
+
+        print 'Make optical Rabi sequence...'
+
+        self.lt2_seq = pulsar.Sequence('OpticalRabi')
+        elements = []
+        
+        for i in range(1,self.params['opt_rabi_sweep_pts']+1):
+            lde_elt = self._lt2_LDE_element(name = 'OpticalRabi-{}'.format(i),
+                eom_pulse_amplitude = self.params['eom_pulse_amplitudes'][i-1])
+            
+            self.lt2_seq.append(name='OpticalRabi-{}'.format(i),
+                wfname = lde_elt.name,
+                trigger_wait = True,
+                goto_target = 'OpticalRabi-{}'.format(i+1 if i < self.params['opt_rabi_sweep_pts'] else 1),
+                repetitions = self.params['LDE_attempts_before_CR'])
+            elements.append(lde_elt)
+        
+        qt.pulsar.upload(*elements)
+        qt.pulsar.program_sequence(self.lt2_seq)
+        self.awg_lt2.set_runmode('SEQ')
+        self.awg_lt2.start()
+
+        i=0
+        awg_ready = False
+        while not awg_ready and i<40:
+            try:
+                if self.awg_lt2.get_state() == 'Waiting for trigger':
+                    awg_ready = True
+            except:
+                print 'waiting for awg: usually means awg is still busy and doesnt respond'
+                print 'waiting', i, '/40'
+                i=i+1
+            qt.msleep(0.5)
+        if not awg_ready: 
+            raise Exception('AWG not ready')
+
 
     ### Start and program adwins; Process control
     def _auto_adwin_params(self, adwin):
@@ -482,7 +544,7 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
         data = self.measurement_loop()
         self.save(data)
 
-    def save(self, HH_data):
+    def save(self, HH_data=None):
         reps = self.adwin_var('adwin_lt1', 'completed_reps')
         self.save_adwin_data('adwin_lt1', 'data', 
             ['CR_preselect', 'CR_probe', 'completed_reps', 'total_red_CR_counts', 
@@ -531,14 +593,16 @@ EXEC_FROM = 'lt2'
 USE_LT1 = True
 USE_LT2 = True
 YELLOW = True
-HH = True
+HH = True                 # if False no HH data acquisition from within qtlab.
 DO_POLARIZE_N = True      # if False, no N-polarization sequence on LT1 will be used
 DO_SEQUENCES = True       # if False, we won't use the AWG at all
-DO_LDE_SEQUENCE = True   # if False, no LDE sequence (both setups) will be done
-LDE_LONG_HIST = False     # if True there will be only 1 HH sync at the beginning of LDE
+DO_LDE_SEQUENCE = True    # if False, no LDE sequence (both setups) will be done
+LDE_LONG_HIST = True      # if True there will be only 1 HH sync at the beginning of LDE
 LDE_SINGLE_SYNC = True    # if False, every opt puls has its own sync
 LDE_DO_MW = False         # if True, there will be MW in the LDE seq
 MAX_HHDATA_LEN = int(1e6)
+DO_LDE_ATTEMPT_MARKER = True # if True, insert a marker to the HH after each sync
+DO_OPT_RABI_MSMT = True # if true, we sweep the rabi parameters instead of doing LDE; essentially this only affects the sequence we make
        
 ### configure the hardware (statics)
 TeleportationMaster.adwins = {
@@ -582,19 +646,23 @@ def setup_msmt(name):
 def start_msmt(m):
     m.update_definitions()
     m.setup()
-    m.run()
+    # m.run()
 
 ### measurements
-def CR_checking_debug(name):
-    m = setup_msmt('CR_check_lt1_only_'+name)    
+def default_msmt(name):
+    m = setup_msmt('testing'+name)    
 
     m.params_lt1['max_CR_starts'] = -1
     m.params_lt1['teleportation_repetitions'] = -1
     m.params['measurement_time'] = 5 # seconds; only affects msmt with HH.
 
+    pts = 5
+    m.params['opt_rabi_sweep_pts'] = pts
+    m.params['eom_pulse_amplitudes'] = np.linspace(1,1.2,pts)
+
     start_msmt(m)
 
 if __name__ == '__main__':
-    CR_checking_debug('test')
+    default_msmt('optical_rabi_debug')
 
                                                                                                                                                                                                                                                                                           

@@ -47,7 +47,7 @@ def ssrocalibration(name):
     m.finish()
 
 if __name__ == '__main__':
-    ssrocalibration('sil15')
+    ssrocalibration('sil9')
  
     
 

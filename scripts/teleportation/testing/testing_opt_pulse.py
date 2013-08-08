@@ -29,6 +29,6 @@ e.add(pulse.cp(square_pulse, amplitude = 0.5, channel = 'EOM_AOM_Matisse'), refp
 qt.pulsar.upload(e)
 
 seq = pulsar.Sequence('Opt Test')
-seq.append('opt_pulse', wfname = 'eom action', trigger_wait = True)
+seq.append('opt pulse 1', wfname = 'opt_pulse', trigger_wait = True)
 
 qt.pulsar.program_sequence(seq)

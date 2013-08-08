@@ -37,13 +37,13 @@ qt.pulsar.define_channel(id='ch3_marker1', name='HH_MA1', type='marker',
     
 #EOM
 qt.pulsar.define_channel(id='ch4', name='EOM_Matisse', type='analog', high=1.5,
-    low=-1.5, offset=0., delay=234e-9, active=True)
+    low=-1.5, offset=0., delay=113e-9, active=True)
 
 #AOMs
 qt.pulsar.define_channel(id='ch4_marker1', name='EOM_AOM_Matisse', type='marker', 
-    high=1.0, low=0.0, offset=0., delay=496e-9, active=True)
+    high=1.0, low=0.01, offset=0., delay=417e-9, active=True)
 qt.pulsar.define_channel(id='ch2_marker1', name='AOM_Newfocus', type='marker',
-    high=1.0, low=0.0, offset=0., delay=525e-9, active=True)
+    high=1.0, low=0.01, offset=0., delay=466e-9, active=True)
 
 # qt.pulsar.define_channel(id='ch3_marker2', name='AOM_Yellow', type='marker',
 #     high=1.0, low=0.0, offset=0., delay=500e-9, active=True)

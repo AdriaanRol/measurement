@@ -68,9 +68,9 @@ params_lt1['time_before_forced_CR'] = 20000 # FIXME
 params_lt1['N_pol_element_repetitions'] = 5 # FIXME
 
 params_lt2['repump_duration'] = 50
-params_lt2['CR_duration'] = 50
-params_lt2['CR_preselect'] = 0
-params_lt2['CR_probe'] = 0
+params_lt2['CR_duration'] = 100
+params_lt2['CR_preselect'] = 15
+params_lt2['CR_probe'] = 15
 params_lt2['repump_after_repetitions'] = 1
 params_lt2['CR_repump'] = 1000
 
@@ -83,13 +83,13 @@ params_lt1['Ey_RO_amplitude'] = 0
 params_lt1['FT_RO_amplitude'] = 0
 params_lt1['repump_amplitude'] = 0
 
-params_lt2['Ey_CR_amplitude'] = 0             
-params_lt2['A_CR_amplitude'] = 0              
-params_lt2['Ey_SP_amplitude'] = 0              
-params_lt2['A_SP_amplitude'] = 0             
+params_lt2['Ey_CR_amplitude'] = 20e-9             
+params_lt2['A_CR_amplitude'] = 20e-9              
+params_lt2['Ey_SP_amplitude'] = 20e-9              
+params_lt2['A_SP_amplitude'] = 20e-9             
 params_lt2['Ey_RO_amplitude'] = 0
 params_lt2['A_RO_amplitude'] = 0
-params_lt2['repump_amplitude'] = 0
+params_lt2['repump_amplitude'] = 300e-6
 
 ### pulses and MW stuff
 params_lt1['mw_frq'] = 2.8e9
