@@ -180,7 +180,7 @@ def get_coincidence_intervals(cnp.ndarray[cnp.uint64_t, ndim=2, mode='c'] data n
 # the other methods above are deprecated for now and should only be seen
 # as instructions.
 
-# TODO some methods obove, most importantly time window filtering 
+# TODO some methods above, most importantly time window filtering 
 # and coincidence intervals would still be cool to have!
 
 @cython.boundscheck(False)

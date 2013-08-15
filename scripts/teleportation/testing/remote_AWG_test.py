@@ -20,5 +20,5 @@ sq_pulse = pulse.SquarePulse(channel='MW_pulsemod',
 test_element.add(pulse.cp(sq_pulse, amplitude=1, length=1e-6),
     name='a pulse')
     
-qt.pulsar.upload(test_element)
+qt.pulsar_remote.upload(test_element)
 

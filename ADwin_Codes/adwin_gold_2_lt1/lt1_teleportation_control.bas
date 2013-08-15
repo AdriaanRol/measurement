@@ -278,12 +278,12 @@ INIT:
   AWG_LT1_in_was_high           = 0
   AWG_LT1_switched_to_high      = 0
     
-  ' prepare hardware
+  ' prepare hardware 
   par_60 = 0                      'debug par used for measuring timer
-  par_62 = 0                      'debug par used for measuring timer
-  par_63 = 0                      'debug par 
-  par_64 = 0                      'debug par
-  par_65 = 0                      'debug par
+  par_62 = 0                      'debug: remote mode
+  par_63 = 0                      'debug: CR timer 
+  par_64 = 0                      'debug: mode
+  par_65 = 0                      'debug: timer
   par_66 = 0                      'debug par
     
   par_67 = cr_repump              
@@ -420,6 +420,7 @@ EVENT:
         if (do_sequences > 0) then
           if(wait_time > 0) then
             timer = -1
+            dec(DATA_28[mode+1]) ' correct statistics
           else
             DIGOUT(AWG_lt1_trigger_do_channel, 1) ' trigger the AWG to start the waiting sequence (decide element)
             CPU_SLEEP(9)
@@ -588,7 +589,9 @@ EVENT:
         
         if (wait_time > 0) then
           timer = -1
+          dec(DATA_28[mode+1]) ' correct statistics
         else
+          inc(par_78)
           DIGOUT(AWG_lt1_trigger_do_channel, 1) ' trigger the AWG to start LDE
           CPU_SLEEP(9)
           DIGOUT(AWG_lt1_trigger_do_channel, 0)

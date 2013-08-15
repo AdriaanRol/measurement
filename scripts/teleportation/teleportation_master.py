@@ -285,8 +285,11 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
         e.add(self.plu_gate, name = 'plu gate 1', refpulse = 'opt pi 1')
 
         #7 opt puls 2
-        e.add(self.eom_aom_pulse, name = 'opt pi 2', start = self.params_lt2['opt_puls_separation'],
-                refpulse = 'opt pi 1', refpoint = 'start')        
+        e.add(pulse.cp(self.eom_aom_pulse, 
+                eom_pulse_amplitude = eom_pulse_amplitude), 
+            name = 'opt pi 2', 
+            start = self.params_lt2['opt_puls_separation'],
+            refpulse = 'opt pi 1', refpoint = 'start')        
 
         #8 MW pi
         if LDE_DO_MW:
@@ -300,18 +303,26 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
         #10 plugate 2
         e.add(self.plu_gate, name = 'plu gate 2', refpulse = 'opt pi 2')
         #11 plugate 3
-        e.add(self.plu_gate(length = self.params_lt2['PLU_gate_3_duration']), 
-                name = 'plu gate 3', start = self.params_lt2['PLU_3_delay'], refpulse = 'plu gate 2')
+        e.add(pulse.cp(self.plu_gate, 
+                length = self.params_lt2['PLU_gate_3_duration']), 
+            name = 'plu gate 3', 
+            start = self.params_lt2['PLU_3_delay'], 
+            refpulse = 'plu gate 2')
+        
         #12 plugate 4
         e.add(self.plu_gate, name = 'plu gate 4', start = self.params_lt2['PLU_4_delay'],
                 refpulse = 'plu gate 3')
         #13 final delay
-        e.add(self.plu_gate(amplitude = 0, length = self.params['finaldelay']), refpulse = 'plu gate 4')
+        e.add(pulse.cp(self.plu_gate, 
+                amplitude = 0, 
+                length = self.params['finaldelay']), 
+            refpulse = 'plu gate 4')
+        
         #14 optional more opt pulses for TPQI
 
         # if required, insert a marker after the sync pulse
         if DO_LDE_ATTEMPT_MARKER:
-            e.add(self.HH_marker, name = 'attempt marker', start = 10e-9,
+            e.add(self.HH_marker, name = 'attempt marker', start = 200e-9,
                 refpulse = syncpulse_name, refpoint = 'start')
 
         return e
@@ -473,6 +484,7 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
             current_dset_length = 0
             
             self.hharp.StartMeas(int(self.params['measurement_time']* 1e3)) # this is in ms
+            qt.msleep(0.1)
 
         # then the adwins; since the LT1 adwin triggers both adwin LT2 and AWGs, this is the last one
         self.start_lt2_process()
@@ -536,8 +548,11 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
                             (0,), 'u8', maxshape=(None,))        
                         current_dset_length = 0
 
+                        self.h5data.flush()
+
         
-        self.stop_adwin_processes()    
+        self.stop_adwin_processes()
+        self.hharp.StopMeas()
 
     def run(self):
         self.autoconfig()
@@ -588,6 +603,180 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
         self.save_params()
         # self.save_instrument_settings_file()
 
+class TeleportationSlave:
+
+    def __init__(self):
+        self.params = m2.MeasurementParameters('JointParameters')
+        self.params_lt1 = m2.MeasurementParameters('LT1Parameters')
+        self.params_lt2 = m2.MeasurementParameters('LT2Parameters')
+
+        self.awg = qt.instruments['AWG_lt1']
+
+    def load_settings(self):
+        for k in tparams.params.parameters:
+            self.params[k] = tparams.params[k]
+
+        for k in tparams.params_lt1.parameters:
+            self.params_lt1[k] = tparams.params_lt1[k]
+        
+        for k in tparams.params_lt2.parameters:
+            self.params_lt2[k] = tparams.params_lt2[k]
+
+    def update_definitions(self):
+        tseq.pulse_defs_lt1(self)
+
+    ### Sequence
+    def _lt1_N_polarization_decision_element(self):
+        """
+        This is just an empty element that needs to be long enough for the
+        adwin to decide whether we need to do CR (then it times out) or
+        jump to the LDE sequence.
+        """
+
+        e = element.Element('N_pol_decision', pulsar = qt.pulsar_remote)
+        e.append(pulse.cp(self.T_pulse, length=10e-6))
+
+        return e
+
+    def _lt1_N_pol_element(self):
+        """
+        This is the element we will run to polarize the nuclear spin after each CR
+        checking.
+        """
+        e = element.Element('N_pol', pulsar = qt.pulsar_remote)
+
+        # TODO not yet implemented
+        e.append(pulse.cp(self.T_pulse, length=1e-6))
+
+        return e
+
+    def _lt1_start_LDE_element(self):
+        """
+        This element triggers the LDE sequence on LT2.
+        """
+        e = element.Element('start_LDE', pulsar = qt.pulsar_remote)
+        e.append(pulse.cp(self.AWG_LT2_trigger_pulse, 
+            length = 1e-6,
+            amplitude = 0))
+        e.append(self.AWG_LT2_trigger_pulse)
+
+        return e
+
+    def _lt1_LDE_element(self):
+        """
+        This element contains the LDE part for LT1, i.e., spin pumping and MW pulses
+        for the LT1 NV in the real experiment.
+        """
+        e = element.Element('LDE_LT1', pulsar = qt.pulsar_remote, global_time = True)
+
+        # TODO not yet implemented
+        e.append(pulse.cp(self.T_pulse, length=11828e-9))
+
+        return e
+
+    def _lt1_adwin_LT1_trigger_element(self):
+        """
+        sends a trigger to Adwin LT1 to notify we go back to CR.
+        """
+        e = element.Element('adwin_LT1_trigger', pulsar = qt.pulsar_remote)
+        e.append(self.adwin_lt1_trigger_pulse)
+        return e
+
+    def _lt1_BSM_element(self):
+        """
+        this element contains the BSM element. (Easiest way: only one element, then there's less
+            chance for error when we don't need all the triggers -- however, then we need
+            the timing to be correctly calibrated!)
+        """
+        e = element.Element('BSM', pulsar = qt.pulsar_remote, global_time = True)
+
+        # TODO not yet implemented
+        e.append(pulse.cp(self.T_pulse, length=1e-6))
+
+        return e
+
+    def _lt1_dummy_element(self):
+        """
+        This is a dummy element. It contains nothing. 
+        It replaces the LDE element if we do not want to do LDE.
+        """
+        e = element.Element('dummy', pulsar = qt.pulsar_remote, global_time = True)
+        
+        e.append(pulse.cp(self.T_pulse, length=1e-6))
+
+        return e
+
+    def lt1_sequence(self):
+        self.lt1_seq = pulsar.Sequence('TeleportationLT1')
+
+        N_pol_decision_element = self._lt1_N_polarization_decision_element()
+        N_pol_element = self._lt1_N_pol_element()
+        start_LDE_element = self._lt1_start_LDE_element()
+        LDE_element = self._lt1_LDE_element()
+        BSM_element = self._lt1_BSM_element()
+        dummy_element = self._lt1_dummy_element()
+        adwin_lt1_trigger_element = self._lt1_adwin_LT1_trigger_element()
+
+        self.lt1_seq.append(name = 'N_pol_decision',
+            wfname = N_pol_decision_element.name,
+            trigger_wait = True,
+            goto_target = 'N_polarization' if DO_POLARIZE_N else 'start_LDE',
+            jump_target = 'start_LDE')
+
+        if DO_POLARIZE_N:
+            self.lt1_seq.append(name = 'N_polarization',
+                wfname = N_pol_element.name,
+                trigger_wait = True,
+                repetitions = self.params_lt1['N_pol_element_repetitions'])
+            self.lt1_seq.append(name = 'N_polarization_done',
+                wfname = adwin_lt1_trigger_element.name)
+
+        self.lt1_seq.append(name = 'start_LDE',
+            trigger_wait = True,
+            wfname = start_LDE_element.name)
+
+        self.lt1_seq.append(name = 'LDE_LT1',
+            wfname = (LDE_element.name if DO_LDE_SEQUENCE else dummy_element.name),
+            # jump_target = 'BSM',
+            repetitions = self.params['LDE_attempts_before_CR'])
+
+        self.lt1_seq.append(name = 'LDE_timeout',
+            wfname = adwin_lt1_trigger_element.name,
+            goto_target = 'N_pol_decision')
+
+
+        elements = []
+        elements.append(N_pol_decision_element)
+        elements.append(adwin_lt1_trigger_element)
+        elements.append(start_LDE_element)
+        elements.append(dummy_element)
+        
+        if DO_POLARIZE_N:
+            elements.append(N_pol_element)
+        
+        if DO_LDE_SEQUENCE:
+            elements.append(LDE_element)
+
+        qt.pulsar_remote.upload(*elements)
+        
+        qt.pulsar_remote.program_sequence(self.lt1_seq)
+        self.awg.set_runmode('SEQ')
+        self.awg.start()
+
+        i=0
+        awg_ready = False
+        while not awg_ready and i<40:
+            try:
+                if self.awg.get_state() == 'Waiting for trigger':
+                    awg_ready = True
+            except:
+                print 'waiting for awg: usually means awg is still busy and doesnt respond'
+                print 'waiting', i, '/40'
+                i=i+1
+            qt.msleep(0.5)
+        if not awg_ready: 
+            raise Exception('AWG not ready')
+
 ### CONSTANTS AND FLAGS
 EXEC_FROM = 'lt2'
 USE_LT1 = True
@@ -600,7 +789,7 @@ DO_LDE_SEQUENCE = True    # if False, no LDE sequence (both setups) will be done
 LDE_LONG_HIST = True      # if True there will be only 1 HH sync at the beginning of LDE
 LDE_SINGLE_SYNC = True    # if False, every opt puls has its own sync
 LDE_DO_MW = False         # if True, there will be MW in the LDE seq
-MAX_HHDATA_LEN = int(1e6)
+MAX_HHDATA_LEN = int(100e6)
 DO_LDE_ATTEMPT_MARKER = True # if True, insert a marker to the HH after each sync
 DO_OPT_RABI_MSMT = True # if true, we sweep the rabi parameters instead of doing LDE; essentially this only affects the sequence we make
        
@@ -643,14 +832,25 @@ def setup_msmt(name):
     m.load_settings()
     return m
 
+def setup_slave_msmt():
+    m = TeleportationSlave()
+    m.load_settings()
+    m.update_definitions()
+    m.lt1_sequence()
+
 def start_msmt(m):
     m.update_definitions()
     m.setup()
-    # m.run()
+    m.run()
 
 ### measurements
 def default_msmt(name):
-    m = setup_msmt('testing'+name)    
+    ### first start the slave
+    ### TODO: make more like master if at some point more dynamic settings are needed
+    setup_slave_msmt()
+
+    # setup the master measurement
+    m = setup_msmt('testing'+name)
 
     m.params_lt1['max_CR_starts'] = -1
     m.params_lt1['teleportation_repetitions'] = -1
