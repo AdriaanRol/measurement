@@ -13,7 +13,7 @@ def ssrocalibration(name, yellow=False):
     m = ssro.AdwinSSRO('SSROCalibration_'+name)
    
     m.params.from_dict(qt.cfgman['protocols']['AdwinSSRO'])
-    m.params.from_dict(qt.cfgman['protocols']['sil2-default']['AdwinSSRO'])    
+    # m.params.from_dict(qt.cfgman['protocols']['sil2-default']['AdwinSSRO'])    
     
     if yellow:
         ssro.AdwinSSRO.repump_aom = qt.instruments['YellowAOM']
@@ -51,7 +51,7 @@ def ssrocalibration(name, yellow=False):
     m.finish()
 
 if __name__ == '__main__':
-    ssrocalibration('SIL2_normal_5nW_RO', yellow=False)
+    ssrocalibration('Hans-SIL9_SM_Ey_A2', yellow=False)
  
     
 
