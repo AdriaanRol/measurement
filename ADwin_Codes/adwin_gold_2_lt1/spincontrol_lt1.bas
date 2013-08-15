@@ -5,10 +5,10 @@
 ' Control_long_Delays_for_Stop   = No
 ' Priority                       = High
 ' Version                        = 1
-' ADbasic_Version                = 5.0.5
+' ADbasic_Version                = 5.0.8
 ' Optimize                       = Yes
 ' Optimize_Level                 = 1
-' Info_Last_Save                 = TUD10238  TUD10238\localadmin
+' Info_Last_Save                 = TUD277246  TUD277246\localadmin
 '<Header End>
 ' this program implements spin readout based on the ssro protocol, 
 ' but integrated over repetitions and readout time.
@@ -204,7 +204,7 @@ INIT:
   CNT_ENABLE(0000b)'turn off all counters
   CNT_MODE(counter_channel,00001000b) 'configure counter
 
-  CONF_DIO(13) 'P2_Digprog(DIO_MODULE, 13)      'configure DIO 08:15 as input, all other ports as output
+  CONF_DIO(11) 'P2_Digprog(DIO_MODULE, 13)      'configure DIO 08:15 as input, all other ports as output
   DIGOUT(AWG_start_DO_channel,0)
 
   mode = 0
@@ -238,7 +238,7 @@ EVENT:
       CASE 0    ' green repump
         IF (timer = 0) THEN
           CNT_CLEAR(counter_pattern)    'clear counter
-          CNT_ENABLE(counter_pattern)	  'turn on counter
+          CNT_ENABLE(counter_pattern)    'turn on counter
           DAC(green_laser_DAC_channel, 3277*green_repump_voltage+32768) ' turn on green
           repumps = repumps + 1
         ELSE 
@@ -259,7 +259,7 @@ EVENT:
           DAC(Ex_laser_DAC_channel, 3277*Ex_CR_voltage+32768) ' turn on Ex laser
           DAC(A_laser_DAC_channel, 3277*A_CR_voltage+32768) ' turn on A laser
           CNT_CLEAR(counter_pattern)    'clear counter
-          CNT_ENABLE(counter_pattern)	  'turn on counter
+          CNT_ENABLE(counter_pattern)    'turn on counter
           INC(PAR_72)
         ELSE 
           IF (timer = CR_duration) THEN
@@ -294,7 +294,7 @@ EVENT:
           DAC(Ex_laser_DAC_channel, 3277*Ex_SP_voltage+32768) ' turn on Ex laser
           DAC(A_laser_DAC_channel, 3277*A_SP_voltage+32768)   ' turn on A laser
           CNT_CLEAR(counter_pattern)    'clear counter
-          CNT_ENABLE(counter_pattern)	  'turn on counter
+          CNT_ENABLE(counter_pattern)    'turn on counter
           old_counts = 0
         ELSE 
           counts = CNT_READ(counter_channel)
@@ -321,7 +321,7 @@ EVENT:
       CASE 3    ' SP filter (postselection)
         IF (timer = 0) THEN
           CNT_CLEAR(counter_pattern)    'clear counter
-          CNT_ENABLE(counter_pattern)	  'turn on counter
+          CNT_ENABLE(counter_pattern)    'turn on counter
         ELSE 
           IF (timer = SP_filter_duration) THEN
             DAC(Ex_laser_DAC_channel, 3277*Ex_off_voltage+32768) ' turn off Ex laser
@@ -384,7 +384,7 @@ EVENT:
       CASE 5    ' spin readout
         IF (timer = 0) THEN
           CNT_CLEAR(counter_pattern)    'clear counter
-          CNT_ENABLE(counter_pattern)	  'turn on counter
+          CNT_ENABLE(counter_pattern)    'turn on counter
           DAC(Ex_laser_DAC_channel, 3277*Ex_RO_voltage+32768) ' turn on Ex laser
           DAC(A_laser_DAC_channel, 3277*A_RO_voltage+32768) ' turn on A laser
           old_counts = 0

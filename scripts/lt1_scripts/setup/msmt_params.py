@@ -4,16 +4,33 @@ cfg = qt.cfgman
 
  
 ### sample settings
-branch='samples/sil2/'
+# branch='samples/sil2/'
 
-f_msm1_cntr = 2.826961e9
+# f_msm1_cntr = 2.826961e9
+# N_frq = 7.13429e6
+# N_HF_frq = 2.19290e6
+# cfg.set(branch+'ms-1_cntr_frq', f_msm1_cntr)
+# cfg.set(branch+'N_0-1_splitting_ms-1', N_frq)
+# cfg.set(branch+'N_HF_frq', N_HF_frq)
+# mw0 = 2.8e9
+# f0 = f_msm1_cntr - mw0
+# Nsplit = N_HF_frq
+# finit = f0 - Nsplit
+# fmIp1 = f_msm1_cntr - mw0 + N_HF_frq
+# cfg.set(branch+'mIm1_mod_frq',  f_msm1_cntr - mw0 - N_HF_frq)
+# cfg.set(branch+'mI0_mod_frq',  f_msm1_cntr - mw0)
+# cfg.set(branch+'mIp1_mod_frq',  f_msm1_cntr - mw0 + N_HF_frq)
+
+
+###
+branch='samples/hans-sil1/'
+
+f_msm1_cntr = 2.826694e9
 N_frq = 7.13429e6
 N_HF_frq = 2.19290e6
-
 cfg.set(branch+'ms-1_cntr_frq', f_msm1_cntr)
 cfg.set(branch+'N_0-1_splitting_ms-1', N_frq)
 cfg.set(branch+'N_HF_frq', N_HF_frq)
-
 mw0 = 2.8e9
 f0 = f_msm1_cntr - mw0
 Nsplit = N_HF_frq
@@ -55,6 +72,24 @@ cfg.set(branch+        'yellow_repump_after_repetitions',100)
 cfg.set(branch+        'yellow_CR_repump',              1)
 cfg.set(branch+        'green_repump_after_repetitions',1)
 cfg.set(branch+        'green_CR_repump',              1000)
+
+cfg.set(branch+        'A_CR_amplitude',            10e-9)
+cfg.set(branch+        'A_RO_amplitude',            0.)
+cfg.set(branch+        'A_SP_amplitude',            10e-9)
+cfg.set(branch+        'CR_duration',               100)
+cfg.set(branch+        'CR_preselect',              10)
+cfg.set(branch+        'CR_probe',                  10)
+cfg.set(branch+        'CR_repump',                 1000)
+cfg.set(branch+        'Ex_CR_amplitude',           5e-9)
+cfg.set(branch+        'Ex_RO_amplitude',           5e-9)
+cfg.set(branch+        'Ex_SP_amplitude',           0.)
+cfg.set(branch+        'SP_duration',               250)
+cfg.set(branch+        'SP_filter_duration',        0)
+cfg.set(branch+        'SSRO_duration',             50)
+cfg.set(branch+        'SSRO_repetitions',          1000)
+cfg.set(branch+        'SSRO_stop_after_first_photon',  0)
+
+
 
 ### General settings for AdwinSSRO+espin
 branch='protocols/AdwinSSRO+espin/'
@@ -220,5 +255,23 @@ cfg.set('protocols/sil2-default/BSM/e_ref_frq', finit)
 # cfg.set(branch+        'yellow_off_voltage',                       0)
 # cfg.set(branch+        'green_off_voltage',                        0)
 
+branch='protocols/hans-sil1-default/AdwinSSRO/'  
+cfg.set(branch+        'A_CR_amplitude',            10e-9)
+cfg.set(branch+        'A_RO_amplitude',            0.)
+cfg.set(branch+        'A_SP_amplitude',            10e-9)
+cfg.set(branch+        'CR_duration',               100)
+cfg.set(branch+        'CR_preselect',              30)
+cfg.set(branch+        'CR_probe',                  30)
+cfg.set(branch+        'CR_repump',                 1000)
+cfg.set(branch+        'Ex_CR_amplitude',           5e-9)
+cfg.set(branch+        'Ex_RO_amplitude',           5e-9)
+cfg.set(branch+        'Ex_SP_amplitude',           0.)
+cfg.set(branch+        'SP_duration',               250)
+cfg.set(branch+        'SP_filter_duration',        0)
+cfg.set(branch+        'SSRO_duration',             50)
+cfg.set(branch+        'SSRO_repetitions',          5000)
+cfg.set(branch+        'SSRO_stop_after_first_photon',  0)
+
+cfg.set('protocols/hans-sil1-default/AdwinSSRO-integrated/SSRO_duration', 15)
 
 cfg.save_all()

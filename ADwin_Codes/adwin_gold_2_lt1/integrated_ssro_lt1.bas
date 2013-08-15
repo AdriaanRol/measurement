@@ -8,7 +8,7 @@
 ' ADbasic_Version                = 5.0.8
 ' Optimize                       = Yes
 ' Optimize_Level                 = 1
-' Info_Last_Save                 = TUD10238  TUD10238\localadmin
+' Info_Last_Save                 = TUD277246  TUD277246\localadmin
 '<Header End>
 ' this program implements single-shot readout fully controlled by ADwin Gold II
 '
@@ -206,7 +206,7 @@ INIT:
   CNT_ENABLE(0000b)'turn off all counters
   CNT_MODE(counter_channel,00001000b) 'configure counter
 
-  CONF_DIO(13)      'configure DIO 08:15 as input, all other ports as output
+  CONF_DIO(11)      'configure DIO 08:15 as input, all other ports as output
   DIGOUT(AWG_start_DO_channel,0)
 
   sweep_index = 1
