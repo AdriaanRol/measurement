@@ -6,10 +6,10 @@ from numpy import *
 import msvcrt
 
 #measurement parameters
-name = 'Sil1_PSB_SM'
+name = 'Sil4_ZPL_1APD'
 steps=31
 max_power=390e-6       #[w]
-counter=1      #number of counter
+counter=2      #number of counter
 PH_count=False    # counting with the HH, assumes apd on channel 0
 bg_x=1.5          #delta x position of background [um]
 bg_y=0             #delta y position of background [um]

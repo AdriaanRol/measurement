@@ -146,7 +146,7 @@ class LaserFrequencyScan:
 
                 cts = float(self.get_counts(self.integration_time_yellow)[self.counter_channel])/(self.integration_time*1e-3)
                 frq = self.get_frequency(self.wm_channel_yellow)*self.frq_factor_yellow - self.frq_offset_yellow
-                if frq < 0: 
+                if frq < -100000: 
                     continue
                 d2.add_data_point(v, frq, cts, gv)
                 if np.mod(i,10)==0:
@@ -278,12 +278,12 @@ def red_yellow_laser_scan(name):
     m.mw_power = -12
     
     # repump setup
-    m.yellow_repump_power = 300e-9
-    m.red_repump_power = 50e-9
+    m.yellow_repump_power = 50e-9
+    m.red_repump_power = 15e-9
     
     #Scan setup red
-    m.laser_power = 1e-9
-    m.start_voltage = 2
+    m.laser_power = 2e-9
+    m.start_voltage = -1
     # m.pump_voltage = -4.8
     m.stop_voltage = -8
     m.pts = 501
@@ -298,11 +298,11 @@ def red_yellow_laser_scan(name):
     
     #Gate scan setup
     m.set_gate_to_zero_before_repump = False 
-    m.set_gate = True
+    m.set_gate = False
     m.gate_start_voltage = 0
-    m.gate_stop_voltage = 0.5
-    m.gate_pts = 5
-    m.plot_3D = True
+    m.gate_stop_voltage = 0.0
+    m.gate_pts = 1
+    m.plot_3D = False
     
     # strain lines
     m.plot_strain_lines=False
@@ -314,7 +314,7 @@ def red_yellow_laser_scan(name):
 if __name__=='__main__':
 
     stools.turn_off_lasers()
-    red_yellow_laser_scan('Find resonances Hans-SIL1 gate21')
+    red_yellow_laser_scan('Find resonances Hans-SIL4 gates disconnected')
     
     # stools.turn_off_lasers()
     # GreenAOM.set_power(150e-6)

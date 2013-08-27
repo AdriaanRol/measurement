@@ -14,8 +14,8 @@ def darkesr(name, yellow = False):
     m = pulsar_msmt.DarkESR(name)
     
     m.params.from_dict(qt.cfgman['protocols']['AdwinSSRO'])
-    m.params.from_dict(qt.cfgman['protocols']['hans-sil1-default']['AdwinSSRO'])
-    m.params.from_dict(qt.cfgman['protocols']['hans-sil1-default']['AdwinSSRO-integrated'])
+    m.params.from_dict(qt.cfgman['protocols']['hans-sil7-default']['AdwinSSRO'])
+    m.params.from_dict(qt.cfgman['protocols']['hans-sil7-default']['AdwinSSRO-integrated'])
     m.params.from_dict(qt.cfgman['protocols']['AdwinSSRO+espin'])
     
     if yellow:
@@ -34,11 +34,11 @@ def darkesr(name, yellow = False):
     m.params['mw_frq'] = 2.8e9
     m.params['ssbmod_frq_start'] = 22.5e6
     m.params['ssbmod_frq_stop'] = 30.5e6
-    m.params['pts'] = 41
+    m.params['pts'] = 81
     m.params['mw_power'] = 20
-    m.params['pulse_length'] = 0.13e-6
+    m.params['pulse_length'] = 2.2e-6
     m.params['repetitions'] = 1000
-    m.params['ssbmod_amplitude'] = 0.9
+    m.params['ssbmod_amplitude'] = 0.01
     m.params['MW_pulse_mod_risetime'] = 10e-9
     m.params['SSRO_duration'] = 20
     
@@ -49,4 +49,4 @@ def darkesr(name, yellow = False):
     m.finish()
 
 if __name__ == '__main__':
-    darkesr('hans_sil9', yellow = False)
+    darkesr('hans_sil8', yellow = False)
