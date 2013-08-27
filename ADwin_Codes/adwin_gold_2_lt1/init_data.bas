@@ -10,8 +10,6 @@
 ' Optimize_Level                 = 1
 ' Info_Last_Save                 = TUD276629  TUD276629\localadmin
 '<Header End>
-'#INCLUDE ADwinPro_All.inc
-'#INCLUDE configuration.inc
 
 'Linescan:
 DIM DATA_1[8] AS FLOAT

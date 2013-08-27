@@ -67,20 +67,26 @@ DIM timer           AS LONG
 DIM CR_timer        AS LONG
 DIM wait_time       AS LONG
 
+'tuning
+DIM tune_duration AS LONG
+
 ' settings for CR checks and repumping
 DIM counter AS LONG                      'select internal ADwin counter 1 - 4 for conditional readout (PSB lt1)
 DIM repump_aom_channel AS LONG            'DAC channel for repump laser AOM
 DIM repump_voltage AS FLOAT               'voltage of repump pulse
+DIM repump_tune_voltage AS FLOAT          
 DIM repump_off_voltage AS FLOAT           'off-voltage of repump laser (0V is not 0W)
 DIM e_aom_channel AS LONG 
 DIM e_cr_voltage AS FLOAT
 DIM e_sp_voltage AS FLOAT
 DIM e_ro_voltage AS FLOAT
+DIM e_tune_voltage AS FLOAT
 DIM e_off_voltage AS FLOAT
 DIM fb_aom_channel AS LONG
 DIM fb_cr_voltage AS FLOAT
 DIM fb_sp_voltage AS FLOAT
 DIM fb_ro_voltage AS FLOAT
+DIM fb_tune_voltage AS FLOAT
 DIM fb_off_voltage AS FLOAT 
 DIM red_cr_check_steps AS LONG                        'how long to check, in units of process cycles (lt1)
 DIM current_red_cr_check_counts AS LONG        
@@ -157,10 +163,11 @@ DIM max_CR_starts AS LONG
 DIM CR_starts AS LONG
 DIM remote_delay as long
 
+
 dim do_remote as long
 dim do_N_polarization as long
 dim do_sequences as long
-
+dim set_do_sequences as long
 
 ' misc and temporary variables
 DIM DIO_register AS LONG 
@@ -247,7 +254,7 @@ INIT:
   AWG_lt2_address_U4            = DATA_20[35]
   do_remote                     = DATA_20[36]
   do_N_polarization             = DATA_20[37]
-  do_sequences                  = DATA_20[38]
+  set_do_sequences              = DATA_20[38]
     
   repump_voltage                = DATA_21[1]
   repump_off_voltage            = DATA_21[2]
@@ -259,7 +266,8 @@ INIT:
   fb_ro_voltage                 = DATA_21[8]
   e_off_voltage                 = DATA_21[9]
   fb_off_voltage                = DATA_21[10] 
-    
+
+  do_sequences = set_do_sequences
   current_red_cr_check_counts   = 0
   current_repump_counts         = 0
   current_cr_threshold          = cr_threshold_prepare
@@ -277,8 +285,11 @@ INIT:
   AWG_LT1_in_is_high            = 0
   AWG_LT1_in_was_high           = 0
   AWG_LT1_switched_to_high      = 0
-    
+
+      
   ' prepare hardware 
+  par_59 = 0                      'tune (1 is tuning, 0 is running)
+  
   par_60 = 0                      'debug par used for measuring timer
   par_62 = 0                      'debug: remote mode
   par_63 = 0                      'debug: CR timer 
@@ -286,16 +297,16 @@ INIT:
   par_65 = 0                      'debug: timer
   par_66 = 0                      'debug par
     
-  par_67 = cr_repump              
-  par_68 = 0                      ' cumulative counts during RO2 (LT1)
-  par_69 = 0                      ' cumulative counts during red CR check (LT1)
-  par_70 = 0                      ' cumulative counts during yellow repumping (LT1)
+  Par_69 = cr_repump              
+  Par_67 = 0                      ' cumulative counts during RO2 (LT1)
+  Par_70 = 0                      ' cumulative counts during red CR check (LT1)
+  Par_76 = 0                      ' cumulative counts during yellow repumping (LT1)
   par_71 = 0                      ' CR below threshold events (LT1)
   par_72 = 0                      ' number of red CR checks performed (LT1)
   par_73 = 0                      ' number of CR OK signals from LT2
   par_74 = 0                      ' number of start CR triggers to LT2
   par_75 = cr_threshold_prepare
-  par_76 = cr_threshold_probe
+  Par_68 = cr_threshold_probe
   par_77 = 0                      ' number of successful attempts
   par_78 = 0                      ' number of LDE sequence starts
   par_79 = 0                      ' number of timed out LDE sequences
@@ -348,8 +359,8 @@ EVENT:
   'par_60 = Max_long((timervalue2-timervalue1),par_60)
     
   cr_threshold_prepare = par_75
-  cr_threshold_probe = par_76
-  cr_repump = par_67
+  cr_threshold_probe = Par_68
+  cr_repump = Par_69
    
   par_63 = CR_timer
   par_64 = mode
@@ -364,7 +375,7 @@ EVENT:
   selectcase remote_mode
     
     case 0 'start remote CR check
-      
+            
       ' remote delay because it can happen that after getting the signal here that LT2 is done,
       ' we immediately send a start again. this can lead to LT2 missing the step where the
       ' the DO is low (because it's very short). therefore wait a tiny bit before sending
@@ -414,9 +425,15 @@ EVENT:
       ' CR checking.
       ' in this mode we always start the checking on LT2 (green!)
       ' CR checking on LT1 is only started after a certain time
-      
+            
       if (timer = 0) then
-        
+      
+        if (par_59 = 1) then 'only do this if timer = 0 to prevent switching between AWG triggers/events
+          do_sequences = 0 ' this is the tune mode
+        else
+          do_sequences = set_do_sequences 
+        endif
+    
         if (do_sequences > 0) then
           if(wait_time > 0) then
             timer = -1
@@ -471,8 +488,8 @@ EVENT:
         IF (timer = repump_steps) THEN
           CNT_ENABLE(0000b)     'turn off counter
           current_repump_counts = CNT_READ(counter)
-          par_70 = par_70 + current_repump_counts 
-          DAC(repump_AOM_channel, 3277*repump_voltage+32768)
+          Par_76 = Par_76 + current_repump_counts
+          DAC(repump_AOM_channel, 3277*repump_off_voltage+32768)
                           
           IF (current_repump_counts < max_yellow_hist_cts) THEN      'make histograms
             
@@ -508,7 +525,7 @@ EVENT:
           
           CNT_ENABLE(0000b)
           current_red_cr_check_counts = CNT_READ(counter)
-          par_69 = par_69 + current_red_cr_check_counts
+          Par_70 = Par_70 + current_red_cr_check_counts
                             
           DAC(e_aom_channel,  3277*e_off_voltage +32768)   'turn off red lasers
           DAC(fb_aom_channel, 3277*fb_off_voltage+32768)
@@ -575,11 +592,11 @@ EVENT:
         if (do_sequences = 0) then
           mode = 0 
           remote_mode = 0
-        else
+        else      
           mode = 5
           wait_time = 5 ' we need to make sure that the AWG is receptive for triggering now!
           DATA_29[tele_event_id + 1] = CR_timer     
-        endif
+        endif        
         timer = -1
       ENDIF      
     
@@ -610,6 +627,9 @@ EVENT:
         endif
         
       endif
+        
+            
+        
                     
     
   ENDSELECT

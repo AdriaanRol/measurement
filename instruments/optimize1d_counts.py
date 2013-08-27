@@ -258,9 +258,14 @@ class optimize1d_counts(CyclopeanInstrument):
         self._opt_pos = p[i]
         ret = True
         
+        if self._dimension=='z':
+            sigma=0.5
+        else:
+            sigma=0.1
+
         if self._gaussian_fit:
             gaussian_fit = fit.fit1d(p, cr,common.fit_gauss, array(cr).min(), 
-                    array(cr).max(), p[i], .5, do_print=False,ret=True)
+                    array(cr).max(), p[i], sigma, do_print=False,ret=True)
            
             if type(gaussian_fit) != dict:
                 self.set_data('fit', zeros(len(p)))

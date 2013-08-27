@@ -17,8 +17,8 @@ class laser_reject0r(Instrument):
         self.add_function('routine') 
         
         self.rotator = qt.instruments['positioner']
-        self.red = qt.instruments['Velocity1AOM']
-        self.adwin = qt.instruments['adwin']
+        self.red = qt.instruments['MatisseAOM_lt1']
+        self.adwin = qt.instruments['adwin_lt1']
         
         self.optim_sets = {
                         'half' : {

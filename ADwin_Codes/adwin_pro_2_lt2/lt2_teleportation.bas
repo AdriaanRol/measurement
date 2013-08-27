@@ -162,6 +162,8 @@ INIT:
   fpar_64 = 0       
   fpar_65 = 0
   
+  par_59 = 0                      ' tune (1 is tuning, 0 is running)
+  
   par_64 = 0                      ' current mode
   par_65 = 0                      ' timer value
   par_66 = 0                      ' number of repumps

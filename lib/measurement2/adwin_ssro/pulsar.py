@@ -117,6 +117,14 @@ class DarkESR(PulsarMeasurement):
 class ElectronRabi(PulsarMeasurement):
     mprefix = 'ElectronRabi'
     
+
+    def autoconfig(self):
+        PulsarMeasurement.autoconfig(self)
+        
+        self.params['sequence_wait_time'] = \
+            int(np.ceil(np.max(self.params['MW_pulse_durations'])*1e6)+10)
+
+
     def generate_sequence(self, upload=True):
 
         # define the necessary pulses
@@ -161,6 +169,13 @@ class ElectronRabi(PulsarMeasurement):
 class ElectronRamsey(PulsarMeasurement):
     mprefix = 'ElectronRamsey'
     
+    def autoconfig(self):
+        PulsarMeasurement.autoconfig(self)
+        
+        self.params['sequence_wait_time'] = \
+            int(np.ceil(np.max(self.params['evolution_times'])*1e6)+10)
+
+
     def generate_sequence(self, upload=True):
 
         # define the necessary pulses
