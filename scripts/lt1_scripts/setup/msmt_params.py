@@ -274,4 +274,43 @@ cfg.set(branch+        'SSRO_stop_after_first_photon',  0)
 
 cfg.set('protocols/hans-sil1-default/AdwinSSRO-integrated/SSRO_duration', 15)
 
+branch='protocols/hans-sil7-default/AdwinSSRO/'  
+cfg.set(branch+        'A_CR_amplitude',            10e-9)
+cfg.set(branch+        'A_RO_amplitude',            0.)
+cfg.set(branch+        'A_SP_amplitude',            10e-9)
+cfg.set(branch+        'CR_duration',               100)
+cfg.set(branch+        'CR_preselect',              15)
+cfg.set(branch+        'CR_probe',                  5)
+cfg.set(branch+        'CR_repump',                 1000)
+cfg.set(branch+        'Ex_CR_amplitude',           5e-9)
+cfg.set(branch+        'Ex_RO_amplitude',           5e-9)
+cfg.set(branch+        'Ex_SP_amplitude',           0.)
+cfg.set(branch+        'SP_duration',               250)
+cfg.set(branch+        'SP_filter_duration',        0)
+cfg.set(branch+        'SSRO_duration',             50)
+cfg.set(branch+        'SSRO_repetitions',          5000)
+cfg.set(branch+        'SSRO_stop_after_first_photon',  0)
+
+cfg.set('protocols/hans-sil7-default/AdwinSSRO-integrated/SSRO_duration', 50)
+
+
+branch='protocols/hans-sil4-default/AdwinSSRO/'  
+cfg.set(branch+        'A_CR_amplitude',            10e-9)
+cfg.set(branch+        'A_RO_amplitude',            0.)
+cfg.set(branch+        'A_SP_amplitude',            10e-9)
+cfg.set(branch+        'CR_duration',               100)
+cfg.set(branch+        'CR_preselect',              15)
+cfg.set(branch+        'CR_probe',                  5)
+cfg.set(branch+        'CR_repump',                 1000)
+cfg.set(branch+        'Ex_CR_amplitude',           10e-9)
+cfg.set(branch+        'Ex_RO_amplitude',           5e-9)
+cfg.set(branch+        'Ex_SP_amplitude',           0.)
+cfg.set(branch+        'SP_duration',               250)
+cfg.set(branch+        'SP_filter_duration',        0)
+cfg.set(branch+        'SSRO_duration',             100)
+cfg.set(branch+        'SSRO_repetitions',          5000)
+cfg.set(branch+        'SSRO_stop_after_first_photon',  0)
+
+cfg.set('protocols/hans-sil4-default/AdwinSSRO-integrated/SSRO_duration', 50)
+
 cfg.save_all()

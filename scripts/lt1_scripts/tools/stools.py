@@ -108,7 +108,8 @@ def set_lt1_remote():
         'linescan_counts',
         'master_of_space',
         'counters',
-        'adwin']:
+        'adwin',
+        'ivvi']:
 
         try:
             qt.instruments.remove(i)
@@ -123,6 +124,7 @@ def set_lt1_standalone():
     global GreenAOM
     global Velocity1AOM
     global Velocity2AOM
+    global ivvi
 
     adwin = qt.instruments.create('adwin', 'adwin_lt1', 
             physical_adwin='physical_adwin')
@@ -157,7 +159,7 @@ def set_lt1_standalone():
     YellowAOM = qt.instruments.create('YellowAOM', 'AOM', 
             use_adwin='adwin', use_pm ='powermeter')
     #laser_scan = qt.instruments.create('laser_scan', 'laser_scan')
-     
+    ivvi = qt.instruments.create('ivvi', 'IVVI', address = 'ASRL1::INSTR', numdacs = 4)
     setup_controller = qt.instruments.create('setup_controller',
              'setup_controller',
             use = { 'master_of_space' : 'mos'} )

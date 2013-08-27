@@ -14,9 +14,9 @@ def erabi(name, msp1=False):
     m = pulsar_msmt.ElectronRabi(name)
     
     m.params.from_dict(qt.cfgman['protocols']['AdwinSSRO'])
-    m.params.from_dict(qt.cfgman['protocols']['hans-sil1-default']['AdwinSSRO'])
-    m.params.from_dict(qt.cfgman['protocols']['hans-sil1-default']['AdwinSSRO-integrated'])
-    m.params.from_dict(qt.cfgman['samples']['hans-sil1'])
+    m.params.from_dict(qt.cfgman['protocols']['hans-sil7-default']['AdwinSSRO'])
+    m.params.from_dict(qt.cfgman['protocols']['hans-sil7-default']['AdwinSSRO-integrated'])
+    #m.params.from_dict(qt.cfgman['samples']['hans-sil1'])
        
     m.params.from_dict(qt.cfgman['protocols']['AdwinSSRO+espin'])
 
@@ -34,8 +34,8 @@ def erabi(name, msp1=False):
         # m.params['mw_frq'] = 2.90e9
         # m.params['ms_cntr_frq'] =  m.params['ms+1_cntr_frq']
     else:
-        m.params['mw_frq'] = 2.80e9
-        m.params['ms_cntr_frq'] = 2.8265e9# m.params['ms-1_cntr_frq']
+        m.params['mw_frq'] = 2.9e9#2.80e9
+        m.params['ms_cntr_frq'] = 2.928e9#2.8265e9# m.params['ms-1_cntr_frq']
     m.params['mw_power'] = 20
     m.params['repetitions'] = 1000
     m.params['MW_pulse_amplitudes'] = np.ones(pts) * 0.9
@@ -56,4 +56,4 @@ def erabi(name, msp1=False):
     m.finish()
 
 if __name__ == '__main__':
-    erabi('ElectronRabi_hans_sil9', msp1=False)
+    erabi('ElectronRabi_hans_sil9-fast-rabi', msp1=False)

@@ -334,20 +334,20 @@ def red_laser_scan(name):
     m.yellow_repump_power=50e-9
     m.red_repump_power=0e-9
     m.yellow_repump_duration=4 #seconds
-    m.repump_power = 50e-6
-    m.use_repump_during = True
+    m.repump_power = 0e-6 #GREEN!!
+    m.use_repump_during = False
     m.repump_duration = 0.5 # seconds
-    m.repump_power_during = 0.0*0.05e-6
+    m.repump_power_during = 0.05e-6
     
     #Scan setup
-    m.laser_power = 1e-9
+    m.laser_power = 2e-9
     m.integration_time = 50 # ms
-    m.min_v = -10
-    m.max_v = 10
-    m.v_step=0.01
+    m.min_v = -9.5
+    m.max_v = 9.5
+    m.v_step=0.015
     
-    m.start_frequency = 30. #GHz
-    m.stop_frequency = 70. #GHz    
+    m.start_frequency = 55 #GHz
+    m.stop_frequency = 80 #GHz    
     
     #Gate scan setup
     m.set_gate_to_zero_before_repump=False
@@ -367,5 +367,5 @@ def red_laser_scan(name):
 
 
 if __name__=='__main__':
-    red_laser_scan('red_scan_coarse_Hans_SIL1_gate23_-1.0_1nW_mw')
+    red_laser_scan('red_scan_coarse_Hans_SIL4_2nW_tuning_gv22=4p5V')
     #yellow_laser_scan('yellow_33V')
