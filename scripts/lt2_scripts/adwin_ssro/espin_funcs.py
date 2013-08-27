@@ -6,11 +6,11 @@ from measurement.lib.measurement2.adwin_ssro import pulsar as pulsar_msmt
 
 def prepare(m):
     m.params.from_dict(qt.cfgman.get('protocols/AdwinSSRO'))
-    m.params.from_dict(qt.cfgman.get('protocols/sil15-default/AdwinSSRO'))
-    m.params.from_dict(qt.cfgman.get('protocols/sil15-default/AdwinSSRO-integrated'))
-    m.params.from_dict(qt.cfgman.get('samples/sil15'))
+    m.params.from_dict(qt.cfgman.get('protocols/sil9-default/AdwinSSRO'))
+    m.params.from_dict(qt.cfgman.get('protocols/sil9-default/AdwinSSRO-integrated'))
+    m.params.from_dict(qt.cfgman.get('samples/sil9'))
 
-    m.params.from_dict(qt.cfgman.get('protocols/sil15-default/pulses'))
+    m.params.from_dict(qt.cfgman.get('protocols/sil9-default/pulses'))
 
     m.params.from_dict(qt.cfgman.get('protocols/AdwinSSRO+espin'))
 

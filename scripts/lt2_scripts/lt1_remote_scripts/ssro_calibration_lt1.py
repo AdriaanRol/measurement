@@ -13,9 +13,9 @@ def ssrocalibration(name):
     m = ssro.AdwinSSRO('SSROCalibration_'+name)
    
     m.params.from_dict(qt.cfgman['protocols']['AdwinSSRO'])
-    m.params.from_dict(qt.cfgman['protocols']['sil9-default']['AdwinSSRO'])    
+    m.params.from_dict(qt.cfgman['protocols']['sil4-default']['AdwinSSRO'])    
     
-    ssro.AdwinSSRO.repump_aom = qt.instruments['GreenAOM']
+    ssro.AdwinSSRO.repump_aom = qt.instruments['GreenAOM_lt1']
     m.params['repump_duration'] = m.params['green_repump_duration']
     m.params['repump_amplitude'] = m.params['green_repump_amplitude']
 
@@ -48,7 +48,8 @@ def ssrocalibration(name):
     m.finish()
 
 if __name__ == '__main__':
-    ssrocalibration('sil9')
+    
+    ssrocalibration('sil4')
  
     
 
