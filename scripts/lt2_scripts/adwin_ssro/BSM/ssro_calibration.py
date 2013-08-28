@@ -25,7 +25,7 @@ def ssrocalibration(name):
     m.params['SSRO_repetitions'] = 5000
     m.params['A_CR_amplitude'] = 20e-9
     m.params['Ex_CR_amplitude'] = 20e-9
-    m.params['CR_duration'] = 200
+    m.params['CR_duration'] = 100
 
     # ms = 0 calibration
     m.params['A_SP_amplitude'] = 20e-9
@@ -48,7 +48,7 @@ def ssrocalibration(name):
     m.finish()
 
 if __name__ == '__main__':
-    ssrocalibration('sil9')
+    ssrocalibration('sil9_E12_20nW')
  
     
 

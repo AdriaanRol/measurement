@@ -1216,8 +1216,8 @@ config['adwin_lt1_processes'] = {
                     # 'last_CR_counts' : 26,
                     },
 				'data_long' : {
-                    # 'CR_before' : 22,  # not used in the integrated ssro
-                    # 'CR_after' : 23,
+                    'CR_before' : 22,  # not used in the integrated ssro
+                    'CR_after' : 23,
                     'SP_hist' : 24,
                     'RO_data' : 25,
                     'statistics' : 26,

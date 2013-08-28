@@ -62,9 +62,9 @@ params_lt1['CR_duration'] = 50
 params_lt1['CR_threshold_preselect'] = 0
 params_lt1['CR_threshold_probe'] = 0
 params_lt1['CR_repump'] = 1000
-params_lt1['repump_duration'] = 50
+params_lt1['repump_duration'] = 500#50
 params_lt1['repump_after_repetitions'] = 1
-params_lt1['time_before_forced_CR'] = 1#20000 # FIXME
+params_lt1['time_before_forced_CR'] = 20000#1#20000 # FIXME
 params_lt1['N_pol_element_repetitions'] = 5 # FIXME
 
 params_lt2['repump_duration'] = 50
@@ -81,7 +81,7 @@ params_lt1['Ey_SP_amplitude'] = 10e-9 # A!
 params_lt1['FT_SP_amplitude'] = 10e-9 # A!
 params_lt1['Ey_RO_amplitude'] = 3e-9 # 
 params_lt1['FT_RO_amplitude'] = 0
-params_lt1['repump_amplitude'] = 50e-9
+params_lt1['repump_amplitude'] = 50e-9#300e-6#
 
 params_lt2['Ey_CR_amplitude'] = 20e-9             
 params_lt2['A_CR_amplitude'] = 20e-9              
@@ -124,7 +124,7 @@ params['HH_sync_period'] = 400e-9 # in seconds -- important for checking (see me
 
 #EOM stuff:
 
-params_lt2['eom_pulse_duration']        = 8e-9
+params_lt2['eom_pulse_duration']        = 16e-9
 params_lt2['eom_off_duration']          = 150e-9
 params_lt2['eom_off_amplitude']         = -.26  # calibration from 23-08-2013
 params_lt2['eom_pulse_amplitude']       = 1.2

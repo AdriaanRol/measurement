@@ -21,7 +21,7 @@ d.add_value('power')
 # d.add_value('power sample lt2 (NF)')
 
 d.create_file()
-p = qt.Plot2D(d, 'b-', coorddim=0, valdim=1, clear=True, name='Fast pulse power LT1')
+p = qt.Plot2D(d, 'b-', coorddim=0, valdim=1, clear=True, name='SP power LT1')
 # p.add(d, 'g-', coorddim=0, valdim=2, right=True)
 
 p.set_xlabel('t (mins)')

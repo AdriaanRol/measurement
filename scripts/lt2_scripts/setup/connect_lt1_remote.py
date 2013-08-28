@@ -18,7 +18,7 @@ optimiz0r_lt1 = qt.instruments.create('optimiz0r_lt1', 'optimiz0r',opt1d_ins=
         opt1d_counts_lt1, mos_ins = master_of_space_lt1, dimension_set='lt1')
 
 def _do_remote_connect_lt1():
-    global powermeter_lt1, SMB100_lt1, PMServo_lt1, ZPLServo_lt1, ivvi_lt1
+    global powermeter_lt1, SMB100_lt1, PMServo_lt1, ZPLServo_lt1, ivvi_lt1, AWG_lt1
     
     from lib.network import object_sharer as objsh
     if objsh.start_glibtcp_client('192.168.0.20',port=12002, nretry=3, timeout=5):
@@ -51,11 +51,11 @@ else:
 GreenAOM_lt1 = qt.instruments.create('GreenAOM_lt1', 'AOM', 
         use_adwin='adwin_lt1', use_pm = powermeter_lt1.get_name())         
 NewfocusAOM_lt1 = qt.instruments.create('NewfocusAOM_lt1', 'AOM', 
-        use_adwin='adwin_lt1', use_pm = powermeter_lt1.get_name())         
+        use_adwin='adwin_lt1', use_pm = powermeter_lt1.get_name(), use_awg='AWG_lt1')         
 MatisseAOM_lt1 = qt.instruments.create('MatisseAOM_lt1', 'AOM', 
         use_adwin='adwin_lt1', use_pm = powermeter_lt1.get_name())
 YellowAOM_lt1 = qt.instruments.create('YellowAOM_lt1', 'AOM',
-        use_adwin = 'adwin_lt1', use_pm = powermeter_lt1.get_name())
+        use_adwin = 'adwin_lt1', use_pm = powermeter_lt1.get_name(),use_awg='AWG_lt1')
 
 setup_controller_lt1 = qt.instruments.create('setup_controller_lt1',
     'setup_controller',
@@ -97,4 +97,8 @@ qt.pulsar_remote.define_channel(id='ch2_marker2', name='YellowAOM', type='marker
 
 # Trigger AWG LT2
 qt.pulsar_remote.define_channel(id='ch3_marker1', name='AWG_LT2_trigger', type='marker', 
+    high=2.0, low=0, offset=0., delay=0., active=True)
+
+# Sync for HH
+qt.pulsar_remote.define_channel(id='ch4_marker1', name='HH_sync', type='marker', 
     high=2.0, low=0, offset=0., delay=0., active=True)

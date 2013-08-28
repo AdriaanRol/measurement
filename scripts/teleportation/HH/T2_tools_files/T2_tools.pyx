@@ -13,9 +13,6 @@ from cython.view cimport array as cvarray
 cimport numpy as cnp
 
 
-
-
-
 ###
 ### LDE live filtering
 ###

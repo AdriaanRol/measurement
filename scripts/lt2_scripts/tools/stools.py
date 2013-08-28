@@ -22,31 +22,43 @@ def turn_off_all_lasers():
     turn_off_all_lt1_lasers()
     turn_off_all_lt2_lasers()
 
-def recalibrate_laser(name, servo, adwin):
+def recalibrate_laser(name, servo, adwin,awg=False):
     qt.instruments[adwin].set_simple_counting()
     qt.instruments[servo].move_in()
     qt.msleep(1)
 
     qt.msleep(0.1)
     print 'Calibrate', name
+    qt.instruments[name].apply_voltage(0)
+    if awg: qt.instruments[name].set_cur_controller('AWG')
     qt.instruments[name].calibrate(31)
+    qt.instruments[name].apply_voltage(0)
+    if awg: qt.instruments[name].set_cur_controller('ADWIN')
     qt.msleep(1)
 
     qt.instruments[name].apply_voltage(0)
     qt.instruments[servo].move_out()
     qt.msleep(1)
 
-def recalibrate_lt1_lasers(names=['GreenAOM_lt1', 'MatisseAOM_lt1', 'NewfocusAOM_lt1', 'YellowAOM_lt1']):
+def recalibrate_lt1_lasers(names=['GreenAOM_lt1', 'MatisseAOM_lt1', 'NewfocusAOM_lt1', 'YellowAOM_lt1'], 
+        awg_names=['NewfocusAOM_lt1', 'YellowAOM_lt1']):
     turn_off_all_lt1_lasers()
     for n in names:
         if (msvcrt.kbhit() and (msvcrt.getch() == 'q')): break
         recalibrate_laser(n, 'PMServo_lt1', 'adwin_lt1')
+    for n in awg_names:
+        if (msvcrt.kbhit() and (msvcrt.getch() == 'q')): break
+        recalibrate_laser(n, 'PMServo_lt1', 'adwin_lt1',awg=True)
 
-def recalibrate_lt2_lasers(names=['MatisseAOM', 'NewfocusAOM', 'GreenAOM']):
+def recalibrate_lt2_lasers(names=['MatisseAOM', 'NewfocusAOM', 'GreenAOM'], awg_names=['NewfocusAOM']):
     turn_off_all_lt2_lasers()
     for n in names:
         if (msvcrt.kbhit() and (msvcrt.getch() == 'q')): break
         recalibrate_laser(n, 'PMServo', 'adwin')
+    for n in awg_names:
+        if (msvcrt.kbhit() and (msvcrt.getch() == 'q')): break
+        recalibrate_laser(n, 'PMServo', 'adwin',awg=True)
+
 
 def check_power(name, setpoint, adwin, powermeter, servo):
     qt.instruments[adwin].set_simple_counting()
@@ -62,7 +74,7 @@ def check_power(name, setpoint, adwin, powermeter, servo):
     qt.msleep(1)
 
 def check_lt1_powers(names=['GreenAOM_lt1', 'MatisseAOM_lt1', 'NewfocusAOM_lt1', 'YellowAOM_lt1'],
-    setpoints = [50e-6, 10e-9, 100e-9, 50e-9]):
+    setpoints = [50e-6, 5e-9, 100e-9, 50e-9]):
     
     turn_off_all_lt1_lasers()
     for n,s in zip(names, setpoints):
@@ -123,6 +135,14 @@ def check_fast_path_power_lt2(ret=False, **kw):
     pwr = check_fast_path_power('powermeter', 'PMServo', ret=ret, **kw)
     if ret:
         return pwr
+
+def set_lt1_optimization_powers():
+    turn_off_all_lt1_lasers()
+    qt.instruments['YellowAOM_lt1'].set_power(50e-9)
+    qt.instruments['MatisseAOM_lt1'].set_power(5e-9)
+    qt.instruments['NewfocusAOM_lt1'].set_power(10e-9)
+
+
 
 
 

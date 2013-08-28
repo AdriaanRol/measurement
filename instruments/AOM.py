@@ -19,14 +19,9 @@ import types
 from lib import config
 
 
-# needed instruments
-# _ins_pm = qt.instruments['powermeter']
-# _ins_adwin = qt.instruments['adwin']
-# ins_awg = qt.instruments['AWG']
-
 class AOM(Instrument):
 
-    def __init__(self, name, use_adwin='adwin', 
+    def __init__(self, name, use_adwin='adwin',use_awg='AWG', 
             use_pm = 'powermeter'):
 
         Instrument.__init__(self, name)
@@ -129,6 +124,7 @@ class AOM(Instrument):
         
 
         self._ins_adwin=qt.instruments[use_adwin]
+        self._ins_awg=qt.instruments[use_awg]
         self._ins_pm=qt.instruments[use_pm]
 
         # set defaults
@@ -194,28 +190,27 @@ class AOM(Instrument):
         channel = self.get_channel()
         V_max = self.get_V_max()
         V_min = self.get_V_min()
-        AWG_instr = qt.instruments['AWG']
         
         if not(V_min <= U <= V_max):
             print('Error: extreme voltage of this channel exceeded: ')
             print 'U is not %.2f =< %.2f =< %.2f' % (V_min, U, V_max)
             return
         if controller in ('AWG'):
-            if qt.instruments['AWG'].get_runmode() != 'CONT':
+            if self._ins_awg.get_runmode() != 'CONT':
                 print('Warning: AWG not in continuous mode!')
            
-            apply = {'ch1': AWG_instr.set_ch1_offset,
-                     'ch1m1': AWG_instr.set_ch1_marker1_low,
-                     'ch1m2': AWG_instr.set_ch1_marker2_low,
-                     'ch2': AWG_instr.set_ch2_offset,
-                     'ch2m1': AWG_instr.set_ch2_marker1_low,
-                     'ch2m2': AWG_instr.set_ch2_marker2_low,
-                     'ch3': AWG_instr.set_ch3_offset,
-                     'ch3m1': AWG_instr.set_ch3_marker1_low,
-                     'ch3m2': AWG_instr.set_ch3_marker2_low,
-                     'ch4': AWG_instr.set_ch4_offset,
-                     'ch4m1': AWG_instr.set_ch4_marker1_low,
-                     'ch4m2': AWG_instr.set_ch4_marker2_low,
+            apply = {'ch1': self._ins_awg.set_ch1_offset,
+                     'ch1m1': self._ins_awg.set_ch1_marker1_low,
+                     'ch1m2': self._ins_awg.set_ch1_marker2_low,
+                     'ch2': self._ins_awg.set_ch2_offset,
+                     'ch2m1': self._ins_awg.set_ch2_marker1_low,
+                     'ch2m2': self._ins_awg.set_ch2_marker2_low,
+                     'ch3': self._ins_awg.set_ch3_offset,
+                     'ch3m1': self._ins_awg.set_ch3_marker1_low,
+                     'ch3m2': self._ins_awg.set_ch3_marker2_low,
+                     'ch4': self._ins_awg.set_ch4_offset,
+                     'ch4m1': self._ins_awg.set_ch4_marker1_low,
+                     'ch4m2': self._ins_awg.set_ch4_marker2_low,
                      }
             apply[channel](U)
         elif controller in ('ADWIN'):
@@ -228,23 +223,22 @@ class AOM(Instrument):
     def get_voltage(self):
         controller = self.get_cur_controller()
         channel = self.get_channel()
-        AWG_instr = qt.instruments['AWG']
         if controller in ('AWG'):
-            if qt.instruments['AWG'].get_runmode() != 'CONT':
+            if self._ins_awg.get_runmode() != 'CONT':
                 print('Warning: AWG not in continuous mode!')
            
-            get_ch = {'ch1': AWG_instr.get_ch1_offset,
-                     'ch1m1': AWG_instr.get_ch1_marker1_low,
-                     'ch1m2': AWG_instr.get_ch1_marker2_low,
-                     'ch2': AWG_instr.get_ch2_offset,
-                     'ch2m1': AWG_instr.get_ch2_marker1_low,
-                     'ch2m2': AWG_instr.get_ch2_marker2_low,
-                     'ch3': AWG_instr.get_ch3_offset,
-                     'ch3m1': AWG_instr.get_ch3_marker1_low,
-                     'ch3m2': AWG_instr.get_ch3_marker2_low,
-                     'ch4': AWG_instr.get_ch4_offset,
-                     'ch4m1': AWG_instr.get_ch4_marker1_low,
-                     'ch4m2': AWG_instr.get_ch4_marker2_low,
+            get_ch = {'ch1': self._ins_awg.get_ch1_offset,
+                     'ch1m1': self._ins_awg.get_ch1_marker1_low,
+                     'ch1m2': self._ins_awg.get_ch1_marker2_low,
+                     'ch2': self._ins_awg.get_ch2_offset,
+                     'ch2m1': self._ins_awg.get_ch2_marker1_low,
+                     'ch2m2': self._ins_awg.get_ch2_marker2_low,
+                     'ch3': self._ins_awg.get_ch3_offset,
+                     'ch3m1': self._ins_awg.get_ch3_marker1_low,
+                     'ch3m2': self._ins_awg.get_ch3_marker2_low,
+                     'ch4': self._ins_awg.get_ch4_offset,
+                     'ch4m1': self._ins_awg.get_ch4_marker1_low,
+                     'ch4m2': self._ins_awg.get_ch4_marker2_low,
                      }
             return get_ch[channel]()
         elif controller in ('ADWIN'):
