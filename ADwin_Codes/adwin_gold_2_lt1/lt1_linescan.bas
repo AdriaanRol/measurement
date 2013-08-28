@@ -8,7 +8,7 @@
 ' ADbasic_Version                = 5.0.8
 ' Optimize                       = Yes
 ' Optimize_Level                 = 1
-' Info_Last_Save                 = TUD277246  TUD277246\localadmin
+' Info_Last_Save                 = TUD276629  TUD276629\localadmin
 '<Header End>
 ' This program does a multidimensional line scan; it needs to be given the 
 ' involved DACs, their start voltage, their end voltage and the number of steps
@@ -21,7 +21,8 @@
 DIM NoOfDACs, i, CurrentStep, NoOfSteps AS INTEGER
 DIM PxTime, StepSize AS FLOAT
 
-' what to do for each pixel; 1=counting, 0=nothing, 2=counting + record supplemental data per px from fpar2
+' what to do for each pixel; 1=counting, 0=nothing, 2=counting + record supplemental data per px from fpar2;
+' 3 counting on counter process
 DIM PxAction AS INTEGER
 
 ' The numbers of the involved DACs (adwin only has 8)
@@ -82,6 +83,16 @@ INIT:
 
   NEXT i
   
+  
+  FOR i = 1 to 100000
+    DATA_11[i] = 0
+    DATA_12[i] = 0
+    DATA_13[i] = 0
+    
+    DATA_15[i] = 0
+  NEXT i
+   
+  
   IF ((PxAction = 1) OR (PxAction = 2)) THEN
     CNT_ENABLE(000b)                                        'Stop counter 1, 2 and 3
     CNT_MODE(1, 00001000b)                                  '
@@ -91,6 +102,16 @@ INIT:
     CNT_CLEAR(111b)                                         'Set all counters to zero
     CNT_ENABLE(111b)                                        'Start counter 1 and 2
   ENDIF
+  
+  IF (PxAction = 3) THEN
+    Par_45 = 0                                                             'clear counts from par
+    Par_46 = 0 
+    Par_47 = 0 
+    Par_49 = 1
+    Par_50 = 0                                                            'tell resonant counting process to sum its data into par 45-48
+  ENDIF
+  
+  
     
  
 EVENT:
@@ -113,6 +134,17 @@ EVENT:
     ' DEBUG FPar_24 = 42.0
     DATA_15[CurrentStep] = FPar_2
   ENDIF
+  
+  IF (PxAction = 3) THEN
+    DATA_11[CurrentStep] = Par_41      'read counts from par (resonant counting ctr1)
+    DATA_12[CurrentStep] = Par_42      'read counts from par (resonant counting ctr2)
+    DATA_13[CurrentStep] = Par_43      'read counts from par (resonant counting ctr3)
+    Par_45 = Par_41
+    Par_46 = Par_42 
+    Par_47 = Par_43 
+    Par_50 = 0
+  ENDIF
+    
   
 
   ' Set the voltage on all involved DACs
@@ -146,3 +178,4 @@ EVENT:
   Par_4 = CurrentStep - 1
   
 FINISH:  
+  par_49 = 0   'tell resonant counting process to stop summing its data into par 45-48  

@@ -8,7 +8,7 @@ reload(funcs)
 
 
 ### msmt class
-class CORPSEPiCalibration(pulsar_msmt.ElectronRabi):
+class CORPSEPiCalibration(pulsar_msmt.PulsarMeasurement):
     mprefix = 'CORPSEPiCalibration'
 
     def generate_sequence(self, upload=True):
@@ -61,7 +61,7 @@ class CORPSEPiCalibration(pulsar_msmt.ElectronRabi):
             qt.pulsar.upload(sync_elt, wait_1us, *elts)
         qt.pulsar.program_sequence(seq)
 
-class CORPSEPi2Calibration(pulsar_msmt.ElectronRabi):
+class CORPSEPi2Calibration(pulsar_msmt.PulsarMeasurement):
     mprefix = 'CORPSEPi2Calibration'
 
     def generate_sequence(self, upload=True):
@@ -80,8 +80,7 @@ class CORPSEPi2Calibration(pulsar_msmt.ElectronRabi):
             length_m318p6 = self.params['CORPSE_pi2_m318p6_duration'],
             length_384p3 = self.params['CORPSE_pi2_384p3_duration'])
 
-        wait_1us = element.Element('1us_delay', pulsar=qt.pulsar)
-        wait_1us.append(pulse.cp(T, length=1e-6))
+        delay_pulse = (pulse.cp(T, length=self.params['delay_element_length']))
 
         sync_elt = element.Element('adwin_sync', pulsar=qt.pulsar)
         adwin_sync = pulse.SquarePulse(channel='adwin_sync',
@@ -90,28 +89,25 @@ class CORPSEPi2Calibration(pulsar_msmt.ElectronRabi):
 
         elts = []
         for i in range(self.params['pts']):
-            e = element.Element('CORPSE-{}'.format(i), pulsar=qt.pulsar)
-            e.append(T,
-                pulse.cp(CORPSE_pi2,
-                    amplitude=self.params['CORPSE_pi2_sweep_amps'][i]))
+            e = element.Element('CORPSE-{}'.format(i), pulsar=qt.pulsar, global_time = True)
+            e.append(T)
+            for j in range(self.params['multiplicity']):
+                e.append(pulse.cp(CORPSE_pi2,
+                    amplitude=self.params['CORPSE_pi2_sweep_amps'][i]), delay_pulse)
             elts.append(e)
 
         # sequence
         seq = pulsar.Sequence('CORPSE pi over 2 calibration')
         for i,e in enumerate(elts):           
-            for j in range(self.params['multiplicity']):
-                seq.append(name = e.name+'-{}'.format(j), 
+            seq.append(name = e.name+'-{}'.format(j), 
                     wfname = e.name,
-                    trigger_wait = (j==0))
-                seq.append(name = 'wait-{}-{}'.format(i,j), 
-                    wfname = wait_1us.name, 
-                    repetitions = self.params['delay_reps'])
+                    trigger_wait = True)
             seq.append(name='sync-{}'.format(i),
                  wfname = sync_elt.name)
 
         # program AWG
         if upload:
-            qt.pulsar.upload(sync_elt, wait_1us, *elts)
+            qt.pulsar.upload(sync_elt, *elts)
         qt.pulsar.program_sequence(seq)
 
 # class CORPSEPiCalibration

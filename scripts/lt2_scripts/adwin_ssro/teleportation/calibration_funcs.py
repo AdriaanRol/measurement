@@ -7,15 +7,15 @@ import qt
 from measurement.lib.measurement2.adwin_ssro import pulsar as pulsar_msmt
 
 #this is a CORPSE calibration based on electron Rabi.
-#import CORPSE_calibration
-#reload(CORPSE_calibration)
+import CORPSE_calibration
+reload(CORPSE_calibration)
 from CORPSE_calibration import CORPSEPiCalibration
 from CORPSE_calibration import CORPSEPi2Calibration
 
 from measurement.scripts.lt2_scripts.adwin_ssro import espin_funcs as funcs
 reload(funcs)
 
-name = 'sil15'
+name = 'sil9'
 
 
 ### Calibration stage 1
@@ -31,8 +31,8 @@ def cal_8mhz_rabi(name):
 
     # MW pulses
     m.params['MW_pulse_durations'] = np.linspace(0,250e-9,pts) + 5e-9
-    m.params['MW_pulse_amplitudes'] = np.ones(pts) * 0.6
-    m.params['MW_pulse_frequency'] = m.params['ms+1_cntr_frq']-m.params['mw_frq']
+    m.params['MW_pulse_amplitudes'] = np.ones(pts) * 0.455
+    m.params['MW_pulse_frequency'] = m.params['ms-1_cntr_frq']-m.params['mw_frq']
 
     # for the autoanalysis
     m.params['sweep_name'] = 'MW pulse duration (ns)'
@@ -54,7 +54,7 @@ def cal_CORPSE_pi(name):
     m.params['wait_for_AWG_done'] = 1
 
     # sweep params
-    m.params['CORPSE_pi_sweep_amps'] = np.linspace(0.54, 0.66, pts)#
+    m.params['CORPSE_pi_sweep_amps'] = np.linspace(0.4, 0.5, pts)#
     m.params['multiplicity'] = 11
     name = name + 'M={}'.format(m.params['multiplicity'])
     m.params['delay_reps'] = 15
@@ -66,7 +66,7 @@ def cal_CORPSE_pi(name):
     funcs.finish(m)
 
 def cal_CORPSE_pi2(name):
-    m = CORPSEPi2Calibration(name)
+    m = CORPSEPi2Calibration(name+'M=1')
     funcs.prepare(m)
 
     pts = 11
@@ -75,10 +75,33 @@ def cal_CORPSE_pi2(name):
     m.params['wait_for_AWG_done'] = 1
 
     # sweep params
-    m.params['CORPSE_pi2_sweep_amps'] = np.linspace(0.54, 0.66, pts)#
+    m.params['CORPSE_pi2_sweep_amps'] = np.linspace(0.4, 0.5, pts)#
     m.params['multiplicity'] = 1
     name = name + 'M={}'.format(m.params['multiplicity'])
-    m.params['delay_reps'] = 15
+    m.params['delay_element_length'] = 1e-6
+
+    # for the autoanalysis
+    m.params['sweep_name'] = 'CORPSE pi/2 amplitude (V)'
+    m.params['sweep_pts'] = m.params['CORPSE_pi2_sweep_amps']  
+
+    funcs.finish(m)
+
+def cal_CORPSE_pi2_alternative(name, M):
+    m = CORPSEPi2Calibration(name+str(M))
+    funcs.prepare(m)
+    ### Currently does not work, because element length fill-up causes dephasing. 
+    #Calibration method abandoned for now
+
+    pts = 11
+    m.params['pts'] = pts
+    m.params['repetitions'] = 1000
+    m.params['wait_for_AWG_done'] = 1
+
+    # sweep params
+    m.params['CORPSE_pi2_sweep_amps'] = np.linspace(0.4, 0.5, pts)#
+    m.params['multiplicity'] = M
+    name = name + 'M={}'.format(m.params['multiplicity'])
+    m.params['delay_element_length'] = 10e-9
 
     # for the autoanalysis
     m.params['sweep_name'] = 'CORPSE pi/2 amplitude (V)'
@@ -101,6 +124,7 @@ def find_CORPSE_fidelity(name):
     m.params['CORPSE_pi_sweep_amps'] = np.ones(pts)*m.params['CORPSE_pi_amp']#np.linspace(0.54, 0.66, pts)#
     m.params['multiplicity'] = 1
     name = name + 'M={}'.format(m.params['multiplicity'])
+    m.params['delay_element_length'] = 1e-6
     m.params['delay_reps'] = 15
 
     # for the autoanalysis
@@ -122,6 +146,7 @@ def find_CORPSE_pi2_fidelity(name):
     m.params['CORPSE_pi2_sweep_amps'] = np.ones(pts)*m.params['CORPSE_pi2_amp']#np.linspace(0.54, 0.66, pts)#
     m.params['multiplicity'] = 1
     name = name + 'M={}'.format(m.params['multiplicity'])
+    m.params['delay_element_length'] = 1e-6
     m.params['delay_reps'] = 15
 
     # for the autoanalysis
@@ -139,6 +164,8 @@ def run_calibrations(stage):
     if stage == 2:
         cal_CORPSE_pi(name)
         cal_CORPSE_pi2(name)
+        cal_CORPSE_pi2_alternative(name, M=2)
+        cal_CORPSE_pi2_alternative(name, M=4)
 
 
 
@@ -146,10 +173,10 @@ if __name__ == '__main__':
     # stage 0: dark esr
 
     # stage 1: find CORPSE Rabi frequency
-    # run_calibrations(1)
+    #run_calibrations(1)
 
-    # stage 2: calibrate CORPSE pi pulse
-    #run_calibrations(2)
+    # stage 2: calibrate CORPSE pi and pi2 pulses
+    run_calibrations(2)
 
     #find_CORPSE_fidelity(name)
-    find_CORPSE_pi2_fidelity(name)
+    #find_CORPSE_pi2_fidelity(name)

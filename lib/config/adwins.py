@@ -869,6 +869,12 @@ config['adwin_lt1_dios'] = {
 
 config['adwin_lt1_processes'] = {
         
+        'init_data' :  {
+            'index' : 5, 
+            'file' : 'init_data.TB5',
+            },
+
+
         'linescan' : {
             
             'index' : 2, 
@@ -1358,9 +1364,9 @@ config['adwin_lt1_processes'] = {
                 'params_float_length'   : 10,
                 'par' : {
                     'CR_preselect'  : 75,
-                    'CR_probe'      : 76,
+                    'CR_probe'      : 68,
                     'completed_reps' : 77,
-                    'total_red_CR_counts' : 69,
+                    'total_red_CR_counts' : 70,
                     },
                 'data_long' : {
                     'CR_hist_time_out' : 7,

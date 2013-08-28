@@ -15,15 +15,37 @@ reload(funcs)
 from measurement.scripts.teleportation import sequence 
 reload(sequence)
 
-name = 'sil15'
+name = 'sil9'
 
 
 def prepare(m):
     funcs.prepare(m)
 
     m.params_lt2 = m2.MeasurementParameters('LT2Parameters')
-    m.params_lt2['MW_pulse_mod_risetime'] = 10e-9  
-    sequence.pulse_defs_lt2(m)
+    
+    m.CORPSE_pi = pulselib.IQ_CORPSE_pi_pulse('CORPSE pi-pulse',
+        I_channel = 'MW_Imod', 
+        Q_channel = 'MW_Qmod',    
+        PM_channel = 'MW_pulsemod',
+        PM_risetime = m.params['MW_pulse_mod_risetime'],
+        frequency = m.params['CORPSE_pi_mod_frq'],
+        amplitude = m.params['CORPSE_pi_amp'],
+        length_60 = m.params['CORPSE_pi_60_duration'],
+        length_m300 = m.params['CORPSE_pi_m300_duration'],
+        length_420 = m.params['CORPSE_pi_420_duration'])    
+
+    m.CORPSE_pi2 = pulselib.IQ_CORPSE_pi2_pulse('CORPSE pi2-pulse',
+        I_channel = 'MW_Imod', 
+        Q_channel = 'MW_Qmod',
+        PM_channel = 'MW_pulsemod',
+        PM_risetime = m.params['MW_pulse_mod_risetime'],
+        frequency = m.params['CORPSE_pi2_mod_frq'],
+        amplitude = m.params['CORPSE_pi2_amp'],
+        length_24p3 = m.params['CORPSE_pi2_24p3_duration'],
+        length_m318p6 = m.params['CORPSE_pi2_m318p6_duration'],
+        length_384p3 = m.params['CORPSE_pi2_384p3_duration'])
+
+    #sequence.pulse_defs_lt2(m)
 
 
 def finish(m, upload=True, debug=False, **kw):
@@ -232,11 +254,13 @@ class ZerothRevival(pulsar_msmt.PulsarMeasurement):
 
 
 
+### functions
 
 
-### Calibration stage 1
+###### calibrating  #######
+
 def dd_sweep_free_ev_time(name):
-    m = DynamicalDecoupling('sweep_free_ev_time_second_revival')
+    m = DynamicalDecoupling('calibrate_first_revival')
     prepare(m)
 
     pts = 41
@@ -245,22 +269,75 @@ def dd_sweep_free_ev_time(name):
     m.params['wait_for_AWG_done'] = 1
 
     # sweep params
-    m.params['revival_nr'] = 2
-    #free evolutiona time is half the total evolution time!!! from end to begin of pulses
+    m.params['revival_nr'] = 1
+    #free evolutiona time is half the total evolution time!!! from centre to centre of pulses
     m.params['free_evolution_times'] = np.linspace(-15e-6, 15e-6, pts) + \
         m.params['first_C_revival'] * m.params['revival_nr']#
+    m.params['extra_t_between_pulses'] = np.ones(pts) * 0e-9
+    m.params['extra_ts_before_pi2'] = np.ones(pts) * 0
     m.params['CORPSE_pi_phases'] = np.ones(pts)*0
     m.params['phases'] = np.ones(pts)*0. 
     m.params['multiplicity'] = 1
 
     #m.params['CORPSE_pi_amp'] = 0.
-    #m.params['CORPSE_pi2_amp'] = 0.
+    m.params['CORPSE_pi2_2_amp'] = m.params['CORPSE_pi2_amp']
 
     # for the autoanalysis
     m.params['sweep_name'] = 'total free evolution time (us)'
     m.params['sweep_pts'] = 2*m.params['free_evolution_times'] / 1e-6  
 
     finish(m,upload=True,debug=False)
+
+
+
+def dd_sweep_t_between_pi_pulses(name):
+    m = DynamicalDecoupling('calibrate_dt_between_pi_pulses_r=1_YY')
+    prepare(m)
+
+    pts = 61
+    m.params['pts'] = pts
+    m.params['repetitions'] = 1000
+    m.params['wait_for_AWG_done'] = 1
+    m.params['revivals'] = 1
+
+    # sweep params
+    m.params['free_evolution_times'] = np.ones(pts) * m.params['first_C_revival'] * m.params['revivals'] #+ 53e-6#
+    m.params['extra_t_between_pulses'] = np.linspace(-300e-9,-180e-9,pts)
+    m.params['extra_ts_before_pi2']  = np.ones(pts) * 0
+    m.params['CORPSE_pi2_2_amp'] = m.params['CORPSE_pi2_amp']
+    m.params['CORPSE_pi_phases'] = np.ones(pts) * -90
+    m.params['phases'] = np.ones(pts) * 0 
+    m.params['multiplicity'] = 2
+
+    # for the autoanalysis
+    m.params['sweep_name'] = 'EXTRA time between CORPSE pulses (ns)'
+    m.params['sweep_pts'] = m.params['extra_t_between_pulses'] /1e-6
+
+    finish(m)
+
+
+def dd_sweep_t_before_pi2(name):
+    m = DynamicalDecoupling('sweep_t_before_second_pi2_m=2')
+    prepare(m)
+
+    pts = 61
+    m.params['pts'] = pts
+    m.params['repetitions'] = 1000
+    m.params['wait_for_AWG_done'] = 1
+
+    m.params['free_evolution_times'] = np.ones(pts) * m.params['first_C_revival'] #+ 53e-6#
+    m.params['extra_t_between_pulses'] = np.ones(pts) * 0
+    m.params['CORPSE_pi_phases'] = np.ones(pts) * 0
+    m.params['phases'] = np.ones(pts) * 0 
+    m.params['multiplicity'] = 2
+    # sweep params
+    m.params['extra_ts_before_pi2'] = np.linspace(-600e-9,2000e-9,pts)
+
+    # for the autoanalysis
+    m.params['sweep_name'] = 'EXTRA time before pi/2 analysis pulse (us)'
+    m.params['sweep_pts'] = m.params['extra_ts_before_pi2'] /1e-6  
+
+    finish(m)
 
 
 def dd_sweep_analysis_phase(name):
@@ -285,27 +362,9 @@ def dd_sweep_analysis_phase(name):
 
     finish(m,upload=False,debug=True)
 
-def dd_sequence(name):
-    m = DynamicalDecoupling('2_pulses_sweep_fet')
-    prepare(m)
 
-    pts = 41
-    m.params['pts'] = pts
-    m.params['repetitions'] = 1000
-    m.params['wait_for_AWG_done'] = 1
 
-    # sweep params
-    m.params['free_evolution_times'] = np.linspace(-15e-6, 15e-6, pts) + m.params['first_C_revival'] #+ 53e-6#
-    m.params['extra_t_between_pulses'] = np.ones(pts)*0
-    m.params['CORPSE_pi_phases'] = np.ones(pts) * 0
-    m.params['phases'] = np.ones(pts)*0 #linspace(0,360,pts)
-    m.params['multiplicity'] = 1
-
-    # for the autoanalysis
-    m.params['sweep_name'] = 'total free evolution time (us)'
-    m.params['sweep_pts'] = 2* m.params['free_evolution_times'] /1e-6  
-
-    finish(m, upload = True, debug = False)
+#### debugging ####
 
 def dd_spinecho_no_2nd_pi(name):
     m = DynamicalDecoupling('2_pulses_sweep_fet')
@@ -363,10 +422,40 @@ def dd_spinecho_no_pi_and_2nd_pi(name):
     finish(m, upload = True, debug = False)
 
 
+#### XX sequence ######
 
+def dd_sequence(name):
+    m = DynamicalDecoupling('XX_sequence_sweep_fet')
+    prepare(m)
+
+    pts = 41
+    m.params['pts'] = pts
+    m.params['repetitions'] = 1000
+    m.params['wait_for_AWG_done'] = 1
+    m.params['revivals'] = 1
+
+    # sweep params
+    m.params['free_evolution_times'] = np.linspace(-15e-6, 15e-6, pts) + m.params['first_C_revival'] * m.params['revivals'] #+ 53e-6#
+    m.params['extra_t_between_pulses'] = np.ones(pts) * -233e-9
+    m.params['CORPSE_pi_phases'] = np.ones(pts) * 0
+    m.params['extra_ts_before_pi2']  = np.ones(pts) * 0
+    m.params['CORPSE_pi2_2_amp'] = m.params['CORPSE_pi2_amp']
+
+    m.params['phases'] = np.ones(pts)*0 #linspace(0,360,pts)
+    m.params['multiplicity'] = 2
+
+    # for the autoanalysis
+    m.params['sweep_name'] = 'total free evolution time (us)'
+    m.params['sweep_pts'] = (2* m.params['free_evolution_times'] *m.params['multiplicity'] - 234e-9) /1e-6  
+
+    finish(m, upload = True, debug = False)
+
+
+
+#### YY sequence ######
 
 def dd_Y_sequence(name):
-    m = DynamicalDecoupling('1_Y_pulse_sweep_fet')
+    m = DynamicalDecoupling('YY_sequence_sweep_fet')
     prepare(m)
 
     pts = 41
@@ -387,51 +476,10 @@ def dd_Y_sequence(name):
     finish(m)
 
 
-def dd_sweep_between(name):
-    m = DynamicalDecoupling('2_pulses_sweep_fet_between_2')
-    prepare(m)
-
-    pts = 41
-    m.params['pts'] = pts
-    m.params['repetitions'] = 1000
-    m.params['wait_for_AWG_done'] = 1
-
-    # sweep params
-    m.params['free_evolution_times'] = np.ones(pts) * m.params['first_C_revival'] #+ 53e-6#
-    m.params['extra_t_between_pulses'] = np.linspace(-1200e-9,1200e-9,pts)
-    m.params['CORPSE_pi_phases'] = np.ones(pts) * 0
-    m.params['phases'] = np.ones(pts) * 0 
-    m.params['multiplicity'] = 2
-
-    # for the autoanalysis
-    m.params['sweep_name'] = 'EXTRA total free evolution time between CORPSE pulses (us)'
-    m.params['sweep_pts'] = m.params['extra_t_between_pulses'] /1e-6  
-
-    finish(m)
 
 
-def dd_sweep_t_before_pi2(name):
-    m = DynamicalDecoupling('sweep_t_before_second_pi2_m=2')
-    prepare(m)
 
-    pts = 61
-    m.params['pts'] = pts
-    m.params['repetitions'] = 1000
-    m.params['wait_for_AWG_done'] = 1
-
-    m.params['free_evolution_times'] = np.ones(pts) * m.params['first_C_revival'] #+ 53e-6#
-    m.params['extra_t_between_pulses'] = np.ones(pts) * 0
-    m.params['CORPSE_pi_phases'] = np.ones(pts) * 0
-    m.params['phases'] = np.ones(pts) * 0 
-    m.params['multiplicity'] = 2
-    # sweep params
-    m.params['extra_ts_before_pi2'] = np.linspace(-600e-9,2000e-9,pts)
-
-    # for the autoanalysis
-    m.params['sweep_name'] = 'EXTRA time before pi/2 analysis pulse (us)'
-    m.params['sweep_pts'] = m.params['extra_ts_before_pi2'] /1e-6  
-
-    finish(m)
+#### XY4 #########
 
 
 def dd_xy4_sweep_fet(name):
@@ -442,11 +490,13 @@ def dd_xy4_sweep_fet(name):
     m.params['pts'] = pts
     m.params['repetitions'] = 1000
     m.params['wait_for_AWG_done'] = 1
+    m.params['revivals'] = 1
 
-    m.params['free_evolution_times'] = np.linspace(-15e-6,15e-6,pts) + m.params['first_C_revival'] #+ 53e-6#
-    m.params['extra_t_between_pulses'] = np.ones(pts) * -245e-9
+    m.params['free_evolution_times'] = np.linspace(-1.25e-6,1.25e-6,pts) + m.params['first_C_revival'] *m.params['revivals']
+    m.params['extra_t_between_pulses'] = np.ones(pts) * -235e-9
     m.params['phases'] = np.ones(pts) * 0 
-    
+    m.params['CORPSE_pi2_2_amp'] = m.params['CORPSE_pi2_amp']
+
     # sweep params
     m.params['extra_ts_before_pi2'] = np.ones(pts) * 0
 
@@ -457,7 +507,7 @@ def dd_xy4_sweep_fet(name):
     # for the autoanalysis
     m.params['sweep_name'] = 'total free evolution time (us)'
     m.params['sweep_pts'] = (2 * m.params['multiplicity'] * m.params['free_evolution_times'] \
-        + (m.params['multiplicity']-1) * -245e-9 )/1e-6  
+        + (m.params['multiplicity']-1) * -235e-9 )/1e-6  
 
     finish(m)
 
@@ -465,14 +515,16 @@ def dd_xy4_sweep_t_between_pi(name):
     m = DynamicalDecoupling('dd_xy4_sweep_t_between_pi')
     prepare(m)
 
-    pts = 41
+    pts = 31
     m.params['pts'] = pts
     m.params['repetitions'] = 1000
     m.params['wait_for_AWG_done'] = 1
+    m.params['revivals']
 
-    m.params['free_evolution_times'] = np.ones(pts) * m.params['first_C_revival'] #+ 53e-6#
-    m.params['extra_t_between_pulses'] = np.linspace(-1600e-9,1600e-9,pts)
+    m.params['free_evolution_times'] = np.ones(pts) * m.params['first_C_revival']  * m.params['revivals']#+ 53e-6#
+    m.params['extra_t_between_pulses'] = np.linspace(-300e-9,-180e-9,pts)
     m.params['phases'] = np.ones(pts) * 0 
+    m.params['CORPSE_pi2_2_amp'] = m.params['CORPSE_pi2_amp']
     
     # sweep params
     m.params['extra_ts_before_pi2'] = np.ones(pts) * 0
@@ -488,6 +540,71 @@ def dd_xy4_sweep_t_between_pi(name):
     m.params['sweep_pts'] = m.params['extra_t_between_pulses'] /1e-6  
 
     finish(m)
+
+
+#### XY 8 #######
+
+
+def dd_xy8_sweep_fet(name):
+    m = DynamicalDecoupling('dd_xy8_sweep_fet')
+    prepare(m)
+
+    pts = 41
+    m.params['pts'] = pts
+    m.params['repetitions'] = 1000
+    m.params['wait_for_AWG_done'] = 1
+
+    m.params['free_evolution_times'] = np.linspace(-10e-6,10e-6,pts) + m.params['first_C_revival'] #+ 53e-6#
+    m.params['extra_t_between_pulses'] = np.ones(pts) * -179e-9
+    m.params['phases'] = np.ones(pts) * 0 
+    m.params['CORPSE_pi2_2_amp'] = m.params['CORPSE_pi2_amp']
+
+    # sweep params
+    m.params['extra_ts_before_pi2'] = np.ones(pts) * 0
+
+    #define the decoupling sequence:
+    m.params['multiplicity'] = 8
+    m.params['CORPSE_pi_phases'] = [0,-90,0,-90,90,180,90,180]
+
+    # for the autoanalysis
+    m.params['sweep_name'] = 'total free evolution time (us)'
+    m.params['sweep_pts'] = (2 * m.params['multiplicity'] * m.params['free_evolution_times'] \
+        + (m.params['multiplicity']-1) * -179e-9 )/1e-6  
+
+    finish(m)
+
+def dd_xy8_sweep_t_between_pi(name):
+    m = DynamicalDecoupling('dd_xy8_sweep_t_between_pi')
+    prepare(m)
+
+    pts = 41
+    m.params['pts'] = pts
+    m.params['repetitions'] = 1000
+    m.params['wait_for_AWG_done'] = 1
+
+    m.params['free_evolution_times'] = np.ones(pts) * m.params['first_C_revival'] #+ 53e-6#
+    m.params['extra_t_between_pulses'] = np.linspace(-1000e-9,600e-9,pts)
+    m.params['phases'] = np.ones(pts) * 0 
+    m.params['CORPSE_pi2_2_amp'] = m.params['CORPSE_pi2_amp']
+    
+    # sweep params
+    m.params['extra_ts_before_pi2'] = np.ones(pts) * 0
+
+    #define the decoupling sequence:
+    # the decoupling sequence is formed of a specific number of pulses, with specific phase. 
+    #Define here for each pulse a phase.
+    m.params['multiplicity'] = 8
+    m.params['CORPSE_pi_phases'] = [0,-90,0,-90,90,180,90,180]
+
+    # for the autoanalysis
+    m.params['sweep_name'] = 'EXTRA time between pi pulses (us)'
+    m.params['sweep_pts'] = m.params['extra_t_between_pulses'] /1e-6  
+
+    finish(m)
+
+
+####### t1 ##########
+
 
 def t1(name):
     m = DynamicalDecoupling('measure_t1_from_ms0')
@@ -516,13 +633,17 @@ def t1(name):
 
     finish(m, init_ms1 = False)
 
+
+####### t2 ##########
+
+
 def t2(name):
-    revival_nrs = np.arange(10)+1
+    revival_nrs = np.arange(14)+1
 
     # make a seperately named folder for each revival, that the analysis script can recognize.
     
     for r in revival_nrs:
-        m = DynamicalDecoupling('t2_revival_{}'.format(r))
+        m = DynamicalDecoupling('t2_revival_{}_'.format(r))
         prepare(m)
 
         pts = 16
@@ -538,7 +659,7 @@ def t2(name):
         m.params['multiplicity'] = 1
         # sweep params
     
-        m.params['free_evolution_times'] = np.linspace(-15e-6,15e-6,pts) + \
+        m.params['free_evolution_times'] = np.linspace(-14e-6,14e-6,pts) + \
             r * m.params['first_C_revival'] 
         
         # for the autoanalysis
@@ -553,17 +674,55 @@ def t2(name):
         m.save()
         m.finish()
 
+def t2_XY4(name):
+    revival_nrs = np.arange(14)+1
+
+    # make a seperately named folder for each revival, that the analysis script can recognize.
+    
+    for r in revival_nrs:
+        m = DynamicalDecoupling('t2_xy4_revival_{}_'.format(r))
+        prepare(m)
+
+        pts = 11
+        m.params['pts'] = pts
+        m.params['repetitions'] = 1000
+        m.params['wait_for_AWG_done'] = 1
+
+        m.params['extra_t_between_pulses'] = np.ones(pts) * 0
+        m.params['extra_ts_before_pi2']  = np.ones(pts) * -233e-9
+        m.params['CORPSE_pi_phases'] = np.ones(pts) * 0
+        m.params['CORPSE_pi2_2_amp'] = m.params['CORPSE_pi2_amp']
+        m.params['phases'] = [0,-90,0,-90]
+        m.params['multiplicity'] = 4
+        # sweep params
+    
+        m.params['free_evolution_times'] = np.linspace(-15e-6,15e-6,pts) + \
+            r * m.params['first_C_revival'] 
+        
+        # for the autoanalysis
+        m.params['sweep_name'] = 'total free evolution time (us)'
+        m.params['sweep_pts'] = 2*m.params['multiplicity']*m.params['free_evolution_times'] -212e-9*r*(m.params['multiplicity']-1) /1e-6  
+
+        print 'revival-{}'.format(r)
+
+        m.autoconfig()
+        m.generate_sequence()
+        m.run()
+        m.save()
+        m.finish()
+
+
 def zerothrevival(name):
-    m = ZerothRevival('pi2-pi-pi2_revival_0')
+    m = ZerothRevival('pi2-pi-pi2_revival_0_')
     prepare(m)
 
-    pts = 41
+    pts = 21
     m.params['pts'] = pts
     m.params['repetitions'] = 1000
     m.params['wait_for_AWG_done'] = 1
 
     # sweep params
-    m.params['free_evolution_times'] = np.linspace(10e-9,15e-6+10e-9, pts) #+\
+    m.params['free_evolution_times'] = np.linspace(10e-9,8e-6+10e-9, pts) #+\
         #m.params['first_C_revival']
     m.params['pi2_phases'] = np.ones(pts) * 0 
 
@@ -614,17 +773,28 @@ def twod_tau_sweep(name):
 
 
 if __name__ == '__main__':
+    #calibrate the position of first Carbon revival. 
     #dd_sweep_free_ev_time(name)
+
+    #calibrate the extra time between pi pulses (on top of free evolution time)
+    #dd_sweep_t_between_pi_pulses(name)
+
     #dd_sweep_analysis_phase(name)
-    #dd_sequence(name)
+    #dd_sweep_t_before_pi2(name)
+
     #dd_spinecho_no_2nd_pi(name)
     #dd_spinecho_no_pi_and_2nd_pi(name)
+
+    #dd_sequence(name)
     #dd_Y_sequence(name+'test')
-    #dd_sweep_between(name+'test')
-    #dd_sweep_t_before_pi2(name)
-    #dd_xy4_sweep_fet(name)
+
     #dd_xy4_sweep_t_between_pi(name)
+    #dd_xy4_sweep_fet(name)
+    #dd_xy8_sweep_t_between_pi(name)
+    #dd_xy8_sweep_fet(name)
+    
     #t1(name)
     t2(name)
-    
-    #zerothrevival(name+'test')
+    #t2_xy4(name)
+
+    #zerothrevival(name)

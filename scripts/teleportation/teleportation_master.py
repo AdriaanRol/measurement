@@ -222,7 +222,7 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
                 self.mwsrc_lt2.set_status('on' if DO_SEQUENCES else 'off')
                 
                 # have different types of sequences we can load.
-                if DO_OPT_RABI_MSMT:
+                if DO_OPT_RABI_AMP_SWEEP:
                     self.lt2_opt_rabi_sequence()
                 else:
                     self.lt2_sequence()
@@ -326,7 +326,7 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
 
         # if required, insert a marker after the sync pulse
         if DO_LDE_ATTEMPT_MARKER:
-            e.add(self.HH_marker, name = 'attempt marker', start = 200e-9,
+            e.add(self.HH_marker, name = 'attempt marker', start = HH_MIN_SYNC_TIME*1e-12 + 500e-9,
                 refpulse = syncpulse_name, refpoint = 'start')
 
         return e
@@ -475,6 +475,7 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
             rawdata_idx = 1
             t_ofl = 0
             t_lastsync = 0
+            last_sync_number = 0
 
             # note: for the live data, 32 bit is enough ('u4') since timing uses overflows.
             dset_hhtime = self.h5data.create_dataset('HH_time-{}'.format(rawdata_idx), 
@@ -484,7 +485,9 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
             dset_hhspecial = self.h5data.create_dataset('HH_special-{}'.format(rawdata_idx), 
                 (0,), 'u1', maxshape=(None,))
             dset_hhsynctime = self.h5data.create_dataset('HH_sync_time-{}'.format(rawdata_idx), 
-                (0,), 'u8', maxshape=(None,))        
+                (0,), 'u8', maxshape=(None,))
+            dset_hhsyncnumber = self.h5data.create_dataset('HH_sync_number-{}'.format(rawdata_idx), 
+                (0,), 'u4', maxshape=(None,))      
             current_dset_length = 0
             
             self.hharp.StartMeas(int(self.params['measurement_time']* 1e3)) # this is in ms
@@ -522,8 +525,11 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
             
                 if _length > 0:
                     _t, _c, _s = self._HH_decode(_data[:_length])
-                    hhtime, hhchannel, hhspecial, sync_time, newlength, t_ofl, t_lastsync = \
-                        T2_tools.LDE_live_filter(_t, _c, _s, t_ofl, t_lastsync)
+                    
+                    hhtime, hhchannel, hhspecial, sync_time, sync_number, \
+                        newlength, t_ofl, t_lastsync, last_sync_number = \
+                            T2_tools.LDE_live_filter(_t, _c, _s, t_ofl, t_lastsync, last_sync_number,
+                                np.uint64(HH_MIN_SYNC_TIME), np.uint64(HH_MAX_SYNC_TIME))
 
                     if newlength > 0:
 
@@ -531,11 +537,13 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
                         dset_hhchannel.resize((current_dset_length+newlength,))
                         dset_hhspecial.resize((current_dset_length+newlength,))
                         dset_hhsynctime.resize((current_dset_length+newlength,))
+                        dset_hhsyncnumber.resize((current_dset_length+newlength,))
 
                         dset_hhtime[current_dset_length:] = hhtime
                         dset_hhchannel[current_dset_length:] = hhchannel
                         dset_hhspecial[current_dset_length:] = hhspecial
                         dset_hhsynctime[current_dset_length:] = sync_time
+                        dset_hhsyncnumber[current_dset_length:] = sync_number
 
                         current_dset_length += newlength
                         self.h5data.flush()
@@ -549,14 +557,17 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
                         dset_hhspecial = self.h5data.create_dataset('HH_special-{}'.format(rawdata_idx), 
                             (0,), 'u1', maxshape=(None,))
                         dset_hhsynctime = self.h5data.create_dataset('HH_sync_time-{}'.format(rawdata_idx), 
-                            (0,), 'u8', maxshape=(None,))        
+                            (0,), 'u8', maxshape=(None,))
+                        dset_hhsyncnumber = self.h5data.create_dataset('HH_sync_number-{}'.format(rawdata_idx), 
+                            (0,), 'u4', maxshape=(None,))         
                         current_dset_length = 0
 
                         self.h5data.flush()
-
         
         self.stop_adwin_processes()
-        self.hharp.StopMeas()
+        
+        if HH:
+            self.hharp.StopMeas()
 
     def run(self):
         self.autoconfig()
@@ -808,16 +819,19 @@ EXEC_FROM = 'lt2'
 USE_LT1 = True
 USE_LT2 = True
 YELLOW = True
-HH = True                 # if False no HH data acquisition from within qtlab.
-DO_POLARIZE_N = True      # if False, no N-polarization sequence on LT1 will be used
-DO_SEQUENCES = True       # if False, we won't use the AWG at all
+HH = False                # if False no HH data acquisition from within qtlab.
+DO_POLARIZE_N = False      # if False, no N-polarization sequence on LT1 will be used
+DO_SEQUENCES = True      # if False, we won't use the AWG at all
 DO_LDE_SEQUENCE = True    # if False, no LDE sequence (both setups) will be done
 LDE_LONG_HIST = True      # if True there will be only 1 HH sync at the beginning of LDE
 LDE_SINGLE_SYNC = True    # if False, every opt puls has its own sync
 LDE_DO_MW = False         # if True, there will be MW in the LDE seq
 MAX_HHDATA_LEN = int(100e6)
 DO_LDE_ATTEMPT_MARKER = True # if True, insert a marker to the HH after each sync
-DO_OPT_RABI_MSMT = True # if true, we sweep the rabi parameters instead of doing LDE; essentially this only affects the sequence we make
+DO_OPT_RABI_AMP_SWEEP = False # if true, we sweep the rabi parameters instead of doing LDE; essentially this only affects the sequence we make
+HH_MIN_SYNC_TIME = 9e6 # 9 us
+HH_MAX_SYNC_TIME = 10.2e6 # 10.2 us
+
        
 ### configure the hardware (statics)
 TeleportationMaster.adwins = {
@@ -858,7 +872,7 @@ def setup_msmt(name):
     m.load_settings()
     return m
 
-def setup_slave_msmt():
+def setup_remote_sequence():
     m = TeleportationSlave()
     m.load_settings()
     m.update_definitions()
@@ -873,22 +887,23 @@ def start_msmt(m):
 def default_msmt(name):
     ### first start the slave
     ### TODO: make more like master if at some point more dynamic settings are needed
-    setup_slave_msmt()
+    if DO_SEQUENCES:
+        setup_remote_sequence()
 
     # setup the master measurement
-    m = setup_msmt('testing'+name)
+    m = setup_msmt('testing_'+name)
 
     m.params_lt1['max_CR_starts'] = -1
     m.params_lt1['teleportation_repetitions'] = -1
-    m.params['measurement_time'] = 5 # seconds; only affects msmt with HH.
+    m.params['measurement_time'] = 10 # seconds; only affects msmt with HH.
 
-    pts = 5
+    pts = 11
     m.params['opt_rabi_sweep_pts'] = pts
-    m.params['eom_pulse_amplitudes'] = np.linspace(1,1.2,pts)
+    m.params['eom_pulse_amplitudes'] = np.linspace(0.5,1.5,pts)
 
     start_msmt(m)
 
 if __name__ == '__main__':
-    default_msmt('optical_rabi_debug')
+    default_msmt('debugging')
 
                                                                                                                                                                                                                                                                                           

@@ -287,11 +287,11 @@ def yellow_laser_scan(name):
     m.repump_power_during = 0.5e-6
       
     #Scan setup
-    m.laser_power = 5e-9
+    m.laser_power = 2e-9
     m.integration_time = 10 # ms
     m.min_v = -9
     m.max_v = 9
-    m.v_step=-0.01
+    m.v_step=-0.02
     
     m.start_frequency = 28 #GHz
     m.stop_frequency = 40 #GHz
@@ -323,9 +323,9 @@ def red_laser_scan(name):
     m.counter_channel = 0
 
     # MW setup
-    m.use_mw = True
-    m.mw_frq =  qt.cfgman['samples']['sil15']['ms+1_cntr_frq']
-    m.mw_power = -5
+    m.use_mw = False
+    m.mw_frq =  qt.cfgman['samples']['sil9']['ms-1_cntr_frq']
+    m.mw_power = -8
     
     # repump setup
     m.yellow_repump = False
@@ -334,19 +334,19 @@ def red_laser_scan(name):
     m.yellow_repump_duration = 4 #seconds
 
     m.repump_power = 100e-6
-    m.use_repump_during = False
+    m.use_repump_during = True
     m.repump_duration = 0.5 # seconds
-    m.repump_power_during = 0.0e-6
+    m.repump_power_during = 0.1e-6
     
     #Scan setup
-    m.laser_power = 20e-9
+    m.laser_power = 5e-9
     m.integration_time = 10 # ms
     m.min_v = -9
     m.max_v = 9
-    m.v_step=0.002
+    m.v_step=0.01
     
-    m.start_frequency = 58 #GHz
-    m.stop_frequency = 70 #GHz
+    m.start_frequency = 60 #GHz
+    m.stop_frequency = 85 #GHz
     
     
     #Gate scan setup
@@ -369,7 +369,7 @@ def red_laser_scan(name):
 if __name__=='__main__':
     
     stools.turn_off_all_lt2_lasers()
-    red_laser_scan('red_scan_coarse_sil15')
+    red_laser_scan('red_scan_coarse_lt2_sil9_w_green')
     #yellow_laser_scan('yellow_1nW')
 
         

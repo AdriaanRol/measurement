@@ -18,7 +18,7 @@ optimiz0r_lt1 = qt.instruments.create('optimiz0r_lt1', 'optimiz0r',opt1d_ins=
         opt1d_counts_lt1, mos_ins = master_of_space_lt1, dimension_set='lt1')
 
 def _do_remote_connect_lt1():
-    global powermeter_lt1, SMB100_lt1, PMServo_lt1, ZPLServo_lt1
+    global powermeter_lt1, SMB100_lt1, PMServo_lt1, ZPLServo_lt1, ivvi_lt1
     
     from lib.network import object_sharer as objsh
     if objsh.start_glibtcp_client('192.168.0.20',port=12002, nretry=3, timeout=5):
@@ -33,6 +33,9 @@ def _do_remote_connect_lt1():
                 remote_name='PMServo', inssrv=remote_ins_server_lt1)
         ZPLServo_lt1= qt.instruments.create('ZPLServo_lt1', 'Remote_Instrument',
                 remote_name='ZPLServo', inssrv=remote_ins_server_lt1)
+        ivvi = qt.instruments.create('ivvi_lt1', 'Remote_Instrument',
+                remote_name='ivvi', inssrv=remote_ins_server_lt1)
+
         return True
     
     logging.warning('Failed to start remote instruments') 
