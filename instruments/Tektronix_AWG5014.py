@@ -458,7 +458,7 @@ class Tektronix_AWG5014(Instrument):
     def _do_get_runmode(self):
         self._runmode = self._visainstrument.ask('AWGC:RMOD?')
         return self._runmode
-    def get_runmode(self, runmode='CONT'):
+    def get_runmode(self):
         return self._do_get_runmode()
     
     def set_runmode(self, runmode='CONT'):
