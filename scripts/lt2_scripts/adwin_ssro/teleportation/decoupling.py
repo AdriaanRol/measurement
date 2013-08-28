@@ -574,6 +574,44 @@ def zerothrevival(name):
     finish(m)
 
 
+def twod_tau_sweep(name):
+    pts = 11
+    fet = m.params['first_C_revival']
+    m.params['tau_pi2_to_pi'] = fet + np.linspace(-500e-9,500e-9,pts)
+    m.params['tau_pi_to_pi'] = fet + np.linspace(-500e-9,500e-9,pts)
+    # make a seperately named folder for each revival, that the analysis script can recognize.
+    
+    for i,t in enumerate(m.params['tau_pi_to_pi']):
+        m = DynamicalDecoupling('twod_tau_sweep_{}_'.format(i))
+        prepare(m)
+
+        m.params['pts'] = pts
+        m.params['repetitions'] = 1000
+        m.params['wait_for_AWG_done'] = 1
+
+        m.params['extra_ts_before_pi2']  = np.ones(pts) * 0
+        m.params['CORPSE_pi_phases'] = np.ones(pts) * 0
+        m.params['CORPSE_pi2_2_amp'] = m.params['CORPSE_pi2_amp']
+        m.params['phases'] = np.ones(pts) * 0 
+        m.params['multiplicity'] = 2
+        
+        # sweep params
+        m.params['free_evolution_times'] = m.params['tau_pi2_to_pi']  
+        m.params['extra_t_between_pulses'] = i - m.params['tau_pi2_to_pi'] 
+
+        
+        # for the autoanalysis
+        m.params['sweep_name'] = 'pi/2 to pi free evolution time (us)'
+        m.params['sweep_pts'] = m.params['tau_pi2_to_pi']  /1e-6  
+
+        print 'sweep tau {} of {}'.format(i,pts) 
+
+        m.autoconfig()
+        m.generate_sequence()
+        m.run()
+        m.save()
+        m.finish()
+
 
 if __name__ == '__main__':
     #dd_sweep_free_ev_time(name)

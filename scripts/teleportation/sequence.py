@@ -77,9 +77,45 @@ def pulse_defs_lt1(msmt):
     msmt.T_pulse = pulse.SquarePulse(channel='MW_pulsemod',
         length = 50e-9, amplitude = 0)
 
+    msmt.TIQ_pulse = pulse.SquarePulse(channel='MW_Imod',
+        length = 10e-9, amplitude = 0)
+
+    # mw pulses
+    msmt.e_pulse = pulselib.MW_IQmod_pulse('MW pulse',
+        I_channel = 'MW_Imod', 
+        Q_channel = 'MW_Qmod',
+        PM_channel = 'MW_pulsemod',
+        PM_risetime = msmt.params_lt1['MW_pulse_mod_risetime'])
+
+    msmt.pi_pulse = pulselib.MW_IQmod_pulse('MW pi pulse',
+        I_channel = 'MW_Imod', 
+        Q_channel = 'MW_Qmod',
+        PM_channel = 'MW_pulsemod',
+        PM_risetime = msmt.params_lt1['MW_pulse_mod_risetime'],
+        frequency = msmt.params_lt1['MW_pi_mod_frq'],
+        amplitude = msmt.params_lt1['MW_pi_amplitude'],
+        length = msmt.params_lt1['MW_pi_length'])
+
+    msmt.pi_pulse = pulselib.MW_IQmod_pulse('MW pi2 pulse',
+        I_channel = 'MW_Imod', 
+        Q_channel = 'MW_Qmod',
+        PM_channel = 'MW_pulsemod',
+        PM_risetime = msmt.params_lt1['MW_pulse_mod_risetime'],
+        frequency = msmt.params_lt1['MW_pi2_mod_frq'],
+        amplitude = msmt.params_lt1['MW_pi2_amplitude'],
+        length = msmt.params_lt1['MW_pi2_length'])
+
     ### synchronizing, etc
     msmt.adwin_lt1_trigger_pulse = pulse.SquarePulse(channel = 'adwin_sync',
         length = 5e-6, amplitude = 2)
 
     msmt.AWG_LT2_trigger_pulse = pulse.SquarePulse(channel='AWG_LT2_trigger',
         length = 10e-9, amplitude = 2)
+
+
+
+
+
+    # light
+    msmt.SP_pulse = pulse.SquarePulse(channel = 'Velocity1AOM', amplitude = 1.0)
+    msmt.yellow_pulse = pulse.SquarePulse(channel = 'YellowAOM', amplitude = 1.0)
