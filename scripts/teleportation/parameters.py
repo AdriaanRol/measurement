@@ -92,17 +92,27 @@ params_lt2['A_RO_amplitude'] = 0
 params_lt2['repump_amplitude'] = 300e-6
 
 ### pulses and MW stuff
+params_lt1['ms-1_cntr_frq'] = 2.83e9 
 params_lt1['mw_frq'] = 2.8e9
 params_lt1['mw_power'] = 20
 params_lt1['MW_pulse_mod_risetime'] = 10e-9
+params_lt1['mi-1_mod_frq'] = params_lt1['ms-1_cntr_frq'] - params_lt1['mw_frq']
+
 
 params_lt2['mw_frq'] = 2.8e9
 params_lt2['mw_power'] = 20
 params_lt2['MW_pulse_mod_risetime'] = 10e-9
 
+#the LDE sequence pi and pi/2 pulse on mI=-1
+params_lt1['MW_pi_mod_frq'] = params_lt1['mi-1_mod_frq']
+params_lt1['MW_pi_amplitude'] = 0.9
+params_lt1['MW_pi_length'] = 63e-9
+
+params_lt1['MW_pi2_mod_frq'] = m.params_lt1['mi-1_mod_frq']
+params_lt1['MW_pi2_amplitude'] = 0.9
+params_lt1['MW_pi2_length'] = 31e-9
 
 ## Hannes: i just copied these corpse parameters from msmt_params in setup
-
 CORPSE_frq = 8.035e6
 params_lt2['CORPSE_pi2_mod_frq'] = params_lt2['mw_frq']
 params_lt2['CORPSE_pi2_amp'] = 0.639
@@ -115,6 +125,8 @@ params_lt2['CORPSE_pi_amp'] = 0.605
 params_lt2['CORPSE_pi_60_duration'] =1./CORPSE_frq/6.
 params_lt2['CORPSE_pi_m300_duration'] = 5./CORPSE_frq/6.
 params_lt2['CORPSE_pi_420_duration'] = 7./CORPSE_frq/6.
+
+
 
 
 ### LDE sequence settings
@@ -160,7 +172,8 @@ params['LDE_SP_duration']             = 9e-6
 
 params['wait_after_sp']               = 500e-9 #this should be large enough, so that the MW puls fits
 
-params['finaldelay']                  = 1000e-9
+params_lt2['finaldelay']              = 1000e-9
+params_lt1['finaldelay']			  = 1000e-9	#make sure this works for spin echo, and equal length
 
 
 ### default process settings

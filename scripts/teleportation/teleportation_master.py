@@ -138,6 +138,8 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
                     self.repump_aom_lt1.power_to_voltage(
                             self.params_lt1['repump_amplitude'])
 
+            # add values from AWG calibrations
+
         if use_lt2:
             self.params_lt2['Ey_laser_DAC_channel'] = self.adwins['adwin_lt2']['ins'].get_dac_channels()\
                     [self.Ey_aom_lt2.get_pri_channel()]
@@ -172,6 +174,8 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
             self.params_lt2['repump_voltage'] = \
                     self.repump_aom_lt2.power_to_voltage(
                             self.params_lt2['repump_amplitude'])
+
+            # add values from AWG calibrations
 
     def setup(self, use_lt1 = True, use_lt2 = True):
         """
@@ -328,7 +332,7 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
         return e
 
     def lt2_sequence(self):
-        print "Make sequence... "
+        print "Make lt2 sequence... "
 
         self.lt2_seq = pulsar.Sequence('TeleportationLT2')
 
@@ -680,8 +684,30 @@ class TeleportationSlave:
         """
         e = element.Element('LDE_LT1', pulsar = qt.pulsar_remote, global_time = True)
 
-        # TODO not yet implemented
-        e.append(pulse.cp(self.T_pulse, length=11828e-9))
+        #this pulse to ensure that the element has equal length as the lt2 element
+        e.add(pulse.cp(self.T_pulse, duration = 11828e-9))
+
+
+        #1 SP
+        e.add(self.SP_pulse(amplitude = 0, length = self.params['initial_delay']), name = 'initial delay')
+        e.add(self.SP_pulse(length = self.params['LDE_SP_duration'], amplitude = 1.0), 
+                name = 'spinpumping', refpulse = 'initial delay')
+        e.add(self.yellow_pulse(length = self.params['LDE_SP_duration'], amplitude = 1.0), 
+                name = 'yellow during sp', refpulse = 'initial delay')
+
+        #2 MW pi/2
+        if LDE_DO_MW:
+            e.add(self.pi2_pulse, name = 'mw_pi2_pulse', 
+                    start = self.params_lt1['MW_wait_after_sp'],
+                    refpulse = 'spinpumping', refpoint = 'start', refpoint_new = 'end')
+
+        #3 MW pi
+        if LDE_DO_MW:   
+            e.add(self.pi_pulse, name = 'mw_pi_pulse',
+                    start = self.params_lt1['MW_separation'],
+                    refpulse = 'mw_pi2_pulse', refpoint = 'start', refpoint_new = 'end')
+            e.add(pulse.cp(self.TIQ_pulse, duration = self.params_lt1['finaldelay']))
+            # need some waiting pulse on IQ here to be certain to operate on spin echo after
 
         return e
 
