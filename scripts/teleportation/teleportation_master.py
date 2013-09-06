@@ -17,6 +17,7 @@ from measurement.lib.cython.hh_optimize import hht4
 import measurement.lib.config.adwins as adwins_cfg
 import measurement.lib.measurement2.measurement as m2
 from measurement.lib.pulsar import pulse, pulselib, element, pulsar
+reload(pulsar)
 
 from HH import T2_tools
 
@@ -76,8 +77,6 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
         self.params_lt1['do_N_polarization'] = 1 if DO_POLARIZE_N else 0
         self.params_lt1['do_sequences'] = 1 if DO_SEQUENCES else 0
         self.params_lt1['do_LDE_sequence'] = 1 if DO_LDE_SEQUENCE else 0
-        self.params['single_sync'] = 1 if LDE_SINGLE_SYNC else 0
-        self.params['long_histogram'] =1 if LDE_LONG_HIST else 0
         self.params['MW_during_LDE'] = 1 if LDE_DO_MW else 0
 
     
@@ -88,7 +87,7 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
         """
         tseq.pulse_defs_lt2(self)
 
-    def autoconfig(self, use_lt1=True, use_lt2=True):
+    def autoconfig(self):
         """
         sets/computes parameters (can be from other, user-set params)
         as required by the specific type of measurement.
@@ -96,136 +95,152 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
         the correct AOM DAC channel from the specified AOM instrument.
         """
 
-        if use_lt1:
-            self.params_lt1['Ey_laser_DAC_channel'] = self.adwins['adwin_lt1']['ins'].get_dac_channels()\
-                    [self.Ey_aom_lt1.get_pri_channel()]
-            self.params_lt1['FT_laser_DAC_channel'] = self.adwins['adwin_lt1']['ins'].get_dac_channels()\
-                    [self.FT_aom_lt1.get_pri_channel()]
-            self.params_lt1['yellow_laser_DAC_channel'] = self.adwins['adwin_lt1']['ins'].get_dac_channels()\
-                    [self.yellow_aom_lt1.get_pri_channel()]
-            self.params_lt1['green_laser_DAC_channel'] = self.adwins['adwin_lt1']['ins'].get_dac_channels()\
-                    [self.green_aom_lt1.get_pri_channel()]
-            # self.params['gate_DAC_channel'] = self.adwin.get_dac_channels()\
-            #        ['gate']
-                 
-            if self.params_lt1['use_yellow']:
-                self.params_lt1['repump_laser_DAC_channel'] = self.params_lt1['yellow_laser_DAC_channel']
-            else:
-                self.params_lt1['repump_laser_DAC_channel'] = self.params_lt1['green_laser_DAC_channel']
+        self.params_lt1['Ey_laser_DAC_channel'] = self.adwins['adwin_lt1']['ins'].get_dac_channels()\
+                [self.Ey_aom_lt1.get_pri_channel()]
+        self.params_lt1['FT_laser_DAC_channel'] = self.adwins['adwin_lt1']['ins'].get_dac_channels()\
+                [self.FT_aom_lt1.get_pri_channel()]
+        self.params_lt1['yellow_laser_DAC_channel'] = self.adwins['adwin_lt1']['ins'].get_dac_channels()\
+                [self.yellow_aom_lt1.get_pri_channel()]
+        self.params_lt1['green_laser_DAC_channel'] = self.adwins['adwin_lt1']['ins'].get_dac_channels()\
+                [self.green_aom_lt1.get_pri_channel()]
+        # self.params['gate_DAC_channel'] = self.adwin.get_dac_channels()\
+        #        ['gate']
+             
+        if self.params_lt1['use_yellow']:
+            self.params_lt1['repump_laser_DAC_channel'] = self.params_lt1['yellow_laser_DAC_channel']
+        else:
+            self.params_lt1['repump_laser_DAC_channel'] = self.params_lt1['green_laser_DAC_channel']
 
-            self.params_lt1['Ey_CR_voltage'] = \
-                    self.Ey_aom_lt1.power_to_voltage(
-                            self.params_lt1['Ey_CR_amplitude'])
-            self.params_lt1['FT_CR_voltage'] = \
-                    self.FT_aom_lt1.power_to_voltage(
-                            self.params_lt1['FT_CR_amplitude'])
+        self.params_lt1['Ey_CR_voltage'] = \
+                self.Ey_aom_lt1.power_to_voltage(
+                        self.params_lt1['Ey_CR_amplitude'])
+        self.params_lt1['FT_CR_voltage'] = \
+                self.FT_aom_lt1.power_to_voltage(
+                        self.params_lt1['FT_CR_amplitude'])
 
-            self.params_lt1['Ey_SP_voltage'] = \
-                    self.Ey_aom_lt1.power_to_voltage(
-                            self.params_lt1['Ey_SP_amplitude'])
-            self.params_lt1['FT_SP_voltage'] = \
-                    self.FT_aom_lt1.power_to_voltage(
-                            self.params_lt1['FT_SP_amplitude'])
+        self.params_lt1['Ey_SP_voltage'] = \
+                self.Ey_aom_lt1.power_to_voltage(
+                        self.params_lt1['Ey_SP_amplitude'])
+        self.params_lt1['FT_SP_voltage'] = \
+                self.FT_aom_lt1.power_to_voltage(
+                        self.params_lt1['FT_SP_amplitude'])
 
-            self.params_lt1['Ey_RO_voltage'] = \
-                    self.Ey_aom_lt1.power_to_voltage(
-                            self.params_lt1['Ey_RO_amplitude'])
-            self.params_lt1['FT_RO_voltage'] = \
-                    self.FT_aom_lt1.power_to_voltage(
-                            self.params_lt1['FT_RO_amplitude'])
-                           
-            self.params_lt1['repump_voltage'] = \
-                    self.repump_aom_lt1.power_to_voltage(
-                            self.params_lt1['repump_amplitude'])
+        self.params_lt1['Ey_RO_voltage'] = \
+                self.Ey_aom_lt1.power_to_voltage(
+                        self.params_lt1['Ey_RO_amplitude'])
+        self.params_lt1['FT_RO_voltage'] = \
+                self.FT_aom_lt1.power_to_voltage(
+                        self.params_lt1['FT_RO_amplitude'])
+                       
+        self.params_lt1['repump_voltage'] = \
+                self.repump_aom_lt1.power_to_voltage(
+                        self.params_lt1['repump_amplitude'])
 
-            # add values from AWG calibrations
+        ### AWG voltages
+        self.params_lt1['SP_voltage_AWG'] = \
+                self.FT_aom_lt1.power_to_voltage(
+                        self.params_lt1['AWG_SP_power'], controller='sec')
+        qt.pulsar_remote.set_channel_opt('Velocity1AOM', 'high', self.params_lt1['SP_voltage_AWG'])
 
-        if use_lt2:
-            self.params_lt2['Ey_laser_DAC_channel'] = self.adwins['adwin_lt2']['ins'].get_dac_channels()\
-                    [self.Ey_aom_lt2.get_pri_channel()]
-            self.params_lt2['A_laser_DAC_channel'] = self.adwins['adwin_lt2']['ins'].get_dac_channels()\
-                    [self.A_aom_lt2.get_pri_channel()]
-            self.params_lt2['green_laser_DAC_channel'] = self.adwins['adwin_lt2']['ins'].get_dac_channels()\
-                   [self.green_aom_lt2.get_pri_channel()]
+        if YELLOW:
+            self.params_lt1['Yellow_voltage_AWG'] = \
+                self.repump_aom_lt1.power_to_voltage(
+                    self.params_lt1['AWG_yellow_power'], controller='sec')
+            qt.pulsar_remote.set_channel_opt('YellowAOM', 'high', self.params_lt1['Yellow_voltage_AWG'])
 
-            self.params_lt2['repump_laser_DAC_channel'] = self.params_lt2['green_laser_DAC_channel']
+        
+        self.params_lt2['Ey_laser_DAC_channel'] = self.adwins['adwin_lt2']['ins'].get_dac_channels()\
+                [self.Ey_aom_lt2.get_pri_channel()]
+        self.params_lt2['A_laser_DAC_channel'] = self.adwins['adwin_lt2']['ins'].get_dac_channels()\
+                [self.A_aom_lt2.get_pri_channel()]
+        self.params_lt2['green_laser_DAC_channel'] = self.adwins['adwin_lt2']['ins'].get_dac_channels()\
+               [self.green_aom_lt2.get_pri_channel()]
 
-            self.params_lt2['Ey_CR_voltage'] = \
-                    self.Ey_aom_lt2.power_to_voltage(
-                            self.params_lt2['Ey_CR_amplitude'])
-            self.params_lt2['A_CR_voltage'] = \
-                    self.A_aom_lt2.power_to_voltage(
-                            self.params_lt2['A_CR_amplitude'])
+        self.params_lt2['repump_laser_DAC_channel'] = self.params_lt2['green_laser_DAC_channel']
 
-            self.params_lt2['Ey_SP_voltage'] = \
-                    self.Ey_aom_lt2.power_to_voltage(
-                            self.params_lt2['Ey_SP_amplitude'])
-            self.params_lt2['A_SP_voltage'] = \
-                    self.A_aom_lt2.power_to_voltage(
-                            self.params_lt2['A_SP_amplitude'])
+        self.params_lt2['Ey_CR_voltage'] = \
+                self.Ey_aom_lt2.power_to_voltage(
+                        self.params_lt2['Ey_CR_amplitude'])
+        self.params_lt2['A_CR_voltage'] = \
+                self.A_aom_lt2.power_to_voltage(
+                        self.params_lt2['A_CR_amplitude'])
 
-            self.params_lt2['Ey_RO_voltage'] = \
-                    self.Ey_aom_lt2.power_to_voltage(
-                            self.params_lt2['Ey_RO_amplitude'])
-            self.params_lt2['A_RO_voltage'] = \
-                    self.A_aom_lt2.power_to_voltage(
-                            self.params_lt2['A_RO_amplitude'])
-                           
-            self.params_lt2['repump_voltage'] = \
-                    self.repump_aom_lt2.power_to_voltage(
-                            self.params_lt2['repump_amplitude'])
+        self.params_lt2['Ey_SP_voltage'] = \
+                self.Ey_aom_lt2.power_to_voltage(
+                        self.params_lt2['Ey_SP_amplitude'])
+        self.params_lt2['A_SP_voltage'] = \
+                self.A_aom_lt2.power_to_voltage(
+                        self.params_lt2['A_SP_amplitude'])
 
-            # add values from AWG calibrations
+        self.params_lt2['Ey_RO_voltage'] = \
+                self.Ey_aom_lt2.power_to_voltage(
+                        self.params_lt2['Ey_RO_amplitude'])
+        self.params_lt2['A_RO_voltage'] = \
+                self.A_aom_lt2.power_to_voltage(
+                        self.params_lt2['A_RO_amplitude'])
+                       
+        self.params_lt2['repump_voltage'] = \
+                self.repump_aom_lt2.power_to_voltage(
+                        self.params_lt2['repump_amplitude'])
 
-    def setup(self, use_lt1 = True, use_lt2 = True):
+        # add values from AWG calibrations
+        self.params_lt2['SP_voltage_AWG'] = \
+                self.A_aom_lt2.power_to_voltage(
+                        self.params_lt2['AWG_SP_power'], controller='sec')
+
+        print self.params_lt2['SP_voltage_AWG']
+        
+        qt.pulsar.set_channel_opt('AOM_Newfocus', 'high', self.params_lt2['SP_voltage_AWG'])
+
+    def setup(self):
         """
         sets up the hardware such that the msmt can be run
         (i.e., turn off the lasers, prepare MW src, etc)
         """        
-        if use_lt1:
-            self.yellow_aom_lt1.set_power(0.)
-            self.green_aom_lt1.set_power(0.)
-            self.Ey_aom_lt1.set_power(0.)
-            self.FT_aom_lt1.set_power(0.)
-            self.yellow_aom_lt1.set_cur_controller('ADWIN')
-            self.green_aom_lt1.set_cur_controller('ADWIN')
-            self.Ey_aom_lt1.set_cur_controller('ADWIN')
-            self.FT_aom_lt1.set_cur_controller('ADWIN')
-            self.yellow_aom_lt1.set_power(0.)
-            self.green_aom_lt1.set_power(0.)
-            self.Ey_aom_lt1.set_power(0.)
-            self.FT_aom_lt1.set_power(0.)
+        self.yellow_aom_lt1.set_power(0.)
+        self.green_aom_lt1.set_power(0.)
+        self.Ey_aom_lt1.set_power(0.)
+        self.FT_aom_lt1.set_power(0.)
+        self.yellow_aom_lt1.set_cur_controller('ADWIN')
+        self.green_aom_lt1.set_cur_controller('ADWIN')
+        self.Ey_aom_lt1.set_cur_controller('ADWIN')
+        self.FT_aom_lt1.set_cur_controller('ADWIN')
+        self.yellow_aom_lt1.set_power(0.)
+        self.green_aom_lt1.set_power(0.)
+        self.Ey_aom_lt1.set_power(0.)
+        self.FT_aom_lt1.set_power(0.)
 
-            if DO_SEQUENCES:
-                self.mwsrc_lt1.set_iq('on')
-                self.mwsrc_lt1.set_pulm('on')
-                self.mwsrc_lt1.set_frequency(self.params_lt1['mw_frq'])
-                self.mwsrc_lt1.set_power(self.params_lt1['mw_power'])
-                self.mwsrc_lt1.set_status('on' if DO_SEQUENCES else 'off')
+        if DO_SEQUENCES:
+            self.mwsrc_lt1.set_iq('on')
+            self.mwsrc_lt1.set_pulm('on')
+            self.mwsrc_lt1.set_frequency(self.params_lt1['mw_frq'])
+            self.mwsrc_lt1.set_power(self.params_lt1['mw_power'])
+        
+        self.mwsrc_lt1.set_status('on' if DO_SEQUENCES else 'off')
 
-        if use_lt2:
-            self.green_aom_lt2.set_power(0.)
-            self.Ey_aom_lt2.set_power(0.)
-            self.A_aom_lt2.set_power(0.)
-            self.green_aom_lt2.set_cur_controller('ADWIN')
-            self.Ey_aom_lt2.set_cur_controller('ADWIN')
-            self.A_aom_lt2.set_cur_controller('ADWIN')
-            self.green_aom_lt2.set_power(0.)
-            self.Ey_aom_lt2.set_power(0.)
-            self.A_aom_lt2.set_power(0.)
-            
-            if DO_SEQUENCES:
-                self.mwsrc_lt2.set_iq('on')
-                self.mwsrc_lt2.set_pulm('on')
-                self.mwsrc_lt2.set_frequency(self.params_lt2['mw_frq'])
-                self.mwsrc_lt2.set_power(self.params_lt2['mw_power'])
-                self.mwsrc_lt2.set_status('on' if DO_SEQUENCES else 'off')
-                
-                # have different types of sequences we can load.
-                if DO_OPT_RABI_AMP_SWEEP:
-                    self.lt2_opt_rabi_sequence()
-                else:
-                    self.lt2_sequence()
+        self.green_aom_lt2.set_power(0.)
+        self.Ey_aom_lt2.set_power(0.)
+        self.A_aom_lt2.set_power(0.)
+        self.green_aom_lt2.set_cur_controller('ADWIN')
+        self.Ey_aom_lt2.set_cur_controller('ADWIN')
+        self.A_aom_lt2.set_cur_controller('ADWIN')
+        self.green_aom_lt2.set_power(0.)
+        self.Ey_aom_lt2.set_power(0.)
+        self.A_aom_lt2.set_power(0.)
+        
+        if DO_SEQUENCES:
+            self.mwsrc_lt2.set_iq('on')
+            self.mwsrc_lt2.set_pulm('on')
+            self.mwsrc_lt2.set_frequency(self.params_lt2['mw_frq'])
+            self.mwsrc_lt2.set_power(self.params_lt2['mw_power'])
+
+            # have different types of sequences we can load.
+            if DO_OPT_RABI_AMP_SWEEP:
+                self.lt2_opt_rabi_sequence()
+            else:
+                self.lt2_sequence()
+
+        self.mwsrc_lt2.set_status('on' if DO_SEQUENCES else 'off')
 
         if HH:
             self.hharp.start_T2_mode()
@@ -259,16 +274,22 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
         eom_pulse_amplitude = kw.pop('eom_pulse_amplitude', self.params_lt2['eom_pulse_amplitude'])
 
         ###
-        e = element.Element(name, pulsar = qt.pulsar)#, global_time = True)
+        e = element.Element(name, pulsar = qt.pulsar, global_time = True)
+        e.add(pulse.cp(self.SP_pulse,
+                amplitude = 0,
+                length = self.params['LDE_element_length']))
 
         #1 SP
-        e.add(self.SP_pulse(amplitude = 0, length = self.params['initial_delay']), name = 'initial delay')
-        e.add(self.SP_pulse(length = self.params['LDE_SP_duration'], amplitude = 1.0), 
-                name = 'spinpumping', refpulse = 'initial delay')
+        e.add(pulse.cp(self.SP_pulse, 
+                amplitude = 0, 
+                length = self.params_lt2['initial_delay']), 
+            name = 'initial delay')
+        e.add(pulse.cp(self.SP_pulse, 
+                length = self.params['LDE_SP_duration'], 
+                amplitude = 1.0), 
+            name = 'spinpumping', 
+            refpulse = 'initial delay')
 
-        #2 Long histogram        
-        if LDE_LONG_HIST:
-            syncpulse_name = e.add(self.HH_sync, refpulse = 'spinpumping', refpoint = 'start', refpoint_new = 'end')
         
         #3 opt puls 1    
         e.add(pulse.cp(self.eom_aom_pulse, 
@@ -279,11 +300,13 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
         
         #4 MW pi/2
         if LDE_DO_MW:
-            e.add(self.CORPSE_pi2, start = - self.params_lt2['MW_opt_puls1_separation'],
-                    refpulse = 'opt pi 1', refpoint = 'start', refpoint_new = 'end')
+            e.add(self.CORPSE_pi2, 
+                start = -self.params_lt2['MW_opt_puls1_separation'],
+                refpulse = 'opt pi 1', 
+                refpoint = 'start', 
+                refpoint_new = 'end')
         #5 HHsync
-        if not LDE_LONG_HIST:
-            syncpulse_name = e.add(self.HH_sync, refpulse = 'opt pi 1', refpoint = 'start', refpoint_new = 'end')
+        syncpulse_name = e.add(self.HH_sync, refpulse = 'opt pi 1', refpoint = 'start', refpoint_new = 'end')
         
         #6 plugate 1
         e.add(self.plu_gate, name = 'plu gate 1', refpulse = 'opt pi 1')
@@ -292,17 +315,13 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
         e.add(pulse.cp(self.eom_aom_pulse, 
                 eom_pulse_amplitude = eom_pulse_amplitude), 
             name = 'opt pi 2', 
-            start = self.params_lt2['opt_puls_separation'],
+            start = self.params_lt2['opt_pulse_separation'],
             refpulse = 'opt pi 1', refpoint = 'start')        
 
         #8 MW pi
-        if LDE_DO_MW:
-            e.add(self.CORPSE_pi, start = - self.params_lt2['MW_opt_puls2_separation'],
-                    refpulse = 'opt pi 2', refpoint = 'start', refpoint_new = 'end')
-
-        #9 HH sync 2 optional
-        if not LDE_LONG_HIST and not LDE_SINGLE_SYNC:
-            e.add(self.HH_sync, refpulse = 'opt pi 2', refpoint = 'start', refpoint_new = 'end')
+        # if LDE_DO_MW:
+        #     e.add(self.CORPSE_pi, start = - self.params_lt2['MW_opt_puls2_separation'],
+        #             refpulse = 'opt pi 2', refpoint = 'start', refpoint_new = 'end')
         
         #10 plugate 2
         e.add(self.plu_gate, name = 'plu gate 2', refpulse = 'opt pi 2')
@@ -316,18 +335,14 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
         #12 plugate 4
         e.add(self.plu_gate, name = 'plu gate 4', start = self.params_lt2['PLU_4_delay'],
                 refpulse = 'plu gate 3')
+        
         #13 final delay
-        e.add(pulse.cp(self.plu_gate, 
-                amplitude = 0, 
-                length = self.params['finaldelay']), 
-            refpulse = 'plu gate 4')
+        # e.add(pulse.cp(self.plu_gate, 
+        #         amplitude = 0, 
+        #         length = self.params['finaldelay']), 
+        #     refpulse = 'plu gate 4')
         
         #14 optional more opt pulses for TPQI
-
-        # if required, insert a marker after the sync pulse
-        if DO_LDE_ATTEMPT_MARKER:
-            e.add(self.HH_marker, name = 'attempt marker', start = HH_MIN_SYNC_TIME*1e-12 + 500e-9,
-                refpulse = syncpulse_name, refpoint = 'start')
 
         return e
 
@@ -640,6 +655,21 @@ class TeleportationSlave:
     def update_definitions(self):
         tseq.pulse_defs_lt1(self)
 
+    def autoconfig(self):
+
+        ### AWG voltages
+        self.params_lt1['SP_voltage_AWG'] = \
+                self.FT_aom_lt1.power_to_voltage(
+                        self.params_lt1['AWG_SP_power'], controller='sec')
+        qt.pulsar_remote.set_channel_opt('Velocity1AOM', 'high', self.params_lt1['SP_voltage_AWG'])
+
+        if YELLOW:
+            self.params_lt1['Yellow_voltage_AWG'] = \
+                self.repump_aom_lt1.power_to_voltage(
+                    self.params_lt1['AWG_yellow_power'], controller='sec')
+            qt.pulsar_remote.set_channel_opt('YellowAOM', 'high', self.params_lt1['Yellow_voltage_AWG'])
+
+
     ### Sequence
     def _lt1_N_polarization_decision_element(self):
         """
@@ -684,30 +714,41 @@ class TeleportationSlave:
         """
         e = element.Element('LDE_LT1', pulsar = qt.pulsar_remote, global_time = True)
 
-        #this pulse to ensure that the element has equal length as the lt2 element
-        e.add(pulse.cp(self.T_pulse, duration = 11828e-9))
-
-
+        # this pulse to ensure that the element has equal length as the lt2 element
+        e.add(pulse.cp(self.SP_pulse,
+                amplitude = 0,
+                length = self.params['LDE_element_length']))
+        #
         #1 SP
-        e.add(self.SP_pulse(amplitude = 0, length = self.params['initial_delay']), name = 'initial delay')
-        e.add(self.SP_pulse(length = self.params['LDE_SP_duration'], amplitude = 1.0), 
-                name = 'spinpumping', refpulse = 'initial delay')
-        e.add(self.yellow_pulse(length = self.params['LDE_SP_duration'], amplitude = 1.0), 
-                name = 'yellow during sp', refpulse = 'initial delay')
+        e.add(pulse.cp(self.SP_pulse,
+               amplitude = 0, 
+                length = self.params_lt1['initial_delay']), 
+                name = 'initial_delay')
+        e.add(pulse.cp(self.SP_pulse, 
+                length = self.params['LDE_SP_duration'], 
+                amplitude = 1.0),
+                name = 'spinpumping',
+                refpulse = 'initial_delay')
+        e.add(pulse.cp(self.yellow_pulse, 
+                length = self.params['LDE_SP_duration_yellow'], 
+                amplitude = 1.0), 
+                refpulse = 'initial_delay')
 
         #2 MW pi/2
         if LDE_DO_MW:
             e.add(self.pi2_pulse, name = 'mw_pi2_pulse', 
                     start = self.params_lt1['MW_wait_after_sp'],
-                    refpulse = 'spinpumping', refpoint = 'start', refpoint_new = 'end')
+                    refpulse = 'spinpumping', refpoint = 'end', refpoint_new = 'start')
 
         #3 MW pi
-        if LDE_DO_MW:   
+        if LDE_DO_MW:
             e.add(self.pi_pulse, name = 'mw_pi_pulse',
                     start = self.params_lt1['MW_separation'],
-                    refpulse = 'mw_pi2_pulse', refpoint = 'start', refpoint_new = 'end')
-            e.add(pulse.cp(self.TIQ_pulse, duration = self.params_lt1['finaldelay']))
-            # need some waiting pulse on IQ here to be certain to operate on spin echo after
+                    refpulse = 'mw_pi2_pulse', refpoint = 'end', refpoint_new = 'start')
+            
+        # e.add(pulse.cp(self.TIQ_pulse, duration = self.params_lt1['finaldelay']))
+        
+        # need some waiting pulse on IQ here to be certain to operate on spin echo after
 
         return e
 
@@ -815,28 +856,22 @@ class TeleportationSlave:
             raise Exception('AWG not ready')
 
 ### CONSTANTS AND FLAGS
-EXEC_FROM = 'lt2'
-USE_LT1 = True
-USE_LT2 = True
 YELLOW = True
 HH = False                # if False no HH data acquisition from within qtlab.
 DO_POLARIZE_N = False      # if False, no N-polarization sequence on LT1 will be used
 DO_SEQUENCES = True      # if False, we won't use the AWG at all
 DO_LDE_SEQUENCE = True    # if False, no LDE sequence (both setups) will be done
-LDE_LONG_HIST = False      # if True there will be only 1 HH sync at the beginning of LDE
-LDE_SINGLE_SYNC = True    # if False, every opt puls has its own sync
 LDE_DO_MW = False         # if True, there will be MW in the LDE seq
-MAX_HHDATA_LEN = int(100e6)
-DO_LDE_ATTEMPT_MARKER = True # if True, insert a marker to the HH after each sync
+MAX_HHDATA_LEN = int(10000e6)
 DO_OPT_RABI_AMP_SWEEP = False # if true, we sweep the rabi parameters instead of doing LDE; essentially this only affects the sequence we make
-HH_MIN_SYNC_TIME = 9e6 # 9 us
-HH_MAX_SYNC_TIME = 10.2e6 # 10.2 us
+HH_MIN_SYNC_TIME = 0 # 9 us
+HH_MAX_SYNC_TIME = 2e6 # 10.2 us
 
        
 ### configure the hardware (statics)
 TeleportationMaster.adwins = {
     'adwin_lt1' : {
-        'ins' : qt.instruments['adwin_lt1'] if EXEC_FROM=='lt2' else qt.instruments['adwin'],
+        'ins' : qt.instruments['adwin_lt1'],# if EXEC_FROM=='lt2' else qt.instruments['adwin'],
         'process' : 'teleportation',
     },
     'adwin_lt2' : {
@@ -866,6 +901,11 @@ else:
 
 TeleportationMaster.hharp = qt.instruments['HH_400']
 
+### This is ugly at this point. better merge classes at some point?
+if YELLOW:
+    TeleportationSlave.repump_aom_lt1 = qt.instruments['YellowAOM_lt1']
+TeleportationSlave.FT_aom_lt1 = qt.instruments['NewfocusAOM_lt1']
+
 ### tool functions
 def setup_msmt(name): 
     m = TeleportationMaster(name)
@@ -875,10 +915,12 @@ def setup_msmt(name):
 def setup_remote_sequence():
     m = TeleportationSlave()
     m.load_settings()
+    m.autoconfig()
     m.update_definitions()
     m.lt1_sequence()
 
 def start_msmt(m):
+    m.autoconfig()
     m.update_definitions()
     m.setup()
     m.run()
@@ -895,11 +937,11 @@ def default_msmt(name):
 
     m.params_lt1['max_CR_starts'] = -1
     m.params_lt1['teleportation_repetitions'] = -1
-    m.params['measurement_time'] = 10 # seconds; only affects msmt with HH.
+    m.params['measurement_time'] = 77000 # seconds; only affects msmt with HH.
 
-    pts = 11
-    m.params['opt_rabi_sweep_pts'] = pts
-    m.params['eom_pulse_amplitudes'] = np.linspace(0.5,1.5,pts)
+    # pts = 11
+    # m.params['opt_rabi_sweep_pts'] = pts
+    # m.params['eom_pulse_amplitudes'] = np.linspace(0.5,1.5,pts)
 
     start_msmt(m)
 

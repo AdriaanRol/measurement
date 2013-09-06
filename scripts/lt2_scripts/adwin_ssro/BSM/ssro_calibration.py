@@ -23,14 +23,14 @@ def ssrocalibration(name):
     m.params['CR_preselect'] = 15
     m.params['CR_probe'] = 2
     m.params['SSRO_repetitions'] = 5000
-    m.params['A_CR_amplitude'] = 20e-9
-    m.params['Ex_CR_amplitude'] = 20e-9
+    m.params['A_CR_amplitude'] = 30e-9
+    m.params['Ex_CR_amplitude'] = 10e-9
     m.params['CR_duration'] = 100
 
     # ms = 0 calibration
-    m.params['A_SP_amplitude'] = 20e-9
+    m.params['A_SP_amplitude'] = 30e-9
     m.params['Ex_SP_amplitude'] = 0.
-    m.params['Ex_RO_amplitude'] = 20e-9 #10e-9
+    m.params['Ex_RO_amplitude'] = 5e-9 #10e-9
 
     #m.autoconfig()
     #m.setup()
@@ -40,15 +40,15 @@ def ssrocalibration(name):
 
     # ms = 1 calibration
     m.params['A_SP_amplitude'] = 0.
-    m.params['Ex_SP_amplitude'] = 20e-9 #10e-9
-    m.params['Ex_RO_amplitude'] = 20e-9 #10e-9
+    m.params['Ex_SP_amplitude'] = 10e-9 #10e-9
+    m.params['Ex_RO_amplitude'] = 5e-9 #10e-9
 
     m.run()
     m.save('ms1')
     m.finish()
 
 if __name__ == '__main__':
-    ssrocalibration('sil9_E12_20nW')
+    ssrocalibration('sil9')
  
     
 

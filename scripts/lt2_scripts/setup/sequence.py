@@ -17,13 +17,15 @@ qt.pulsar = pulsar.Pulsar()
 # qt.pulsar.define_channel(id='ch2', name='RF', type='analog', high=1.0,
 #     low=-1.0, offset=0., delay=242e-9, active=True)
 
+spin_of = -104e-9
+
 # MW
 qt.pulsar.define_channel(id='ch1_marker1', name='MW_pulsemod', type='marker', 
-    high=2.0, low=0, offset=0., delay=258*1e-9, active=True)
+    high=2.0, low=0, offset=0., delay=spin_of+258e-9, active=True)
 qt.pulsar.define_channel(id='ch1', name='MW_Imod', type='analog', high=0.9,
-    low=-0.9, offset=0., delay=239*1e-9, active=True)
+    low=-0.9, offset=0., delay=spin_of+239e-9, active=True)
 qt.pulsar.define_channel(id='ch3', name='MW_Qmod', type='analog', high=0.9,
-    low=-0.9, offset=0., delay=242*1e-9, active=True)
+    low=-0.9, offset=0., delay=spin_of+242e-9, active=True)
 
 # sync ADwin
 qt.pulsar.define_channel(id='ch1_marker2', name='adwin_sync', type='marker', 
@@ -41,7 +43,7 @@ qt.pulsar.define_channel(id='ch4', name='EOM_Matisse', type='analog', high=1.5,
 
 #AOMs
 qt.pulsar.define_channel(id='ch4_marker1', name='EOM_AOM_Matisse', type='marker', 
-    high=1.0, low=0.02, offset=0., delay=415e-9, active=True)
+    high=0.4, low=0.02, offset=0., delay=415e-9, active=True)
 qt.pulsar.define_channel(id='ch2_marker1', name='AOM_Newfocus', type='marker',
     high=1.0, low=0.01, offset=0., delay=466e-9, active=True)
 

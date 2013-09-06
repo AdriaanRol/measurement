@@ -235,9 +235,15 @@ def awgssrocalibration(name):
     m.params.from_dict(qt.cfgman['protocols']['AdwinSSRO'])
     m.params.from_dict(qt.cfgman['protocols']['hans-sil4-default']['AdwinSSRO'])    
     
-    ssro.AdwinSSRO.repump_aom = qt.instruments['YellowAOM_lt1']
-    m.params['repump_duration'] = m.params['yellow_repump_duration']
-    m.params['repump_amplitude'] = m.params['yellow_repump_amplitude']
+    yellow=False
+    if yellow:
+        ssro.AdwinSSRO.repump_aom = qt.instruments['YellowAOM_lt1']
+        m.params['repump_duration'] = m.params['yellow_repump_duration']
+        m.params['repump_amplitude'] = m.params['yellow_repump_amplitude']
+    else:
+        ssro.AdwinSSRO.repump_aom = qt.instruments['GreenAOM_lt1']
+        m.params['repump_duration'] = m.params['green_repump_duration']
+        m.params['repump_amplitude'] = m.params['green_repump_amplitude']
 
     m.params['send_AWG_start']=1
 

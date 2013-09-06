@@ -1029,7 +1029,6 @@ config['adwin_lt1_processes'] = {
                     ['SSRO_stop_after_first_photon',   0],
                     ['cycle_duration'              , 300],
                     ['CR_probe'                    ,  10],
-                    ['repump_after_repetitions'    ,  1],
                     ['CR_repump'                   ,  0],
                     ],
                 'params_long_index'  : 20,
@@ -1188,7 +1187,6 @@ config['adwin_lt1_processes'] = {
                     ['SSRO_stop_after_first_photon',   0],
                     ['cycle_duration'              , 300],
                     ['CR_probe'                    ,  10],
-                    ['repump_after_repetitions'    ,   1],
                     ['CR_repump'                   ,1000]
                     ],
                 'params_long_index'  : 20,

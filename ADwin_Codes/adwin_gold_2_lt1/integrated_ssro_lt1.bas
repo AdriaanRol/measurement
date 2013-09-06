@@ -80,8 +80,8 @@
 
 DIM DATA_20[25] AS LONG               ' integer parameters
 DIM DATA_21[10] AS FLOAT              ' float parameters
-' DIM DATA_22[max_repetitions] AS LONG AT EM_LOCAL  ' CR counts before sequence
-' DIM DATA_23[max_repetitions] AS LONG AT EM_LOCAL  ' CR counts after sequence
+DIM DATA_22[max_repetitions] AS LONG AT EM_LOCAL  ' CR counts before sequence
+DIM DATA_23[max_repetitions] AS LONG AT EM_LOCAL  ' CR counts after sequence
 DIM DATA_24[max_SP_bins] AS LONG AT EM_LOCAL      ' SP counts
 DIM DATA_25[max_SSRO_dim] AS LONG AT DRAM_EXTERN  ' SSRO counts
 DIM DATA_26[max_stat] AS LONG AT EM_LOCAL         ' statistics
@@ -104,7 +104,6 @@ DIM SSRO_repetitions AS LONG
 DIM SSRO_duration AS LONG
 DIM SSRO_stop_after_first_photon AS LONG
 DIM cycle_duration AS LONG
-DIM repump_after_repetitions AS LONG
 DIM sweep_length as long
 DIM sweep_index as long
 
@@ -159,8 +158,7 @@ INIT:
   SSRO_stop_after_first_photon = DATA_20[18]
   cycle_duration               = DATA_20[19]
   CR_probe                     = DATA_20[20]
-  repump_after_repetitions     = DATA_20[21]
-  CR_repump                    = DATA_20[22]
+  CR_repump                    = DATA_20[21]
   
   repump_voltage               = DATA_21[1]
   repump_off_voltage           = DATA_21[2]
@@ -173,10 +171,10 @@ INIT:
   Ex_off_voltage               = DATA_21[9]
   A_off_voltage                = DATA_21[10]
  
-  ' FOR i = 1 TO SSRO_repetitions
-  '   DATA_22[i] = 0
-  '   DATA_23[i] = 0
-  ' NEXT i
+  FOR i = 1 TO SSRO_repetitions
+    DATA_22[i] = 0
+    DATA_23[i] = 0
+  NEXT i
   
   FOR i = 1 TO max_SP_bins
     DATA_24[i] = 0
@@ -240,7 +238,7 @@ EVENT:
     SELECTCASE mode
       CASE 0    ' repump
         IF (timer = 0) THEN
-          IF ((Mod(repetition_counter,repump_after_repetitions)=0) OR (cr_counts < CR_repump))  THEN  'only repump after x SSRO repetitions
+          IF  (cr_counts < CR_repump)  THEN  'only repump after x SSRO repetitions
             CNT_CLEAR( counter_pattern)    'clear counter
             CNT_ENABLE(counter_pattern)    'turn on counter
             DAC(repump_laser_DAC_channel, 3277*repump_voltage+32768) ' turn on repump
@@ -270,25 +268,30 @@ EVENT:
           CNT_CLEAR( counter_pattern)    'clear counter
           CNT_ENABLE(counter_pattern)    'turn on counter
           INC(PAR_72)
-        endif
-         
-        IF (timer = CR_duration) THEN
-          DAC(Ex_laser_DAC_channel, 3277*Ex_off_voltage+32768) ' turn off Ex laser
-          DAC(A_laser_DAC_channel, 3277*A_off_voltage+32768) ' turn off A laser
-          cr_counts = CNT_READ(counter_channel)
-          CNT_ENABLE(0)
-          
-          PAR_70 = PAR_70 + cr_counts            
-          IF (cr_counts < current_cr_threshold) THEN
-            mode = 0
-            inc(PAR_71)
-          ELSE
-            mode = 2
-            current_cr_threshold = CR_probe
-          ENDIF
+        ELSE 
+          IF (timer = CR_duration) THEN
+            DAC(Ex_laser_DAC_channel, 3277*Ex_off_voltage+32768) ' turn off Ex laser
+            DAC(A_laser_DAC_channel, 3277*A_off_voltage+32768) ' turn off A laser
+            cr_counts = CNT_READ(counter_channel)
+            CNT_ENABLE(0)
             
-          timer = -1
-          wait_after_pulse = wait_after_pulse_duration
+            PAR_70 = PAR_70 + cr_counts
+            IF (first > 0) THEN ' first CR after SSRO sequence
+              DATA_23[repetition_counter] = cr_counts
+              first = 0
+            ENDIF            
+            
+            IF (cr_counts < current_cr_threshold) THEN
+              mode = 0
+              inc(PAR_71)
+            ELSE
+              mode = 2
+              DATA_22[repetition_counter+1] = cr_counts
+              current_cr_threshold = CR_probe
+            ENDIF
+            timer = -1
+            wait_after_pulse = wait_after_pulse_duration
+          ENDIF         
         ENDIF
 
       CASE 2    ' Ex or A laser spin pumping

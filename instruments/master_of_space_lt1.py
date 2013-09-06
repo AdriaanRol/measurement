@@ -151,7 +151,10 @@ class master_of_space_lt1(CyclopeanInstrument):
         self.ins_cfg = config.Config(cfg_fn)     
         self.load_cfg()
         self.save_cfg()
+
+        self._init_positions()
         
+    def _init_positions(self):
         # set initial position values (need to know whether LT or RT settings)
         for d in self.dimensions:
             dim = self.dimensions[d]
@@ -234,6 +237,7 @@ class master_of_space_lt1(CyclopeanInstrument):
             # self._adwin.set_LT(0)
             self.dimensions = self.rt_dimensions
             self._lt_settings = False
+        self._init_positions()
 
     # monitor the status of the linescan
     def _linescan_check(self):
@@ -381,7 +385,7 @@ class master_of_space_lt1(CyclopeanInstrument):
         return U    
 
     #Convenient extra functions
-    def move_to_pos(self, dim_name, val, speed=5000, blocking=False):
+    def move_to_pos(self, dim_name, val, speed=2000, blocking=False):
         # print dim_name, val
         
         dim = self.dimensions[dim_name]
@@ -397,7 +401,7 @@ class master_of_space_lt1(CyclopeanInstrument):
         self.get(dim_name)
 
     # FIXME too explicit. make that general.
-    def move_to_xyz_pos(self, dim_names, vals, speed=5000, blocking=False):
+    def move_to_xyz_pos(self, dim_names, vals, speed=2000, blocking=False):
         
         target_voltages = []
         for d in ['x','y','z']:

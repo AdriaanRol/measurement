@@ -73,27 +73,33 @@ qt.pulsar_remote = pulsar.Pulsar()
 qt.pulsar_remote.AWG = qt.instruments['AWG_lt1']
 
 ### channels
+
+# for the remote LDE setup. effectively this is the relative delay between SP AOM and MWs.
+spin_of = -69e-9
+
 # RF
 qt.pulsar_remote.define_channel(id='ch1', name='RF', type='analog', high=1.0,
-    low=-1.0, offset=0., delay=165e-9, active=True)
+    low=-1.0, offset=0., delay=spin_of+165e-9, active=True)
 
 # MW
 qt.pulsar_remote.define_channel(id='ch1_marker1', name='MW_pulsemod', type='marker', 
-    high=2.0, low=0, offset=0., delay=(44+165)*1e-9, active=True)
+    high=2.0, low=0, offset=0., delay=spin_of+(44+165)*1e-9, active=True)
 qt.pulsar_remote.define_channel(id='ch3', name='MW_Imod', type='analog', high=0.9,
-    low=-0.9, offset=0., delay=(27+165)*1e-9, active=True)
+    low=-0.9, offset=0., delay=spin_of+(27+165)*1e-9, active=True)
 qt.pulsar_remote.define_channel(id='ch4', name='MW_Qmod', type='analog', high=0.9,
-    low=-0.9, offset=0., delay=(27+165)*1e-9, active=True)
+    low=-0.9, offset=0., delay=spin_of+(27+165)*1e-9, active=True)
 
 # sync ADwin
 qt.pulsar_remote.define_channel(id='ch3_marker2', name='adwin_sync', type='marker', 
     high=2.0, low=0, offset=0., delay=0., active=True)
 
-# light
-qt.pulsar_remote.define_channel(id='ch1_marker2', name='Velocity1AOM', type='marker', 
-    high=0.4, low=0, offset=0., delay=(690)*1e-9, active=True) #delay not yet calibrated
+# light -- delay of SP is here *defined* as 700 (trigger comes from the other AWG); 
+# all other delays are then relative to that.
+qt.pulsar_remote.define_channel(id='ch2', name='Velocity1AOM', type='analog', 
+    high=0.4, low=0, offset=0., delay=700e-9, active=True)
+
 qt.pulsar_remote.define_channel(id='ch2_marker2', name='YellowAOM', type='marker', 
-    high=0.4, low=0, offset=0., delay=(690)*1e-9, active=True) #delay not yet calibrated
+    high=0.4, low=0, offset=0., delay=750e-9, active=True) 
 
 # Trigger AWG LT2
 qt.pulsar_remote.define_channel(id='ch3_marker1', name='AWG_LT2_trigger', type='marker', 

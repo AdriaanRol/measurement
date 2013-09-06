@@ -15,14 +15,12 @@ reload(funcs)
 from measurement.scripts.teleportation import sequence 
 reload(sequence)
 
-name = 'sil9'
+name = 'sil5'
 
 
 def prepare(m):
     funcs.prepare(m)
-
-    m.params_lt2 = m2.MeasurementParameters('LT2Parameters')
-    
+   
     m.CORPSE_pi = pulselib.IQ_CORPSE_pi_pulse('CORPSE pi-pulse',
         I_channel = 'MW_Imod', 
         Q_channel = 'MW_Qmod',    

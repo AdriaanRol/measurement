@@ -14,9 +14,9 @@ def erabi(name, msp1=False):
     m = pulsar_msmt.ElectronRabi(name)
     
     m.params.from_dict(qt.cfgman['protocols']['AdwinSSRO'])
-    m.params.from_dict(qt.cfgman['protocols']['sil9-default']['AdwinSSRO'])
-    m.params.from_dict(qt.cfgman['protocols']['sil9-default']['AdwinSSRO-integrated'])
-    m.params.from_dict(qt.cfgman['samples']['sil9'])
+    m.params.from_dict(qt.cfgman['protocols']['sil5-default']['AdwinSSRO'])
+    m.params.from_dict(qt.cfgman['protocols']['sil5-default']['AdwinSSRO-integrated'])
+    m.params.from_dict(qt.cfgman['samples']['sil5'])
 
     m.params.from_dict(qt.cfgman['protocols']['AdwinSSRO+espin'])
 
@@ -27,7 +27,7 @@ def erabi(name, msp1=False):
 
     m.params['pts'] = 21
     pts = m.params['pts']
-    m.params['MW_pulse_durations'] = np.linspace(0,150e-9,pts)
+    m.params['MW_pulse_durations'] = np.linspace(0,300e-9,pts)
 
     if msp1:
         m.params['mw_frq'] = 2.90e9
@@ -57,4 +57,4 @@ def erabi(name, msp1=False):
     m.finish()
 
 if __name__ == '__main__':
-    erabi('ElectronRabi_sil9', msp1=False)
+    erabi('ElectronRabi_sil5', msp1=True)

@@ -65,6 +65,7 @@ def pulse_defs_lt2(msmt):
     msmt.SP_pulse = pulse.SquarePulse(channel = 'AOM_Newfocus', amplitude = 1.0)
     msmt.plu_gate = pulse.SquarePulse(channel = 'plu_sync', amplitude = 1.0, 
                                     length = msmt.params_lt2['PLU_gate_duration'])
+    
     msmt.HH_marker = pulse.SquarePulse(channel = 'HH_MA1', length = 50e-9, amplitude = 1.0)
 
     ### LDE attempt
@@ -96,7 +97,7 @@ def pulse_defs_lt1(msmt):
         amplitude = msmt.params_lt1['MW_pi_amplitude'],
         length = msmt.params_lt1['MW_pi_length'])
 
-    msmt.pi_pulse = pulselib.MW_IQmod_pulse('MW pi2 pulse',
+    msmt.pi2_pulse = pulselib.MW_IQmod_pulse('MW pi2 pulse',
         I_channel = 'MW_Imod', 
         Q_channel = 'MW_Qmod',
         PM_channel = 'MW_pulsemod',
@@ -112,9 +113,7 @@ def pulse_defs_lt1(msmt):
     msmt.AWG_LT2_trigger_pulse = pulse.SquarePulse(channel='AWG_LT2_trigger',
         length = 10e-9, amplitude = 2)
 
-
-
-
+    msmt.HH_sync = pulse.SquarePulse(channel = 'HH_sync', length = 50e-9, amplitude = 1.0)
 
     # light
     msmt.SP_pulse = pulse.SquarePulse(channel = 'Velocity1AOM', amplitude = 1.0)

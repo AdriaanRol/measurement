@@ -2,6 +2,7 @@ import qt
 import numpy as np
 import msvcrt
 
+
 def set_simple_counting(adwins=['adwin', 'adwin_lt1']):
     for adwin in adwins:
         qt.instruments[adwin].set_simple_counting()
@@ -74,7 +75,7 @@ def check_power(name, setpoint, adwin, powermeter, servo):
     qt.msleep(1)
 
 def check_lt1_powers(names=['GreenAOM_lt1', 'MatisseAOM_lt1', 'NewfocusAOM_lt1', 'YellowAOM_lt1'],
-    setpoints = [50e-6, 5e-9, 100e-9, 50e-9]):
+    setpoints = [50e-6, 5e-9, 10e-9, 50e-9]):
     
     turn_off_all_lt1_lasers()
     for n,s in zip(names, setpoints):

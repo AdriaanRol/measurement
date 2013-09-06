@@ -430,6 +430,7 @@ EVENT:
       
         if (par_59 = 1) then 'only do this if timer = 0 to prevent switching between AWG triggers/events
           do_sequences = 0 ' this is the tune mode
+          CR_timer = 1
         else
           do_sequences = set_do_sequences 
         endif
@@ -518,6 +519,7 @@ EVENT:
                           
         DAC(e_aom_channel, 3277*e_cr_voltage+32768)  'turn on red lasers
         DAC(fb_aom_channel, 3277*fb_cr_voltage+32768)
+        'DAC(repump_aom_channel, 3277*repump_voltage+32768) 
                        
       ELSE
         
@@ -529,6 +531,7 @@ EVENT:
                             
           DAC(e_aom_channel,  3277*e_off_voltage +32768)   'turn off red lasers
           DAC(fb_aom_channel, 3277*fb_off_voltage+32768)
+          'DAC(repump_aom_channel, 3277*repump_off_voltage+32768) 
                         
           IF (cr_after_teleportation > 0) THEN    ' save the number of CR counts with teleportation event
             DATA_23[tele_event_id] = current_red_cr_check_counts

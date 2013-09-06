@@ -8,7 +8,7 @@
 ' ADbasic_Version                = 5.0.8
 ' Optimize                       = Yes
 ' Optimize_Level                 = 1
-' Info_Last_Save                 = TUD10238  TUD10238\localadmin
+' Info_Last_Save                 = TUD276629  TUD276629\localadmin
 '<Header End>
 ' this program implements single-shot readout fully controlled by ADwin Gold II
 '
@@ -157,8 +157,7 @@ INIT:
   SSRO_stop_after_first_photon = DATA_20[18]
   cycle_duration               = DATA_20[19]
   CR_probe                     = DATA_20[20]
-  repump_after_repetitions     = DATA_20[21]
-  CR_repump                    = DATA_20[22]
+  CR_repump                    = DATA_20[21]
   
   repump_voltage               = DATA_21[1]
   repump_off_voltage           = DATA_21[2]
@@ -236,7 +235,7 @@ EVENT:
     SELECTCASE mode
       CASE 0    ' green repump
         IF (timer = 0) THEN
-          IF ((Mod(repetition_counter,repump_after_repetitions)=0) OR (cr_counts < CR_repump))  THEN  'only repump after x SSRO repetitions
+          IF (cr_counts < CR_repump)  THEN  'only repump after x SSRO repetitions
             CNT_CLEAR( counter_pattern)    'clear counter
             CNT_ENABLE(counter_pattern)    'turn on counter
             DAC(repump_laser_DAC_channel, 3277*repump_voltage+32768) ' turn on green
@@ -297,7 +296,11 @@ EVENT:
         IF (timer = 0) THEN
           DAC(Ex_laser_DAC_channel, 3277*Ex_SP_voltage+32768) ' turn on Ex laser
           DAC(A_laser_DAC_channel, 3277*A_SP_voltage+32768)   ' turn on A laser
-          CNT_CLEAR( counter_pattern)    'clear counter
+                   
+          ' DONT LEAVE THIS IN AS DEFAULT
+          ' DAC(repump_laser_DAC_channel, 3277*repump_voltage+32768)
+          
+          CNT_CLEAR(counter_pattern)    'clear counter
           CNT_ENABLE(counter_pattern)    'turn on counter
           old_counts = 0
         ELSE 
@@ -309,6 +312,7 @@ EVENT:
             IF (SP_filter_duration = 0) THEN
               DAC(Ex_laser_DAC_channel, 3277*Ex_off_voltage+32768) ' turn off Ex laser
               DAC(A_laser_DAC_channel, 3277*A_off_voltage+32768) ' turn off A laser
+              DAC(repump_laser_DAC_channel, 3277*repump_off_voltage+32768)
               IF ((send_AWG_start > 0) or (sequence_wait_time > 0)) THEN
                 mode = 4
               ELSE

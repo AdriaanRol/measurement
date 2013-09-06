@@ -1,12 +1,14 @@
 ssro.AdwinSSRO.adwin_processes_key = 'adwin_lt1_processes'
-ssro.AdwinSSRO.E_aom = qt.instruments['NewfocusAOM_lt1']
-ssro.AdwinSSRO.A_aom = qt.instruments['MatisseAOM_lt1']
+
+# REGULAR SETTING: A = NF, E = Matisse
+ssro.AdwinSSRO.E_aom = qt.instruments['MatisseAOM_lt1']
+ssro.AdwinSSRO.A_aom = qt.instruments['NewfocusAOM_lt1']
 ssro.AdwinSSRO.green_aom = qt.instruments['GreenAOM_lt1']
 ssro.AdwinSSRO.yellow_aom = qt.instruments['YellowAOM_lt1']
 ssro.AdwinSSRO.adwin = qt.instruments['adwin_lt1']
 ssro.AdwinSSRO.repump_aom = qt.instruments['GreenAOM_lt1']
 
-
+ 
 #below is not yet LT1; we are not set up to do AWG things remotely
 # sequence.SequenceSSRO.awg = qt.instruments['AWG_lt1']
 # sequence.SequenceSSRO.mwsrc = qt.instruments['SMB100_lt1']

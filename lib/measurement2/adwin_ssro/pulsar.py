@@ -48,8 +48,8 @@ class PulsarMeasurement(ssro.IntegratedSSRO):
     def generate_sequence(self):
         pass
 
-    def finish(self):
-        ssro.IntegratedSSRO.finish(self)
+    def finish(self,**kw):
+        ssro.IntegratedSSRO.finish(self,**kw)
         
         self.awg.stop()
         self.awg.set_runmode('CONT')

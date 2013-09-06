@@ -17,6 +17,7 @@ import os,sys,time
 import qt
 import types
 from lib import config
+import logging
 
 
 class AOM(Instrument):
@@ -192,12 +193,12 @@ class AOM(Instrument):
         V_min = self.get_V_min()
         
         if not(V_min <= U <= V_max):
-            print('Error: extreme voltage of this channel exceeded: ')
+            logging.warning(self.get_name() + ' Error: extreme voltage of this channel exceeded: ')
             print 'U is not %.2f =< %.2f =< %.2f' % (V_min, U, V_max)
             return
         if controller in ('AWG'):
             if self._ins_awg.get_runmode() != 'CONT':
-                print('Warning: AWG not in continuous mode!')
+                logging.warning(self.get_name() + ' Warning: AWG not in continuous mode!')
            
             apply = {'ch1': self._ins_awg.set_ch1_offset,
                      'ch1m1': self._ins_awg.set_ch1_marker1_low,
@@ -217,7 +218,7 @@ class AOM(Instrument):
             self._ins_adwin.set_dac_voltage([channel,U])
             #print 'Applying voltage: channel %s, voltage %s'%(channel,U)
         else:
-            print('Error: unknown AOM controller %s'%controller)
+            logging.warning(self.get_name() + ' Error: unknown AOM controller %s'%controller)
         return
 
     def get_voltage(self):
@@ -225,7 +226,7 @@ class AOM(Instrument):
         channel = self.get_channel()
         if controller in ('AWG'):
             if self._ins_awg.get_runmode() != 'CONT':
-                print('Warning: AWG not in continuous mode!')
+                logging.warning(self.get_name() + ' Warning: AWG not in continuous mode!')
            
             get_ch = {'ch1': self._ins_awg.get_ch1_offset,
                      'ch1m1': self._ins_awg.get_ch1_marker1_low,
@@ -244,7 +245,7 @@ class AOM(Instrument):
         elif controller in ('ADWIN'):
             return self._ins_adwin.get_dac_voltage(channel)
         else:
-            print('Error: unknown AOM controller %s'%controller)
+            logging.warning(self.get_name() + ' Error: unknown AOM controller %s'%controller)
         return
 
     def calibrate(self, steps): # calibration values in uW
@@ -259,7 +260,7 @@ class AOM(Instrument):
 
         print 'background power: %.4f uW' % (bg*1e6)
 
-        time.sleep(2)
+        time.sleep(.2)
 
         V_max = self.get_V_max()
         V_min = self.get_V_min()
@@ -269,7 +270,7 @@ class AOM(Instrument):
         for a in rng:
             x[a] = a*(V_max-V_min)/float(steps-1)+V_min
             self.apply_voltage(x[a])
-            time.sleep(1)
+            time.sleep(0.5)
             y[a] = self._ins_pm.get_power() - bg
             
             print 'measured power at %.2f V: %.4f uW' % \
@@ -320,12 +321,15 @@ class AOM(Instrument):
             xc = self.get_sec_cal_xc()
             k = self.get_sec_cal_k()
         else:
-            print 'Error: controller', controller, 'not registered.'
+            logging.warning(self.get_name() + ' Error: controller', controller, 'not registered.')
             
         if p <= 0:
             voltage = 0
         else:
             voltage = xc-log(log(a/float(p)))/k
+
+        if isnan(voltage):
+            logging.warning(self.get_name() + ' Error: power out of calibration range')
         
         return voltage
 
@@ -346,6 +350,16 @@ class AOM(Instrument):
     def get_power(self):
         return self.voltage_to_power(self.get_voltage())
 
+    def turn_on(self):
+        if abs(self.get_V_min())>self.get_V_max():
+            v=self.get_V_min()
+        else:
+            v=self.get_V_max()
+        self.apply_voltage(v)
+
+    def turn_off(self):
+        self.apply_voltage(0)
+
     def do_set_cur_controller(self, val):
         # print val
         
@@ -356,7 +370,7 @@ class AOM(Instrument):
              return
 
         if (val != self._pri_controller) & (val != self._sec_controller):
-            print ('Error: controller %s not registered, using %s instead'%(val, 
+            logging.warning(self.get_name() + ' Error: controller %s not registered, using %s instead'%(val, 
                 self._pri_controller))
             self._cur_controller = self._pri_controller
 

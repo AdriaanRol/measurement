@@ -58,13 +58,13 @@ params_lt1['SSRO1_duration'] = 15
 params_lt2['SSRO_lt2_duration'] = 50
 
 ### CR and asynchronous preparation settings
-params_lt1['CR_duration'] = 50
+params_lt1['CR_duration'] = 100
 params_lt1['CR_threshold_preselect'] = 0
 params_lt1['CR_threshold_probe'] = 0
 params_lt1['CR_repump'] = 1000
 params_lt1['repump_duration'] = 500#50
 params_lt1['repump_after_repetitions'] = 1
-params_lt1['time_before_forced_CR'] = 20000#1#20000 # FIXME
+params_lt1['time_before_forced_CR'] = 1 #1#20000 # FIXME
 params_lt1['N_pol_element_repetitions'] = 5 # FIXME
 
 params_lt2['repump_duration'] = 50
@@ -75,13 +75,13 @@ params_lt2['repump_after_repetitions'] = 1
 params_lt2['CR_repump'] = 1000
 
 ### SSRO, CR, SP Laser powers
-params_lt1['Ey_CR_amplitude'] = 5e-9
-params_lt1['FT_CR_amplitude'] = 10e-9 # A!              
-params_lt1['Ey_SP_amplitude'] = 10e-9 # A!              
-params_lt1['FT_SP_amplitude'] = 10e-9 # A!
-params_lt1['Ey_RO_amplitude'] = 3e-9 # 
+params_lt1['Ey_CR_amplitude'] = 3e-9
+params_lt1['FT_CR_amplitude'] = 20e-9               
+params_lt1['Ey_SP_amplitude'] = 10e-9               
+params_lt1['FT_SP_amplitude'] = 450e-9 
+params_lt1['Ey_RO_amplitude'] = 3e-9  
 params_lt1['FT_RO_amplitude'] = 0
-params_lt1['repump_amplitude'] = 50e-9#300e-6#
+params_lt1['repump_amplitude'] = 50e-9 #300e-6#
 
 params_lt2['Ey_CR_amplitude'] = 20e-9             
 params_lt2['A_CR_amplitude'] = 20e-9              
@@ -92,12 +92,11 @@ params_lt2['A_RO_amplitude'] = 0
 params_lt2['repump_amplitude'] = 300e-6
 
 ### pulses and MW stuff
-params_lt1['ms-1_cntr_frq'] = 2.83e9 
+params_lt1['ms-1_cntr_frq'] = 2.827e9 
 params_lt1['mw_frq'] = 2.8e9
 params_lt1['mw_power'] = 20
 params_lt1['MW_pulse_mod_risetime'] = 10e-9
 params_lt1['mi-1_mod_frq'] = params_lt1['ms-1_cntr_frq'] - params_lt1['mw_frq']
-
 
 params_lt2['mw_frq'] = 2.8e9
 params_lt2['mw_power'] = 20
@@ -106,11 +105,11 @@ params_lt2['MW_pulse_mod_risetime'] = 10e-9
 #the LDE sequence pi and pi/2 pulse on mI=-1
 params_lt1['MW_pi_mod_frq'] = params_lt1['mi-1_mod_frq']
 params_lt1['MW_pi_amplitude'] = 0.9
-params_lt1['MW_pi_length'] = 63e-9
+params_lt1['MW_pi_length'] = 500e-9
 
-params_lt1['MW_pi2_mod_frq'] = m.params_lt1['mi-1_mod_frq']
+params_lt1['MW_pi2_mod_frq'] = params_lt1['mi-1_mod_frq']
 params_lt1['MW_pi2_amplitude'] = 0.9
-params_lt1['MW_pi2_length'] = 31e-9
+params_lt1['MW_pi2_length'] = 500e-9
 
 ## Hannes: i just copied these corpse parameters from msmt_params in setup
 CORPSE_frq = 8.035e6
@@ -133,10 +132,8 @@ params_lt2['CORPSE_pi_420_duration'] = 7./CORPSE_frq/6.
 params['HH_sync_period'] = 400e-9 # in seconds -- important for checking (see measurement_loop())
 									#Question from hannes: is this the separation of the optical pi pulses?
 
-
 #EOM stuff:
-
-params_lt2['eom_pulse_duration']        = 16e-9
+params_lt2['eom_pulse_duration']        = 40e-9
 params_lt2['eom_off_duration']          = 150e-9
 params_lt2['eom_off_amplitude']         = -.26  # calibration from 23-08-2013
 params_lt2['eom_pulse_amplitude']       = 1.2
@@ -146,9 +143,8 @@ params_lt2['eom_overshoot_duration2']   = 4e-9
 params_lt2['eom_overshoot2']            = -0.03
 params_lt2['aom_risetime']              = 23e-9
 
-
 params_lt2['AWG_SP_power']            = 30e-9
-params_lt2['opt_puls_separation']     = 600e-9
+params_lt2['opt_pulse_separation']    = 600e-9
 params_lt2['MW_opt_puls1_separation'] = 50e-9 #distance between the end of the MW and the start of opt puls1
 params_lt2['MW_opt_puls2_separation'] = 50e-9
 
@@ -157,27 +153,26 @@ params_lt2['PLU_gate_3_duration']     = 40e-9
 params_lt2['PLU_3_delay']             = 50e-9
 params_lt2['PLU_4_delay']             = 150e-9
 
-
-params_lt1['AWG_SP_power']            = 50e-9 #this should be on the FT
-params_lt1['AWG_yellow_power']        = 300e-9 #yellow power during SP in LDE on LT1
+params_lt1['AWG_SP_power']            = 100e-9 # 500e-9 #this should be on the FT
+params_lt1['AWG_yellow_power']        = 10e-9 #yellow power during SP in LDE on LT1
 params_lt1['MW_wait_after_SP']        = 20e-9 #wait time between end of SP_lt1 and start of first MW
 params_lt1['MW_separation']           = 600e-9 # separation between the two MW pulses on LT1
+
+params_lt1['initial_delay']           = 10e-9 + 240e-9
+params_lt2['initial_delay']           = 10e-9
 
 params['single_sync']                 = 1 #if ==1 then there will only be 1 sync otherwise 1 for each puls
 params['long_histogram']              = 0 #if ==1 there will be only one sync at the beginning of LDE
 params['MW_during_LDE']               = 0 #NOTE:MW stuff not implemented, yet
 
-params['initial_delay']               = 10e-9
-params['LDE_SP_duration']             = 9e-6
-
+params['LDE_SP_duration']             = 50e-6
+params['LDE_SP_duration_yellow']      = 49e-6
 params['wait_after_sp']               = 500e-9 #this should be large enough, so that the MW puls fits
-
-params_lt2['finaldelay']              = 1000e-9
-params_lt1['finaldelay']			  = 1000e-9	#make sure this works for spin echo, and equal length
+params['LDE_element_length']          = 12.5e-6
 
 
 ### default process settings
-params['LDE_attempts_before_CR'] = 100 # FIXME
+params['LDE_attempts_before_CR'] = 1000 # FIXME
 
 params_lt1['max_CR_starts'] = -1
 params_lt1['teleportation_repetitions'] = -1
