@@ -2,8 +2,23 @@ import types
 import qt
 cfg = qt.cfgman
 
- 
-### sample settings
+
+##############################################################################
+##############################################################################
+### Protocols
+###
+### To make sure everything works fine, only leave the current sample
+### un-commented here (we use local variables here for convenience,
+### that WILL lead to trouble because the get overwritten in each sample 
+### section)
+##############################################################################
+##############################################################################
+
+
+##############################################################################
+### The111/2
+##############################################################################
+
 # branch='samples/sil2/'
 
 # f_msm1_cntr = 2.826961e9
@@ -22,10 +37,13 @@ cfg = qt.cfgman
 # cfg.set(branch+'mIp1_mod_frq',  f_msm1_cntr - mw0 + N_HF_frq)
 
 
-###
-branch='samples/hans-sil1/'
+##############################################################################
+### HANS/4
+##############################################################################
 
-f_msm1_cntr = 2.826694e9
+branch='samples/hans-sil4/'
+
+f_msm1_cntr = 2.82650e9
 N_frq = 7.13429e6
 N_HF_frq = 2.19290e6
 cfg.set(branch+'ms-1_cntr_frq', f_msm1_cntr)
@@ -40,13 +58,16 @@ cfg.set(branch+'mIm1_mod_frq',  f_msm1_cntr - mw0 - N_HF_frq)
 cfg.set(branch+'mI0_mod_frq',  f_msm1_cntr - mw0)
 cfg.set(branch+'mIp1_mod_frq',  f_msm1_cntr - mw0 + N_HF_frq)
 
-
-### protocol settings ###
+##############################################################################
+##############################################################################
+### Protocols
+##############################################################################
+##############################################################################
 
 ### General settings for AdwinSSRO
 branch='protocols/AdwinSSRO/'
 cfg.set(branch+        'AWG_done_DI_channel',          16)
-cfg.set(branch+        'AWG_event_jump_DO_channel',    7)
+cfg.set(branch+        'AWG_event_jump_DO_channel',    14)
 cfg.set(branch+        'AWG_start_DO_channel',         10)
 cfg.set(branch+        'A_laser_DAC_channel',          6)
 cfg.set(branch+        'Ex_laser_DAC_channel',         7)
@@ -89,11 +110,10 @@ cfg.set(branch+        'SSRO_duration',             50)
 cfg.set(branch+        'SSRO_repetitions',          1000)
 cfg.set(branch+        'SSRO_stop_after_first_photon',  0)
 
-
-
 ### General settings for AdwinSSRO+espin
 branch='protocols/AdwinSSRO+espin/'
 cfg.set(branch+        'send_AWG_start',                 1)
+cfg.set(branch+        'MW_pulse_mod_risetime',          10e-9)
 
 ### General settings for AdwinSSRO+MBI
 branch='protocols/AdwinSSRO+MBI/'
@@ -109,9 +129,16 @@ cfg.set(branch+        'repump_after_MBI_duration',                100)
 cfg.set(branch+        'repump_after_MBI_amp',                     15e-9)
 
 
-### more specfic settings
+##############################################################################
+##############################################################################
+### Specific sample settings for protocols
+##############################################################################
+##############################################################################
    
-### sil2, Pulses ###   
+##############################################################################
+### The111/2 - Pulses
+##############################################################################
+
 branch='protocols/sil2-default/pulses/'
 
 tof = 0#11e-9
@@ -178,7 +205,10 @@ cfg.set(branch+        'N_pi_amp', 1)
 cfg.set(branch+        'N_pi2_duration', 91.1e-6/2.)
 cfg.set(branch+        'N_pi2_amp', 1)
 
-### sil2, AdwinSSRO ###
+##############################################################################
+### The111/2 - SSRO
+##############################################################################
+
 branch='protocols/sil2-default/AdwinSSRO/'  
 cfg.set(branch+        'A_CR_amplitude',            10e-9)
 cfg.set(branch+        'A_RO_amplitude',            0.)
@@ -196,10 +226,13 @@ cfg.set(branch+        'SSRO_duration',             50)
 cfg.set(branch+        'SSRO_repetitions',          1000)
 cfg.set(branch+        'SSRO_stop_after_first_photon',  0)
 
-### sil2, integrated SSRO
+### integrated SSRO
 cfg.set('protocols/sil2-default/AdwinSSRO-integrated/SSRO_duration', 15)
 
-### sil2, Adwin MBI ###
+##############################################################################
+### The111/2 - MBI
+##############################################################################
+
 branch='protocols/sil2-default/AdwinSSRO+MBI/'
 cfg.set(branch+        'mw_frq',                        mw0)
 cfg.set(branch+        'mw_power',                      20)
@@ -218,42 +251,13 @@ cfg.set(branch+        'repump_after_E_RO_amplitude',   25e-9)
 cfg.set(branch+        'AWG_wait_duration_before_MBI_MW_pulse',     50e-9)
 cfg.set(branch+        'AWG_wait_for_adwin_MBI_duration',           15e-6)
 
-### sil2, Teleportation ###
-# branch='protocols/sil2-default/Teleportation/'
-# cfg.set(branch+        'A_CR_amplitude',                10e-9)
-# cfg.set(branch+        'A_RO_amplitude',                0.)
-# cfg.set(branch+        'A_SP_amplitude',                15e-9)
-# cfg.set(branch+        'Ex_CR_amplitude',               10e-9)
-# cfg.set(branch+        'Ex_RO_amplitude',               5e-9)
-# cfg.set(branch+        'Ex_SP_amplitude',               0.)
-# cfg.set(branch+        'yellow_repump_amplitude',       0)
-# cfg.set(branch+        'yellow_repump_duration',        3) 
-# cfg.set(branch+        'CR_duration',                   100)
-# cfg.set(branch+        'CR_threshold_preselect',        40)
-# cfg.set(branch+        'CR_threshold_probe',            40)
-# cfg.set(branch+        'time_before_forced_CR',         500000)
-# cfg.set(branch+        'teleportation_repetitions',     1000)
-
 ### sil2, BSM
 cfg.set('protocols/sil2-default/BSM/N_ref_frq', N_frq)
 cfg.set('protocols/sil2-default/BSM/e_ref_frq', finit)
 
-### General settings for ADWIN Teleportation
-# branch='protocols/Teleportation/'
-# cfg.set(branch+        'AWG_done_DI_channel',                      16)
-# cfg.set(branch+        'AWG_event_jump_DO_channel',                7)
-# cfg.set(branch+        'AWG_start_DO_channel',                     1)
-# cfg.set(branch+        'A_laser_DAC_channel',                      6)
-# cfg.set(branch+        'Ex_laser_DAC_channel',                     7)
-# cfg.set(branch+        'counter_channel',                          1)
-# cfg.set(branch+        'yellow_laser_DAC_channel',                 3)
-# cfg.set(branch+        'green_laser_DAC_channel',                  4)
-# cfg.set(branch+        'green_off_amplitude',                      0.0)
-# cfg.set(branch+        'green_repump_amplitude',                   100e-6)
-# cfg.set(branch+        'green_repump_duration',                    10)
-# cfg.set(branch+        'yellow_repump_duration',                   500)
-# cfg.set(branch+        'yellow_off_voltage',                       0)
-# cfg.set(branch+        'green_off_voltage',                        0)
+##############################################################################
+### HANS/1
+##############################################################################
 
 branch='protocols/hans-sil1-default/AdwinSSRO/'  
 cfg.set(branch+        'A_CR_amplitude',            10e-9)
@@ -274,6 +278,10 @@ cfg.set(branch+        'SSRO_stop_after_first_photon',  0)
 
 cfg.set('protocols/hans-sil1-default/AdwinSSRO-integrated/SSRO_duration', 15)
 
+##############################################################################
+### HANS/7
+##############################################################################
+
 branch='protocols/hans-sil7-default/AdwinSSRO/'  
 cfg.set(branch+        'A_CR_amplitude',            10e-9)
 cfg.set(branch+        'A_RO_amplitude',            0.)
@@ -293,24 +301,122 @@ cfg.set(branch+        'SSRO_stop_after_first_photon',  0)
 
 cfg.set('protocols/hans-sil7-default/AdwinSSRO-integrated/SSRO_duration', 50)
 
+##############################################################################
+### HANS/4 --- SSRO
+##############################################################################
 
 branch='protocols/hans-sil4-default/AdwinSSRO/'  
-cfg.set(branch+        'A_CR_amplitude',            10e-9)
+cfg.set(branch+        'A_CR_amplitude',            5e-9)
 cfg.set(branch+        'A_RO_amplitude',            0.)
-cfg.set(branch+        'A_SP_amplitude',            10e-9)
+cfg.set(branch+        'A_SP_amplitude',            5e-9)
 cfg.set(branch+        'CR_duration',               100)
-cfg.set(branch+        'CR_preselect',              15)
-cfg.set(branch+        'CR_probe',                  5)
+cfg.set(branch+        'CR_preselect',              1000)
+cfg.set(branch+        'CR_probe',                  10)
 cfg.set(branch+        'CR_repump',                 1000)
-cfg.set(branch+        'Ex_CR_amplitude',           10e-9)
+cfg.set(branch+        'Ex_CR_amplitude',           5e-9)
 cfg.set(branch+        'Ex_RO_amplitude',           5e-9)
 cfg.set(branch+        'Ex_SP_amplitude',           0.)
 cfg.set(branch+        'SP_duration',               250)
 cfg.set(branch+        'SP_filter_duration',        0)
-cfg.set(branch+        'SSRO_duration',             100)
+cfg.set(branch+        'SSRO_duration',             50)
 cfg.set(branch+        'SSRO_repetitions',          5000)
 cfg.set(branch+        'SSRO_stop_after_first_photon',  0)
 
-cfg.set('protocols/hans-sil4-default/AdwinSSRO-integrated/SSRO_duration', 50)
+cfg.set('protocols/hans-sil4-default/AdwinSSRO-integrated/SSRO_duration', 25)
+
+cfg.set('protocols/hans-sil4-default/AdwinSSRO+espin/mw_frq', mw0)
+cfg.set('protocols/hans-sil4-default/AdwinSSRO+espin/mw_power', 20)
+
+##############################################################################
+### HANS/4 --- MBI
+##############################################################################
+
+branch='protocols/hans-sil4-default/AdwinSSRO+MBI/'
+cfg.set(branch+        'mw_frq',                        mw0)
+cfg.set(branch+        'mw_power',                      20)
+cfg.set(branch+        'Ex_MBI_amplitude',              5e-9)
+cfg.set(branch+        'Ex_SP_amplitude',               5e-9)
+cfg.set(branch+        'MBI_duration',                  4)
+cfg.set(branch+        'MBI_steps',                     1)
+cfg.set(branch+        'MBI_threshold',                 1)
+cfg.set(branch+        'SP_E_duration',                 100)
+cfg.set(branch+        'repump_after_MBI_duration',     10)
+cfg.set(branch+        'repump_after_MBI_amplitude',    5e-9)
+cfg.set(branch+        'repump_after_E_RO_duration',    10)
+cfg.set(branch+        'repump_after_E_RO_amplitude',   5e-9)
+
+# MBI pulse
+cfg.set(branch+        'AWG_wait_duration_before_MBI_MW_pulse',     50e-9)
+cfg.set(branch+        'AWG_wait_for_adwin_MBI_duration',           15e-6)
+
+##############################################################################
+### HANS/4 --- Pulses
+##############################################################################
+
+branch='protocols/hans-sil4-default/pulses/'
+
+cfg.set(branch+        'selective_pi_duration',     2500e-9)
+cfg.set(branch+        'selective_pi_amp',          0.011)
+cfg.set(branch+        'selective_pi_mod_frq',      finit)
+cfg.set(branch+        'AWG_MBI_MW_pulse_mod_frq',  
+    finit)
+cfg.set(branch+        'AWG_MBI_MW_pulse_ssbmod_frq',
+    finit)
+cfg.set(branch+        'AWG_MBI_MW_pulse_amp',      
+    cfg.get(branch+        'selective_pi_amp'))
+cfg.set(branch+        'AWG_MBI_MW_pulse_duration', 
+    cfg.get(branch+        'selective_pi_duration'))
+
+cfg.set(branch+        'fast_pi_duration',         62e-9)
+cfg.set(branch+        'fast_pi_amp',              0.831)
+cfg.set(branch+        'fast_pi_mod_frq',          finit)
+
+cfg.set(branch+        'fast_pi2_duration',         33e-9)
+cfg.set(branch+        'fast_pi2_amp',              0.831)
+cfg.set(branch+        'fast_pi2_mod_frq',          finit)
+
+### CNOTs
+cfg.set(branch+        'pi2pi_mIm1_duration',        395e-9)
+cfg.set(branch+        'pi2pi_mIm1_amp',             0.0827)
+cfg.set(branch+        'pi2pi_mIm1_mod_frq',         finit)
+
+### CORPSE used in the BSM
+# CORPSE_frq = 8.071e6
+# cfg.set(branch+        'CORPSE_pi_60_duration',     1./CORPSE_frq/6.)
+# cfg.set(branch+        'CORPSE_pi_m300_duration',   5./CORPSE_frq/6.)
+# cfg.set(branch+        'CORPSE_pi_420_duration',    7./CORPSE_frq/6.)
+# cfg.set(branch+        'CORPSE_pi_mod_frq',         finit + Nsplit/2.)
+
+# ### TODO
+# cfg.set(branch+        'CORPSE_pi_amp',             0.703)
+
+# ### TODO
+# cfg.set(branch+        'CORPSE_pi_phase_shift',     74.0)
+
+# ### TODO
+# cfg.set(branch+        'CORPSE_pi_center_shift',    13e-9)
+
+### CORPSE for the full ms=-1 manifold, driven in the center 
+### (resonant with mI = 0)
+CORPSE_frq = 8e6
+cfg.set(branch+        'msm1_CORPSE_pi_60_duration',     1./CORPSE_frq/6.)
+cfg.set(branch+        'msm1_CORPSE_pi_m300_duration',   5./CORPSE_frq/6.)
+cfg.set(branch+        'msm1_CORPSE_pi_420_duration',    7./CORPSE_frq/6.)
+cfg.set(branch+        'msm1_CORPSE_pi_mod_frq',         f_msm1_cntr - mw0)
+cfg.set(branch+        'msm1_CORPSE_pi_amp',             0.770)
+
+cfg.set(branch+        'msm1_CORPSE_pi2_24p3_duration',     24.3/CORPSE_frq/360.)
+cfg.set(branch+        'msm1_CORPSE_pi2_m318p6_duration',   318.6/CORPSE_frq/360.)
+cfg.set(branch+        'msm1_CORPSE_pi2_384p3_duration',    384.3/CORPSE_frq/360.)
+cfg.set(branch+        'msm1_CORPSE_pi2_mod_frq',           f_msm1_cntr - mw0)
+cfg.set(branch+        'msm1_CORPSE_pi2_amp',               0.639) ###not calibrated
+
+##############################################################################
+##############################################################################
+##############################################################################
+### DONE
+##############################################################################
+##############################################################################
+##############################################################################
 
 cfg.save_all()

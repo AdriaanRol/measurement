@@ -52,6 +52,5 @@ def postinitdarkesr(name):
     
     
 if __name__ == '__main__':
-    print 'poo'
     postinitdarkesr('postinitdarkesr')
     

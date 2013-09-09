@@ -23,7 +23,7 @@ def turn_off_all_lasers():
     turn_off_all_lt1_lasers()
     turn_off_all_lt2_lasers()
 
-def recalibrate_laser(name, servo, adwin,awg=False):
+def recalibrate_laser(name, servo, adwin, awg=False):
     qt.instruments[adwin].set_simple_counting()
     qt.instruments[servo].move_in()
     qt.msleep(1)

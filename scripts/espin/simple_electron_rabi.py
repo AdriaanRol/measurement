@@ -10,14 +10,12 @@ import measurement.lib.measurement2.measurement as m2
 from measurement.lib.measurement2.adwin_ssro import ssro
 from measurement.lib.measurement2.adwin_ssro import pulsar as pulsar_msmt
 
-def erabi(name, msp1=False):
+def erabi(name):
     m = pulsar_msmt.ElectronRabi(name)
     
     m.params.from_dict(qt.cfgman['protocols']['AdwinSSRO'])
-    m.params.from_dict(qt.cfgman['protocols']['hans-sil7-default']['AdwinSSRO'])
-    m.params.from_dict(qt.cfgman['protocols']['hans-sil7-default']['AdwinSSRO-integrated'])
-    #m.params.from_dict(qt.cfgman['samples']['hans-sil1'])
-       
+    m.params.from_dict(qt.cfgman['protocols']['hans-sil4-default']['AdwinSSRO'])
+    m.params.from_dict(qt.cfgman['protocols']['hans-sil4-default']['AdwinSSRO-integrated'])      
     m.params.from_dict(qt.cfgman['protocols']['AdwinSSRO+espin'])
 
     ssro.AdwinSSRO.repump_aom = qt.instruments['GreenAOM']
@@ -25,20 +23,15 @@ def erabi(name, msp1=False):
     m.params['repump_amplitude']=m.params['green_repump_amplitude']
     
 
-    m.params['pts'] = 41
+    m.params['pts'] = 31
     pts = m.params['pts']
-    m.params['MW_pulse_durations'] = np.linspace(0,500e-9,pts)
-
-    if msp1:
-        pass
-        # m.params['mw_frq'] = 2.90e9
-        # m.params['ms_cntr_frq'] =  m.params['ms+1_cntr_frq']
-    else:
-        m.params['mw_frq'] = 2.9e9#2.80e9
-        m.params['ms_cntr_frq'] = 2.928e9#2.8265e9# m.params['ms-1_cntr_frq']
+    m.params['MW_pulse_durations'] = np.linspace(0,250e-9,pts)
+    m.params['mw_frq'] = 2.80e9
+    m.params['ms_cntr_frq'] = 2.826605e9
+    
     m.params['mw_power'] = 20
     m.params['repetitions'] = 1000
-    m.params['MW_pulse_amplitudes'] = np.ones(pts) * 0.9
+    m.params['MW_pulse_amplitudes'] = np.ones(pts) * 0.75
     m.params['MW_pulse_frequency'] = m.params['ms_cntr_frq'] - m.params['mw_frq']
     m.params['MW_pulse_mod_risetime'] = 10e-9
 
@@ -56,4 +49,4 @@ def erabi(name, msp1=False):
     m.finish()
 
 if __name__ == '__main__':
-    erabi('ElectronRabi_hans_sil9-fast-rabi', msp1=False)
+    erabi('hans4-0.75V')

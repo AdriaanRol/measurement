@@ -4,18 +4,15 @@ import numpy as np
 from measurement.lib.measurement2.adwin_ssro import ssro, pulsar_mbi_espin
 
 def prepare(m, yellow = False):
-    m.params.from_dict(qt.cfgman.get('samples/sil2'))
+    m.params.from_dict(qt.cfgman.get('samples/hans-sil4'))
 
     m.params.from_dict(qt.cfgman.get('protocols/AdwinSSRO'))
-    m.params.from_dict(qt.cfgman.get('protocols/sil2-default/AdwinSSRO'))
-    m.params.from_dict(qt.cfgman.get('protocols/sil2-default/AdwinSSRO-integrated'))
-
+    m.params.from_dict(qt.cfgman.get('protocols/hans-sil4-default/AdwinSSRO'))
+    m.params.from_dict(qt.cfgman.get('protocols/hans-sil4-default/AdwinSSRO-integrated'))
     m.params.from_dict(qt.cfgman.get('protocols/AdwinSSRO+MBI'))
-    m.params.from_dict(qt.cfgman.get('protocols/sil2-default/AdwinSSRO+MBI'))
-
-    m.params.from_dict(qt.cfgman.get('protocols/sil2-default/pulses'))
-
-    m.params.from_dict(qt.cfgman.get('protocols/sil2-default/BSM'))
+    m.params.from_dict(qt.cfgman.get('protocols/hans-sil4-default/AdwinSSRO+MBI'))
+    m.params.from_dict(qt.cfgman.get('protocols/hans-sil4-default/pulses'))
+    # m.params.from_dict(qt.cfgman.get('protocols/hans-sil4-default/BSM'))
 
     if yellow:
         ssro.AdwinSSRO.repump_aom = qt.instruments['YellowAOM']
@@ -32,6 +29,14 @@ def prepare(m, yellow = False):
 
 def finish(m, upload=True, debug=False):
     m.autoconfig()
+
+    m.params['A_SP_durations'] = [m.params['repump_after_MBI_duration']]
+    m.params['A_SP_amplitudes'] = [m.params['repump_after_MBI_amplitude']]
+    m.params['E_RO_durations'] = [m.params['SSRO_duration']]
+    m.params['E_RO_amplitudes'] = [m.params['Ex_RO_amplitude']]
+    m.params['send_AWG_start'] = [1]
+    m.params['sequence_wait_time'] = [0]
+    
     m.generate_sequence(upload=upload)
     
     if not debug:

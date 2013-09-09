@@ -10,10 +10,10 @@ import CORPSE_calibration
 reload(CORPSE_calibration)
 from CORPSE_calibration import CORPSEPiCalibration
 
-import mbi_espin_funcs as funcs
+from measurement.scripts.mbi_espin import mbi_espin_funcs as funcs
 reload(funcs)
 
-name = 'sil2'
+name = 'hans-sil4'
 
 ### Calibration stage 1
 def cal_slow_pi(name, yellow):
@@ -29,7 +29,7 @@ def cal_slow_pi(name, yellow):
   
     # slow pi pulses
     m.params['MW_pulse_durations'] = np.linspace(0,5e-6,pts) + 50e-9
-    m.params['MW_pulse_amps'] = np.ones(pts) * 0.02
+    m.params['MW_pulse_amps'] = np.ones(pts) * 0.011
     m.params['MW_pulse_mod_frqs'] = np.ones(pts) * \
         m.params['AWG_MBI_MW_pulse_mod_frq']
 
@@ -40,7 +40,7 @@ def cal_slow_pi(name, yellow):
     funcs.finish(m)
 
 ### Calibration stage 2
-def cal_4mhz_rabi(name, yellow):
+def cal_fast_rabi(name, yellow):
     m = pulsar_mbi_espin.ElectronRabi('cal_4mhz_rabi'+name)
     funcs.prepare(m, yellow)
 
@@ -51,8 +51,8 @@ def cal_4mhz_rabi(name, yellow):
     m.params['MW_pulse_delays'] = np.ones(pts) * 20e-9
 
     # MW pulses
-    m.params['MW_pulse_durations'] = np.linspace(0,500e-9,pts) + 5e-9
-    m.params['MW_pulse_amps'] = np.ones(pts) * 0.7
+    m.params['MW_pulse_durations'] = np.linspace(0,250e-9,pts) + 5e-9
+    m.params['MW_pulse_amps'] = np.ones(pts) * 0.75
     m.params['MW_pulse_mod_frqs'] = np.ones(pts) * \
         m.params['AWG_MBI_MW_pulse_mod_frq']
 
@@ -62,11 +62,10 @@ def cal_4mhz_rabi(name, yellow):
     
     funcs.finish(m)
 
-
 ### Calibration stage 3
-def cal_4mhz_pi(name, yellow, mult=1):
+def cal_fast_pi(name, yellow, mult=1):
     m = pulsar_mbi_espin.ElectronRabiSplitMultElements(
-        'cal_4MHz_pi_'+name+'_M=%d' % mult)
+        'cal_fast_pi_'+name+'_M=%d' % mult)
     funcs.prepare(m, yellow)
     
     # measurement settings
@@ -77,8 +76,8 @@ def cal_4mhz_pi(name, yellow, mult=1):
     m.params['MW_pulse_delays'] = np.ones(pts) * 15e-6
     
     # hard pi pulses
-    m.params['MW_pulse_durations'] = 1e-9* (11 + np.ones(pts) + 125)
-    m.params['MW_pulse_amps'] = np.linspace(0.6,0.75,pts)
+    m.params['MW_pulse_durations'] = np.ones(pts) * 62e-9
+    m.params['MW_pulse_amps'] = np.linspace(0.6,0.9,pts)
     m.params['MW_pulse_mod_frqs'] = np.ones(pts) * \
         m.params['AWG_MBI_MW_pulse_mod_frq']
         
@@ -86,30 +85,6 @@ def cal_4mhz_pi(name, yellow, mult=1):
     m.params['sweep_name'] = 'MW pulse amplitude (V)'
     m.params['sweep_pts'] = m.params['MW_pulse_amps']
 
-    funcs.finish(m)
-
-def cal_4mhz_pi2(name, yellow, mult=1):
-    m = pulsar_mbi_espin.ElectronRabi(
-        'cal_4MHz_pi_over_2_'+name+'_M=%d' % mult)
-    funcs.prepare(m, yellow)    
-    
-    # measurement settings
-    pts = 11
-    m.params['reps_per_ROsequence'] = 2000
-    m.params['pts'] = pts
-    m.params['MW_pulse_multiplicities'] = np.ones(pts).astype(int)
-    m.params['MW_pulse_delays'] = np.ones(pts) * 100e-9
-    
-    # pulses
-    m.params['MW_pulse_durations'] = 1e-9 * (np.ones(pts) * 62 + 11)
-    m.params['MW_pulse_amps'] = np.linspace(0.7, 0.75, pts)
-    m.params['MW_pulse_mod_frqs'] = np.ones(pts) * \
-        m.params['AWG_MBI_MW_pulse_mod_frq']
-
-    # for the autoanalysis
-    m.params['sweep_name'] = 'MW pulse amplitude (V)'
-    m.params['sweep_pts'] = m.params['MW_pulse_amps']
-    
     funcs.finish(m)
 
 def cal_CORPSE_pi(name, yellow):
@@ -144,8 +119,8 @@ def cal_pi2pi_pi(name, yellow, mult=1):
     m.params['MW_pulse_delays'] = np.ones(pts) * 15e-6
     
     # hard pi pulses
-    m.params['MW_pulse_durations'] = 1e-9 * (11 + np.ones(pts) + 395)
-    m.params['MW_pulse_amps'] = np.linspace(0.15,0.18,pts)
+    m.params['MW_pulse_durations'] = np.ones(pts) * 395e-9
+    m.params['MW_pulse_amps'] = np.linspace(0.07,0.1,pts)
     m.params['MW_pulse_mod_frqs'] = np.ones(pts) * \
         m.params['AWG_MBI_MW_pulse_mod_frq']
         
@@ -182,53 +157,25 @@ def cal_pi2pi_pi_mI0(name, yellow, mult=1):
 
     funcs.finish(m)
 
-def cal_hard_pi(name, yellow, mult=1):
-    m = pulsar_mbi_espin.ElectronRabiSplitMultElements(
-        'cal_hard_pi_'+name+'_M=%d' % mult)
-    funcs.prepare(m,yellow)
-    print 'calibrate hard pi pulse'
-    
-    # measurement settings
-    pts = 11
-    m.params['pts'] = pts
-    m.params['reps_per_ROsequence'] = 1000
-    m.params['MW_pulse_multiplicities'] = np.ones(pts).astype(int) * mult
-    m.params['MW_pulse_delays'] = np.ones(pts) * 15e-6
-    
-    # hard pi pulses
-    m.params['MW_pulse_durations'] = 1e-9 * (11 + np.ones(pts) + 115)
-    m.params['MW_pulse_amps'] = np.linspace(0.65,0.8,pts)
-    m.params['MW_pulse_mod_frqs'] = np.ones(pts) * \
-        m.params['AWG_MBI_MW_pulse_mod_frq']
-        
-    # for the autoanalysis    
-    m.params['sweep_name'] = 'MW pulse amplitude (V)'
-    m.params['sweep_pts'] = m.params['MW_pulse_amps']
-
-    funcs.finish(m)
-
-
 ### master function
 def run_calibrations(stage, yellow):
     if stage == 1:        
         cal_slow_pi(name, yellow)
 
     if stage == 2:
-        cal_4mhz_rabi(name, yellow)
+        cal_fast_rabi(name, yellow)
     
     if stage == 3:    
-        cal_4mhz_pi(name, yellow, mult=11)
-        #cal_4mhz_pi2(name, yellow)
-        cal_CORPSE_pi(name, yellow)
-        cal_pi2pi_pi(name, yellow, mult=11)
-        cal_pi2pi_pi_mI0(name, yellow, mult=5)
-        #cal_hard_pi(name, yellow, mult=15)
+        # cal_fast_pi(name, yellow, mult=5)
+        # cal_CORPSE_pi(name, yellow)
+        cal_pi2pi_pi(name, yellow, mult=5)
+        # cal_pi2pi_pi_mI0(name, yellow, mult=5)
 
 
 if __name__ == '__main__':
-    #run_calibrations(1, yellow = True)
-    #run_calibrations(2, yellow = True)
-    run_calibrations(3, yellow = True)
+    # run_calibrations(1, yellow = False)
+    # run_calibrations(2, yellow=False)
+    run_calibrations(3, yellow=False)
 
     """
     stage 0.0: do a ssro calibration
