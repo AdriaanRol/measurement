@@ -42,5 +42,10 @@ def check_max_powers(names = ALLAOMS):
     turn_off_all_lasers()
     for n in names:
         stools.check_max_power(n, ADWIN, PM, PMSERVO)
+
+def turn_off_AWG_laser_channel():
+    qt.instruments['AWG'].set_ch2_offset(0.)
+
+
         
 
