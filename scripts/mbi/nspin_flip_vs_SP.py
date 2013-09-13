@@ -89,7 +89,8 @@ class NSpinflips(pulsar_msmt.MBI):
 
 def nspinflips(name):
     m = NSpinflips(name)
-    funcs.prepare(m)
+    sil_name='hans-sil4'
+    funcs.prepare(m, sil_name, yellow=False)
 
     SP_power = 5e-9
     m.params['AWG_SP_amplitude'] = qt.instruments['Velocity1AOM'].power_to_voltage(
@@ -110,7 +111,7 @@ def nspinflips(name):
     m.params['sweep_name'] = 'SP cycles'
     m.params['sweep_pts'] = m.params['AWG_sequence_repetitions']
     
-    funcs.finish(m, debug=False)
+    funcs.finish(m, upload=True, debug=True)
 
 if __name__ == '__main__':
     nspinflips('hans4_E12')

@@ -3,15 +3,14 @@ import numpy as np
 
 from measurement.lib.measurement2.adwin_ssro import ssro, pulsar_mbi_espin
 
-def prepare(m, yellow = False):
+def prepare(m, sil_name, yellow = False):
     m.params.from_dict(qt.cfgman.get('samples/hans-sil4'))
-
     m.params.from_dict(qt.cfgman.get('protocols/AdwinSSRO'))
-    m.params.from_dict(qt.cfgman.get('protocols/hans-sil4-default/AdwinSSRO'))
-    m.params.from_dict(qt.cfgman.get('protocols/hans-sil4-default/AdwinSSRO-integrated'))
+    m.params.from_dict(qt.cfgman.get('protocols/'+sil_name+'-default/AdwinSSRO'))
+    m.params.from_dict(qt.cfgman.get('protocols/'+sil_name+'-default/AdwinSSRO-integrated'))
     m.params.from_dict(qt.cfgman.get('protocols/AdwinSSRO+MBI'))
-    m.params.from_dict(qt.cfgman.get('protocols/hans-sil4-default/AdwinSSRO+MBI'))
-    m.params.from_dict(qt.cfgman.get('protocols/hans-sil4-default/pulses'))
+    m.params.from_dict(qt.cfgman.get('protocols/'+sil_name+'-default/AdwinSSRO+MBI'))
+    m.params.from_dict(qt.cfgman.get('protocols/'+sil_name+'-default/pulses'))
     # m.params.from_dict(qt.cfgman.get('protocols/hans-sil4-default/BSM'))
 
     if yellow:

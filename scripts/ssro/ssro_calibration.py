@@ -1,5 +1,5 @@
 """
-LT1 script for adwin ssro.
+LT1/2 script for adwin ssro.
 """
 import numpy as np
 import qt
@@ -9,11 +9,12 @@ import measurement.lib.measurement2.measurement as m2
 # import the msmt class
 from measurement.lib.measurement2.adwin_ssro import ssro
 
+SAMPLE_CFG = qt.cfgman['protocols']['current']
+
 def ssrocalibration(name, yellow=False):
-    m = ssro.AdwinSSRO('SSROCalibration_'+name)
-   
+    m = ssro.AdwinSSRO('SSROCalibration_'+name)   
     m.params.from_dict(qt.cfgman['protocols']['AdwinSSRO'])
-    m.params.from_dict(qt.cfgman['protocols']['hans-sil4-default']['AdwinSSRO'])    
+    m.params.from_dict(qt.cfgman['protocols'][SAMPLE_CFG]['AdwinSSRO'])    
     
     if yellow:
         ssro.AdwinSSRO.repump_aom = qt.instruments['YellowAOM']
@@ -28,8 +29,8 @@ def ssrocalibration(name, yellow=False):
         
     # parameters
     m.params['SSRO_repetitions'] = 5000
-    m.params['A_CR_amplitude'] = 5e-9 
-    m.params['E_CR_amplitude'] = 5e-9
+    m.params['A_CR_amplitude'] = 10e-9 
+    m.params['E_CR_amplitude'] = 10e-9
     m.params['green_repump_amplitude'] = 100e-6
     m.params['yellow_repump_amplitude'] = 50e-9
     m.params['SSRO_duration'] = 50
@@ -38,9 +39,9 @@ def ssrocalibration(name, yellow=False):
 
     # ms = 0 calibration
     m.params['SP_duration'] = 250
-    m.params['A_SP_amplitude'] = 5e-9
+    m.params['A_SP_amplitude'] = 10e-9
     m.params['Ex_SP_amplitude'] = 0.
-    m.params['Ex_RO_amplitude'] = 3e-9 #10e-9
+    m.params['Ex_RO_amplitude'] = 10e-9 #10e-9
     
     # m.autoconfig()
     # m.setup()
@@ -51,15 +52,15 @@ def ssrocalibration(name, yellow=False):
     # ms = 1 calibration
     m.params['SP_duration'] = 250
     m.params['A_SP_amplitude'] = 0.
-    m.params['Ex_SP_amplitude'] = 5e-9 #10e-9
-    m.params['Ex_RO_amplitude'] = 3e-9 #10e-9
+    m.params['Ex_SP_amplitude'] = 10e-9 #10e-9
+    m.params['Ex_RO_amplitude'] = 10e-9 #10e-9
 
     m.run()
     m.save('ms1')
     m.finish()
 
 if __name__ == '__main__':
-    ssrocalibration('Hans-SIL4', yellow=False)
+    ssrocalibration(SAMPLE_CFG, yellow=False)
  
     
 

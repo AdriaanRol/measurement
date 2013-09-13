@@ -213,7 +213,7 @@ def run_calibrations(stage):
         cal_slow_pi(name)
 
     if stage == 2:
-        #cal_pi2pi_pi(name, mult=1)
+        cal_pi2pi_pi(name, mult=1)
     
     if stage == 3:    
         cal_4mhz_rabi(name)
@@ -227,7 +227,7 @@ def run_calibrations(stage):
 
 
 if __name__ == '__main__':
-    # run_calibrations(1)
+    run_calibrations(1)
     #run_calibrations(2)
-    run_calibrations(3)
+    #run_calibrations(3)
 
