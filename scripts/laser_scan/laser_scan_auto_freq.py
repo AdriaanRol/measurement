@@ -41,7 +41,7 @@ class LaserFrequencyScan:
     def finish_scan(self):
         pass
 
-    def scan_to_frequency(self, f, voltage_step=0.05, dwell_time=0.005, tolerance=0.3, power = 0, **kw):
+    def scan_to_frequency(self, f, voltage_step=0.02, dwell_time=0.01, tolerance=0.3, power = 0, **kw):
 
         set_voltage = kw.pop('set_voltage', self.set_red_laser_voltage)
         get_voltage = kw.pop('get_voltage', self.get_red_laser_voltage)
@@ -82,7 +82,7 @@ class LaserFrequencyScan:
     def single_line_scan(self, start_f, stop_f, 
         voltage_step, integration_time_ms, power, **kw):
 
-        stabilizing_time = kw.pop('stabilizing_time', 0.005)
+        stabilizing_time = kw.pop('stabilizing_time', 0.01)
         save = kw.pop('save', True)
         data = kw.pop('data', None)
 
@@ -148,6 +148,11 @@ class LaserFrequencyScan:
                     data.add_data_point(v, cur_f, cts)
                 else:
                     data.add_data_point(v, cur_f, cts, *data_args)
+
+                if not data_obj_supplied:
+                    plt_cts.update()
+                    plt_frq.update()
+
 
         set_power(0)
 
@@ -281,12 +286,96 @@ class ScanLT1(LaserFrequencyScan):
             data = yellow_data,
             **kw)        
 
+
+    def green_yellow_during(self, y_start, y_stop, y_power, r_start, r_stop, r_step, r_int, r_power, g_p_during, y_p_during, **kw):
+        red_data = kw.pop('red_data', None)
+        yellow_data = kw.pop('yellow_data', None)
+        red_data_w_green = kw.pop('red_data', None)
+        yellow_data_green = kw.pop('yellow_data', None)
+        red_data_w_yellow = kw.pop('red_data', None)
+        yellow_data_yellow = kw.pop('yellow_data', None)
+
+
+        print 'green repump pulse'
+        qt.msleep(1)
+        self.set_repump_power(10e-6)
+        qt.msleep(0.5)
+        self.set_repump_power(0)
+        qt.msleep(1)
+
+        print 'red scan...'
+        self.red_scan(r_start, r_stop, 
+            voltage_step=r_step, 
+            integration_time_ms=r_int, 
+            power=r_power, 
+            data = red_data,
+            **kw)
+       
+        print 'ionization scan red...'
+        self.red_inonization_scan(r_stop, r_start)
+        
+        print 'yellow scan...'
+        self.yellow_scan(y_start, y_stop, y_power,
+            data = yellow_data,
+            **kw)
+
+
+        print 'green repump pulse'
+        qt.msleep(1)
+        self.set_repump_power(10e-6)
+        qt.msleep(0.5)
+        self.set_repump_power(0)
+        qt.msleep(1)
+
+        print 'red scan with green...'
+        self.set_repump_power(g_p_during)
+
+        self.red_scan(r_start, r_stop, 
+            voltage_step=r_step, 
+            integration_time_ms=r_int, 
+            power=r_power, 
+            data = red_data_w_green,
+            **kw)
+
+        self.set_repump_power(0.)
+        
+        print 'ionization scan red...'
+        self.red_inonization_scan(r_stop, r_start)
+        
+        print 'yellow scan...'
+        self.yellow_scan(y_start, y_stop, y_power,
+            data = yellow_data_green,
+            **kw)
+
+        print 'ionization scan yellow...'
+        self.yellow_ionization_scan(y_stop, y_start)
+
+        print 'red scan with yellow...'
+        self.set_yellow_power(y_p_during)
+
+        self.red_scan(r_start, r_stop, 
+            voltage_step=r_step, 
+            integration_time_ms=r_int, 
+            power=r_power, 
+            data = red_data_w_yellow,
+            **kw)
+    
+        self.set_yellow_power(0.)
+
+        print 'ionization scan red...'
+        self.red_inonization_scan(r_stop, r_start)
+        
+        print 'yellow scan...'
+        self.yellow_scan(y_start, y_stop, y_power,
+            data = yellow_data_yellow,
+            **kw)
+
     def oldschool_red_scan(self, r_start, r_stop, r_step, r_int, r_power, **kw):
         red_data = kw.pop('red_data', None)
 
         print 'green repump pulse'
         qt.msleep(1)
-        self.set_repump_power(100e-6)
+        self.set_repump_power(0e-6)
         qt.msleep(1)
         self.set_repump_power(0)
         qt.msleep(1)
@@ -308,10 +397,24 @@ def single_red_scan():
     SMB100.set_pulm('off')
     SMB100.set_status('on')
 
-    m.yellow_red(19, 23, 0.2e-9, 55, 75, 0.01, 20, 1e-9)
-    # m.oldschool_red_scan(35, 60, 0.01, 20, 1e-9)
+    # m.yellow_red(20, 22, 0.2e-9, 55, 75, 0.01, 20, 1e-9)
+    m.oldschool_red_scan(55, 75, 0.01, 20, 0.5e-9)
 
     SMB100.set_status('off')
+
+def green_yellow_during_scan():
+    m = ScanLT1()
+
+    SMB100.set_power(-5)
+    SMB100.set_frequency(2.8265e9)
+    SMB100.set_iq('off')
+    SMB100.set_pulm('off')
+    SMB100.set_status('on')
+
+    m.green_yellow_during(20, 23, 0.2e-9, 55, 75, 0.01, 20, 1e-9, 0.2e-6, 30e-9)
+
+    SMB100.set_status('off')
+
 
 def repeated_red_scans(**kw):
     pts = 100
@@ -399,7 +502,8 @@ def repeated_red_scans(**kw):
     plot3d_yellow.save_png()
 
 if __name__ == '__main__':
-    single_red_scan()
+    #single_red_scan()
+    green_yellow_during_scan()
     # repeated_red_scans()
     # repeated_red_scans(spectral_diffusion=True)
 
