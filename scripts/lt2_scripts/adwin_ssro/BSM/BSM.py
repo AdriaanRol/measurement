@@ -22,7 +22,7 @@ def prepare(m):
     m.params['repump_duration'] = m.params['green_repump_duration']
     m.params['repump_amplitude'] = m.params['green_repump_amplitude']
 
-    m.params['MW_pulse_mod_risetime'] = 2e-9
+    m.params['MW_pulse_mod_risetime'] = 10e-9
 
 def finish(m, upload=True, debug=False):
     m.autoconfig()
@@ -470,7 +470,4 @@ class ENReadoutMsmt(BSMMsmt):
                 N_RO_CNOT_elt, *flattened_sweep_elements)
         
         qt.pulsar.program_sequence(seq)
-
-
-
 

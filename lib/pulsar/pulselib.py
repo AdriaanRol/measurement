@@ -322,3 +322,180 @@ class EOMAOMPulse(pulse.Pulse):
             
         return wf
                 
+class GaussianPulse_Envelope_IQ(MW_IQmod_pulse):
+    def __init__(self, *arg, **kw):
+        self.env_amplitude = kw.pop('amplitude', 0.1)
+        MW_IQmod_pulse.__init__(self, *arg, amplitude=1., **kw)
+        self.mu = kw.pop('mu',0.5*self.length)
+        self.std = kw.pop('std',0.1667*self.length)
+
+    def __call__(self, *arg, **kw):
+        self.env_amplitude = kw.pop('amplitude', 0.1)
+        MW_IQmod_pulse.__call__(self, *arg, amplitude=1., **kw)
+        self.mu = kw.pop('mu',0.5*self.length)
+        self.std = kw.pop('std',0.1667*self.length)
+        return self
+
+    def chan_wf(self, chan, tvals):
+        if chan == self.PM_channel:
+            return MW_IQmod_pulse.chan_wf(self,chan,tvals)
+
+        else:  
+            env = self.env_amplitude*np.exp(-(((tvals-self.mu)**2)/(2*self.std**2)))
+            wf = MW_IQmod_pulse.chan_wf(self, chan, tvals)
+
+            return env*wf
+
+class HermitePulse_Envelope_IQ(MW_IQmod_pulse):
+    def __init__(self, *arg, **kw):
+        self.env_amplitude = kw.pop('amplitude', 0.1)
+        MW_IQmod_pulse.__init__(self, *arg,amplitude=1., **kw)
+        self.mu = kw.pop('mu',0.5*self.length)
+        self.T_herm = kw.pop('T_herm',0.1667*self.length)
+
+    def __call__(self, *arg, **kw):
+        self.env_amplitude = kw.pop('amplitude', 0.1)
+        MW_IQmod_pulse.__call__(self, *arg,amplitude=1., **kw)
+        self.mu = kw.pop('mu',0.5*self.length)
+        self.T_herm = kw.pop('T_herm',0.1667*self.length)
+        return self
+
+    def chan_wf(self, chan, tvals):
+        if chan == self.PM_channel:
+            return MW_IQmod_pulse.chan_wf(self,chan,tvals)
+
+        else:  
+            env = self.env_amplitude*(1-0.956*((tvals-self.mu)/self.T_herm)**2)*np.exp(-((tvals-self.mu)/self.T_herm)**2) #literature values
+            wf = MW_IQmod_pulse.chan_wf(self, chan, tvals)
+
+            return env*wf
+
+
+class ReburpPulse_Envelope_IQ(MW_IQmod_pulse):
+    def __init__(self, *arg, **kw):
+        self.env_amplitude = kw.pop('amplitude', 0.1)
+        MW_IQmod_pulse.__init__(self, *arg,amplitude=1., **kw)
+
+    def __call__(self, *arg, **kw):
+        self.env_amplitude = kw.pop('amplitude', 0.1)
+        MW_IQmod_pulse.__call__(self, *arg,amplitude=1., **kw)
+        return self
+
+    def chan_wf(self, chan, tvals):
+        if chan == self.PM_channel:
+            return MW_IQmod_pulse.chan_wf(self,chan,tvals)
+
+        else:  
+            F_coeff = [0.49,-1.02,1.11,-1.57,0.83,-0.42,0.26,-0.16,+0.10,-0.07,+0.04,-0.03,+0.01,-0.02,0,0.01] \
+        # Fourier series coefficients for Np = 256, taken from Geen and Freeman paper
+            F_coeff[:] = [x*self.env_amplitude/6.114 for x in F_coeff] # /6.114 to get normalise max amplitude to 1
+
+            Amp_Reburp_list=np.zeros((len(tvals),len(F_coeff)))
+            Amp_Reburp = np.zeros((len(tvals)))
+        
+            for j in range(len(tvals)):
+                for i,c in enumerate(F_coeff):  
+                    Amp_Reburp_list[j,i] = c*np.cos(i*((2*np.pi)/self.length)*tvals[j])
+
+                Amp_Reburp[j]= (sum(Amp_Reburp_list[j]))
+            
+
+            wf = MW_IQmod_pulse.chan_wf(self, chan, tvals)
+
+            return Amp_Reburp*wf
+
+class GaussianPulse(pulse.Pulse):
+    def __init__(self, channel, name='gaussian pulse', **kw):
+        Pulse.__init__(self, name)
+        
+        self.channel = channel # this is just for convenience, internally
+        self.channels.append(channel) # this is the part the sequencer element wants to communicate with
+        self.frequency = kw.pop('frequency', 1e6)
+        self.amplitude = kw.pop('amplitude', 0.) #max amplitude
+        self.length = kw.pop('length', 0.)
+        self.phase = kw.pop('phase', 0.)
+        self.mu = kw.pop('mu',0.5*self.length)
+        self.std = kw.pop('std',0.1667*self.length)
+
+    def __call__(self, **kw):
+        self.frequency = kw.pop('frequency', 1e6)
+        self.amplitude = kw.pop('amplitude', 0.) #max amplitude
+        self.length = kw.pop('length', 0.)
+        self.phase = kw.pop('phase', 0.)
+        self.mu = kw.pop('mu',0.5*self.length)
+        self.std = kw.pop('std',0.1667*self.length)
+        
+        self.channels = []
+        self.channels.append(self.channel)
+
+        return self
+
+    def chan_wf(self, chan, tvals):
+        return self.amplitude*exp(-(((tvals-self.mu)**2)/(2*self.std**2)))
+
+class HermitePulse(pulse.Pulse):
+    def __init__(self, channel, name='hermite pulse', **kw):
+        Pulse.__init__(self, name)
+        
+        self.channel = channel # this is just for convenience, internally
+        self.channels.append(channel) # this is the part the sequencer element wants to communicate with
+        self.frequency = kw.pop('frequency', 1e6)
+        self.amplitude = kw.pop('amplitude', 0.1) #max amplitude
+        self.length = kw.pop('length', 0.)
+        self.phase = kw.pop('phase', 0.)
+        self.mu = kw.pop('mu',0.5*self.length)
+        self.T_herm = kw.pop('T_herm',0.1667*self.length)
+
+    def __call__(self, **kw):
+        self.frequency = kw.pop('frequency', 1e6)
+        self.amplitude = kw.pop('amplitude', 0.1) #max amplitude
+        self.length = kw.pop('length', 0.)
+        self.phase = kw.pop('phase', 0.)
+        self.mu = kw.pop('mu',0.5*self.length)
+        self.T_herm = kw.pop('T_herm',0.1667*self.length)
+
+        self.channels = []
+        self.channels.append(self.channel)
+
+        return self
+
+    def chan_wf(self, chan, tvals):
+        return self.amplitude*(1-0.956*((tvals-self.mu)/self.T_herm)**2)*exp(-((tvals-self.mu)/self.T_herm)**2)
+
+class ReburpPulse(pulse.Pulse):
+    def __init__(self, channel, name='reburp pulse', **kw):
+        Pulse.__init__(self, name)
+        
+        self.channel = channel # this is just for convenience, internally
+        self.channels.append(channel) # this is the part the sequencer element wants to communicate with
+        self.frequency = kw.pop('frequency', 1e6)
+        self.amplitude = kw.pop('amplitude', 0.0) # max amplitude
+        self.length = kw.pop('length', 0.)
+        self.phase = kw.pop('phase', 0.)
+        
+    def __call__(self, **kw):
+        self.frequency = kw.pop('frequency', 1e6)
+        self.amplitude = kw.pop('amplitude', 0.1) #max amplitude
+        self.length = kw.pop('length', 0.)
+        self.phase = kw.pop('phase', 0.)
+
+        self.channels = []
+        self.channels.append(self.channel)
+    
+        return self
+
+    def chan_wf(self, chan, tvals, pts = 256):
+        F_coeff = [0.49,-1.02,1.11,-1.57,0.83,-0.42,0.26,-0.16,+0.10,-0.07,+0.04,-0.03,+0.01,-0.02,0,0.01] \
+        # Fourier series coefficients for Np = 256, taken from Geen and Freeman paper
+        F_coeff[:] = [x*self.amplitude/6.114 for x in F_coeff] # /6.114 to get normalise max amplitude to 1
+
+        Amp_Reburp_list=np.zeros((pts,len(F_coeff)))
+        Amp_Reburp = np.zeros((pts))
+    
+        for j in range(tvals):
+            for i,c in enumerate(F_coeff):  
+                Amp_Reburp_list[j,i] = c*np.cos(i*((2*np.pi)/self.length)*tvals[j])
+
+            Amp_Reburp[j]= (sum(Amp_Reburp_list[j]))
+        
+        return Amp_Reburp

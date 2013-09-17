@@ -67,7 +67,7 @@ params_lt1['repump_after_repetitions'] = 1
 params_lt1['time_before_forced_CR'] = 1 #1#20000 # FIXME
 params_lt1['N_pol_element_repetitions'] = 5 # FIXME
 
-params_lt2['repump_duration'] = 50
+params_lt2['repump_duration'] = 10
 params_lt2['CR_duration'] = 100
 params_lt2['CR_preselect'] = 15
 params_lt2['CR_probe'] = 15
@@ -83,11 +83,11 @@ params_lt1['Ey_RO_amplitude'] = 3e-9
 params_lt1['FT_RO_amplitude'] = 0
 params_lt1['repump_amplitude'] = 50e-9 #300e-6#
 
-params_lt2['Ey_CR_amplitude'] = 20e-9             
-params_lt2['A_CR_amplitude'] = 20e-9              
-params_lt2['Ey_SP_amplitude'] = 20e-9              
+params_lt2['Ey_CR_amplitude'] = 10e-9             
+params_lt2['A_CR_amplitude'] = 10e-9              
+params_lt2['Ey_SP_amplitude'] = 10e-9              
 params_lt2['A_SP_amplitude'] = 20e-9             
-params_lt2['Ey_RO_amplitude'] = 20e-9
+params_lt2['Ey_RO_amplitude'] = 10e-9
 params_lt2['A_RO_amplitude'] = 0
 params_lt2['repump_amplitude'] = 300e-6
 
@@ -126,14 +126,12 @@ params_lt2['CORPSE_pi_m300_duration'] = 5./CORPSE_frq/6.
 params_lt2['CORPSE_pi_420_duration'] = 7./CORPSE_frq/6.
 
 
-
-
 ### LDE sequence settings
 params['HH_sync_period'] = 400e-9 # in seconds -- important for checking (see measurement_loop())
 									#Question from hannes: is this the separation of the optical pi pulses?
 
 #EOM stuff:
-params_lt2['eom_pulse_duration']        = 40e-9
+params_lt2['eom_pulse_duration']        = 2e-9
 params_lt2['eom_off_duration']          = 150e-9
 params_lt2['eom_off_amplitude']         = -.26  # calibration from 23-08-2013
 params_lt2['eom_pulse_amplitude']       = 1.2
@@ -165,14 +163,14 @@ params['single_sync']                 = 1 #if ==1 then there will only be 1 sync
 params['long_histogram']              = 0 #if ==1 there will be only one sync at the beginning of LDE
 params['MW_during_LDE']               = 0 #NOTE:MW stuff not implemented, yet
 
-params['LDE_SP_duration']             = 50e-6
-params['LDE_SP_duration_yellow']      = 49e-6
+params['LDE_SP_duration']             = 10e-6
+params['LDE_SP_duration_yellow']      = 9e-6
 params['wait_after_sp']               = 500e-9 #this should be large enough, so that the MW puls fits
-params['LDE_element_length']          = 12.5e-6
+params['LDE_element_length']          = 5.5e-6
 
 
 ### default process settings
-params['LDE_attempts_before_CR'] = 1000 # FIXME
+params['LDE_attempts_before_CR'] = 100 # FIXME
 
 params_lt1['max_CR_starts'] = -1
 params_lt1['teleportation_repetitions'] = -1
