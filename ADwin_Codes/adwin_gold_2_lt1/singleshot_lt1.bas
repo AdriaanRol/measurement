@@ -8,7 +8,7 @@
 ' ADbasic_Version                = 5.0.8
 ' Optimize                       = Yes
 ' Optimize_Level                 = 1
-' Info_Last_Save                 = TUD276629  TUD276629\localadmin
+' Info_Last_Save                 = TUD277246  TUD277246\localadmin
 '<Header End>
 ' this program implements single-shot readout fully controlled by ADwin Gold II
 '
@@ -118,7 +118,7 @@ DIM A_RO_voltage AS FLOAT
 DIM Ex_off_voltage AS FLOAT
 DIM A_off_voltage AS FLOAT
 
-DIM timer, mode, i AS LONG
+DIM timer, mode, i, cr_probe_timer AS LONG
 DIM aux_timer AS LONG
 DIM AWG_done AS LONG
 DIM wait_after_pulse AS LONG
@@ -132,7 +132,7 @@ DIM counts, old_counts, cr_counts AS LONG
 DIM first AS LONG
 
 DIM current_cr_threshold AS LONG
-DIM CR_probe AS LONG
+DIM CR_probe, CR_probe_max_time AS LONG
 DIM CR_preselect AS LONG
 DIM CR_repump AS LONG
 
@@ -158,6 +158,7 @@ INIT:
   cycle_duration               = DATA_20[19]
   CR_probe                     = DATA_20[20]
   CR_repump                    = DATA_20[21]
+  CR_probe_max_time            = DATA_20[22]
   
   repump_voltage               = DATA_21[1]
   repump_off_voltage           = DATA_21[2]
@@ -209,6 +210,7 @@ INIT:
 
   mode = 0
   timer = 0
+  cr_probe_timer = 0
   processdelay = cycle_duration
   
   
@@ -221,7 +223,10 @@ INIT:
   Par_68 = CR_probe
   par_69 = CR_repump
   par_76 = 0                      ' cumulative counts during repumping
-  Par_80 = 0                      ' cumulative counts in PSB when not CR chekging or repummping 
+  Par_80 = 0  
+  
+  Par_77=0' 
+  Par_78=CR_probe_max_time
  
   current_cr_threshold = CR_preselect
 EVENT:
@@ -235,7 +240,7 @@ EVENT:
     SELECTCASE mode
       CASE 0    ' green repump
         IF (timer = 0) THEN
-          IF (cr_counts < CR_repump)  THEN  'only repump after x SSRO repetitions
+          IF (cr_counts < CR_repump)  THEN  'only repump 
             CNT_CLEAR( counter_pattern)    'clear counter
             CNT_ENABLE(counter_pattern)    'turn on counter
             DAC(repump_laser_DAC_channel, 3277*repump_voltage+32768) ' turn on green
@@ -285,7 +290,13 @@ EVENT:
             ELSE
               mode = 2
               DATA_22[repetition_counter+1] = cr_counts  ' CR before next SSRO sequence
-              current_cr_threshold = CR_probe
+              IF (cr_probe_timer>CR_probe_max_time) THEN
+                current_cr_threshold = CR_preselect
+                cr_probe_timer = 0
+                Inc(Par_77)
+              ELSE
+                current_cr_threshold = CR_probe
+              ENDIF
             ENDIF
             
             timer = -1
@@ -440,7 +451,8 @@ EVENT:
         ENDIF
     ENDSELECT
     
-    timer = timer + 1
+    Inc(timer)
+    Inc(cr_probe_timer)
   ENDIF
 FINISH:
   DATA_26[1] = repumps

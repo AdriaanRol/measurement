@@ -8,7 +8,7 @@
 ' ADbasic_Version                = 5.0.8
 ' Optimize                       = Yes
 ' Optimize_Level                 = 1
-' Info_Last_Save                 = TUD10238  TUD10238\localadmin
+' Info_Last_Save                 = TUD277246  TUD277246\localadmin
 '<Header End>
 ' MBI with the adwin, with dynamic CR-preparation, dynamic MBI-success/fail
 ' recognition, and SSRO at the end. 
@@ -24,48 +24,6 @@
 '   5 : wait for AWG
 '   6 : spin-readout
 '
-' parameters:
-' integer parameters: DATA_20[i]
-' index i   description
-'   1       counter_channel
-'   2       repump_laser_DAC_channel
-'   3       Ex_laser_DAC_channel
-'   4       A_laser_DAC_channel
-'   5       AWG_start_DO_channel
-'   6       AWG_done_DI_channel
-'   7       repump_duration       (durations in process cycles)
-'   8       CR_duration 
-'   9       SP_E_duration               (pumping time into +/-1 at the beginning)
-'  10       wait_after_pulse_duration   (waiting time after MBI AWG pulse ??)
-'  11       CR_preselect                (count threshold right after repump)
-'  12       RO_repetitions              
-'  13       sweep_length                (= number of data points)
-'  14       cycle_duration              (in processor clock cycles, 3.333ns)
-'  15       CR_probe                    (count threshold after surpassing the threshold in the prev. rd.)
-'  16       AWG_event_jump_DO_channel
-'  17       MBI_duration                (duration of the MBI pulse (so far Adwin AOM pulse))
-'  18       MBI_attempts                (how often we try to to MBI before returning to CR checking)
-'  19       MBI_threshold               (photon threshold to assume success (given n, >= n is accepted))
-'  20       nr_of_ROsequences           (how many sequences we run after MBI, each of them can contain pumping back on A and readout on E)
-'  21       wait_after_RO_pulse_duration
-'  22       CR_repump
-'  23       repump_after_repetitions
-
-' float parameters: DATA_21[i]
-' index i   description
-'   1       repump_voltage
-'   2       repump_off_voltage
-'   3       Ex_CR_voltage
-'   4       A_CR_voltage
-'   5       Ex_SP_voltage
-'   6       Ex_MBI_voltage
-
-' return values:
-' Data_22[1]                 CR counts before sequence
-' Data_23[1]                 CR counts after sequence
-' Data_24[SP_duration]                 time dependence SP
-' Data_25[RO_duration]                 spin readout
-' Data_26[...]               statistics : how often we entered each mode
 
 #INCLUDE ADwinGoldII.inc
 #Include Math.inc
@@ -245,7 +203,7 @@ INIT:
   ' init parameters
   ' Y after the comment means I (wolfgang) checked whether they're actually used
   ' during the modifications of 2013/01/11
-  par_67 = CR_repump  
+  par_69 = CR_repump  
   par_68 = CR_probe               ' Y
   PAR_70 = 0                      ' cumulative counts from probe intervals Y
   PAR_71 = 0                      ' below CR threshold events Y
@@ -290,7 +248,7 @@ EVENT:
   ' communication with the outside world for user convenience
   CR_preselect = PAR_75
   CR_probe = PAR_68
-  CR_repump = PAR_67
+  CR_repump = PAR_69
   PAR_77 = mode
   
   IF (wait_time > 0) THEN

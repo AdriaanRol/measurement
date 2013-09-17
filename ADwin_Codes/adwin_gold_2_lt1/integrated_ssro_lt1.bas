@@ -8,7 +8,7 @@
 ' ADbasic_Version                = 5.0.8
 ' Optimize                       = Yes
 ' Optimize_Level                 = 1
-' Info_Last_Save                 = TUD276629  TUD276629\localadmin
+' Info_Last_Save                 = TUD277246  TUD277246\localadmin
 '<Header End>
 ' this program implements single-shot readout fully controlled by ADwin Gold II
 '
@@ -23,65 +23,19 @@
 ' mode  4:  optional: trigger for AWG sequence, or static wait time
 ' mode  5:  Ex pulse and photon counting for spin-readout with time dependence
 '           -> mode 1
-'
-' parameters:
-' integer parameters: DATA_20[i]
-' index i   description
-'   1       counter_channel
-'   2       repump_laser_DAC_channel
-'   3       Ex_laser_DAC_channel
-'   4       A_laser_DAC_channel
-'   5       AWG_start_DO_channel
-'   6       AWG_done_DI_channel
-'   7       send_AWG_start
-'   8       wait_for_AWG_done
-'   9       repump_duration       (durations in process cycles)
-'  10       CR_duration
-'  11       SP_duration
-'  XXX 12       SP_filter_duration
-'  12       sweep length
-'  13       sequence_wait_time
-'  14       wait_after_pulse_duration
-'  15       CR_preselect
-'  16       SSRO_repetitions
-'  17       SSRO_duration
-'  18       SSRO_stop_after_first_photon
-'  19       cycle_duration              (in processor clock cycles, 3.333ns)
-'  20       CR_probe                   
-'  21       repump_after_repetitions
-'  22       CR_repump
-
-' float parameters: DATA_21[i]
-' index i   description
-'   1       repump_voltage
-'   2       repump_off_voltage
-'   3       Ex_CR_voltage
-'   4       A_CR_voltage
-'   5       Ex_SP_voltage
-'   6       A_SP_voltage
-'   7       Ex_RO_voltage
-'   8       A_RO_voltage
-
-' return values:
-' Data_24[SP_duration]                 time dependence SP
-' Data_25[SSRO_duration*repetitions]   spin readout
-' Data_26[...]                         statistics
-'   1   repumps
-'   2   CR_failed
-'   3   CR_failed
 
 #INCLUDE ADwinGoldII.inc
 #INCLUDE Math.inc
 
-#DEFINE max_repetitions 20000
-#DEFINE max_SP_bins       500
-#DEFINE max_SSRO_dim  1000000
-#DEFINE max_stat           10
+#DEFINE max_repetitions 500000
+#DEFINE max_SP_bins        500
+#DEFINE max_SSRO_dim     10000
+#DEFINE max_stat            10
 
-DIM DATA_20[25] AS LONG               ' integer parameters
-DIM DATA_21[10] AS FLOAT              ' float parameters
-DIM DATA_22[max_repetitions] AS LONG AT EM_LOCAL  ' CR counts before sequence
-DIM DATA_23[max_repetitions] AS LONG AT EM_LOCAL  ' CR counts after sequence
+DIM DATA_20[30] AS LONG               ' integer parameters
+DIM DATA_21[15] AS FLOAT              ' float parameters
+DIM DATA_22[max_repetitions] AS LONG AT DRAM_EXTERN  ' CR counts before sequence
+DIM DATA_23[max_repetitions] AS LONG AT DRAM_EXTERN  ' CR counts after sequence
 DIM DATA_24[max_SP_bins] AS LONG AT EM_LOCAL      ' SP counts
 DIM DATA_25[max_SSRO_dim] AS LONG AT DRAM_EXTERN  ' SSRO counts
 DIM DATA_26[max_stat] AS LONG AT EM_LOCAL         ' statistics
@@ -136,9 +90,9 @@ DIM CR_probe AS LONG
 DIM CR_preselect AS LONG
 DIM CR_repump AS LONG
 
-INIT:
+INIT:  
   counter_channel              = DATA_20[1]
-  repump_laser_DAC_channel      = DATA_20[2]
+  repump_laser_DAC_channel     = DATA_20[2]
   Ex_laser_DAC_channel         = DATA_20[3]
   A_laser_DAC_channel          = DATA_20[4]
   AWG_start_DO_channel         = DATA_20[5]
@@ -187,7 +141,7 @@ INIT:
   FOR i = 1 TO max_stat
     DATA_26[i] = 0
   NEXT i
-  
+   
   AWG_done_DI_pattern = 2 ^ AWG_done_DI_channel
   counter_pattern     = 2 ^ (counter_channel-1)
 
@@ -201,10 +155,10 @@ INIT:
   DAC(Ex_laser_DAC_channel, 3277*Ex_off_voltage+32768) ' turn off Ex laser
   DAC(A_laser_DAC_channel, 3277*A_off_voltage+32768) ' turn off Ex laser
 
-  CNT_ENABLE(0000b)'turn off all counters
-  CNT_MODE(counter_channel,00001000b) 'configure counter
+  CNT_ENABLE(0000b) 'turn off all counters
+  CNT_MODE(counter_channel, 00001000b) 'configure counter
 
-  CONF_DIO(11)      'configure DIO 08:15 as input, all other ports as output
+  CONF_DIO(11)
   DIGOUT(AWG_start_DO_channel,0)
 
   sweep_index = 1
@@ -225,6 +179,7 @@ INIT:
   current_cr_threshold = CR_preselect
 
 EVENT:
+    
   CR_preselect                 = PAR_75
   CR_probe                     = PAR_68
 
