@@ -119,7 +119,7 @@ def SP_saturation_power(name, yellow=False):
     m.params['SSRO_repetitions'] = 5000
     m.params['pts'] = 10
     pts = m.params['pts']
-    step = 3e-9
+    step = 4e-9
 
     #repump settings
     _set_repump_settings(m,yellow) 
@@ -127,7 +127,7 @@ def SP_saturation_power(name, yellow=False):
     m.params['CR_preselect'] = 1000
     m.params['CR_probe'] = 10
     m.params['A_CR_amplitude'] = 30e-9 
-    m.params['E_CR_amplitude'] = 15e-9
+    m.params['E_CR_amplitude'] = 5e-9
 
     m.params['A_SP_amplitude'] = 0
     m.params['Ex_SP_amplitude'] = 15e-9
@@ -305,7 +305,7 @@ def _set_repump_settings(m,yellow):
 
 if __name__ == '__main__':
     #RO_saturation_power('sil9_Ey_saturation', yellow=True)
-    #SP_saturation_power('sil9_SP_saturation', yellow=True)
-    threshold_calibration('sil9_preselect', yellow=True)
-    # max_probe_time_calibration('hans_sil4')
+    SP_saturation_power('sil9_SP_saturation', yellow=True)
+    #threshold_calibration('sil9_preselect', yellow=True)
+    # max_probe_time_calibration('hans_sil4', yellow=True)
 

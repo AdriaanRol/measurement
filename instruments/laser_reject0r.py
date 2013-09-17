@@ -17,17 +17,17 @@ class laser_reject0r(Instrument):
         self.add_function('routine') 
         
         self.rotator = qt.instruments['positioner']
-        self.red = qt.instruments['MatisseAOM_lt1']
-        self.adwin = qt.instruments['adwin_lt1']
+        self.red = qt.instruments['MatisseAOM']
+        self.adwin = qt.instruments['adwin']
         
         self.optim_sets = {
                         'half' : {
                             'channel' : 2,
-                            'stepsize' : 700,
+                            'stepsize' : 400,
                             'noof_points' : 11}, 
                         'quarter' : {
                             'channel' : 1,
-                            'stepsize' : 700,
+                            'stepsize' : 400,
                             'noof_points' : 11},
                         'first_time' : {
                             'channel' : 0,
@@ -293,7 +293,7 @@ class laser_reject0r(Instrument):
 
         qtdata = qt.Data(name = dataname)
         
-        if self.get_plot_degrees():
+        if not self.get_plot_degrees():
             qtdata.add_coordinate('Waveplate steps')
         else:
             qtdata.add_coordinate('Degrees')
