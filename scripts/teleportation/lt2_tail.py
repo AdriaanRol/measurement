@@ -27,6 +27,20 @@ class LT2Tail(pulsar_msmt.PulsarMeasurement):
         print 'generating'
         self.lt2_sequence()
 
+    
+    def autoconfig(self):
+        pulsar_msmt.PulsarMeasurement.autoconfig(self)
+
+        # add values from AWG calibrations
+        self.params_lt2['SP_voltage_AWG'] = \
+                self.A_aom_lt2.power_to_voltage(
+                        self.params_lt2['AWG_SP_power'], controller='sec')
+
+        print 'setting AWG SP voltage:', self.params_lt2['SP_voltage_AWG']
+        
+        qt.pulsar.set_channel_opt('AOM_Newfocus', 'high', self.params_lt2['SP_voltage_AWG'])
+
+
     def lt2_sequence(self):
         print "Make lt2 sequence... "
 
@@ -101,10 +115,9 @@ def tail_lt2(name):
     m.params['pts']=1
     m.params['send_AWG_start'] = 1
     m.params['wait_for_AWG_done'] = 0
-    m.params['repetitions'] = 500000
+    m.params['repetitions'] = 100000
     m.params['sequence_wait_time'] = m.params['LDE_attempts_before_CR']*m.params['LDE_element_length']*1e6 + 20
     m.params['SP_duration'] = 250
-    m.params['eom_pulse_duration']    = 2
 
     print  m.params['sequence_wait_time'] 
     m.autoconfig()
@@ -112,7 +125,7 @@ def tail_lt2(name):
     m.setup()
     m.run()    
     m.save()
-    m.finish()
+    # m.finish()
 
 if __name__ == '__main__':
-    tail_lt2('debugging')
+    tail_lt2('measure_dat_tail')

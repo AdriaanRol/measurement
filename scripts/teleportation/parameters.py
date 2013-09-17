@@ -43,9 +43,11 @@ params_lt2['counter_channel'] = 1
 params_lt2['Adwin_lt1_do_channel'] = 2
 params_lt2['Adwin_lt1_di_channel'] = 17
 params_lt2['AWG_lt2_di_channel'] = 16
-params_lt2['repump_off_voltage'] = 0
+params_lt2['repump_off_voltage'] = 0.02
 params_lt2['Ey_off_voltage'] = 0 
 params_lt2['A_off_voltage'] = 0
+params_lt2['freq_AOM_DAC_channel'] = 4
+
 
 ### RO settings
 params_lt1['wait_before_SSRO1'] = 3
@@ -58,20 +60,21 @@ params_lt1['SSRO1_duration'] = 15
 params_lt2['SSRO_lt2_duration'] = 50
 
 ### CR and asynchronous preparation settings
-params_lt1['CR_duration'] = 100
+params_lt1['CR_duration'] = 50
 params_lt1['CR_threshold_preselect'] = 0
 params_lt1['CR_threshold_probe'] = 0
 params_lt1['CR_repump'] = 1000
-params_lt1['repump_duration'] = 500#50
-params_lt1['repump_after_repetitions'] = 1
+params_lt1['repump_duration'] = 10#50
 params_lt1['time_before_forced_CR'] = 1 #1#20000 # FIXME
 params_lt1['N_pol_element_repetitions'] = 5 # FIXME
 
-params_lt2['repump_duration'] = 10
-params_lt2['CR_duration'] = 100
+params_lt2['repump_duration'] = 500
+params_lt2['repump_freq_offset'] = 5.
+params_lt2['repump_freq_amp'] = 4.
+
+params_lt2['CR_duration'] = 50
 params_lt2['CR_preselect'] = 15
 params_lt2['CR_probe'] = 15
-params_lt2['repump_after_repetitions'] = 1
 params_lt2['CR_repump'] = 1000
 
 ### SSRO, CR, SP Laser powers
@@ -139,9 +142,9 @@ params_lt2['eom_overshoot_duration1']   = 10e-9
 params_lt2['eom_overshoot1']            = -0.03
 params_lt2['eom_overshoot_duration2']   = 4e-9
 params_lt2['eom_overshoot2']            = -0.03
-params_lt2['aom_risetime']              = 23e-9
+params_lt2['aom_risetime']              = 42e-9
 
-params_lt2['AWG_SP_power']            = 30e-9
+params_lt2['AWG_SP_power']            = 20e-9
 params_lt2['opt_pulse_separation']    = 600e-9
 params_lt2['MW_opt_puls1_separation'] = 50e-9 #distance between the end of the MW and the start of opt puls1
 params_lt2['MW_opt_puls2_separation'] = 50e-9
@@ -163,10 +166,10 @@ params['single_sync']                 = 1 #if ==1 then there will only be 1 sync
 params['long_histogram']              = 0 #if ==1 there will be only one sync at the beginning of LDE
 params['MW_during_LDE']               = 0 #NOTE:MW stuff not implemented, yet
 
-params['LDE_SP_duration']             = 10e-6
+params['LDE_SP_duration']             = 5e-6
 params['LDE_SP_duration_yellow']      = 9e-6
 params['wait_after_sp']               = 500e-9 #this should be large enough, so that the MW puls fits
-params['LDE_element_length']          = 5.5e-6
+params['LDE_element_length']          = 7.5e-6
 
 
 ### default process settings
