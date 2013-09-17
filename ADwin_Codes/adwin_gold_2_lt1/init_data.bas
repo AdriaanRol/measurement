@@ -8,7 +8,7 @@
 ' ADbasic_Version                = 5.0.8
 ' Optimize                       = Yes
 ' Optimize_Level                 = 1
-' Info_Last_Save                 = TUD276629  TUD276629\localadmin
+' Info_Last_Save                 = TUD277246  TUD277246\localadmin
 '<Header End>
 
 'Linescan:
@@ -41,11 +41,11 @@ DIM DATA_45[4] AS LONG
 DIM DATA_19[1000] AS FLOAT AT EM_LOCAL 
 DIM DATA_20[300] AS LONG
 DIM DATA_21[300] AS FLOAT
-'DIM DATA_22[10000] AS LONG AT EM_LOCAL  
-'DIM DATA_23[10000] AS LONG AT EM_LOCAL  
-'DIM DATA_24[500] AS LONG AT EM_LOCAL      
-'DIM DATA_25[500000] AS LONG AT DRAM_EXTERN 
-'DIM DATA_26[10] AS LONG AT EM_LOCAL     
+'DIM DATA_22[20000] AS LONG AT EM_LOCAL  ' CR counts before sequence
+'DIM DATA_23[20000] AS LONG AT EM_LOCAL  ' CR counts after sequence
+'DIM DATA_24[500] AS LONG AT EM_LOCAL      ' SP counts
+'DIM DATA_25[1000000] AS LONG AT DRAM_EXTERN  ' SSRO counts
+'DIM DATA_26[50] AS LONG AT EM_LOCAL         ' statistics 
 
 INIT:
 
