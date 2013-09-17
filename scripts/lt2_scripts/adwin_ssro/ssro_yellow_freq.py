@@ -35,9 +35,9 @@ def calibration(name):
     m.params['SSRO_repetitions'] = 5000
     
     # ms = 0 calibration
-    m.params['A_CR_amplitude'] = 80e-9
-    m.params['Ex_CR_amplitude'] = 50e-9
-    m.params['repump_amplitude']=10e-9 
+    m.params['A_CR_amplitude'] = 30e-9
+    m.params['Ex_CR_amplitude'] = 15e-9
+    m.params['repump_amplitude']=50e-9 
     m.params['A_SP_amplitude'] = 20e-9
     m.params['Ex_SP_amplitude'] = 0.
     m.params['Ex_RO_amplitude'] = 10e-9
@@ -108,3 +108,9 @@ def _set_repump_settings(m,yellow):
         ssro.AdwinSSRO.repump_aom = qt.instruments['GreenAOM']
         m.params['repump_duration']=m.params['green_repump_duration']
         m.params['repump_amplitude']=m.params['green_repump_amplitude']
+
+
+if __name__ == '__main__':
+    #RO_saturation_power('sil9_Ey_saturation', yellow=True)
+    #SP_saturation_power('sil9_SP_saturation', yellow=True)
+    calibration('sil9_test')

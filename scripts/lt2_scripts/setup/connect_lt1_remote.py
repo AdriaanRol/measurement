@@ -33,7 +33,7 @@ def _do_remote_connect_lt1():
                 remote_name='PMServo', inssrv=remote_ins_server_lt1)
         ZPLServo_lt1= qt.instruments.create('ZPLServo_lt1', 'Remote_Instrument',
                 remote_name='ZPLServo', inssrv=remote_ins_server_lt1)
-        ivvi = qt.instruments.create('ivvi_lt1', 'Remote_Instrument',
+        #ivvi = qt.instruments.create('ivvi_lt1', 'Remote_Instrument',
                 remote_name='ivvi', inssrv=remote_ins_server_lt1)
 
         return True
