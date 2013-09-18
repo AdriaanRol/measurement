@@ -34,7 +34,7 @@ def _do_remote_connect_lt1():
         ZPLServo_lt1= qt.instruments.create('ZPLServo_lt1', 'Remote_Instrument',
                 remote_name='ZPLServo', inssrv=remote_ins_server_lt1)
         #ivvi = qt.instruments.create('ivvi_lt1', 'Remote_Instrument',
-                remote_name='ivvi', inssrv=remote_ins_server_lt1)
+                #remote_name='ivvi', inssrv=remote_ins_server_lt1)
 
         return True
     
@@ -61,6 +61,29 @@ setup_controller_lt1 = qt.instruments.create('setup_controller_lt1',
     'setup_controller',
     use = { 'master_of_space_lt1' : 'mos'} )
 
+
+pos_maxjog_cfg_lt1 = { 1 : {'positive' : 1.000,
+                            'negative' : 0.940},
+                       2 : {'positive' : 1.000,
+                            'negative' : 0.900},
+                     }
+
+#normalized to ~ 481 steps/degree
+pos_maxpr_cfg_lt1  = { 1 : {'positive' : 1.000,
+                            'negative' : 0.981},
+                       2 : {'positive' : 1.000,
+                            'negative' : 1.130},
+                      }
+
+#values provided here are in deg/step
+pos_step_deg_cfg_lt1 = { 1 : 10/5000.,
+                      2 : 10/5000.}
+
+positioner_lt1 = qt.instruments.create('positioner_lt1', 'NewportAgilisUC2_v2', 
+        address = 'COM6', maxjog_cfg=pos_maxjog_cfg_lt1, maxpr_cfg=pos_maxpr_cfg_lt1,
+        step_deg_cfg=pos_step_deg_cfg_lt1 )
+rejecter_lt1 = qt.instruments.create('rejecter_lt1', 'laser_reject0r', positioner=positioner_lt1, 
+        adwin=adwin_lt1, red_laser= MatisseAOM_lt1)
 
 #### make a remote pulsar and configure it
 from measurement.lib.pulsar import pulse, pulselib, element, pulsar

@@ -29,9 +29,7 @@
 #DEFINE max_repetitions   20000
 #DEFINE max_CR_hist_bins    100
 #DEFINE max_stat             10
-#DEFINE max_repump_duration 1000
 
-DIM DATA_19[max_repump_duration] AS FLOAT AT EM_LOCAL 'repump freq_aom voltages
 DIM DATA_20[25] AS LONG                             ' integer parameters
 DIM DATA_21[15] AS FLOAT                            ' float parameters
 DIM DATA_22[max_repetitions] AS LONG AT EM_LOCAL    ' CR counts before sequence
@@ -39,11 +37,9 @@ DIM DATA_23[max_repetitions] AS LONG  AT EM_LOCAL   ' CR counts after sequence
 DIM DATA_24[max_CR_hist_bins] AS LONG AT EM_LOCAL   ' CR counts
 DIM DATA_25[max_repetitions] AS LONG AT DRAM_EXTERN ' SSRO counts
 DIM DATA_26[max_stat] AS LONG AT EM_LOCAL           ' statistics
-DIM DATA_27[max_repump_duration] AS FLOAT AT EM_LOCAL 'repump counts
 
 DIM counter_channel AS LONG
 DIM repump_laser_DAC_channel AS LONG
-DIM freq_AOM_DAC_channel AS LONG
 DIM Ex_laser_DAC_channel AS LONG
 DIM A_laser_DAC_channel AS LONG
 DIM ADwin_lt1_di_channel AS LONG       'this is in channel of ADwin Pro, from Adwin lt1
@@ -55,6 +51,7 @@ DIM repump_duration AS LONG
 DIM CR_duration AS LONG
 DIM teleportation_repetitions AS LONG
 DIM SSRO_duration AS LONG
+DIM repump_after_repetitions AS LONG
 
 DIM repump_voltage AS FLOAT
 DIM repump_off_voltage AS FLOAT
@@ -66,16 +63,12 @@ DIM Ex_RO_voltage AS FLOAT
 DIM A_RO_voltage AS FLOAT
 DIM Ex_off_voltage AS FLOAT
 DIM A_off_voltage AS FLOAT
-DIM repump_freq_error AS FLOAT
-DIM repump_freq_control AS FLOAT
-DIM repump_freq_control_offset AS FLOAT
-DIM repump_freq_control_amp AS FLOAT
 
 DIM timer, mode, i AS LONG
 DIM tele_event_id AS LONG
 DIM total_repump_counts AS LONG
 DIM counter_pattern AS LONG
-DIM counts, cr_counts, old_counts AS LONG
+DIM counts, cr_counts AS LONG
 DIM current_ssro_counts AS LONG
 DIM cr_after_teleportation AS LONG
 DIM time_start, time_stop AS LONG
@@ -104,11 +97,11 @@ INIT:
   teleportation_repetitions    = DATA_20[8]
   SSRO_duration                = DATA_20[9]
   CR_probe                     = DATA_20[10]
-  CR_repump                    = DATA_20[11]
-  ADwin_lt1_do_channel         = DATA_20[12]
-  ADwin_lt1_di_channel         = DATA_20[13]
-  AWG_lt2_di_channel           = DATA_20[14]
-  freq_AOM_DAC_channel         = DATA_20[15]
+  repump_after_repetitions     = DATA_20[11]
+  CR_repump                    = DATA_20[12]
+  ADwin_lt1_do_channel         = DATA_20[13]
+  ADwin_lt1_di_channel         = DATA_20[14]
+  AWG_lt2_di_channel           = DATA_20[15]
     
   repump_voltage               = DATA_21[1]
   repump_off_voltage           = DATA_21[2]
@@ -120,9 +113,7 @@ INIT:
   A_RO_voltage                 = DATA_21[8]
   Ex_off_voltage               = DATA_21[9]
   A_off_voltage                = DATA_21[10]
-  repump_freq_control_offset   = DATA_21[11]
-  repump_freq_control_amp      = DATA_21[12]
- 
+   
   FOR i = 1 TO max_repetitions
     DATA_22[i] = 0
     DATA_23[i] = 0
@@ -137,12 +128,6 @@ INIT:
     DATA_26[i] = 0
   NEXT i
   
-  'fill data_19 with a sine for repump control (calculating sines is slow --> cannot do it during the event cycle)
-  FOR i = 1 TO repump_duration
-    DATA_19[i] = Sin(-3.14+2*3.14*i/repump_duration)
-    DATA_27[i] = 0.0
-  NEXT i
-
   counter_pattern = 2 ^ (counter_channel-1)
   ADwin_lt1_di_channel_in_bit = 2^ADwin_lt1_di_channel
   AWG_lt2_di_channel_in_bit = 2^AWG_lt2_di_channel
@@ -161,7 +146,7 @@ INIT:
   Alternating           = 0
   'ADwin_switched_to_high = 0
 
-  P2_DAC(DAC_MODULE, repump_laser_DAC_channel, 3277*repump_off_voltage+32768) ' turn off repump
+  P2_DAC(DAC_MODULE, repump_laser_DAC_channel, 3277*repump_off_voltage+32768) ' turn off green
   P2_DAC(DAC_MODULE, Ex_laser_DAC_channel, 3277*Ex_off_voltage+32768) ' turn off Ex laser
   P2_DAC(DAC_MODULE, A_laser_DAC_channel, 3277*A_off_voltage+32768) ' turn off Ex laser
 
@@ -176,8 +161,6 @@ INIT:
   fpar_63 = 0                      ' debug fpars
   fpar_64 = 0       
   fpar_65 = 0
-
-  FPar_77 = 0                     ' repump frequency resonance monitor fpar
   
   par_59 = 0                      ' tune (1 is tuning, 0 is running)
   
@@ -225,12 +208,10 @@ EVENT:
       IF (timer = 0) THEN
         inc(par_66)
         
-        IF (cr_counts < CR_repump)  THEN  'only repump when counts are lower than cr_repump threshold
+        IF (cr_counts < CR_repump)  THEN  'only repump after x SSRO repetitions
           P2_CNT_CLEAR(CTR_MODULE,  counter_pattern)    'clear counter
           P2_CNT_ENABLE(CTR_MODULE, counter_pattern)    'turn on counter
           P2_DAC(DAC_MODULE, repump_laser_DAC_channel, 3277*repump_voltage+32768) ' turn on green
-          old_counts = 0
-          repump_freq_control_amp = -1.0*repump_freq_control_amp
         ELSE
           mode = 1
           timer = -1
@@ -249,13 +230,6 @@ EVENT:
           mode = 1
           timer = -1
           current_CR_threshold = CR_preselect
-        ELSE
-          counts = P2_CNT_READ(CTR_MODULE, counter_channel)
-          repump_freq_control=repump_freq_control_amp*DATA_19[timer]
-          P2_DAC(DAC_MODULE, freq_AOM_DAC_channel, 3277*(repump_freq_control+repump_freq_control_offset)+32768) ' put current voltage on freq mod aom
-          'DATA_27[timer]=DATA_27[timer]*0.8+(counts-old_counts)
-          FPar_77 = FPar_77*0.999+repump_freq_control*(counts-old_counts)
-          old_counts=counts  
         ENDIF
       
       ENDIF

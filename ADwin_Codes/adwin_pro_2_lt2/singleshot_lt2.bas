@@ -80,8 +80,8 @@
 #DEFINE max_SSRO_dim   4000000
 #DEFINE max_stat           10
 
-DIM DATA_20[25] AS LONG                           ' integer parameters
-DIM DATA_21[20] AS FLOAT                          ' float parameters
+DIM DATA_20[25] AS LONG               ' integer parameters
+DIM DATA_21[20] AS FLOAT              ' float parameters
 DIM DATA_22[max_repetitions] AS LONG AT EM_LOCAL  ' CR counts before sequence
 DIM DATA_23[max_repetitions] AS LONG  AT EM_LOCAL ' CR counts after sequence
 DIM DATA_24[max_SP_bins] AS LONG AT EM_LOCAL      ' SP counts
@@ -96,7 +96,7 @@ DIM AWG_start_DO_channel AS LONG
 DIM AWG_done_DI_channel AS LONG
 DIM send_AWG_start AS LONG
 DIM wait_for_AWG_done AS LONG
-DIM green_repump_duration AS LONG
+DIM repump_duration AS LONG
 DIM CR_duration AS LONG
 DIM SP_duration AS LONG
 DIM SP_filter_duration AS LONG
@@ -119,7 +119,7 @@ DIM A_RO_voltage AS FLOAT
 DIM Ex_off_voltage AS FLOAT
 DIM A_off_voltage AS FLOAT
 
-DIM timer, mode, i AS LONG
+DIM timer, mode, i, cr_probe_timer AS LONG
 DIM aux_timer AS LONG
 DIM AWG_done AS LONG
 DIM wait_after_pulse AS LONG
@@ -134,7 +134,7 @@ DIM first AS LONG
 DIM time_start, time_stop AS LONG
 
 DIM current_cr_threshold AS LONG
-DIM CR_probe AS LONG
+DIM CR_probe, CR_probe_max_time AS LONG
 DIM CR_preselect AS LONG
 DIM CR_repump AS LONG
 
@@ -147,7 +147,7 @@ INIT:
   AWG_done_DI_channel          = DATA_20[6]
   send_AWG_start               = DATA_20[7]
   wait_for_AWG_done            = DATA_20[8]
-  green_repump_duration        = DATA_20[9]
+  repump_duration              = DATA_20[9]
   CR_duration                  = DATA_20[10]
   SP_duration                  = DATA_20[11]
   SP_filter_duration           = DATA_20[12]
@@ -159,8 +159,8 @@ INIT:
   SSRO_stop_after_first_photon = DATA_20[18]
   cycle_duration               = DATA_20[19]
   CR_probe                     = DATA_20[20]
-  repump_after_repetitions     = DATA_20[21]
-  CR_repump                    = DATA_20[22]
+  CR_repump                    = DATA_20[21]
+  CR_probe_max_time            = DATA_20[22]
   
   repump_voltage               = DATA_21[1]
   repump_off_voltage           = DATA_21[2]
@@ -172,7 +172,7 @@ INIT:
   A_RO_voltage                 = DATA_21[8]
   Ex_off_voltage               = DATA_21[9]
   A_off_voltage                = DATA_21[10]
-   
+  
   FOR i = 1 TO SSRO_repetitions
     DATA_22[i] = 0
     DATA_23[i] = 0
@@ -211,7 +211,10 @@ INIT:
 
   mode = 0
   timer = 0
+  cr_probe_timer = 0
   processdelay = cycle_duration
+  
+  
   Par_73 = repetition_counter
 
   PAR_70 = 0                      ' cumulative counts from probe intervals
@@ -235,7 +238,7 @@ EVENT:
     SELECTCASE mode
       CASE 0    ' green repump
         IF (timer = 0) THEN
-          IF ((Mod(repetition_counter,repump_after_repetitions)=0) OR (cr_counts < CR_repump))  THEN  'only repump after x SSRO repetitions
+          IF (cr_counts < CR_repump)  THEN  
             P2_CNT_CLEAR(CTR_MODULE,  counter_pattern)    'clear counter
             P2_CNT_ENABLE(CTR_MODULE, counter_pattern)    'turn on counter
             P2_DAC(DAC_MODULE, repump_laser_DAC_channel, 3277*repump_voltage+32768) ' turn on green
@@ -247,7 +250,7 @@ EVENT:
           ENDIF
           
         ELSE 
-          IF (timer = green_repump_duration) THEN
+          IF (timer = repump_duration) THEN
             P2_DAC(DAC_MODULE, repump_laser_DAC_channel, 3277*repump_off_voltage+32768) ' turn off green
             counts = P2_CNT_READ(CTR_MODULE, counter_channel)
             P2_CNT_ENABLE(CTR_MODULE, 0)
@@ -256,7 +259,7 @@ EVENT:
             mode = 1
             timer = -1
             wait_after_pulse = wait_after_pulse_duration
-            current_CR_threshold = CR_preselect
+            current_cr_threshold = CR_preselect
           ENDIF
         ENDIF
       CASE 1    ' Ex/A laser CR check
@@ -286,7 +289,12 @@ EVENT:
             ELSE
               mode = 2
               DATA_22[repetition_counter+1] = cr_counts  ' CR before next SSRO sequence
-              current_cr_threshold = CR_probe      
+              IF (cr_probe_timer>CR_probe_max_time) THEN
+                current_cr_threshold = CR_preselect
+                cr_probe_timer = 0
+              ELSE
+                current_cr_threshold = CR_probe
+              ENDIF
             ENDIF
             
             timer = -1
@@ -439,7 +447,8 @@ EVENT:
         ENDIF
     ENDSELECT
     
-    timer = timer + 1
+    Inc(timer)
+    Inc(cr_probe_timer)
   ENDIF
   
 FINISH:

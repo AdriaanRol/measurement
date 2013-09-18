@@ -72,13 +72,10 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
         for k in tparams.params_lt2.parameters:
             self.params_lt2[k] = tparams.params_lt2[k]
 
-
-        self.params_lt1['use_yellow'] = YELLOW
         self.params_lt1['do_N_polarization'] = 1 if DO_POLARIZE_N else 0
         self.params_lt1['do_sequences'] = 1 if DO_SEQUENCES else 0
         self.params_lt1['do_LDE_sequence'] = 1 if DO_LDE_SEQUENCE else 0
         self.params['MW_during_LDE'] = 1 if LDE_DO_MW else 0
-
     
     def update_definitions(self):
         """
@@ -105,11 +102,8 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
                 [self.green_aom_lt1.get_pri_channel()]
         # self.params['gate_DAC_channel'] = self.adwin.get_dac_channels()\
         #        ['gate']
-             
-        if self.params_lt1['use_yellow']:
-            self.params_lt1['repump_laser_DAC_channel'] = self.params_lt1['yellow_laser_DAC_channel']
-        else:
-            self.params_lt1['repump_laser_DAC_channel'] = self.params_lt1['green_laser_DAC_channel']
+            
+        self.params_lt1['repump_laser_DAC_channel'] = self.params_lt1['green_laser_DAC_channel']
 
         self.params_lt1['Ey_CR_voltage'] = \
                 self.Ey_aom_lt1.power_to_voltage(
@@ -141,13 +135,6 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
                 self.FT_aom_lt1.power_to_voltage(
                         self.params_lt1['AWG_SP_power'], controller='sec')
         qt.pulsar_remote.set_channel_opt('Velocity1AOM', 'high', self.params_lt1['SP_voltage_AWG'])
-
-        if YELLOW:
-            self.params_lt1['Yellow_voltage_AWG'] = \
-                self.repump_aom_lt1.power_to_voltage(
-                    self.params_lt1['AWG_yellow_power'], controller='sec')
-            qt.pulsar_remote.set_channel_opt('YellowAOM', 'high', self.params_lt1['Yellow_voltage_AWG'])
-
         
         self.params_lt2['Ey_laser_DAC_channel'] = self.adwins['adwin_lt2']['ins'].get_dac_channels()\
                 [self.Ey_aom_lt2.get_pri_channel()]
@@ -155,8 +142,13 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
                 [self.A_aom_lt2.get_pri_channel()]
         self.params_lt2['green_laser_DAC_channel'] = self.adwins['adwin_lt2']['ins'].get_dac_channels()\
                [self.green_aom_lt2.get_pri_channel()]
+        self.params_lt2['yellow_laser_DAC_channel'] = self.adwins['adwin_lt2']['ins'].get_dac_channels()\
+               [self.yellow_aom_lt2.get_pri_channel()]
 
-        self.params_lt2['repump_laser_DAC_channel'] = self.params_lt2['green_laser_DAC_channel']
+        if YELLOW:
+            self.params_lt2['repump_laser_DAC_channel'] = self.params_lt2['yellow_laser_DAC_channel']
+        else:
+            self.params_lt2['repump_laser_DAC_channel'] = self.params_lt2['green_laser_DAC_channel']
 
         self.params_lt2['Ey_CR_voltage'] = \
                 self.Ey_aom_lt2.power_to_voltage(
@@ -252,9 +244,9 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
 
         self.lt2_seq = pulsar.Sequence('TeleportationLT2')
 
-        dummy_element = self._lt2_dummy_element()
-        LDE_element = self._lt2_LDE_element()
-        finished_element = self._lt2_sequence_finished_element()
+        dummy_element = _lt2_dummy_element(self)
+        LDE_element = _lt2_LDE_element(self)
+        finished_element = _lt2_sequence_finished_element(self)
 
         self.lt2_seq.append(name = 'LDE_LT2',
             wfname = (LDE_element.name if DO_LDE_SEQUENCE else dummy_element.name),
@@ -302,7 +294,7 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
         elements = []
         
         for i in range(1,self.params['opt_rabi_sweep_pts']+1):
-            lde_elt = self._lt2_LDE_element(name = 'OpticalRabi-{}'.format(i),
+            lde_elt = _lt2_LDE_element(self, name = 'OpticalRabi-{}'.format(i),
                 eom_pulse_amplitude = self.params['eom_pulse_amplitudes'][i-1])
             
             self.lt2_seq.append(name='OpticalRabi-{}'.format(i),
@@ -655,6 +647,8 @@ class TeleportationSlave:
         for k in tparams.params_lt2.parameters:
             self.params_lt2[k] = tparams.params_lt2[k]
 
+        self.params_lt2['use_yellow'] = YELLOW
+
     def update_definitions(self):
         tseq.pulse_defs_lt1(self)
 
@@ -666,25 +660,18 @@ class TeleportationSlave:
                         self.params_lt1['AWG_SP_power'], controller='sec')
         qt.pulsar_remote.set_channel_opt('Velocity1AOM', 'high', self.params_lt1['SP_voltage_AWG'])
 
-        if YELLOW:
-            self.params_lt1['Yellow_voltage_AWG'] = \
-                self.repump_aom_lt1.power_to_voltage(
-                    self.params_lt1['AWG_yellow_power'], controller='sec')
-            qt.pulsar_remote.set_channel_opt('YellowAOM', 'high', self.params_lt1['Yellow_voltage_AWG'])
-
-
-    
+  
 
     def lt1_sequence(self):
         self.lt1_seq = pulsar.Sequence('TeleportationLT1')
 
-        N_pol_decision_element = self._lt1_N_polarization_decision_element()
-        N_pol_element = self._lt1_N_pol_element()
-        start_LDE_element = self._lt1_start_LDE_element()
-        LDE_element = self._lt1_LDE_element()
-        BSM_element = self._lt1_BSM_element()
-        dummy_element = self._lt1_dummy_element()
-        adwin_lt1_trigger_element = self._lt1_adwin_LT1_trigger_element()
+        N_pol_decision_element = _lt1_N_polarization_decision_element(self)
+        N_pol_element = _lt1_N_pol_element(self)
+        start_LDE_element = _lt1_start_LDE_element(self)
+        LDE_element = _lt1_LDE_element(self)
+        BSM_element = _lt1_BSM_element(self)
+        dummy_element = _lt1_dummy_element(self)
+        adwin_lt1_trigger_element = _lt1_adwin_LT1_trigger_element(self)
 
         self.lt1_seq.append(name = 'N_pol_decision',
             wfname = N_pol_decision_element.name,
@@ -805,10 +792,7 @@ def _lt1_LDE_element(msmnt):
             amplitude = 1.0),
             name = 'spinpumping',
             refpulse = 'initial_delay')
-    e.add(pulse.cp(msmnt.yellow_pulse, 
-            length = msmnt.params['LDE_SP_duration_yellow'], 
-            amplitude = 1.0), 
-            refpulse = 'initial_delay')
+
 
     #2 MW pi/2
     if LDE_DO_MW:
@@ -861,7 +845,7 @@ def _lt1_dummy_element(msmnt):
     return e
 
 ### CONSTANTS AND FLAGS
-YELLOW = False
+YELLOW = True              # whether to use yellow on lt2
 HH = False                # if False no HH data acquisition from within qtlab.
 DO_POLARIZE_N = False      # if False, no N-polarization sequence on LT1 will be used
 DO_SEQUENCES = True      # if False, we won't use the AWG at all
@@ -891,24 +875,24 @@ TeleportationMaster.green_aom_lt1 = qt.instruments['GreenAOM_lt1']
 TeleportationMaster.Ey_aom_lt1 = qt.instruments['MatisseAOM_lt1']
 TeleportationMaster.FT_aom_lt1 = qt.instruments['NewfocusAOM_lt1']
 TeleportationMaster.mwsrc_lt1 = qt.instruments['SMB100_lt1']
+TeleportationMaster.repump_aom_lt1 = TeleportationMaster.green_aom_lt1
 
+TeleportationMaster.yellow_aom_lt2 = qt.instruments['YellowAOM']
 TeleportationMaster.green_aom_lt2 = qt.instruments['GreenAOM']
 TeleportationMaster.Ey_aom_lt2 = qt.instruments['MatisseAOM']
 TeleportationMaster.A_aom_lt2 = qt.instruments['NewfocusAOM']
 TeleportationMaster.mwsrc_lt2 = qt.instruments['SMB100']
 TeleportationMaster.awg_lt2 = qt.instruments['AWG']
-TeleportationMaster.repump_aom_lt2 = TeleportationMaster.green_aom_lt2
 
 if YELLOW:
-    TeleportationMaster.repump_aom_lt1 = TeleportationMaster.yellow_aom_lt1
+    TeleportationMaster.repump_aom_lt2 = TeleportationMaster.yellow_aom_lt2
 else:
-    TeleportationMaster.repump_aom_lt1 = TeleportationMaster.green_aom_lt1
+    TeleportationMaster.repump_aom_lt2 = TeleportationMaster.green_aom_lt2
 
 TeleportationMaster.hharp = qt.instruments['HH_400']
 
 ### This is ugly at this point. better merge classes at some point?
-if YELLOW:
-    TeleportationSlave.repump_aom_lt1 = qt.instruments['YellowAOM_lt1']
+TeleportationSlave.repump_aom_lt1 = qt.instruments['GreemAOM_lt1']
 TeleportationSlave.FT_aom_lt1 = qt.instruments['NewfocusAOM_lt1']
 
 ### tool functions
