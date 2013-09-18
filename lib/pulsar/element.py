@@ -5,6 +5,7 @@
 import numpy as np
 from copy import deepcopy
 import pprint
+import pulsar
 
 class Element:
     """
@@ -250,7 +251,7 @@ class Element:
     def ideal_waveforms(self):
         # tvals = np.arange(self.samples())/self.clock
         wfs = {}
-        tvals = np.arange(self.samples())/self.clock  
+        tvals = np.arange(self.samples())/self.clock
 
         # use channels on demand, i.e., only create data when there's a pulse
         # in that channel.
@@ -268,8 +269,8 @@ class Element:
                 for c in self.pulses[p].channels:
                     idx0 = self.pulse_start_sample(p,c)
                     idx1 = self.pulse_end_sample(p,c) + 1
-                    c_tvals = tvals.copy()[idx0:idx1] + \
-                        self.channel_delay(c) + self.time_offset 
+                    c_tvals = np.round(tvals.copy()[idx0:idx1] + \
+                        self.channel_delay(c) + self.time_offset, pulsar.SIGNIFICANT_DIGITS)
                     chan_tvals[c] = c_tvals
                 
                 pulsewfs = self.pulses[p].get_wfs(chan_tvals)
