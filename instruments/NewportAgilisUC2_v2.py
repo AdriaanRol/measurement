@@ -14,7 +14,7 @@ import numpy as np
 
 class NewportAgilisUC2_v2(Instrument):
 
-    def __init__(self, name, address):
+    def __init__(self, name, address,maxjog_cfg,maxpr_cfg,step_deg_cfg):
         Instrument.__init__(self, name)
 
         self._address = address
@@ -30,23 +30,13 @@ class NewportAgilisUC2_v2(Instrument):
         #                         'negative' : 1.025/1.013},
         #                   }
 
-        self.maxjog_cfg = { 1 : {'positive' : 1.000,
-                                 'negative' : 1./0.790 * 0.94},
-                            2 : {'positive' : 1.000,
-                                 'negative' : 1./0.979 * 0.9},
-                           }
-
+        self.maxjog_cfg = maxjog_cfg
         #normalized to ~ 481 steps/degree
         # TODO is that actually used?
-        self.maxpr_cfg  = { 1 : {'positive' : 1.000,
-                                 'negative' : 0.981},
-                            2 : {'positive' : 1.000,
-                                 'negative' : 1.130},
-                           }
+        self.maxpr_cfg  = maxpr_cfg
 
         #values provided here are in deg/step
-        self.step_deg_cfg = { 1 : 10/5000.,
-                              2 : 198./1e5}
+        self.step_deg_cfg = step_deg_cfg
 
         #define the get and set functions of the positioner. order is 
         #according to the manual page 24.
