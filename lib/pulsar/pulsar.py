@@ -9,6 +9,13 @@ import time
 import numpy as np
 import logging
 
+# some pulses use rounding when determining the correct sample at which to insert a particular
+# value. this might require correct rounding -- the pulses are typically specified on short time 
+# scales, but the time unit we use is seconds. therefore we need a suitably chosen digit on which
+# to round. 9 would round a pulse to 1 ns precision. 11 is 10 ps, and therefore probably beyond
+# the lifetime of this code (no 10ps AWG available yet :))
+SIGNIFICANT_DIGITS = 11
+
 class Pulsar:
     """
     This is the object that communicates with the AWG.
