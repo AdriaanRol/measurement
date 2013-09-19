@@ -8,7 +8,7 @@
 ' ADbasic_Version                = 5.0.8
 ' Optimize                       = Yes
 ' Optimize_Level                 = 1
-' Info_Last_Save                 = TUD276629  TUD276629\localadmin
+' Info_Last_Save                 = TUD277246  TUD277246\localadmin
 '<Header End>
 ' this program implements the part of the teleportation protocol controlled by ADwin Pro II
 ' ADwin Gold II is in charge of the experiment.
@@ -40,6 +40,7 @@ DIM DATA_24[max_CR_hist_bins] AS LONG AT EM_LOCAL   ' CR counts
 DIM DATA_25[max_repetitions] AS LONG AT DRAM_EXTERN ' SSRO counts
 DIM DATA_26[max_stat] AS LONG AT EM_LOCAL           ' statistics
 DIM DATA_27[max_repump_duration] AS FLOAT AT EM_LOCAL 'repump counts
+DIM DATA_28[max_repetitions] AS LONG AT EM_LOCAL    ' CR probe timer values
 
 DIM counter_channel AS LONG
 DIM repump_laser_DAC_channel AS LONG
@@ -129,6 +130,7 @@ INIT:
     DATA_22[i] = 0
     DATA_23[i] = 0
     DATA_25[i] = 0
+    DATA_28[i] = 0
   NEXT i
   
   FOR i = 1 TO max_CR_hist_bins
@@ -290,11 +292,12 @@ EVENT:
             mode = 0
             inc(par_71)
           ELSE
-            DATA_22[tele_event_id+1] = counts  ' CR before next SSRO sequence
+            DATA_22[tele_event_id+1] = cr_counts  ' CR before next SSRO sequence
             P2_DIGOUT(DIO_MODULE, ADwin_lt1_do_channel, 1)
+            DATA_28[tele_event_id+1] = CR_probe_timer  'save CR timer just after CR check -> put to after LDE later?    
             mode = 2
             
-            IF (cr_probe_timer>CR_probe_max_time) THEN
+            IF (CR_probe_timer>CR_probe_max_time) THEN
               current_cr_threshold = CR_preselect
               cr_probe_timer = 0
             ELSE

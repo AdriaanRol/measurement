@@ -253,8 +253,8 @@ class Element:
         wfs = {}
         tvals = np.arange(self.samples())/self.clock
 
-        # use channels on demand, i.e., only create data when there's a pulse
-        # in that channel.
+        for c in self._channels:
+            wfs[c] = np.zeros(self.samples()) + self._channels[c]['offset']
 
         # we first compute the ideal function values
         for p in self.pulses:
@@ -276,10 +276,6 @@ class Element:
                 pulsewfs = self.pulses[p].get_wfs(chan_tvals)
 
             for c in self.pulses[p].channels:
-                if not c in wfs:
-                    wfs[c] = np.zeros(self.samples()) + \
-                        self._channels[c]['offset']
-
                 idx0 = self.pulse_start_sample(p,c)
                 idx1 = self.pulse_end_sample(p,c) + 1
                 wfs[c][idx0:idx1] += pulsewfs[c]

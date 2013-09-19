@@ -1,3 +1,4 @@
+import msvcrt
 import numpy as np
 import qt
 import hdf5_data as h5
@@ -34,6 +35,9 @@ class PulsarMeasurement(ssro.IntegratedSSRO):
             i=0
             awg_ready = False
             while not awg_ready and i<40:
+                if (msvcrt.kbhit() and (msvcrt.getch() == 'x')):
+                    raise Exception('User abort while waiting for AWG')
+
                 try:
                     if self.awg.get_state() == 'Waiting for trigger':
                         awg_ready = True
@@ -41,7 +45,9 @@ class PulsarMeasurement(ssro.IntegratedSSRO):
                     print 'waiting for awg: usually means awg is still busy and doesnt respond'
                     print 'waiting', i, '/ 40'
                     i=i+1
+                
                 qt.msleep(0.5)
+            
             if not awg_ready: 
                 raise Exception('AWG not ready')
                
@@ -53,6 +59,7 @@ class PulsarMeasurement(ssro.IntegratedSSRO):
         
         self.awg.stop()
         self.awg.set_runmode('CONT')
+        
 
         self.mwsrc.set_status('off')
         self.mwsrc.set_iq('off')
@@ -174,7 +181,6 @@ class ElectronRamsey(PulsarMeasurement):
         
         self.params['sequence_wait_time'] = \
             int(np.ceil(np.max(self.params['evolution_times'])*1e6)+10)
-
 
     def generate_sequence(self, upload=True):
 
