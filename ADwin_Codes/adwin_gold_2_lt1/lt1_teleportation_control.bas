@@ -8,7 +8,7 @@
 ' ADbasic_Version                = 5.0.8
 ' Optimize                       = Yes
 ' Optimize_Level                 = 1
-' Info_Last_Save                 = TUD276629  TUD276629\localadmin
+' Info_Last_Save                 = TUD277246  TUD277246\localadmin
 '<Header End>
 ' Teleportation master controller program. lt1 is in charge, lt2 is remote
 
@@ -607,7 +607,7 @@ EVENT:
         else      
           mode = 5
           wait_time = 5 ' we need to make sure that the AWG is receptive for triggering now!
-          DATA_29[tele_event_id + 1] = CR_probe_timer     
+          DATA_29[tele_event_id + 1] = CR_probe_timer   ' save CR timer just before LDE sequence -> put to after LDE later?   
         endif        
         timer = -1
       ENDIF      
