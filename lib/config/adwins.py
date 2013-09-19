@@ -805,11 +805,11 @@ config['adwin_lt2_processes'] = {
                     ['teleportation_repetitions'   ,1000],
                     ['SSRO_lt2_duration'           ,  50],
                     ['CR_probe'                    ,  40],
-                    ['repump_after_repetitions'    ,   1],
                     ['CR_repump'                   ,1000],
                     ['Adwin_lt1_do_channel'        ,   8],
                     ['Adwin_lt1_di_channel'        ,  17],
-                    ['AWG_lt2_di_channel'          ,  16]
+                    ['AWG_lt2_di_channel'          ,  16],
+                    ['freq_AOM_DAC_channel'        ,  4],
                     ],
                 'params_long_index' : 20, 
                 'params_long_length': 25,
@@ -823,7 +823,9 @@ config['adwin_lt2_processes'] = {
                     ['Ey_RO_voltage'               , 0.0],
                     ['A_RO_voltage'                , 0.0],
                     ['Ey_off_voltage'              , 0.0],
-                    ['A_off_voltage'               , 0.0]
+                    ['A_off_voltage'               , 0.0],
+                    ['repump_freq_offset'          , 5.0],
+                    ['repump_freq_amplitude'       , 4.0]  
                     ],
                 'params_float_index' : 21,
                 'params_float_length': 10,
@@ -837,6 +839,10 @@ config['adwin_lt2_processes'] = {
                     'CR_hist'   : 24,
                     'SSRO_lt2_data' : 25,
                     'statistics'    : 26,
+                    },
+                'data_float': {
+                    'repump_freq_voltages'      : 19,
+                    'repump_freq_counts'        : 27,
                     },
                 },
 
@@ -1030,6 +1036,7 @@ config['adwin_lt1_processes'] = {
                     ['cycle_duration'              , 300],
                     ['CR_probe'                    ,  10],
                     ['CR_repump'                   ,  0],
+                    ['CR_probe_max_time'           ,  1000000],
                     ],
                 'params_long_index'  : 20,
                 'params_long_length' : 25,
@@ -1327,7 +1334,6 @@ config['adwin_lt1_processes'] = {
                     ['SP_after_RO_duration'         ,      50],
                     ['wait_before_SSRO2'            ,       3],
                     ['SSRO2_duration'               ,      50],
-                    ['repump_after_repetitions'     ,       1],
                     ['CR_repump'                    ,    1000],
                     ['AWG_lt1_event_do_channel'     ,       3],
                     ['max_CR_starts'                ,       0], 

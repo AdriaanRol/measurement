@@ -47,5 +47,76 @@ def turn_off_AWG_laser_channel():
     qt.instruments['AWG'].set_ch2_offset(0.)
 
 
+def set_lt1_remote():
+    for i in ['labjack', 
+        'setup_controller',
+        'YellowAOM',
+        'Velocity2AOM',
+        'Velocity1AOM',
+        'GreenAOM',
+        'optimiz0r',
+        'opt1d_counts',
+        'scan2d',
+        'linescan_counts',
+        'master_of_space',
+        'counters',
+        'adwin']:
+
+        try:
+            qt.instruments.remove(i)
+        except:
+            logging.warning('could not remove instrument {}'.format(i))
+
+def set_lt1_standalone():
+    global adwin
+    global counters
+    global master_of_space
+    global optimiz0r
+    global GreenAOM
+    global Velocity1AOM
+    global Velocity2AOM
+    global ivvi
+
+    adwin = qt.instruments.create('adwin', 'adwin_lt1', 
+            physical_adwin='physical_adwin')
+    
+    counters = qt.instruments.create('counters', 'counters_via_adwin',
+            adwin='adwin')
+    
+    master_of_space = qt.instruments.create('master_of_space',
+            'master_of_space_lt1', adwin='adwin')
+
+    linescan_counts = qt.instruments.create('linescan_counts', 
+            'linescan_counts',  adwin='adwin', mos='master_of_space',
+            counters='counters')
+    
+    scan2d = qt.instruments.create('scan2d', 'scan2d_counts',
+             linescan='linescan_counts', mos='master_of_space',
+            xdim='x', ydim='y', counters='counters')
+     
+    opt1d_counts = qt.instruments.create('opt1d_counts', 
+             'optimize1d_counts', linescan='linescan_counts', 
+            mos='master_of_space', counters='counters')
+
+    optimiz0r = qt.instruments.create('optimiz0r', 'optimiz0r',opt1d_ins=
+            opt1d_counts,mos_ins=master_of_space,dimension_set='lt1')
+  
+    GreenAOM = qt.instruments.create('GreenAOM', 'AOM', 
+            use_adwin='adwin', use_pm= 'powermeter')
+    Velocity1AOM = qt.instruments.create('Velocity1AOM', 'AOM', 
+            use_adwin='adwin', use_pm = 'powermeter')         
+    Velocity2AOM = qt.instruments.create('Velocity2AOM', 'AOM', 
+            use_adwin='adwin', use_pm = 'powermeter')
+    YellowAOM = qt.instruments.create('YellowAOM', 'AOM', 
+            use_adwin='adwin', use_pm ='powermeter')
+    setup_controller = qt.instruments.create('setup_controller',
+             'setup_controller',
+            use = { 'master_of_space' : 'mos'} )
+    
+    from lib.network import object_sharer as objsh
+    if objsh.start_glibtcp_client('192.168.0.80', port=12002, nretry=3):
+        remote_ins_server = objsh.helper.find_object('qtlab_lasermeister:instrument_server')
+        labjack = qt.instruments.create('labjack', 'Remote_Instrument',
+        remote_name='labjack', inssrv=remote_ins_server)
         
 
