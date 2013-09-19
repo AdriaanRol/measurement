@@ -30,6 +30,7 @@ class laser_reject0r(Instrument):
                     'first_time_channel'      : {'type':types.IntType,'flags':Instrument.FLAG_GETSET, 'val':0},
                     'first_time_stepsize'     : {'type':types.IntType,'flags':Instrument.FLAG_GETSET, 'val':4250},
                     'first_time_noof_points'  : {'type':types.IntType,'flags':Instrument.FLAG_GETSET, 'val':11},
+                    'first_opt_red_power'     : {'type':types.FloatType,'flags':Instrument.FLAG_GETSET, 'val':1e-9},
                     'opt_threshold'           : {'type':types.FloatType,'flags':Instrument.FLAG_GETSET, 'val':5E5},
                     'zpl_counter'             : {'type':types.IntType,'flags':Instrument.FLAG_GETSET, 'val':2},
                     'plot_degrees'            : {'type':types.BooleanType,'flags':Instrument.FLAG_GETSET, 'val':True},
@@ -48,8 +49,7 @@ class laser_reject0r(Instrument):
         self.add_parameter('opt_scan_range',
                 flags=Instrument.FLAG_GETSET,
                 type=types.TupleType,
-                units = 'deg', 
-                mival = 1, maxval = 180)
+                units = 'deg')
 
         self.add_parameter('conversion_factor',
                 type=types.FloatType,
@@ -98,7 +98,6 @@ class laser_reject0r(Instrument):
     def do_get_conversion_factor(self, w = 'half'):
         return self.rotator.get_step_deg_cfg()[getattr(self,'_'+w+'_channel')]
 
-
     def do_get_opt_red_power(self):
         return self.opt_red_power
 
@@ -129,7 +128,7 @@ class laser_reject0r(Instrument):
         qwp_factor = self._quarter_noof_points\
                 * self.get_conversion_factor('quarter') #noof_steps * deg/steps 
 
-        if size(val) == 2:
+        if np.size(val) == 2:
             self._half_stepsize = val[0]/hwp_factor
             self._quarter_stepsize = val[1]/qwp_factor
         else:
@@ -404,7 +403,7 @@ class laser_reject0r(Instrument):
                 str(getattr(self,'_'+w+'_channel')))()
 
         #turn waveplates
-        data, qtdata, dataplot, premature_quit = self.run('first_time', self.first_opt_red_power)
+        data, qtdata, dataplot, premature_quit = self.run('first_time', self._first_opt_red_power)
         qtdata.close_file()
 
         if not premature_quit:

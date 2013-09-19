@@ -35,17 +35,17 @@ params_lt1['AWG_lt2_address_U1'] = 2
 params_lt1['AWG_lt2_address_U2'] = 3
 params_lt1['AWG_lt2_address_U3'] = 4
 params_lt1['AWG_lt2_address_U4'] = 5       
-params_lt1['repump_off_voltage'] = 0         
-params_lt1['Ey_off_voltage'] = 0 
-params_lt1['FT_off_voltage'] = 0
+params_lt1['repump_off_voltage'] = 0.0         
+params_lt1['Ey_off_voltage'] = 0.0
+params_lt1['FT_off_voltage'] = 0.0
 
 params_lt2['counter_channel'] = 1
 params_lt2['Adwin_lt1_do_channel'] = 2
 params_lt2['Adwin_lt1_di_channel'] = 17
 params_lt2['AWG_lt2_di_channel'] = 16
-params_lt2['repump_off_voltage'] = 0.02
-params_lt2['Ey_off_voltage'] = 0 
-params_lt2['A_off_voltage'] = 0
+params_lt2['repump_off_voltage'] = 0.0
+params_lt2['Ey_off_voltage'] = 0.0
+params_lt2['A_off_voltage'] = -0.15
 params_lt2['freq_AOM_DAC_channel'] = 4
 
 
@@ -73,23 +73,23 @@ params_lt2['repump_duration'] = 500
 params_lt2['repump_freq_offset'] = 5.
 params_lt2['repump_freq_amplitude'] = 4.
 
-params_lt2['CR_duration'] = 50 
-params_lt2['CR_preselect'] = 30
-params_lt2['CR_probe'] = 15
+params_lt2['CR_duration'] = 50
+params_lt2['CR_preselect'] = 25
+params_lt2['CR_probe'] = 2
 params_lt2['CR_repump'] = 1
-params_lt2['CR_probe_max_time'] = 500000 # us = 0.5 
+params_lt2['CR_probe_max_time'] = 500000 # us = 0.5 s 
  
 ### SSRO, CR, SP Laser powers
-params_lt1['Ey_CR_amplitude'] = 4e-9
+params_lt1['Ey_CR_amplitude'] = 5e-9
 params_lt1['FT_CR_amplitude'] = 13e-9               
 params_lt1['Ey_SP_amplitude'] = 10e-9               
 params_lt1['FT_SP_amplitude'] = 10e-9 
-params_lt1['Ey_RO_amplitude'] = 3e-9  
+params_lt1['Ey_RO_amplitude'] = 7e-9  
 params_lt1['FT_RO_amplitude'] = 0
 params_lt1['repump_amplitude'] = 200e-6 #300e-6#
 
 params_lt2['Ey_CR_amplitude'] = 6e-9             
-params_lt2['A_CR_amplitude'] = 10e-9              
+params_lt2['A_CR_amplitude'] = 16e-9              
 params_lt2['Ey_SP_amplitude'] = 10e-9              
 params_lt2['A_SP_amplitude'] = 20e-9             
 params_lt2['Ey_RO_amplitude'] = 10e-9
@@ -136,7 +136,7 @@ params['HH_sync_period'] = 400e-9 # in seconds -- important for checking (see me
 									#Question from hannes: is this the separation of the optical pi pulses?
 
 #EOM stuff:
-params_lt2['eom_pulse_duration']        = 2e-9
+params_lt2['eom_pulse_duration']        = 1e-9
 params_lt2['eom_off_duration']          = 50e-9
 params_lt2['eom_off_amplitude']         = -.26  # calibration from 23-08-2013
 params_lt2['eom_pulse_amplitude']       = 1.2
@@ -156,7 +156,7 @@ params_lt2['PLU_gate_3_duration']     = 40e-9
 params_lt2['PLU_3_delay']             = 50e-9
 params_lt2['PLU_4_delay']             = 150e-9
 
-params_lt1['AWG_SP_power']            = 10e-9 # 500e-9 #this should be on the FT
+params_lt1['AWG_SP_power']            = 20e-9 # 500e-9 #this should be on the FT
 params_lt1['AWG_yellow_power']        = 0e-9 #yellow power during SP in LDE on LT1
 params_lt1['MW_wait_after_SP']        = 20e-9 #wait time between end of SP_lt1 and start of first MW
 params_lt1['MW_separation']           = 600e-9 # separation between the two MW pulses on LT1
@@ -168,8 +168,8 @@ params['single_sync']                 = 1 #if ==1 then there will only be 1 sync
 params['long_histogram']              = 0 #if ==1 there will be only one sync at the beginning of LDE
 params['MW_during_LDE']               = 0 #NOTE:MW stuff not implemented, yet
 
-params['LDE_SP_duration']             = 10e-6
-params['LDE_SP_duration_yellow']      = 9e-6
+params['LDE_SP_duration']             = 5e-6
+params['LDE_SP_duration_yellow']      = 4e-6
 params['wait_after_sp']               = 500e-9 #this should be large enough, so that the MW puls fits
 params['LDE_element_length']          = 7.5e-6
 
