@@ -12,9 +12,19 @@ import numpy as np
 #Positive x (i.e. set_relative_position(+x)) rotates towards positive 
 #degrees. Negative x rotates towards negative degrees.
 
+#HALF WAVE PLATE (CH1 of the positioner):
+# * POSITIVE DIRECTION: 481 waveplate steps/degree of rotation
+# * NEGATIVE DIRECTION: 472 steps/deg
+# ==> correction factor = 472/481 = 0.981
+
+#QUARTER WAVEPLATE (CH2 of the positioner):
+# * POSITIVE DIRECTION: 481 steps/deg 
+# * NEGATIVE DIRECTION: 543 steps/deg
+# ==> correction factor = 543/481 = 1.130
+
 class NewportAgilisUC2_v2(Instrument):
 
-    def __init__(self, name, address,maxjog_cfg,maxpr_cfg,step_deg_cfg):
+    def __init__(self, name, address):
         Instrument.__init__(self, name)
 
         self._address = address
@@ -30,13 +40,22 @@ class NewportAgilisUC2_v2(Instrument):
         #                         'negative' : 1.025/1.013},
         #                   }
 
-        self.maxjog_cfg = maxjog_cfg
+        self.maxjog_cfg = { 1 : {'positive' : 1.000,
+                                 'negative' : 0.940},
+                            2 : {'positive' : 1.000,
+                                 'negative' : 0.900},
+                           }
+
         #normalized to ~ 481 steps/degree
-        # TODO is that actually used?
-        self.maxpr_cfg  = maxpr_cfg
+        self.maxpr_cfg  = { 1 : {'positive' : 1.000,
+                                 'negative' : 0.981},
+                            2 : {'positive' : 1.000,
+                                 'negative' : 1.130},
+                           }
 
         #values provided here are in deg/step
-        self.step_deg_cfg = step_deg_cfg
+        self.step_deg_cfg = { 1 : 10/5000.,
+                              2 : 10/5000.}
 
         #define the get and set functions of the positioner. order is 
         #according to the manual page 24.

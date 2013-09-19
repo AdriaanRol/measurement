@@ -82,7 +82,7 @@
 DIM DATA_20[25] AS LONG               ' integer parameters
 DIM DATA_21[20] AS FLOAT              ' float parameters
 DIM DATA_22[max_repetitions] AS LONG AT EM_LOCAL  ' CR counts before sequence
-DIM DATA_23[max_repetitions] AS LONG AT EM_LOCAL ' CR counts after sequence
+DIM DATA_23[max_repetitions] AS LONG  AT EM_LOCAL ' CR counts after sequence
 DIM DATA_24[max_SP_bins] AS LONG AT EM_LOCAL      ' SP counts
 DIM DATA_25[max_SSRO_dim] AS LONG AT DRAM_EXTERN  ' SSRO counts
 DIM DATA_26[max_stat] AS LONG AT EM_LOCAL         ' statistics

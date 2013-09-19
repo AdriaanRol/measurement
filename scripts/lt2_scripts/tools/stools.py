@@ -61,17 +61,21 @@ def recalibrate_lt2_lasers(names=['MatisseAOM', 'NewfocusAOM', 'GreenAOM', 'Yell
         recalibrate_laser(n, 'PMServo', 'adwin',awg=True)
 
 
-def check_power(name, setpoint, adwin, powermeter, servo):
+def check_power(name, setpoint, adwin, powermeter, servo,move_out=True):
     qt.instruments[adwin].set_simple_counting()
     qt.instruments[servo].move_in()    
     qt.instruments[powermeter].set_wavelength(qt.instruments[name].get_wavelength())
+    bg=qt.instruments[powermeter].get_power()
+    if bg>5e-9:
+        print 'Background:', bg
     qt.instruments[name].set_power(setpoint)
     qt.msleep(1)
 
-    print name, 'setpoint:', setpoint, 'value:', qt.instruments[powermeter].get_power()
+    print name, 'setpoint:', setpoint, 'value:', qt.instruments[powermeter].get_power()-bg
 
     qt.instruments[name].apply_voltage(0)
-    qt.instruments[servo].move_out()
+    if move_out:
+        qt.instruments[servo].move_out()
     qt.msleep(1)
 
 def check_lt1_powers(names=['GreenAOM_lt1', 'MatisseAOM_lt1', 'NewfocusAOM_lt1', 'YellowAOM_lt1'],
@@ -79,14 +83,16 @@ def check_lt1_powers(names=['GreenAOM_lt1', 'MatisseAOM_lt1', 'NewfocusAOM_lt1',
     
     turn_off_all_lt1_lasers()
     for n,s in zip(names, setpoints):
-        check_power(n, s, 'adwin_lt1', 'powermeter_lt1', 'PMServo_lt1')
+        check_power(n, s, 'adwin_lt1', 'powermeter_lt1', 'PMServo_lt1',False)
+    qt.instruments['PMServo_lt1'].move_out()
 
 def check_lt2_powers(names=['MatisseAOM', 'NewfocusAOM', 'GreenAOM','YellowAOM'],
     setpoints = [10e-9, 20e-9, 50e-6,50e-9]):
     
     turn_off_all_lt2_lasers()
     for n,s in zip(names, setpoints):
-        check_power(n, s, 'adwin', 'powermeter', 'PMServo')
+        check_power(n, s, 'adwin', 'powermeter', 'PMServo', False)
+    qt.instruments['PMServo'].move_out()
         
 def disconnect_lt1_remote():
     for i in qt.instruments.get_instrument_names():

@@ -117,6 +117,7 @@ DIM SSRO_stop_after_first_photon AS LONG
 DIM cycle_duration AS LONG
 DIM repump_after_repetitions AS LONG
 
+
 DIM repump_voltage AS FLOAT
 DIM repump_off_voltage AS FLOAT
 DIM Ex_CR_voltage AS FLOAT
@@ -130,6 +131,7 @@ DIM A_off_voltage AS FLOAT
 DIM repump_freq_error AS FLOAT
 DIM repump_freq_control AS FLOAT
 DIM repump_freq_control_offset AS FLOAT
+DIM repump_freq_alternator as LONG
 
 DIM timer, mode, i AS LONG
 DIM aux_timer AS LONG
@@ -144,6 +146,7 @@ DIM AWG_done_DI_pattern AS LONG
 DIM counts, old_counts, cr_counts AS LONG
 DIM first AS LONG
 DIM time_start, time_stop AS LONG
+
 
 DIM current_cr_threshold AS LONG
 DIM CR_probe AS LONG
@@ -217,6 +220,7 @@ INIT:
   repetition_counter  = 0
   first               = 0
   wait_after_pulse    = 0
+  repump_freq_alternator = 1.0
   P2_DAC(DAC_MODULE, repump_laser_DAC_channel, 3277*repump_off_voltage+32768) ' turn off green
   P2_DAC(DAC_MODULE, Ex_laser_DAC_channel, 3277*Ex_off_voltage+32768) ' turn off Ex laser
   P2_DAC(DAC_MODULE, A_laser_DAC_channel, 3277*A_off_voltage+32768) ' turn off Ex laser
@@ -256,13 +260,13 @@ EVENT:
     SELECTCASE mode
       CASE 0    ' green repump
         IF (timer = 0) THEN
-          IF ((Mod(repetition_counter,repump_after_repetitions)=0) OR (cr_counts < CR_repump))  THEN  'only repump after x SSRO repetitions
+          IF (cr_counts < CR_repump)  THEN  'only repump after x SSRO repetitions
             P2_CNT_CLEAR(CTR_MODULE,  counter_pattern)    'clear counter
             P2_CNT_ENABLE(CTR_MODULE, counter_pattern)    'turn on counter
             P2_DAC(DAC_MODULE, repump_laser_DAC_channel, 3277*repump_voltage+32768) ' turn on green
             repumps = repumps + 1
             old_counts = 0
-            FPar_77=0
+            repump_freq_alternator = -1.0*repump_freq_alternator
           ELSE
             mode = 1
             timer = -1
@@ -282,10 +286,11 @@ EVENT:
             current_CR_threshold = CR_preselect
           ELSE
             counts = P2_CNT_READ(CTR_MODULE, counter_channel)
-            repump_freq_control=DATA_19[timer]
+            repump_freq_control=repump_freq_alternator*DATA_19[timer]
             P2_DAC(DAC_MODULE, freq_AOM_DAC_channel, 3277*(repump_freq_control+repump_freq_control_offset)+32768) ' put current voltage on freq mod aom
             DATA_27[timer]=DATA_27[timer]*0.8+(counts-old_counts)
             FPar_77 = FPar_77*0.999+repump_freq_control*(counts-old_counts)
+            FPar_78=10.
             old_counts=counts
           ENDIF
         ENDIF

@@ -66,6 +66,7 @@ DIM remote_mode     AS INTEGER
 DIM timer           AS LONG
 DIM CR_timer        AS LONG
 DIM wait_time       AS LONG
+DIM CR_probe_timer  AS LONG
 
 'tuning
 DIM tune_duration AS LONG
@@ -99,7 +100,7 @@ DIM current_cr_threshold AS LONG
 DIM first_cr_probe_after_unsuccessful_lde AS INTEGER  'first CR check after timed out lde sequence
 DIM cr_after_teleportation AS INTEGER                 'first CR check after teleportation
 DIM time_before_forced_CR AS LONG                     'time before forced CR check on LT1
-DIM repump_after_repetitions AS LONG                  'number of attempts, after which repump
+DIM CR_probe_max_time AS LONG
 
 'LDE sequence
 DIM AWG_lt1_trigger_do_channel AS LONG
@@ -239,22 +240,23 @@ INIT:
   spin_pumping_steps            = DATA_20[20]
   wait_steps_before_RO2         = DATA_20[21]
   electron_RO2_steps            = DATA_20[22]
-  repump_after_repetitions      = DATA_20[23]
-  CR_repump                     = DATA_20[24]
-  AWG_lt1_event_do_channel      = DATA_20[25]
-  max_CR_starts                 = DATA_20[26]
-  AWG_lt2_address0_do_channel   = DATA_20[27]
-  AWG_lt2_address1_do_channel   = DATA_20[28]
-  AWG_lt2_address2_do_channel   = DATA_20[29]
-  AWG_lt2_address3_do_channel   = DATA_20[30] 
-  AWG_lt2_address_LDE           = DATA_20[31]
-  AWG_lt2_address_U1            = DATA_20[32]
-  AWG_lt2_address_U2            = DATA_20[33]
-  AWG_lt2_address_U3            = DATA_20[34]
-  AWG_lt2_address_U4            = DATA_20[35]
-  do_remote                     = DATA_20[36]
-  do_N_polarization             = DATA_20[37]
-  set_do_sequences              = DATA_20[38]
+  CR_repump                     = DATA_20[23]
+  AWG_lt1_event_do_channel      = DATA_20[24]
+  max_CR_starts                 = DATA_20[25]
+  AWG_lt2_address0_do_channel   = DATA_20[26]
+  AWG_lt2_address1_do_channel   = DATA_20[27]
+  AWG_lt2_address2_do_channel   = DATA_20[28]
+  AWG_lt2_address3_do_channel   = DATA_20[29] 
+  AWG_lt2_address_LDE           = DATA_20[30]
+  AWG_lt2_address_U1            = DATA_20[31]
+  AWG_lt2_address_U2            = DATA_20[32]
+  AWG_lt2_address_U3            = DATA_20[33]
+  AWG_lt2_address_U4            = DATA_20[34]
+  do_remote                     = DATA_20[35]
+  do_N_polarization             = DATA_20[36]
+  set_do_sequences              = DATA_20[37]
+  CR_probe_max_time             = DATA_20[38]
+  
     
   repump_voltage                = DATA_21[1]
   repump_off_voltage            = DATA_21[2]
@@ -282,6 +284,7 @@ INIT:
   ADwin_in_was_high             = 0
   ADwin_switched_to_high        = 0
   CR_timer                      = 0
+  CR_probe_timer                = 0
   AWG_LT1_in_is_high            = 0
   AWG_LT1_in_was_high           = 0
   AWG_LT1_switched_to_high      = 0
@@ -292,7 +295,7 @@ INIT:
   
   par_60 = 0                      'debug par used for measuring timer
   par_62 = 0                      'debug: remote mode
-  par_63 = 0                      'debug: CR timer 
+  par_63 = 0                      'debug: CR probe timer 
   par_64 = 0                      'debug: mode
   par_65 = 0                      'debug: timer
   par_66 = 0                      'debug par
@@ -362,7 +365,7 @@ EVENT:
   cr_threshold_probe = Par_68
   cr_repump = Par_69
    
-  par_63 = CR_timer
+  par_63 = CR_probe_timer
   par_64 = mode
   par_65 = timer
   par_62 = remote_mode
@@ -562,7 +565,13 @@ EVENT:
               mode = 3
             endif
             
-            current_cr_threshold = cr_threshold_probe
+            IF (cr_probe_timer > CR_probe_max_time) THEN
+              current_cr_threshold = CR_threshold_prepare
+              cr_probe_timer = 0
+            ELSE
+              current_cr_threshold = cr_threshold_probe
+            ENDIF
+            
             timer = -1  
           ENDIF
         
@@ -598,7 +607,7 @@ EVENT:
         else      
           mode = 5
           wait_time = 5 ' we need to make sure that the AWG is receptive for triggering now!
-          DATA_29[tele_event_id + 1] = CR_timer     
+          DATA_29[tele_event_id + 1] = CR_probe_timer     
         endif        
         timer = -1
       ENDIF      
@@ -638,6 +647,7 @@ EVENT:
   ENDSELECT
   '          
   INC(timer)
+  Inc(CR_probe_timer)
   DEC(CR_timer)
   if (CR_timer < 0) then
     CR_timer = 0

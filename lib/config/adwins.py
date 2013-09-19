@@ -149,8 +149,8 @@ config['adwin_lt2_processes'] = {
                     ['SSRO_stop_after_first_photon',   0],
                     ['cycle_duration'              , 300],
                     ['CR_probe'                    ,  10],
-                    ['repump_after_repetitions'    ,  1],
                     ['CR_repump'                   ,  0],
+                    ['CR_probe_max_time'           , 1000000]
                     ],
                 'params_long_index'  : 20,
                 'params_long_length' : 25,
@@ -810,6 +810,7 @@ config['adwin_lt2_processes'] = {
                     ['Adwin_lt1_di_channel'        ,  17],
                     ['AWG_lt2_di_channel'          ,  16],
                     ['freq_AOM_DAC_channel'        ,  4],
+                    ['CR_probe_max_time'        , 1000000],
                     ],
                 'params_long_index' : 20, 
                 'params_long_length': 25,
@@ -828,7 +829,7 @@ config['adwin_lt2_processes'] = {
                     ['repump_freq_amplitude'       , 4.0]  
                     ],
                 'params_float_index' : 21,
-                'params_float_length': 10,
+                'params_float_length': 12,
                 'par': {
                     'completed_reps' : 77,
                     'total_CR_counts': 70,
@@ -871,6 +872,7 @@ config['adwin_lt1_dios'] = {
         'awg_event' : 6,
         'awg_trigger' : 0,
         'awg_ch3m2' : 9,
+        'lt1_zpl_wp' : 4,
         }
 
 config['adwin_lt1_processes'] = {
@@ -989,6 +991,16 @@ config['adwin_lt1_processes'] = {
                 },
             },
 
+        'trigger_dio' : {
+            'index' : 4,
+            'file' : 'lt1_dio_trigger.tb4',
+            'par' : {
+                'dio_no' : 61,
+                'startval' : 62, # where to start - 0 or 1
+                'waittime' : 63, # length of the trigger pulse in units of 10 ns
+            },
+        },
+
         'gate_modulation' : {
             'index' : 7,
             'file' : 'gate_modulation.TB7',
@@ -997,7 +1009,7 @@ config['adwin_lt1_processes'] = {
                 'modulation_period' : 13,
                 'modulation_on' : 14,
                 },
-            'fpar': {
+            'fpar': { 
                 'gate_voltage' : 12,
                 },
             },
@@ -1349,6 +1361,7 @@ config['adwin_lt1_processes'] = {
                     ['do_remote'                    ,       1],
                     ['do_N_polarization'            ,       1],
                     ['do_sequences'                 ,       1],
+                    ['CR_probe_max_time'        ,       1000000],
                     ],
                 'params_long_index'    : 20,
                 'params_long_length'   : 40,

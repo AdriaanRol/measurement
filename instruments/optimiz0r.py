@@ -77,11 +77,11 @@ class optimiz0r(Instrument):
 
                 print "Position changed %d nm" % \
                         (position_after_opt-position_before_opt)
-                
-                if msvcrt.kbhit():
-                    kb_char=msvcrt.getch()
-                    if kb_char == "q" : break
                 qt.msleep(1)
+            if msvcrt.kbhit():
+                kb_char=msvcrt.getch()
+                if kb_char == "q" : break
+                
         
         return ret
     

@@ -8,25 +8,32 @@
 ' ADbasic_Version                = 5.0.8
 ' Optimize                       = Yes
 ' Optimize_Level                 = 1
-' Info_Last_Save                 = TUD277246  TUD277246\localadmin
+' Info_Last_Save                 = TUD276629  TUD276629\localadmin
 '<Header End>
-' Sets the output status for DIO given by <channel> to <set>
-' channel is the pin no (16 to 31 are configured to be DO's
-' set is either 0 or 1
-
 #INCLUDE ADwinGoldII.inc
 ' #INCLUDE configuration.inc
-DIM channel AS LONG
+DIM channel AS LONG    ' dio number
+DIM startval AS LONG   ' where to set the pulse value at the beginning
+DIM waittime AS LONG   ' how long the trigger pulse is
+dim pulseval as long
 
 INIT:
-  CONF_DIO(13)   'configure DIO-24 to DIO 31 as outputs, the rest are inputs
-  channel=PAR_61    'OutputNR can only have values 1,2,3,4 corresponding to DIO28,29,30,31
-  par_61 = 3
-  digout(channel,0)
+  CONF_DIO(13)   
+  channel = PAR_61
+  startval = par_62
+  waittime = par_63
+  ' par_61 = 3
   
-
+  if (startval = 0) then
+    pulseval = 1
+  else
+    pulseval = 0
+  endif
+    
+  digout(channel,startval)
+  
 EVENT:
-  digout(channel, 1)
-  CPU_SLEEP(9)
-  digout(channel, 0)
+  digout(channel, pulseval)
+  CPU_SLEEP(waittime)
+  digout(channel, startval)
   END

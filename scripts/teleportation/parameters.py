@@ -61,38 +61,40 @@ params_lt2['SSRO_lt2_duration'] = 50
 
 ### CR and asynchronous preparation settings
 params_lt1['CR_duration'] = 50
-params_lt1['CR_threshold_preselect'] = 0
-params_lt1['CR_threshold_probe'] = 0
+params_lt1['CR_threshold_preselect'] = 22
+params_lt1['CR_threshold_probe'] = 2
 params_lt1['CR_repump'] = 1000
+params_lt1['CR_probe_max_time'] = 10000 #us
 params_lt1['repump_duration'] = 10#50
 params_lt1['time_before_forced_CR'] = 1 #1#20000 # FIXME
 params_lt1['N_pol_element_repetitions'] = 5 # FIXME
 
 params_lt2['repump_duration'] = 500
 params_lt2['repump_freq_offset'] = 5.
-params_lt2['repump_freq_amp'] = 4.
+params_lt2['repump_freq_amplitude'] = 4.
 
-params_lt2['CR_duration'] = 50
-params_lt2['CR_preselect'] = 15
+params_lt2['CR_duration'] = 50 
+params_lt2['CR_preselect'] = 30
 params_lt2['CR_probe'] = 15
-params_lt2['CR_repump'] = 1000
-
+params_lt2['CR_repump'] = 1
+params_lt2['CR_probe_max_time'] = 500000 # us = 0.5 
+ 
 ### SSRO, CR, SP Laser powers
-params_lt1['Ey_CR_amplitude'] = 3e-9
-params_lt1['FT_CR_amplitude'] = 20e-9               
+params_lt1['Ey_CR_amplitude'] = 4e-9
+params_lt1['FT_CR_amplitude'] = 13e-9               
 params_lt1['Ey_SP_amplitude'] = 10e-9               
-params_lt1['FT_SP_amplitude'] = 450e-9 
+params_lt1['FT_SP_amplitude'] = 10e-9 
 params_lt1['Ey_RO_amplitude'] = 3e-9  
 params_lt1['FT_RO_amplitude'] = 0
-params_lt1['repump_amplitude'] = 50e-9 #300e-6#
+params_lt1['repump_amplitude'] = 200e-6 #300e-6#
 
-params_lt2['Ey_CR_amplitude'] = 10e-9             
+params_lt2['Ey_CR_amplitude'] = 6e-9             
 params_lt2['A_CR_amplitude'] = 10e-9              
 params_lt2['Ey_SP_amplitude'] = 10e-9              
 params_lt2['A_SP_amplitude'] = 20e-9             
 params_lt2['Ey_RO_amplitude'] = 10e-9
 params_lt2['A_RO_amplitude'] = 0
-params_lt2['repump_amplitude'] = 300e-6
+params_lt2['repump_amplitude'] = 50e-9 #yellow
 
 ### pulses and MW stuff
 params_lt1['ms-1_cntr_frq'] = 2.827e9 
@@ -135,7 +137,7 @@ params['HH_sync_period'] = 400e-9 # in seconds -- important for checking (see me
 
 #EOM stuff:
 params_lt2['eom_pulse_duration']        = 2e-9
-params_lt2['eom_off_duration']          = 150e-9
+params_lt2['eom_off_duration']          = 50e-9
 params_lt2['eom_off_amplitude']         = -.26  # calibration from 23-08-2013
 params_lt2['eom_pulse_amplitude']       = 1.2
 params_lt2['eom_overshoot_duration1']   = 10e-9
@@ -144,7 +146,7 @@ params_lt2['eom_overshoot_duration2']   = 4e-9
 params_lt2['eom_overshoot2']            = -0.03
 params_lt2['aom_risetime']              = 42e-9
 
-params_lt2['AWG_SP_power']            = 20e-9
+params_lt2['AWG_SP_power']            = 40e-9
 params_lt2['opt_pulse_separation']    = 600e-9
 params_lt2['MW_opt_puls1_separation'] = 50e-9 #distance between the end of the MW and the start of opt puls1
 params_lt2['MW_opt_puls2_separation'] = 50e-9
@@ -154,8 +156,8 @@ params_lt2['PLU_gate_3_duration']     = 40e-9
 params_lt2['PLU_3_delay']             = 50e-9
 params_lt2['PLU_4_delay']             = 150e-9
 
-params_lt1['AWG_SP_power']            = 100e-9 # 500e-9 #this should be on the FT
-params_lt1['AWG_yellow_power']        = 10e-9 #yellow power during SP in LDE on LT1
+params_lt1['AWG_SP_power']            = 10e-9 # 500e-9 #this should be on the FT
+params_lt1['AWG_yellow_power']        = 0e-9 #yellow power during SP in LDE on LT1
 params_lt1['MW_wait_after_SP']        = 20e-9 #wait time between end of SP_lt1 and start of first MW
 params_lt1['MW_separation']           = 600e-9 # separation between the two MW pulses on LT1
 
@@ -166,7 +168,7 @@ params['single_sync']                 = 1 #if ==1 then there will only be 1 sync
 params['long_histogram']              = 0 #if ==1 there will be only one sync at the beginning of LDE
 params['MW_during_LDE']               = 0 #NOTE:MW stuff not implemented, yet
 
-params['LDE_SP_duration']             = 5e-6
+params['LDE_SP_duration']             = 10e-6
 params['LDE_SP_duration_yellow']      = 9e-6
 params['wait_after_sp']               = 500e-9 #this should be large enough, so that the MW puls fits
 params['LDE_element_length']          = 7.5e-6
