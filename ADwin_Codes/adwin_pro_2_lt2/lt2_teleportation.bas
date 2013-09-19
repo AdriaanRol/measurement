@@ -72,6 +72,7 @@ DIM repump_freq_control_offset AS FLOAT
 DIM repump_freq_control_amp AS FLOAT
 
 DIM timer, mode, i AS LONG
+DIM cr_probe_timer AS LONG
 DIM tele_event_id AS LONG
 DIM total_repump_counts AS LONG
 DIM counter_pattern AS LONG
@@ -89,7 +90,7 @@ DIM AWG_in_was_high AS LONG
 DIM Alternating AS LONG
 
 DIM current_cr_threshold AS LONG
-DIM CR_probe AS LONG
+DIM CR_probe, CR_probe_max_time AS LONG
 DIM CR_preselect AS LONG
 DIM CR_repump AS LONG
 
@@ -109,6 +110,7 @@ INIT:
   ADwin_lt1_di_channel         = DATA_20[13]
   AWG_lt2_di_channel           = DATA_20[14]
   freq_AOM_DAC_channel         = DATA_20[15]
+  CR_probe_max_time            = DATA_20[16]
     
   repump_voltage               = DATA_21[1]
   repump_off_voltage           = DATA_21[2]
@@ -180,6 +182,8 @@ INIT:
   FPar_77 = 0                     ' repump frequency resonance monitor fpar
   
   par_59 = 0                      ' tune (1 is tuning, 0 is running)
+  
+  par_63 = CR_probe_max_time
   
   par_64 = 0                      ' current mode
   par_65 = 0                      ' timer value
@@ -289,7 +293,15 @@ EVENT:
             DATA_22[tele_event_id+1] = counts  ' CR before next SSRO sequence
             P2_DIGOUT(DIO_MODULE, ADwin_lt1_do_channel, 1)
             mode = 2
-            current_cr_threshold = CR_probe
+            
+            IF (cr_probe_timer>CR_probe_max_time) THEN
+              current_cr_threshold = CR_preselect
+              cr_probe_timer = 0
+            ELSE
+              current_cr_threshold = CR_probe
+            ENDIF
+            
+            
           ENDIF
                   
           timer = -1

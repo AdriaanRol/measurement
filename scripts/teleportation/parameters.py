@@ -64,7 +64,7 @@ params_lt1['CR_duration'] = 50
 params_lt1['CR_threshold_preselect'] = 22
 params_lt1['CR_threshold_probe'] = 2
 params_lt1['CR_repump'] = 1000
-params_lt1['CR_probe_max_time'] = 10000 #us, not yet in ADWIN
+params_lt1['CR_probe_max_time'] = 10000 #us
 params_lt1['repump_duration'] = 10#50
 params_lt1['time_before_forced_CR'] = 1 #1#20000 # FIXME
 params_lt1['N_pol_element_repetitions'] = 5 # FIXME
@@ -77,7 +77,8 @@ params_lt2['CR_duration'] = 50
 params_lt2['CR_preselect'] = 30
 params_lt2['CR_probe'] = 15
 params_lt2['CR_repump'] = 1
-
+params_lt2['CR_probe_max_time'] = 500000 # us = 0.5 
+ 
 ### SSRO, CR, SP Laser powers
 params_lt1['Ey_CR_amplitude'] = 4e-9
 params_lt1['FT_CR_amplitude'] = 13e-9               
@@ -135,8 +136,8 @@ params['HH_sync_period'] = 400e-9 # in seconds -- important for checking (see me
 									#Question from hannes: is this the separation of the optical pi pulses?
 
 #EOM stuff:
-params_lt2['eom_pulse_duration']        = 20e-9
-params_lt2['eom_off_duration']          = 150e-9
+params_lt2['eom_pulse_duration']        = 2e-9
+params_lt2['eom_off_duration']          = 50e-9
 params_lt2['eom_off_amplitude']         = -.26  # calibration from 23-08-2013
 params_lt2['eom_pulse_amplitude']       = 1.2
 params_lt2['eom_overshoot_duration1']   = 10e-9
@@ -145,7 +146,7 @@ params_lt2['eom_overshoot_duration2']   = 4e-9
 params_lt2['eom_overshoot2']            = -0.03
 params_lt2['aom_risetime']              = 42e-9
 
-params_lt2['AWG_SP_power']            = 20e-9
+params_lt2['AWG_SP_power']            = 40e-9
 params_lt2['opt_pulse_separation']    = 600e-9
 params_lt2['MW_opt_puls1_separation'] = 50e-9 #distance between the end of the MW and the start of opt puls1
 params_lt2['MW_opt_puls2_separation'] = 50e-9
@@ -167,7 +168,7 @@ params['single_sync']                 = 1 #if ==1 then there will only be 1 sync
 params['long_histogram']              = 0 #if ==1 there will be only one sync at the beginning of LDE
 params['MW_during_LDE']               = 0 #NOTE:MW stuff not implemented, yet
 
-params['LDE_SP_duration']             = 5e-6
+params['LDE_SP_duration']             = 10e-6
 params['LDE_SP_duration_yellow']      = 9e-6
 params['wait_after_sp']               = 500e-9 #this should be large enough, so that the MW puls fits
 params['LDE_element_length']          = 7.5e-6

@@ -179,8 +179,6 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
         self.params_lt2['SP_voltage_AWG'] = \
                 self.A_aom_lt2.power_to_voltage(
                         self.params_lt2['AWG_SP_power'], controller='sec')
-
-        print self.params_lt2['SP_voltage_AWG']
         
         qt.pulsar.set_channel_opt('AOM_Newfocus', 'high', self.params_lt2['SP_voltage_AWG'])
 
@@ -566,6 +564,7 @@ def _lt2_LDE_element(msmnt, **kw):
             amplitude = 0, 
             length = msmnt.params_lt2['initial_delay']), 
         name = 'initial delay')
+    
     e.add(pulse.cp(msmnt.SP_pulse, 
             length = msmnt.params['LDE_SP_duration'], 
             amplitude = 1.0), 
@@ -573,13 +572,19 @@ def _lt2_LDE_element(msmnt, **kw):
         refpulse = 'initial delay')
 
     
-    #3 opt puls 1    
-    e.add(pulse.cp(msmnt.eom_aom_pulse, 
-            eom_pulse_amplitude = eom_pulse_amplitude),
-        name = 'opt pi 1', 
-        start = msmnt.params['wait_after_sp'],
-        refpulse = 'spinpumping')
-    
+    for i in range(OPT_PI_PULSES):
+        name = 'opt pi {}'.format(i+1)
+        refpulse = 'opt pi {}'.format(i) if i > 0 else 'spinpumping'
+        start = msmnt.params_lt2['opt_pulse_separation'] if i > 0 else msmnt.params['wait_after_sp']
+        refpoint = 'start' if i > 0 else 'end'
+
+        e.add(pulse.cp(msmnt.eom_aom_pulse, 
+                eom_pulse_amplitude = eom_pulse_amplitude),
+            name = name, 
+            start = start,
+            refpulse = refpulse,
+            refpoint = refpoint)
+   
     #4 MW pi/2
     if LDE_DO_MW:
         e.add(msmnt.CORPSE_pi2, 
@@ -593,13 +598,6 @@ def _lt2_LDE_element(msmnt, **kw):
     #6 plugate 1
     e.add(msmnt.plu_gate, name = 'plu gate 1', refpulse = 'opt pi 1')
 
-    #7 opt puls 2
-    e.add(pulse.cp(msmnt.eom_aom_pulse, 
-            eom_pulse_amplitude = eom_pulse_amplitude), 
-        name = 'opt pi 2', 
-        start = msmnt.params_lt2['opt_pulse_separation'],
-        refpulse = 'opt pi 1', refpoint = 'start')        
-
     #8 MW pi
     # if LDE_DO_MW:
     #     e.add(msmnt.CORPSE_pi, start = - msmnt.params_lt2['MW_opt_puls2_separation'],
@@ -607,6 +605,7 @@ def _lt2_LDE_element(msmnt, **kw):
     
     #10 plugate 2
     e.add(msmnt.plu_gate, name = 'plu gate 2', refpulse = 'opt pi 2')
+    
     #11 plugate 3
     e.add(pulse.cp(msmnt.plu_gate, 
             length = msmnt.params_lt2['PLU_gate_3_duration']), 
@@ -784,7 +783,7 @@ def _lt1_LDE_element(msmnt):
     #
     #1 SP
     e.add(pulse.cp(msmnt.SP_pulse,
-           amplitude = 0, 
+            amplitude = 0, 
             length = msmnt.params_lt1['initial_delay']), 
             name = 'initial_delay')
     e.add(pulse.cp(msmnt.SP_pulse, 
@@ -851,16 +850,18 @@ DO_POLARIZE_N = False      # if False, no N-polarization sequence on LT1 will be
 DO_SEQUENCES = True      # if False, we won't use the AWG at all
 DO_LDE_SEQUENCE = True    # if False, no LDE sequence (both setups) will be done
 LDE_DO_MW = False         # if True, there will be MW in the LDE seq
-MAX_HHDATA_LEN = int(10000e6)
+MAX_HHDATA_LEN = int(100e6)
 DO_OPT_RABI_AMP_SWEEP = False # if true, we sweep the rabi parameters instead of doing LDE; essentially this only affects the sequence we make
 HH_MIN_SYNC_TIME = 0 # 9 us
 HH_MAX_SYNC_TIME = 2e6 # 10.2 us
+OPT_PI_PULSES = 1
+
 
        
 ### configure the hardware (statics)
 TeleportationMaster.adwins = {
     'adwin_lt1' : {
-        'ins' : qt.instruments['adwin_lt1'],# if EXEC_FROM=='lt2' else qt.instruments['adwin'],
+        'ins' : qt.instruments['adwin_lt1'], # if EXEC_FROM=='lt2' else qt.instruments['adwin'],
         'process' : 'teleportation',
     },
     'adwin_lt2' : {
@@ -912,7 +913,7 @@ def start_msmt(m):
     m.autoconfig()
     m.update_definitions()
     m.setup()
-    m.run()
+    # m.run()
 
 ### measurements
 def default_msmt(name):
