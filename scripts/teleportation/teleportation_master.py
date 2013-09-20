@@ -604,7 +604,7 @@ def _lt2_LDE_element(msmnt, **kw):
     #             refpulse = 'opt pi 2', refpoint = 'start', refpoint_new = 'end')
     
     #10 plugate 2
-    e.add(msmnt.plu_gate, name = 'plu gate 2', refpulse = 'opt pi 2')
+    e.add(msmnt.plu_gate, name = 'plu gate 2', refpulse = 'opt pi {}'.format(OPT_PI_PULSES))
     
     #11 plugate 3
     e.add(pulse.cp(msmnt.plu_gate, 
@@ -913,7 +913,7 @@ def start_msmt(m):
     m.autoconfig()
     m.update_definitions()
     m.setup()
-    # m.run()
+    m.run()
 
 ### measurements
 def default_msmt(name):
