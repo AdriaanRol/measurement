@@ -136,8 +136,8 @@ params['HH_sync_period'] = 400e-9 # in seconds -- important for checking (see me
 									#Question from hannes: is this the separation of the optical pi pulses?
 
 #EOM stuff:
-params_lt2['eom_pulse_duration']        = 1e-9
-params_lt2['eom_off_duration']          = 50e-9
+params_lt2['eom_pulse_duration']        = 2e-9
+params_lt2['eom_off_duration']          = 100e-9
 params_lt2['eom_off_amplitude']         = -.26  # calibration from 23-08-2013
 params_lt2['eom_pulse_amplitude']       = 1.2
 params_lt2['eom_overshoot_duration1']   = 10e-9
@@ -147,6 +147,7 @@ params_lt2['eom_overshoot2']            = -0.03
 params_lt2['aom_risetime']              = 42e-9
 
 params_lt2['AWG_SP_power']            = 40e-9
+params_lt2['AWG_yellow_power']        = 50e-9 #yellow power during SP in LDE on LT1
 params_lt2['opt_pulse_separation']    = 600e-9
 params_lt2['MW_opt_puls1_separation'] = 50e-9 #distance between the end of the MW and the start of opt puls1
 params_lt2['MW_opt_puls2_separation'] = 50e-9
@@ -169,13 +170,13 @@ params['long_histogram']              = 0 #if ==1 there will be only one sync at
 params['MW_during_LDE']               = 0 #NOTE:MW stuff not implemented, yet
 
 params['LDE_SP_duration']             = 5e-6
-params['LDE_SP_duration_yellow']      = 4e-6
+params['LDE_SP_duration_yellow']      = 3e-6
 params['wait_after_sp']               = 500e-9 #this should be large enough, so that the MW puls fits
-params['LDE_element_length']          = 7.5e-6
+params['LDE_element_length']          = 9e-6 # 9k for TPQI.
 
 
 ### default process settings
-params['LDE_attempts_before_CR'] = 100 # FIXME
+params['LDE_attempts_before_CR'] = 1000 # 1000 for tpqi seems ok
 
 params_lt1['max_CR_starts'] = -1
 params_lt1['teleportation_repetitions'] = -1

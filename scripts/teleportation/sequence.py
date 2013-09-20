@@ -63,6 +63,7 @@ def pulse_defs_lt2(msmt):
 
     msmt.HH_sync = pulse.SquarePulse(channel = 'HH_sync', length = 50e-9, amplitude = 1.0)
     msmt.SP_pulse = pulse.SquarePulse(channel = 'AOM_Newfocus', amplitude = 1.0)
+    msmt.yellow_pulse = pulse.SquarePulse(channel = 'AOM_Yellow', amplitude = 1.0)
     msmt.plu_gate = pulse.SquarePulse(channel = 'plu_sync', amplitude = 1.0, 
                                     length = msmt.params_lt2['PLU_gate_duration'])
     
@@ -117,4 +118,3 @@ def pulse_defs_lt1(msmt):
 
     # light
     msmt.SP_pulse = pulse.SquarePulse(channel = 'Velocity1AOM', amplitude = 1.0)
-    msmt.yellow_pulse = pulse.SquarePulse(channel = 'YellowAOM', amplitude = 1.0)

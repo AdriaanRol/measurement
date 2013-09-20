@@ -5,6 +5,7 @@ import numpy as np
 import msvcrt, os, sys, time, gobject
 from analysis.lib.fitting import fit, common
 import instrument_helper
+from lib import config
 
 class laser_reject0r(Instrument):
     

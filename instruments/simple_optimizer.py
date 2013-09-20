@@ -14,10 +14,10 @@ class simple_optimizer(Instrument):
         if plot_name=='': 
             plot_name='optimizer_'+name            
                
-        self.get_control_f=get_control_f
-        self.set_control_f=set_control_f
-        self.get_value_f=get_value_f
-        self.get_norm_f=get_norm_f
+        self._get_control_f=get_control_f
+        self._set_control_f=set_control_f
+        self._get_value_f=get_value_f
+        self._get_norm_f=get_norm_f
         
         ins_pars  = {'max_control'      :   {'type':types.FloatType,'val':0.0,'flags':Instrument.FLAG_GETSET},
                     'min_control'       :   {'type':types.FloatType,'val':0.0,'flags':Instrument.FLAG_GETSET},
@@ -66,10 +66,10 @@ class simple_optimizer(Instrument):
             
     def scan(self):
           
-        initial_setpoint = self.get_control_f()
-        scan_min = max(self.min_control,initial_setpoint - self.scan_range/2.)
-        scan_max = min(self.max_control,initial_setpoint + self.scan_range/2.)
-        steps=int((scan_max - scan_min) / self.control_step_size)
+        initial_setpoint = self._get_control_f()
+        scan_min = max(self._min_control,initial_setpoint - self._scan_range/2.)
+        scan_max = min(self._max_control,initial_setpoint + self._scan_range/2.)
+        steps=int((scan_max - scan_min) / self._control_step_size)
         print initial_setpoint,scan_min,scan_max, steps
         udrange=np.append(np.linspace(initial_setpoint,scan_min,int(steps/2.)),
                 np.linspace(scan_min, scan_max, steps))
@@ -77,17 +77,18 @@ class simple_optimizer(Instrument):
         values=np.zeros(len(udrange))
         true_udrange=np.zeros(len(udrange))
         for i,sp in enumerate(udrange):
-            self.set_control_f(sp)
-            qt.msleep(self.dwell_time)
-            true_udrange[i]=self.get_control_f()
+            #print 'sp',sp
+            self._set_control_f(sp)
+            qt.msleep(self._dwell_time)
+            true_udrange[i]=self._get_control_f()
             values[i]=self.get_value()
             
-        valid_i=np.where(values>self.min_value)
+        valid_i=np.where(values>self._min_value)
         
         if self.get_do_plot():
-            p=plt.plot(name=self.plot_name)
+            p=plt.plot(name=self._plot_name)
             p.clear()
-            plt.plot(true_udrange[valid_i],values[valid_i],'O',name=self.plot_name)
+            plt.plot(true_udrange[valid_i],values[valid_i],'O',name=self._plot_name)
         
         return (true_udrange[valid_i],values[valid_i])
     
@@ -102,13 +103,13 @@ class simple_optimizer(Instrument):
             maxy=np.max(y)
             self.set_last_max(maxy)
             if maxy>1.1*value_before:
-                print self.get_name(),'setting new control (old,new,delta): {:.2f},{:.2f},{:.2f}'.format(self.get_control_f(),maxx,self.get_control_f()-maxx)
-                self.set_control_f(maxx)
+                print self.get_name(),'setting new control (old,new,delta): {:.2f},{:.2f},{:.2f}'.format(self._get_control_f(),maxx,self._get_control_f()-maxx)
+                self._set_control_f(maxx)
             
     def get_value(self):
-        v1,n1=self.get_value_f(),self.get_norm_f()
-        qt.msleep(self.dwell_time)
-        v2,n2=self.get_value_f(),self.get_norm_f()
+        v1,n1=self._get_value_f(),self._get_norm_f()
+        qt.msleep(self._dwell_time)
+        v2,n2=self._get_value_f(),self._get_norm_f()
         if (n2-n1)!=0:
             return float((v2-v1))/(n2-n1)
         else:
