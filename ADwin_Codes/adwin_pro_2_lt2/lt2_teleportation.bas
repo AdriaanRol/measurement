@@ -288,6 +288,10 @@ EVENT:
             cr_after_teleportation = 0
           ENDIF
                   
+          IF (cr_counts < max_CR_hist_bins)THEN
+            INC(DATA_24[cr_counts+1]) 'make histogram for all attempts
+          ENDIF      
+          
           IF (cr_counts < current_cr_threshold) THEN
             mode = 0
             inc(par_71)
