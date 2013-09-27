@@ -1,5 +1,5 @@
 """
-LT2 script for calibration
+LT2 script for decoupling
 """
 import numpy as np
 import qt
@@ -15,7 +15,7 @@ reload(funcs)
 from measurement.scripts.teleportation import sequence 
 reload(sequence)
 
-name = 'sil5'
+name = 'sil4'
 
 
 def prepare(m):

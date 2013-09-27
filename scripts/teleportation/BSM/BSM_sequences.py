@@ -18,21 +18,19 @@ def prepare(m, yellow = False):
     m.params.from_dict(qt.cfgman.get('protocols/'+SIL_NAME+'-default/AdwinSSRO+MBI'))
 
     m.params.from_dict(qt.cfgman.get('protocols/'+SIL_NAME+'-default/pulses'))
-
-    m.params.from_dict(qt.cfgman.get('protocols/'+SIL_NAME+'-default/BSM'))
     
+    m.params.from_dict(qt.cfgman.get('protocols/'+SIL_NAME+'-default/BSM'))
+
     if yellow:
         ssro.AdwinSSRO.repump_aom = qt.instruments['YellowAOM']
         m.params['repump_duration']=m.params['yellow_repump_duration']
         m.params['repump_amplitude']=m.params['yellow_repump_amplitude']
         m.params['CR_repump']=m.params['yellow_CR_repump']
-        m.params['repump_after_repetitions']=m.params['yellow_repump_after_repetitions']
     else:
         ssro.AdwinSSRO.repump_aom = qt.instruments['GreenAOM']
         m.params['repump_duration']=m.params['green_repump_duration']
         m.params['repump_amplitude']=m.params['green_repump_amplitude']
         m.params['CR_repump']=m.params['green_CR_repump']
-        m.params['repump_after_repetitions']=m.params['green_repump_after_repetitions']
 
     # m.params['MW_pulse_mod_risetime'] = 2e-9
 
@@ -90,31 +88,31 @@ class BSMMsmt(pulsar_msmt.MBI):
             length = self.params['selective_pi_duration'])
 
         # reasonably fast pi and pi/2 pulses
-        self.pi_4MHz = pulselib.MW_IQmod_pulse('4MHz pi',
+        self.fast_pi = pulselib.MW_IQmod_pulse('fast pi',
             I_channel = 'MW_Imod', 
             Q_channel = 'MW_Qmod',
             PM_channel = 'MW_pulsemod',
             PM_risetime = self.params['MW_pulse_mod_risetime'],
-            frequency = self.params['4MHz_pi_mod_frq'],
-            amplitude = self.params['4MHz_pi_amp'],
-            length = self.params['4MHz_pi_duration'])
+            frequency = self.params['fast_pi_mod_frq'],
+            amplitude = self.params['fast_pi_amp'],
+            length = self.params['fast_pi_duration'])
 
-        self.pi2_4MHz = pulselib.MW_IQmod_pulse('4MHz pi2',
+        self.fast_pi2 = pulselib.MW_IQmod_pulse('fast pi2',
             I_channel = 'MW_Imod', 
             Q_channel = 'MW_Qmod',
             PM_channel = 'MW_pulsemod',
             PM_risetime = self.params['MW_pulse_mod_risetime'],
-            frequency = self.params['4MHz_pi2_mod_frq'],
-            amplitude = self.params['4MHz_pi2_amp'],
-            length = self.params['4MHz_pi2_duration'])
+            frequency = self.params['fast_pi2_mod_frq'],
+            amplitude = self.params['fast_pi2_amp'],
+            length = self.params['fast_pi2_duration'])
 
         # shelving pi-pulse to bring electron to ms=-1 after mbi
         self.shelving_pulse = pulselib.MW_IQmod_pulse('MBI shelving pulse',
             I_channel = 'MW_Imod', Q_channel = 'MW_Qmod',
             PM_channel = 'MW_pulsemod',
             frequency = self.params['AWG_MBI_MW_pulse_mod_frq'],
-            amplitude = self.params['AWG_shelving_pulse_amp'],
-            length = self.params['AWG_shelving_pulse_duration'],
+            amplitude = self.params['fast_pi_amp'],
+            length = self.params['fast_pi_duration'],
             PM_risetime = self.params['MW_pulse_mod_risetime'])
 
         # CORPSE pi pulse
@@ -139,6 +137,7 @@ class BSMMsmt(pulsar_msmt.MBI):
             amplitude = self.params['pi2pi_mIm1_amp'],
             length = self.params['pi2pi_mIm1_duration'])
 
+        """
         self.pi2pi_0 = pulselib.MW_IQmod_pulse('pi2pi pulse mI=0',
             I_channel = 'MW_Imod',
             Q_channel = 'MW_Qmod',
@@ -157,6 +156,7 @@ class BSMMsmt(pulsar_msmt.MBI):
             amplitude = self.params['pi2pi_mIp1_amp'],
             length = self.params['pi2pi_mIp1_duration'])
 
+        """
         ### nuclear spin manipulation pulses
         self.TN = pulse.SquarePulse(channel='RF',
             length = 100e-9, amplitude = 0)
@@ -178,14 +178,14 @@ class BSMMsmt(pulsar_msmt.MBI):
             amplitude = self.params['N_pi2_amp'])
 
         ### synchronizing, etc
-        self.adwin_sync = pulse.SquarePulse(channel='adwin_sync',
+        self.adwin_lt1_trigger_pulse = pulse.SquarePulse(channel='adwin_sync',
             length = 10e-6, amplitude = 2)
 
         ### useful elements
         self.mbi_elt = self._MBI_element()
 
         self.sync_elt = element.Element('adwin_sync', pulsar=qt.pulsar)
-        self.sync_elt.append(self.adwin_sync)
+        self.sync_elt.append(self.adwin_lt1_trigger_pulse)
 
         self.N_RO_CNOT_elt = element.Element('N-RO CNOT', pulsar=qt.pulsar)
         self.N_RO_CNOT_elt.append(pulse.cp(self.T,
@@ -539,7 +539,7 @@ class TheRealBSM(ENReadoutMsmt):
         no_second_N_pulse = kw.pop('no_second_N_pulse', False)
 
         # to make sure that the zero-time of the element
-        # is zero-time on the IQ channels
+        # is zero-time on the IQ channels (and not of the N pulse due to delays)
         start_buffer = kw.pop('start_buffer', 200e-9)
 
         # verbosity: if verbose, print info about all phases and lengths
@@ -547,6 +547,9 @@ class TheRealBSM(ENReadoutMsmt):
 
         CORPSE_pi_phase_shift = kw.pop('CORPSE_pi_phase_shift',
             self.params['CORPSE_pi_phase_shift'])
+
+        # optionally add time at the beginning, (for the N init to start at the spin echo)
+        begin_offset_time = kw.pop('begin_offset_time', 0)
 
         # optionally add/omit time at the end, which might facilitate
         # timing calculations for the next element. for the start this
@@ -557,6 +560,8 @@ class TheRealBSM(ENReadoutMsmt):
         elt = element.Element(name, pulsar=qt.pulsar,
             global_time = True, time_offset = time_offset)
         
+        delay0_name = elt.append(pulse.cp(self.TIQ,
+            length = begin_offset_time))
         delay1_name = elt.append(pulse.cp(self.TIQ, 
             length = evolution_time))
         
@@ -843,7 +848,7 @@ class TheRealBSM(ENReadoutMsmt):
         prep_elt = element.Element('UNROT-prep', pulsar=qt.pulsar,
             global_time = True)
         prep_elt.append(self.T)
-        prep_elt.append(pulse.cp(self.pi_4MHz,
+        prep_elt.append(pulse.cp(self.fast_pi,
             amplitude=1.))
         prep_elt.append(pulse.cp(self.T, length=200e-9))
 
@@ -1120,7 +1125,7 @@ class TheRealBSM(ENReadoutMsmt):
         e_pi2_elt.append(pulse.cp(self.TIQ, 
             length = 800e-9))
 
-        e_pi2_elt.append(self.pi2_4MHz)
+        e_pi2_elt.append(self.fast_pi2)
 
         e_pi2_elt.append(pulse.cp(self.TIQ, 
             length = 200e-9))
@@ -1128,10 +1133,10 @@ class TheRealBSM(ENReadoutMsmt):
         
         UNROT_N_init = self.UNROT_element('N_init',
             self.N_pi2, 
-            self.params['pi2_evolution_time']-self.pi2_4MHz.length/2 -200E-9, 
+            self.params['pi2_evolution_time']-self.fast_pi2.length/2 -200E-9, 
             #Above time: to start time at centre pi/2, and to subtract waiting time after pi/2
             e_pi2_elt.length(), 
-            end_offset_time = self.pi2_4MHz.length/2 + 200e-9 - 240e-9)
+            end_offset_time = self.fast_pi2.length/2 + 200e-9 - 240e-9)
             #end_offset time: to get 'pi2_evolution_time', 
             #and compensate for CNOT time in next element 
         
@@ -1139,7 +1144,8 @@ class TheRealBSM(ENReadoutMsmt):
             
             CNOT, UNROT_H = self.BSM_elements('{}'.format(i), 
                 time_offset = e_pi2_elt.length()+UNROT_N_init.length(),
-                H_phase = self.params['H_phases'][i])
+                H_phase = self.params['H_phases'][i], 
+                evolution_time = self.params['H_evolution_times'][i])
             
             self.flattened_elements.append(e_pi2_elt)
             self.flattened_elements.append(UNROT_N_init)
@@ -1229,13 +1235,13 @@ class TheRealBSM(ENReadoutMsmt):
         first_pi2_elt = element.Element('first pi2', pulsar=qt.pulsar,
             global_time = True)
         first_pi2_elt.append(pulse.cp(self.T, length=1e-6))
-        first_pi2_name = first_pi2_elt.append(self.pi2_4MHz)
+        first_pi2_name = first_pi2_elt.append(self.fast_pi2)
         first_pi2_elt.append(pulse.cp(self.TIQ, length=100e-9))
 
         self.flattened_elements.append(first_pi2_elt)
 
         # phase reference for the UNROT element
-        # e_ref_phase = phaseref(self.pi2_4MHz.frequency,
+        # e_ref_phase = phaseref(self.fast_pi2.frequency,
         #     first_pi2_elt.length() - \
         #     first_pi2_elt.effective_pulse_start_time(first_pi2_name,'MW_Imod'))
 
@@ -1259,7 +1265,7 @@ class TheRealBSM(ENReadoutMsmt):
             first_pi2_elt.effective_pulse_end_time(first_pi2_name, 'MW_Imod')
 
         # the phase...
-        # pi2_phase = phaseref(self.pi2_4MHz.frequency,
+        # pi2_phase = phaseref(self.fast_pi2.frequency,
         #     first_pi2_elt.length() - \
         #         first_pi2_elt.effective_pulse_start_time(first_pi2_name,'MW_Imod') + \
         #         2*etime + t_pi2)
@@ -1269,7 +1275,7 @@ class TheRealBSM(ENReadoutMsmt):
             global_time = True, 
             time_offset = e.length()+first_pi2_elt.length())        
         second_pi2_elt.append(pulse.cp(self.TIQ, length=t_pi2))
-        second_pi2_elt.append(self.pi2_4MHz)
+        second_pi2_elt.append(self.fast_pi2)
 
         self.flattened_elements.append(second_pi2_elt)
         self.flattened_elements.append(self.N_RO_CNOT_elt)
@@ -1304,9 +1310,9 @@ class TheRealBSM(ENReadoutMsmt):
         prep_elt.append(self.T)
         
         if eigenstate == '-1':
-            prep_elt.append(self.pi_4MHz)
+            prep_elt.append(self.fast_pi)
         else:
-            prep_elt.append(pulse.cp(self.pi_4MHz,
+            prep_elt.append(pulse.cp(self.fast_pi,
                 amplitude = 0.))
 
         self.flattened_elements.append(self.mbi_elt)
@@ -1427,7 +1433,7 @@ def bsm_test_BS_ZZ_correlations():
     finish(m, debug=False, upload=True)
 
 def bsm_calibrate_CORPSE_pi_phase_shift():
-    m = TheRealBSM('CalibrateCORPSEPiPhase_154us')
+    m = TheRealBSM('CalibrateCORPSEPiPhase_51us')
     prepare(m)
 
     pts = 9
@@ -1452,7 +1458,7 @@ def bsm_calibrate_UNROT_X_timing(name):
     m.params['pts'] = pts
     m.params['reps_per_ROsequence'] = 500
 
-    m.params['evolution_times'] = 191e-6 + np.linspace(-400e-9,400e-9,pts)
+    m.params['evolution_times'] = 50.9e-6 + np.linspace(-400e-9,400e-9,pts)
     m.calibrate_UNROT_X_timing(eigenstate='-1')
 
     # for the autoanalysis
@@ -1672,8 +1678,8 @@ def bsm_test_BSM_superposition_in(name):
     m.params['pts'] = pts
     m.params['reps_per_ROsequence'] = 1000
 
-    m.params['pi2_evolution_time'] = 51.070e-6 #calibrated value
-    m.params['H_evolution_time'] = 51.070e-6 #139.995e-6 + 194e-9#calibrated value + correction (234 deg).
+    m.params['pi2_evolution_time'] = 51.089e-6 #calibrated value
+    m.params['H_evolution_times'] = np.ones(pts)*51.089e-6 #139.995e-6 + 194e-9#calibrated value + correction (234 deg).
     m.params['H_phases'] = np.linspace(0,720,pts) 
 
     m.params['sweep_name'] = 'CORPSE-UNROT-H phase'

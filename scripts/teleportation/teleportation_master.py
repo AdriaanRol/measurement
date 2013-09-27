@@ -540,7 +540,7 @@ def _lt2_dummy_element(msmnt):
     A 1us empty element we can use to replace 'real' elements for certain modes.
     """
     e = element.Element('Dummy', pulsar = qt.pulsar)
-    e.append(pulse.cp(msmnt.T_pulse, length=1e-6))
+    e.append(pulse.cp(msmnt.T, length=1e-6))
     return e
 
 def _lt2_LDE_element(msmnt, **kw):
@@ -635,6 +635,7 @@ class TeleportationSlave:
         self.params_lt2 = m2.MeasurementParameters('LT2Parameters')
 
         self.awg = qt.instruments['AWG_lt1']
+        self.pulsar_lt1 = qt.pulsar_remote
 
     def load_settings(self):
         for k in tparams.params.parameters:
@@ -664,13 +665,14 @@ class TeleportationSlave:
     def lt1_sequence(self):
         self.lt1_seq = pulsar.Sequence('TeleportationLT1')
 
-        N_pol_decision_element = _lt1_N_polarization_decision_element(self)
-        N_pol_element = _lt1_N_pol_element(self)
-        start_LDE_element = _lt1_start_LDE_element(self)
-        LDE_element = _lt1_LDE_element(self)
-        BSM_element = _lt1_BSM_element(self)
-        dummy_element = _lt1_dummy_element(self)
-        adwin_lt1_trigger_element = _lt1_adwin_LT1_trigger_element(self)
+        N_pol_decision_element = tseq._lt1_N_polarization_decision_element(self)
+        N_pol_element = tseq._lt1_N_pol_element(self)
+        start_LDE_element = tseq._lt1_start_LDE_element(self)
+        LDE_element = tseq._lt1_LDE_element(self)
+        dummy_element = tseq._lt1_dummy_element(self)
+        adwin_lt1_trigger_element = tseq._lt1_adwin_LT1_trigger_element(self)
+        N_init_element, BSM_CNOT_elt, BSM_UNROT_elt = tseq._lt1_N_init_and_BSM_for_teleportation(self)
+        N_RO_CNOT_elt = tseq._lt1_N_RO_CNOT_elt(self)
 
         self.lt1_seq.append(name = 'N_pol_decision',
             wfname = N_pol_decision_element.name,
@@ -692,20 +694,42 @@ class TeleportationSlave:
 
         self.lt1_seq.append(name = 'LDE_LT1',
             wfname = (LDE_element.name if DO_LDE_SEQUENCE else dummy_element.name),
-            # jump_target = 'BSM',
+            jump_target = 'N_init',
             repetitions = self.params['LDE_attempts_before_CR'])
 
         self.lt1_seq.append(name = 'LDE_timeout',
             wfname = adwin_lt1_trigger_element.name,
             goto_target = 'N_pol_decision')
 
+        self.lt1_seq.append(name = 'N_init', 
+            wfname = N_init_element.name)
+
+        self.lt1_seq.append(name = 'BSM_CNOT',
+            wfname = BSM_CNOT_elt.name)
+
+        self.lt1_seq.append(name = 'BSM_H_UNROT',
+            wfname = BSM_UNROT_elt.name)
+
+        self.lt1_seq.append(name = 'sync_before_first_ro', 
+            wfname = adwin_lt1_trigger_element.name)
+
+        self.lt1_seq.append(name = 'N_RO_CNOT',
+            trigger_wait = True,
+            wfname = N_RO_CNOT_elt.name)
+
+        self.lt1_seq.append(name = 'sync_before_second_ro', 
+            wfname = adwin_lt1_trigger_element.name, 
+            goto_target = 'N_pol_decision')
 
         elements = []
         elements.append(N_pol_decision_element)
         elements.append(adwin_lt1_trigger_element)
         elements.append(start_LDE_element)
-        elements.append(dummy_element)
-        
+        elements.append(N_init_element)
+        elements.append(BSM_CNOT_elt)
+        elements.append(BSM_UNROT_elt)
+        elements.append(N_RO_CNOT_elt)
+
         if DO_POLARIZE_N:
             elements.append(N_pol_element)
         
@@ -732,116 +756,7 @@ class TeleportationSlave:
         if not awg_ready: 
             raise Exception('AWG not ready')
 
-#************************ Sequence elements LT1   ******************************
-def _lt1_N_polarization_decision_element(msmnt):
-    """
-    This is just an empty element that needs to be long enough for the
-    adwin to decide whether we need to do CR (then it times out) or
-    jump to the LDE sequence.
-    """
 
-    e = element.Element('N_pol_decision', pulsar = qt.pulsar_remote)
-    e.append(pulse.cp(msmnt.T_pulse, length=10e-6))
-
-    return e
-
-def _lt1_N_pol_element(msmnt):
-    """
-    This is the element we will run to polarize the nuclear spin after each CR
-    checking.
-    """
-    e = element.Element('N_pol', pulsar = qt.pulsar_remote)
-
-    # TODO not yet implemented
-    e.append(pulse.cp(msmnt.T_pulse, length=1e-6))
-
-    return e
-
-def _lt1_start_LDE_element(msmnt):
-    """
-    This element triggers the LDE sequence on LT2.
-    """
-    e = element.Element('start_LDE', pulsar = qt.pulsar_remote)
-    e.append(pulse.cp(msmnt.AWG_LT2_trigger_pulse, 
-        length = 1e-6,
-        amplitude = 0))
-    e.append(msmnt.AWG_LT2_trigger_pulse)
-
-    return e
-
-def _lt1_LDE_element(msmnt):
-    """
-    This element contains the LDE part for LT1, i.e., spin pumping and MW pulses
-    for the LT1 NV in the real experiment.
-    """
-    e = element.Element('LDE_LT1', pulsar = qt.pulsar_remote, global_time = True)
-
-    # this pulse to ensure that the element has equal length as the lt2 element
-    e.add(pulse.cp(msmnt.SP_pulse,
-            amplitude = 0,
-            length = msmnt.params['LDE_element_length']))
-    #
-    #1 SP
-    e.add(pulse.cp(msmnt.SP_pulse,
-            amplitude = 0, 
-            length = msmnt.params_lt1['initial_delay']), 
-            name = 'initial_delay')
-    e.add(pulse.cp(msmnt.SP_pulse, 
-            length = msmnt.params['LDE_SP_duration'], 
-            amplitude = 1.0),
-            name = 'spinpumping',
-            refpulse = 'initial_delay')
-
-
-    #2 MW pi/2
-    if LDE_DO_MW:
-        e.add(msmnt.pi2_pulse, name = 'mw_pi2_pulse', 
-                start = msmnt.params_lt1['MW_wait_after_sp'],
-                refpulse = 'spinpumping', refpoint = 'end', refpoint_new = 'start')
-
-    #3 MW pi
-    if LDE_DO_MW:
-        e.add(msmnt.pi_pulse, name = 'mw_pi_pulse',
-                start = msmnt.params_lt1['MW_separation'],
-                refpulse = 'mw_pi2_pulse', refpoint = 'end', refpoint_new = 'start')
-        
-    # e.add(pulse.cp(msmnt.TIQ_pulse, duration = msmnt.params_lt1['finaldelay']))
-    
-    # need some waiting pulse on IQ here to be certain to operate on spin echo after
-
-    return e
-
-def _lt1_adwin_LT1_trigger_element(msmnt):
-    """
-    sends a trigger to Adwin LT1 to notify we go back to CR.
-    """
-    e = element.Element('adwin_LT1_trigger', pulsar = qt.pulsar_remote)
-    e.append(msmnt.adwin_lt1_trigger_pulse)
-    return e
-
-def _lt1_BSM_element(msmnt):
-    """
-    this element contains the BSM element. (Easiest way: only one element, then there's less
-        chance for error when we don't need all the triggers -- however, then we need
-        the timing to be correctly calibrated!)
-    """
-    e = element.Element('BSM', pulsar = qt.pulsar_remote, global_time = True)
-
-    # TODO not yet implemented
-    e.append(pulse.cp(msmnt.T_pulse, length=1e-6))
-
-    return e
-
-def _lt1_dummy_element(msmnt):
-    """
-    This is a dummy element. It contains nothing. 
-    It replaces the LDE element if we do not want to do LDE.
-    """
-    e = element.Element('dummy', pulsar = qt.pulsar_remote, global_time = True)
-    
-    e.append(pulse.cp(msmnt.T_pulse, length=1e-6))
-
-    return e
 
 ### CONSTANTS AND FLAGS
 YELLOW = True              # whether to use yellow on lt2

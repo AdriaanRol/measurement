@@ -3,15 +3,18 @@ import numpy as np
 
 from measurement.lib.measurement2.adwin_ssro import ssro, pulsar_mbi_espin
 
+
+SAMPLE_CFG = cfg['protocols']['current']
+
 def prepare(m):
-    m.params.from_dict(qt.cfgman.get('protocols/AdwinSSRO'))
-    m.params.from_dict(qt.cfgman.get('protocols/sil9-default/AdwinSSRO'))
-    m.params.from_dict(qt.cfgman.get('protocols/sil9-default/AdwinSSRO-integrated'))
+    m.params.from_dict(qt.cfgman['protocols']['AdwinSSRO'])
+    m.params.from_dict(qt.cfgman['protocols'][SAMPLE_CFG]['AdwinSSRO'])
+    m.params.from_dict(qt.cfgman['protocols'][SAMPLE_CFG]['AdwinSSRO-integrated'])
 
-    m.params.from_dict(qt.cfgman.get('protocols/AdwinSSRO+MBI'))
-    m.params.from_dict(qt.cfgman.get('protocols/sil9-default/AdwinSSRO+MBI'))
+    m.params.from_dict(qt.cfgman['protocols']['AdwinSSRO+MBI'])
+    m.params.from_dict(qt.cfgman['protocols'][SAMPLE_CFG]['AdwinSSRO+MBI'])
 
-    m.params.from_dict(qt.cfgman.get('protocols/sil9-default/pulses'))
+    m.params.from_dict(qt.cfgman['protocols'][SAMPLE_CFG]['pulses'])
 
     ssro.AdwinSSRO.repump_aom = qt.instruments['GreenAOM']
     m.params['repump_duration'] = m.params['green_repump_duration']

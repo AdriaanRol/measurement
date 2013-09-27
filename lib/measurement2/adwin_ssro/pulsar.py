@@ -2,6 +2,7 @@ import msvcrt
 import numpy as np
 import qt
 import hdf5_data as h5
+import logging
 
 import measurement.lib.config.adwins as adwins_cfg
 import measurement.lib.measurement2.measurement as m2
@@ -267,13 +268,13 @@ class MBI(PulsarMeasurement):
                 self.adwin_process_params[key] = self.params[key]
             except:
                 logging.error("Cannot set adwin process variable '%s'" \
-                        % key)
+                    % key)
                 return False
         
         self.adwin_process_params['Ex_CR_voltage'] = \
                 self.E_aom.power_to_voltage(
                         self.params['Ex_CR_amplitude'])
-        
+
         self.adwin_process_params['A_CR_voltage'] = \
                 self.A_aom.power_to_voltage(
                         self.params['A_CR_amplitude'])

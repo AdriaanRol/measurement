@@ -32,11 +32,11 @@ def darkesr(name, yellow = False):
         m.params['repump_after_repetitions']=m.params['green_repump_after_repetitions']
 
     m.params['mw_frq'] = 2.8e9
-    m.params['ssbmod_frq_start'] = 26.5e6 - 4e6
-    m.params['ssbmod_frq_stop'] = 26.5e6 + 4e6
+    m.params['ssbmod_frq_start'] = 22e6 
+    m.params['ssbmod_frq_stop'] = 31e6 
     m.params['pts'] = 161
     m.params['mw_power'] = 20
-    m.params['pulse_length'] = 2.3e-6
+    m.params['pulse_length'] = 3e-6
     m.params['repetitions'] = 1000
     m.params['ssbmod_amplitude'] = 0.01
     m.params['MW_pulse_mod_risetime'] = 10e-9

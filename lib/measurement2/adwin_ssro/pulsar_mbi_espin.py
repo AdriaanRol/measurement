@@ -58,6 +58,68 @@ class ElectronRabi(pulsar_msmt.MBI):
             qt.pulsar.upload(mbi_elt, *elts)
         qt.pulsar.program_sequence(seq)
 
+
+class ElectronRamsey(pulsar_msmt.MBI):
+    mprefix = 'PulsarMBIElectronRamsey'
+
+    def generate_sequence(self, upload=True):
+        # MBI element
+        mbi_elt = self._MBI_element()
+
+        # electron manipulation pulses
+        T = pulse.SquarePulse(channel='MW_pulsemod',
+            length = 10e-9, amplitude = 0)
+
+        X = pulselib.MW_IQmod_pulse('MW pulse',
+            I_channel = 'MW_Imod', 
+            Q_channel = 'MW_Qmod',
+            PM_channel = 'MW_pulsemod',
+            PM_risetime = self.params['MW_pulse_mod_risetime'])
+
+        adwin_sync = pulse.SquarePulse(channel='adwin_sync',
+            length = 10e-6, amplitude = 2)
+
+        # electron manipulation elements
+        elts = []
+        for i in range(self.params['pts']):
+            e = element.Element('ERamsey_pt-%d' % i, pulsar=qt.pulsar,
+                global_time = True)
+            e.append(T)
+        
+            e.append(
+                pulse.cp(X,
+                    frequency = self.params['MW_pulse_mod_frqs'][i],
+                    amplitude = self.params['MW_pulse_amps'][i],
+                    length = self.params['MW_pulse_durations'][i],
+                    phase = self.params['MW_pulse_1_phases'][i]))
+
+            e.append(
+                pulse.cp(T, length=self.params['MW_pulse_delays'][i]))
+
+            e.append(
+                pulse.cp(X, 
+                    frequency = self.params['MW_pulse_mod_frqs'][i],
+                    amplitude = self.params['MW_pulse_amps'][i],
+                    length = self.params['MW_pulse_durations'][i],
+                    phase = self.params['MW_pulse_2_phases'][i]))
+
+            e.append(adwin_sync)
+            elts.append(e)
+
+        # sequence
+        seq = pulsar.Sequence('MBI Electron Rabi sequence')
+        for i,e in enumerate(elts):
+            seq.append(name = 'MBI-%d' % i, wfname = mbi_elt.name, 
+                trigger_wait = True, goto_target = 'MBI-%d' % i, 
+                jump_target = e.name)
+            seq.append(name = e.name, wfname = e.name, 
+                trigger_wait = True)
+
+        # program AWG
+        if upload:
+            qt.pulsar.upload(mbi_elt, *elts)
+        qt.pulsar.program_sequence(seq)
+
 class ElectronRabiSplitMultElements(pulsar_msmt.MBI):
     mprefix = 'PulsarMBIElectronRabi'
 

@@ -18,11 +18,11 @@ def ssrocalibration(name, yellow=False):
           
     # parameters
     m.params['SSRO_repetitions'] = 5000
-    m.params['A_CR_amplitude'] = 10e-9 #5e-9
-    m.params['E_CR_amplitude'] = 5e-9 #5e-9
+    m.params['A_CR_amplitude'] = 12e-9 #5e-9
+    m.params['E_CR_amplitude'] = 3e-9 #5e-9
     
-    m.params['green_repump_amplitude'] = 100e-6
-    m.params['green_repump_duration'] = 50
+    m.params['green_repump_amplitude'] = 200e-6
+    m.params['green_repump_duration'] = 10
     m.params['yellow_repump_amplitude'] = 50e-9
     m.params['yellow_repump_duration'] = 500
 
@@ -36,7 +36,7 @@ def ssrocalibration(name, yellow=False):
         m.params['repump_amplitude']=m.params['yellow_repump_amplitude']
         m.params['CR_repump']=1
     else:
-        ssro.AdwinSSRO.repump_aom = qt.instruments['GreenAOM_lt1']
+        ssro.AdwinSSRO.repump_aom = qt.instruments['GreenAOM']
         m.params['repump_duration']=m.params['green_repump_duration']
         m.params['repump_amplitude']=m.params['green_repump_amplitude']
 
@@ -44,7 +44,7 @@ def ssrocalibration(name, yellow=False):
     m.params['SP_duration'] = 250
     m.params['A_SP_amplitude'] = 10e-9#10e-9
     m.params['Ex_SP_amplitude'] = 0.
-    m.params['Ex_RO_amplitude'] = 5e-9 #10e-9
+    m.params['Ex_RO_amplitude'] = 6e-9 #10e-9
     
     # m.autoconfig()
     # m.setup()
@@ -55,8 +55,8 @@ def ssrocalibration(name, yellow=False):
     # ms = 1 calibration
     m.params['SP_duration'] = 250
     m.params['A_SP_amplitude'] = 0.
-    m.params['Ex_SP_amplitude'] = 5e-9 #10e-9
-    m.params['Ex_RO_amplitude'] = 5e-9 #10e-9
+    m.params['Ex_SP_amplitude'] = 10e-9 #10e-9
+    m.params['Ex_RO_amplitude'] = 6e-9 #10e-9
 
     m.run()
     m.save('ms1')
