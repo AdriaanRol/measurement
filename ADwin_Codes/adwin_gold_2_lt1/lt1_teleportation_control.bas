@@ -41,23 +41,26 @@
 
 #DEFINE max_repetitions         10000          'the maximum number of datapoints taken
 #DEFINE max_red_hist_cts        100            ' dimension of photon counts histogram for red CR
-#DEFINE max_yellow_hist_cts     100            ' dimension of photon counts histogram for yellow Resonance check
+#DEFINE max_repump_hist_cts     100            ' dimension of photon counts histogram for repump hist
 #DEFINE max_statistics          15
+#DEFINE max_hist_CR_probe_time  500            '*1000 = 0.5 s is max time of CR probe time statistics
 
 ' parameters
 DIM DATA_20[40] AS LONG                   AT DRAM_EXTERN ' integer parameters
 DIM DATA_21[10] AS FLOAT                  AT DRAM_EXTERN ' float parameters
 DIM DATA_7[max_red_hist_cts] AS LONG      AT EM_LOCAL ' histogram of counts during 1st red CR after timed-out lde sequence
 DIM DATA_8[max_red_hist_cts] AS LONG      AT EM_LOCAL ' histogram of counts during red CR (all attempts)
-DIM DATA_9[max_yellow_hist_cts] AS LONG   AT EM_LOCAL ' histogram of counts during 1st yellow CR after timed-out lde sequence
-DIM DATA_10[max_yellow_hist_cts] AS LONG  AT EM_LOCAL ' histogram of counts during yellow CR (all attempts)
-DIM DATA_23[max_repetitions] AS LONG      AT EM_LOCAL 'CR counts after teleportation
-DIM DATA_24[max_repetitions] AS LONG      AT EM_LOCAL 'BSM SSRO 1 (electron) results
-DIM DATA_25[max_repetitions] AS LONG      AT EM_LOCAL 'PLU Bell states
-DIM DATA_26[max_repetitions] AS LONG      AT EM_LOCAL 'BSM SSRO2 (nitrogen) results
+DIM DATA_9[max_repump_hist_cts] AS LONG   AT EM_LOCAL ' histogram of counts during 1st repump after timed-out lde sequence
+DIM DATA_10[max_repump_hist_cts] AS LONG  AT EM_LOCAL ' histogram of counts during repump (all attempts)
+DIM DATA_23[max_repetitions] AS LONG      AT DRAM_EXTERN 'CR counts after teleportation
+DIM DATA_24[max_repetitions] AS LONG      AT DRAM_EXTERN 'BSM SSRO 1 (electron) results
+DIM DATA_25[max_repetitions] AS LONG      AT DRAM_EXTERN 'PLU Bell states
+DIM DATA_26[max_repetitions] AS LONG      AT DRAM_EXTERN 'BSM SSRO2 (nitrogen) results
 DIM DATA_27[max_repetitions] AS LONG      AT EM_LOCAL    'CR check counts before teleportation event
-DIM DATA_28[max_statistics] AS LONG       AT PM_LOCAL    'statistics on entering modes
+DIM DATA_28[max_statistics] AS LONG       AT EM_LOCAL    'statistics on entering modes
 DIM DATA_29[max_repetitions] AS LONG      AT EM_LOCAL    ' CR timer before LDE element of teleportation event
+DIM DATA_30[max_hist_CR_probe_time] AS LONG AT EM_LOCAL  ' CR probe time statistics before LDE sequence
+DIM DATA_31[max_hist_CR_probe_time] AS LONG AT EM_LOCAL  ' CR probe time lt2 statistics before LDE sequence
 
 ' general variables
 DIM i               AS LONG ' counter for array initalization
@@ -67,6 +70,9 @@ DIM timer           AS LONG
 DIM CR_timer        AS LONG
 DIM wait_time       AS LONG
 DIM CR_probe_timer  AS LONG
+DIM CR_probe_time   AS LONG
+DIM CR_timer_lt2    AS LONG
+DIM CR_time_lt2      as LONG
 
 'tuning
 DIM tune_duration AS LONG
@@ -199,7 +205,7 @@ INIT:
     DATA_8[i] = 0
   next i
     
-  for i=1 to max_yellow_hist_cts
+  for i=1 to max_repump_hist_cts
     DATA_9[i] = 0
     DATA_10[i] = 0
   next i
@@ -212,11 +218,16 @@ INIT:
     DATA_27[i] = 0    'CR check counts before event
     DATA_29[i] = 0    'CR timer before LDE element of teleportation event
   next i
-    
+     
   for i=1 to max_statistics
     DATA_28[i] = 0    'statistics
   next i     
-    
+  
+  for i=1 to max_hist_CR_probe_time
+    DATA_30[i] = 0   'lt1 CR probe timer
+    DATA_31[i] = 0   'lt2 CR probe timer
+  next i
+      
   ' init variables
   counter                       = DATA_20[1]
   repump_aom_channel            = DATA_20[2]
@@ -291,6 +302,7 @@ INIT:
 
       
   ' prepare hardware 
+  par_58 = 0
   par_59 = 0                      'tune (1 is tuning, 0 is running)
   
   par_60 = 0                      'debug par used for measuring timer
@@ -304,7 +316,7 @@ INIT:
   Par_67 = 0                      ' cumulative counts during RO2 (LT1)
   Par_70 = 0                      ' cumulative counts during red CR check (LT1)
   Par_76 = 0                      ' cumulative counts during yellow repumping (LT1)
-  par_71 = 0                      ' CR below threshold events (LT1)
+  par_71 = 0                      ' cumulative number of repumps
   par_72 = 0                      ' number of red CR checks performed (LT1)
   par_73 = 0                      ' number of CR OK signals from LT2
   par_74 = 0                      ' number of start CR triggers to LT2
@@ -312,7 +324,7 @@ INIT:
   Par_68 = cr_threshold_probe
   par_77 = 0                      ' number of successful attempts
   par_78 = 0                      ' number of LDE sequence starts
-  par_79 = 0                      ' number of timed out LDE sequences
+  par_79 = 0                      ' CR below threshold events (LT1)
   par_80 = 0                      ' cumulative counts during RO1 (LT1)
   
   ADwin_LT2_di_channel_in_bit = 2^ADwin_LT2_di_channel 
@@ -364,7 +376,8 @@ EVENT:
   cr_threshold_prepare = par_75
   cr_threshold_probe = Par_68
   cr_repump = Par_69
-   
+  
+  par_61 = CR_probe_timer
   par_64 = mode
   par_65 = timer
   par_62 = remote_mode
@@ -400,6 +413,7 @@ EVENT:
         DIGOUT(ADwin_LT2_trigger_do_channel, 0)
         remote_mode = 2
         INC(par_73)
+        CR_timer_lt2 = 0
       ENDIF
       
     case 2 'remote CR OK, waiting
@@ -480,6 +494,7 @@ EVENT:
           CNT_CLEAR(1111b)     'clear counter    
           CNT_ENABLE(1111b)    'enable counter       
           DAC(repump_aom_channel, 3277*repump_voltage+32768)
+          inc(par_71)
         ELSE
           mode = 2
           timer = -1
@@ -494,7 +509,7 @@ EVENT:
           Par_76 = Par_76 + current_repump_counts
           DAC(repump_AOM_channel, 3277*repump_off_voltage+32768)
                           
-          IF (current_repump_counts < max_yellow_hist_cts) THEN      'make histograms
+          IF (current_repump_counts < max_repump_hist_cts) THEN      'make histograms
             
             IF (first_cr_probe_after_unsuccessful_lde > 0) THEN
               INC(DATA_9[current_repump_counts+1])
@@ -541,6 +556,7 @@ EVENT:
           ENDIF
                             
           IF (current_red_cr_check_counts < max_red_hist_cts) THEN      'make histograms
+            ' FIXME -- else into last bin 
             
             IF (first_cr_probe_after_unsuccessful_lde > 0) THEN
               INC(DATA_7[current_red_cr_check_counts+1]) 'make histogram for only after unsuccessful lde
@@ -548,9 +564,14 @@ EVENT:
             
             INC(DATA_8[current_red_cr_check_counts+1]) 'make histogram for all attempts
           ENDIF
-                            
+          
+          IF (cr_probe_timer > CR_probe_max_time) THEN
+            current_cr_threshold = CR_threshold_prepare
+            cr_probe_timer = 0
+          ENDIF
+                                      
           IF (current_red_cr_check_counts < current_cr_threshold) THEN
-            INC(par_71)     'CR below threshold events
+            INC(par_79)     'CR below threshold events
             mode = 1
             timer = -1
           ELSE
@@ -563,14 +584,7 @@ EVENT:
             else
               mode = 3
             endif
-            
-            IF (cr_probe_timer > CR_probe_max_time) THEN
-              current_cr_threshold = CR_threshold_prepare
-              cr_probe_timer = 0
-            ELSE
-              current_cr_threshold = cr_threshold_probe
-            ENDIF
-            
+                        
             timer = -1  
           ENDIF
         
@@ -606,7 +620,14 @@ EVENT:
         else      
           mode = 5
           wait_time = 5 ' we need to make sure that the AWG is receptive for triggering now!
-          DATA_29[tele_event_id + 1] = CR_probe_timer   ' save CR timer just before LDE sequence -> put to after LDE later?   
+          DATA_29[tele_event_id + 1] = CR_probe_timer   ' save CR timer just before LDE sequence -> put to after LDE later?
+                    
+          CR_time_lt2 = Min_long(CR_timer_lt2/1000, max_hist_CR_probe_time-1)+1
+          INC(DATA_31[CR_time_lt2])
+          
+          CR_probe_time = Min_long(CR_probe_timer/1000, max_hist_CR_probe_time-1)+1
+          INC(DATA_30[CR_probe_time])
+          
         endif        
         timer = -1
       ENDIF      
@@ -631,6 +652,8 @@ EVENT:
         AWG_LT1_in_is_high = DIGIN(AWG_LT1_di_channel)
              
         IF ((AWG_LT1_in_was_high = 0) AND (AWG_LT1_in_is_high > 0)) THEN
+
+          first_cr_probe_after_unsuccessful_lde = 1
           mode = 0
           timer = -1
           remote_mode = 0
@@ -647,6 +670,7 @@ EVENT:
   '          
   INC(timer)
   Inc(CR_probe_timer)
+  Inc(CR_timer_lt2)
   DEC(CR_timer)
   if (CR_timer < 0) then
     CR_timer = 0

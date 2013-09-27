@@ -315,6 +315,8 @@ class Sequence:
 
         self.elements = []
 
+        self.djump_table = None
+
     def _make_element_spec(self, name, wfname, repetitions, goto_target, 
             jump_target, trigger_wait):
         
@@ -352,6 +354,11 @@ class Sequence:
 
     def element_index(self, name, start_idx=1):
         names = [self.elements[i]['name'] for i in range(len(self.elements))]
-        return names.index(name)+start_idx
+        return names.index(name)+start_idx 
+
+    def add_djump_address(self, name, pattern):
+
+
+        return True
 
 

@@ -16,6 +16,9 @@ opt1d_counts_lt1 = qt.instruments.create('opt1d_counts_lt1',
         mos='master_of_space_lt1', counters='counters_lt1')
 optimiz0r_lt1 = qt.instruments.create('optimiz0r_lt1', 'optimiz0r',opt1d_ins=
         opt1d_counts_lt1, mos_ins = master_of_space_lt1, dimension_set='lt1')
+c_optimiz0r_lt1 = qt.instruments.create('c_optimiz0r_lt1', 'convex_optimiz0r', 
+        adwin_ins=adwin_lt1, mos_ins=master_of_space_lt1)
+
 
 def _do_remote_connect_lt1():
     global powermeter_lt1, SMB100_lt1, PMServo_lt1, ZPLServo_lt1, ivvi_lt1, AWG_lt1

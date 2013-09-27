@@ -45,7 +45,7 @@ params_lt2['Adwin_lt1_di_channel'] = 17
 params_lt2['AWG_lt2_di_channel'] = 16
 params_lt2['repump_off_voltage'] = 0.0
 params_lt2['Ey_off_voltage'] = 0.0
-params_lt2['A_off_voltage'] = -0.15
+params_lt2['A_off_voltage'] = -0.09
 params_lt2['freq_AOM_DAC_channel'] = 4
 
 
