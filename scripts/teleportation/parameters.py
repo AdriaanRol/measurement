@@ -82,7 +82,7 @@ params_lt2['CR_probe_max_time'] = 500000 # us = 0.5 s
 ### SSRO, CR, SP Laser powers
 params_lt1['Ey_CR_amplitude'] = 5e-9
 params_lt1['FT_CR_amplitude'] = 13e-9               
-params_lt1['Ey_SP_amplitude'] = 10e-9               
+params_lt1['Ey_SP_amplitude'] = 0e-9               
 params_lt1['FT_SP_amplitude'] = 10e-9 
 params_lt1['Ey_RO_amplitude'] = 7e-9  
 params_lt1['FT_RO_amplitude'] = 0
@@ -96,25 +96,69 @@ params_lt2['Ey_RO_amplitude'] = 10e-9
 params_lt2['A_RO_amplitude'] = 0
 params_lt2['repump_amplitude'] = 50e-9 #yellow
 
-### pulses and MW stuff
-params_lt1['ms-1_cntr_frq'] = 2.827e9 
-params_lt1['mw_frq'] = 2.8e9
-params_lt1['mw_power'] = 20
-params_lt1['MW_pulse_mod_risetime'] = 10e-9
-params_lt1['mi-1_mod_frq'] = params_lt1['ms-1_cntr_frq'] - params_lt1['mw_frq']
+####################
+### pulses and MW stuff LT1
+#####################
+## general
+f_msm1_cntr_lt1 = 2.826526e9
+N_frq_lt1 = 7.13377e6
+N_HF_frq_lt1 = 2.19290e6
+mw0_lt1= 2.8e9
+f0_lt1 = f_msm1_cntr_lt1 - mw0_lt1
+finit_lt1 = f0_lt1 - N_HF_frq_lt1
 
+params_lt1['ms-1_cntr_frq'] = f_msm1_cntr_lt1
+params_lt1['N_0-1_splitting_ms-1'] = N_frq_lt1
+params_lt1['N_HF_frq'] = N_HF_frq_lt1
+params_lt1['mw_frq'] = mw0_lt1
+params_lt1['mw_power'] = 20
+params_lt1['mI-1_mod_frq'] = finit_lt1
+params_lt1['MW_pulse_mod_risetime'] = 10e-9
+params_lt1['AWG_MBI_MW_pulse_mod_frq'] = finit_lt1
+
+## pulses
+params_lt1['fast_pi_mod_frq'] = finit_lt1
+params_lt1['fast_pi_amp'] = 0.823
+params_lt1['fast_pi_duration'] = 62e-9
+
+# fast pi/2 pulse
+params_lt1['fast_pi2_mod_frq'] = finit_lt1
+params_lt1['fast_pi2_amp'] = 0.820
+params_lt1['fast_pi2_duration'] = 33e-9
+
+# slow pi  pulse
+params_lt1['selective_pi_mod_frq'] = finit_lt1
+params_lt1['selective_pi_amp'] =  0.011
+params_lt1['selective_pi_duration'] = 2439e-9
+
+CORPSE_frq_lt1 = 5e6
+params_lt1['CORPSE_pi_mod_frq'] = finit_lt1 + N_HF_frq_lt1/2.
+params_lt1['CORPSE_pi_60_duration'] = 1./CORPSE_frq_lt1/6.
+params_lt1['CORPSE_pi_m300_duration'] = 5./CORPSE_frq_lt1/6.
+params_lt1['CORPSE_pi_420_duration'] = 7./CORPSE_frq_lt1/6.
+params_lt1['CORPSE_pi_amp'] = 0.363
+params_lt1['CORPSE_pi_phase_shift'] = 104.
+params_lt1['CORPSE_pi_center_shift'] = 0.e-9
+
+params_lt1['pi2pi_mIm1_mod_frq'] = finit_lt1
+params_lt1['pi2pi_mIm1_amp'] = 0.083
+params_lt1['pi2pi_mIm1_duration'] = 396e-9
+
+params_lt1['N_pi_duration'] = 47.3e-6
+params_lt1['N_pi_amp'] = 1.
+
+params_lt1['N_pi2_duration'] = 47.3e-6/2
+params_lt1['N_pi2_amp'] =1.
+
+####################
+### pulses and MW stuff LT1
+#####################
+## general
 params_lt2['mw_frq'] = 2.8e9
 params_lt2['mw_power'] = 20
 params_lt2['MW_pulse_mod_risetime'] = 10e-9
 
-#the LDE sequence pi and pi/2 pulse on mI=-1
-params_lt1['MW_pi_mod_frq'] = params_lt1['mi-1_mod_frq']
-params_lt1['MW_pi_amplitude'] = 0.9
-params_lt1['MW_pi_length'] = 500e-9
 
-params_lt1['MW_pi2_mod_frq'] = params_lt1['mi-1_mod_frq']
-params_lt1['MW_pi2_amplitude'] = 0.9
-params_lt1['MW_pi2_length'] = 500e-9
 
 ## Hannes: i just copied these corpse parameters from msmt_params in setup
 CORPSE_frq = 8.035e6
@@ -184,3 +228,41 @@ params_lt1['do_remote'] = 1
 params_lt1['do_N_polarization'] = 1
 
 params_lt2['teleportation_repetitions'] = -1
+
+
+
+########
+## parameters (for now) only used in calibration scripts
+########
+params['nr_of_ROsequences'] = 1 # this is the standard
+params_lt1['MBI_duration'] = 4
+params_lt1['MBI_steps'] =1
+params_lt1['MBI_threshold'] =1 
+params_lt1['Ex_MBI_amplitude'] = 5e-9
+
+params_lt1['repump_after_MBI_amplitude'] = 5e-9
+params_lt1['repump_after_MBI_duration'] = 10
+params_lt1['repump_after_E_RO_duration'] = 5e-9
+params_lt1['repump_after_E_RO_amplitude']  = 25e-9
+params_lt1['Ex_CR_amplitude'] = params_lt1['Ey_CR_amplitude']
+params_lt1['A_CR_amplitude'] = params_lt1['FT_CR_amplitude']
+params_lt1['Ex_SP_amplitude'] = params_lt1['Ey_SP_amplitude']
+
+params_lt1['A_off_voltage'] = params_lt1['FT_off_voltage']
+params_lt1['Ex_off_voltage'] = params_lt1['Ey_off_voltage']
+
+params_lt1['SP_E_duration'] = 100
+
+
+params_lt1['cycle_duration'] = 300
+params_lt1['repump_after_repetitions'] = 1 #could remove this altogether from adwin...
+params_lt1['AWG_done_DI_channel'] = params_lt1['AWG_lt1_di_channel']
+params_lt1['AWG_event_jump_DO_channel'] = params_lt1['AWG_lt1_event_do_channel']
+params_lt1['AWG_start_DO_channel'] = params_lt1['AWG_lt1_trigger_do_channel'] 
+
+params_lt1['CR_preselect'] = params_lt1['CR_threshold_preselect']
+params_lt1['CR_probe'] = params_lt1['CR_threshold_probe']
+
+
+params_lt1['wait_after_RO_pulse_duration'] = 3
+params_lt1['wait_after_pulse_duration'] = 3

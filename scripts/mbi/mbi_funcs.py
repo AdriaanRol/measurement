@@ -4,7 +4,7 @@ import numpy as np
 from measurement.lib.measurement2.adwin_ssro import ssro, pulsar_mbi_espin
 
 def prepare(m, sil_name, yellow = False):
-    m.params.from_dict(qt.cfgman.get('samples/hans-sil4'))
+    m.params.from_dict(qt.cfgman.get('samples/'+sil_name))
     m.params.from_dict(qt.cfgman.get('protocols/AdwinSSRO'))
     m.params.from_dict(qt.cfgman.get('protocols/'+sil_name+'-default/AdwinSSRO'))
     m.params.from_dict(qt.cfgman.get('protocols/'+sil_name+'-default/AdwinSSRO-integrated'))

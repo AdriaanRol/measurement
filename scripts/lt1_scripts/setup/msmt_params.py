@@ -3,6 +3,11 @@ import qt
 cfg = qt.cfgman
 
 
+cfg['samples']['current'] = 'hans-sil4'
+cfg['protocols']['current'] = 'hans-sil4-default'
+
+print 'updating msmt params for {}'.format(cfg['samples']['current'])
+
 ##############################################################################
 ##############################################################################
 ### Protocols
@@ -43,8 +48,8 @@ cfg = qt.cfgman
 
 branch='samples/hans-sil4/'
 
-f_msm1_cntr = 2.82650e9
-N_frq = 7.13429e6
+f_msm1_cntr = 2.826526e9
+N_frq = 7.13377e6
 N_HF_frq = 2.19290e6
 cfg.set(branch+'ms-1_cntr_frq', f_msm1_cntr)
 cfg.set(branch+'N_0-1_splitting_ms-1', N_frq)
@@ -306,15 +311,15 @@ cfg.set('protocols/hans-sil7-default/AdwinSSRO-integrated/SSRO_duration', 50)
 ##############################################################################
 
 branch='protocols/hans-sil4-default/AdwinSSRO/'  
-cfg.set(branch+        'A_CR_amplitude',            5e-9)
+cfg.set(branch+        'A_CR_amplitude',            12e-9)
 cfg.set(branch+        'A_RO_amplitude',            0.)
 cfg.set(branch+        'A_SP_amplitude',            10e-9)
 cfg.set(branch+        'CR_duration',               50)
 cfg.set(branch+        'CR_preselect',              1000)
 cfg.set(branch+        'CR_probe',                  10)
 cfg.set(branch+        'CR_repump',                 1000)
-cfg.set(branch+        'Ex_CR_amplitude',           5e-9)
-cfg.set(branch+        'Ex_RO_amplitude',           5e-9)
+cfg.set(branch+        'Ex_CR_amplitude',           3e-9)
+cfg.set(branch+        'Ex_RO_amplitude',           6e-9)
 cfg.set(branch+        'Ex_SP_amplitude',           0.)
 cfg.set(branch+        'SP_duration',               250)
 cfg.set(branch+        'SP_filter_duration',        0)
@@ -335,7 +340,7 @@ branch='protocols/hans-sil4-default/AdwinSSRO+MBI/'
 cfg.set(branch+        'mw_frq',                        mw0)
 cfg.set(branch+        'mw_power',                      20)
 cfg.set(branch+        'Ex_MBI_amplitude',              5e-9)
-cfg.set(branch+        'Ex_SP_amplitude',               5e-9)
+cfg.set(branch+        'Ex_SP_amplitude',               10e-9)
 cfg.set(branch+        'MBI_duration',                  4)
 cfg.set(branch+        'MBI_steps',                     1)
 cfg.set(branch+        'MBI_threshold',                 1)
@@ -349,13 +354,20 @@ cfg.set(branch+        'repump_after_E_RO_amplitude',   5e-9)
 cfg.set(branch+        'AWG_wait_duration_before_MBI_MW_pulse',     50e-9)
 cfg.set(branch+        'AWG_wait_for_adwin_MBI_duration',           15e-6)
 
+### BSM
+cfg.set('protocols/hans-sil4-default/BSM/N_ref_frq', N_frq)
+cfg.set('protocols/hans-sil4-default/BSM/e_ref_frq', finit)
+cfg.set('protocols/hans-sil4-default/BSM/pi2_evolution_time', 51.089e-6)
+cfg.set('protocols/hans-sil4-default/BSM/H_evolution_time', 50.746e-6)
+cfg.set('protocols/hans-sil4-default/BSM/H_phase', 46)
+
 ##############################################################################
 ### HANS/4 --- Pulses
 ##############################################################################
 
 branch='protocols/hans-sil4-default/pulses/'
 
-cfg.set(branch+        'selective_pi_duration',     2500e-9)
+cfg.set(branch+        'selective_pi_duration',     2439e-9)
 cfg.set(branch+        'selective_pi_amp',          0.011)
 cfg.set(branch+        'selective_pi_mod_frq',      finit)
 cfg.set(branch+        'AWG_MBI_MW_pulse_mod_frq',  
@@ -368,33 +380,31 @@ cfg.set(branch+        'AWG_MBI_MW_pulse_duration',
     cfg.get(branch+        'selective_pi_duration'))
 
 cfg.set(branch+        'fast_pi_duration',         62e-9)
-cfg.set(branch+        'fast_pi_amp',              0.831)
+cfg.set(branch+        'fast_pi_amp',              0.823)
 cfg.set(branch+        'fast_pi_mod_frq',          finit)
 
 cfg.set(branch+        'fast_pi2_duration',         33e-9)
-cfg.set(branch+        'fast_pi2_amp',              0.831)
+cfg.set(branch+        'fast_pi2_amp',              0.820)
 cfg.set(branch+        'fast_pi2_mod_frq',          finit)
 
 ### CNOTs
-cfg.set(branch+        'pi2pi_mIm1_duration',        395e-9)
-cfg.set(branch+        'pi2pi_mIm1_amp',             0.0827)
+cfg.set(branch+        'pi2pi_mIm1_duration',        396e-9)
+cfg.set(branch+        'pi2pi_mIm1_amp',             0.083)
 cfg.set(branch+        'pi2pi_mIm1_mod_frq',         finit)
 
 ### CORPSE used in the BSM
-# CORPSE_frq = 8.071e6
-# cfg.set(branch+        'CORPSE_pi_60_duration',     1./CORPSE_frq/6.)
-# cfg.set(branch+        'CORPSE_pi_m300_duration',   5./CORPSE_frq/6.)
-# cfg.set(branch+        'CORPSE_pi_420_duration',    7./CORPSE_frq/6.)
-# cfg.set(branch+        'CORPSE_pi_mod_frq',         finit + Nsplit/2.)
+CORPSE_frq = 5e6
+cfg.set(branch+        'CORPSE_pi_60_duration',     1./CORPSE_frq/6.)
+cfg.set(branch+        'CORPSE_pi_m300_duration',   5./CORPSE_frq/6.)
+cfg.set(branch+        'CORPSE_pi_420_duration',    7./CORPSE_frq/6.)
+cfg.set(branch+        'CORPSE_pi_mod_frq',         finit + Nsplit/2.)
+cfg.set(branch+        'CORPSE_pi_amp',             0.363)
 
 # ### TODO
-# cfg.set(branch+        'CORPSE_pi_amp',             0.703)
+cfg.set(branch+        'CORPSE_pi_phase_shift',     104.0)
 
 # ### TODO
-# cfg.set(branch+        'CORPSE_pi_phase_shift',     74.0)
-
-# ### TODO
-# cfg.set(branch+        'CORPSE_pi_center_shift',    13e-9)
+cfg.set(branch+        'CORPSE_pi_center_shift',    0.e-9)
 
 ### CORPSE for the full ms=-1 manifold, driven in the center 
 ### (resonant with mI = 0)
@@ -403,13 +413,24 @@ cfg.set(branch+        'msm1_CORPSE_pi_60_duration',     1./CORPSE_frq/6.)
 cfg.set(branch+        'msm1_CORPSE_pi_m300_duration',   5./CORPSE_frq/6.)
 cfg.set(branch+        'msm1_CORPSE_pi_420_duration',    7./CORPSE_frq/6.)
 cfg.set(branch+        'msm1_CORPSE_pi_mod_frq',         f_msm1_cntr - mw0)
-cfg.set(branch+        'msm1_CORPSE_pi_amp',             0.770)
+cfg.set(branch+        'msm1_CORPSE_pi_amp',             0.782)
 
 cfg.set(branch+        'msm1_CORPSE_pi2_24p3_duration',     24.3/CORPSE_frq/360.)
 cfg.set(branch+        'msm1_CORPSE_pi2_m318p6_duration',   318.6/CORPSE_frq/360.)
 cfg.set(branch+        'msm1_CORPSE_pi2_384p3_duration',    384.3/CORPSE_frq/360.)
 cfg.set(branch+        'msm1_CORPSE_pi2_mod_frq',           f_msm1_cntr - mw0)
-cfg.set(branch+        'msm1_CORPSE_pi2_amp',               0.639) ###not calibrated
+cfg.set(branch+        'msm1_CORPSE_pi2_amp',               0.818) ###not calibrated
+
+cfg.set(branch+        'first_C_revival',                   50.90e-6)
+
+### Nitrogen pulses
+cfg.set(branch+        'N_pi_duration', 47.3e-6)
+cfg.set(branch+        'N_pi_amp', 1)
+
+cfg.set(branch+        'N_pi2_duration', 47.3e-6/2.)
+cfg.set(branch+        'N_pi2_amp', 1)
+
+
 
 ##############################################################################
 ##############################################################################

@@ -123,8 +123,6 @@ class IQ_CORPSE_pi_pulse(MW_IQmod_pulse):
             if not self.phaselock:
                 tvals = tvals.copy() - tvals[idx0]
 
-                print self.name, tvals[0]
-
             if chan == self.I_channel:
                 wf[start_420:end_420] += self.amplitude * np.cos(2 * np.pi * \
                     (self.frequency * tvals[start_420:end_420] + self.phase/360.))

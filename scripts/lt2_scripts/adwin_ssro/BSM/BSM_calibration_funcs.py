@@ -210,17 +210,17 @@ def cal_hard_pi(name, mult=1):
 ### master function
 def run_calibrations(stage):
     if stage == 1:        
-        cal_slow_pi(name)
+        #cal_slow_pi(name)
 
     if stage == 2:
-        cal_pi2pi_pi(name, mult=1)
+        #cal_pi2pi_pi(name, mult=1)
     
     if stage == 3:    
-        cal_4mhz_rabi(name)
+        #cal_4mhz_rabi(name)
         #cal_4mhz_pi(name, mult=11)
     
     if stage == 4:
-        cal_4mhz_pi2(name)
+        #cal_4mhz_pi2(name)
         #cal_CORPSE_pi(name)
         #cal_pi2pi_pi(name, mult=11)
         #cal_hard_pi(name, mult=15)

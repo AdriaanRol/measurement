@@ -139,6 +139,7 @@ def lt1_hans4_calibrate_msm1_pi(name='hans4_msm1_pi'):
 
     pts = 11
     CORPSE_frq = 8e6
+    m.params['CORPSE_pi_amp'] = m.params['msm1_CORPSE_pi_amp']
     m.params['CORPSE_pi_60_duration'] = 1./CORPSE_frq/6.
     m.params['CORPSE_pi_m300_duration'] = 5./CORPSE_frq/6.
     m.params['CORPSE_pi_420_duration'] = 7./CORPSE_frq/6.
@@ -165,9 +166,10 @@ def lt1_hans4_calibrate_msm1_pi2(name='hans4_msm1_pi'):
 
     pts = 11
     CORPSE_frq = 8e6
-    m.params['CORPSE_pi2_24p3_duration'] = 1./CORPSE_frq/6.
-    m.params['CORPSE_pi2_m318p6_duration'] = 5./CORPSE_frq/6.
-    m.params['CORPSE_pi2_384p3_duration'] = 7./CORPSE_frq/6.
+    m.params['CORPSE_pi2_amp'] = m.params['msm1_CORPSE_pi2_amp']
+    m.params['CORPSE_pi2_24p3_duration'] = 24.3/CORPSE_frq/360.
+    m.params['CORPSE_pi2_m318p6_duration'] = 318.6/CORPSE_frq/360.
+    m.params['CORPSE_pi2_384p3_duration'] = 384.3/CORPSE_frq/360.
     m.params['CORPSE_pi2_mod_frq'] = m.params['ms-1_cntr_frq'] - m.params['mw_frq']
 
     m.params['pts'] = pts
@@ -177,6 +179,7 @@ def lt1_hans4_calibrate_msm1_pi2(name='hans4_msm1_pi'):
     m.params['CORPSE_pi2_sweep_amps'] = np.linspace(0.65, 0.9, pts)
     m.params['multiplicity'] = 1
     m.params['delay_reps'] = 15
+    m.params['delay_element_length']=10e-9
 
     # for the autoanalysis
     m.params['sweep_name'] = 'CORPSE amplitude (V)'
@@ -186,6 +189,6 @@ def lt1_hans4_calibrate_msm1_pi2(name='hans4_msm1_pi'):
     funcs.finish(m, debug=False)
 
 if __name__ == '__main__':
-    # sweep_amplitude('sil9_test')
-    # lt1_hans4_calibrate_msm1_pi()
+    #sweep_amplitude('sil4_test')
+    #lt1_hans4_calibrate_msm1_pi()
     lt1_hans4_calibrate_msm1_pi2()

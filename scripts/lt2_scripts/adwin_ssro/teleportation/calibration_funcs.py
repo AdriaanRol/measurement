@@ -15,7 +15,7 @@ from measurement.scripts.lt2_scripts.adwin_ssro.teleportation.CORPSE_calibration
 from measurement.scripts.lt2_scripts.adwin_ssro import espin_funcs as funcs
 reload(funcs)
 
-name = 'sil5'
+name = 'hans-sil4'
 
 
 ### Calibration stage 1
