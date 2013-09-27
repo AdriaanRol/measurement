@@ -64,6 +64,7 @@ def pulse_defs_lt2(msmt):
 
     msmt.HH_sync = pulse.SquarePulse(channel = 'HH_sync', length = 50e-9, amplitude = 1.0)
     msmt.SP_pulse = pulse.SquarePulse(channel = 'AOM_Newfocus', amplitude = 1.0)
+    msmt.yellow_pulse = pulse.SquarePulse(channel = 'AOM_Yellow', amplitude = 1.0)
     msmt.plu_gate = pulse.SquarePulse(channel = 'plu_sync', amplitude = 1.0, 
                                     length = msmt.params_lt2['PLU_gate_duration'])
     
@@ -570,3 +571,4 @@ def _lt1_N_init_and_BSM_for_teleportation(msmt):
         time_offset = _lt1_LDE_element.length() + N_init_elt.length())
 
     return N_init_elt, BSM_elts[0], BSM_elts[1]
+

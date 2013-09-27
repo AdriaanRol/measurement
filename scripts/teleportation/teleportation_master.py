@@ -129,13 +129,7 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
         self.params_lt1['repump_voltage'] = \
                 self.repump_aom_lt1.power_to_voltage(
                         self.params_lt1['repump_amplitude'])
-
-        ### AWG voltages
-        self.params_lt1['SP_voltage_AWG'] = \
-                self.FT_aom_lt1.power_to_voltage(
-                        self.params_lt1['AWG_SP_power'], controller='sec')
-        qt.pulsar_remote.set_channel_opt('Velocity1AOM', 'high', self.params_lt1['SP_voltage_AWG'])
-        
+       
         self.params_lt2['Ey_laser_DAC_channel'] = self.adwins['adwin_lt2']['ins'].get_dac_channels()\
                 [self.Ey_aom_lt2.get_pri_channel()]
         self.params_lt2['A_laser_DAC_channel'] = self.adwins['adwin_lt2']['ins'].get_dac_channels()\
@@ -179,8 +173,13 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
         self.params_lt2['SP_voltage_AWG'] = \
                 self.A_aom_lt2.power_to_voltage(
                         self.params_lt2['AWG_SP_power'], controller='sec')
+        # add values from AWG calibrations
+        self.params_lt2['SP_voltage_AWG_yellow'] = \
+                self.A_aom_lt2.power_to_voltage(
+                        self.params_lt2['AWG_yellow_power'], controller='sec')
         
         qt.pulsar.set_channel_opt('AOM_Newfocus', 'high', self.params_lt2['SP_voltage_AWG'])
+        qt.pulsar.set_channel_opt('AOM_Yellow', 'high', self.params_lt2['SP_voltage_AWG_yellow'])
 
     def setup(self):
         """
@@ -388,7 +387,7 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
                 (0,), 'u8', maxshape=(None,))
             dset_hhchannel = self.h5data.create_dataset('HH_channel-{}'.format(rawdata_idx), 
                 (0,), 'u1', maxshape=(None,))
-            dset_hhspecial = wself.h5data.create_dataset('HH_special-{}'.format(rawdata_idx), 
+            dset_hhspecial = self.h5data.create_dataset('HH_special-{}'.format(rawdata_idx), 
                 (0,), 'u1', maxshape=(None,))
             dset_hhsynctime = self.h5data.create_dataset('HH_sync_time-{}'.format(rawdata_idx), 
                 (0,), 'u8', maxshape=(None,))
@@ -569,6 +568,12 @@ def _lt2_LDE_element(msmnt, **kw):
             length = msmnt.params['LDE_SP_duration'], 
             amplitude = 1.0), 
         name = 'spinpumping', 
+        refpulse = 'initial delay')
+
+    e.add(pulse.cp(msmnt.yellow_pulse, 
+            length = msmnt.params['LDE_SP_duration_yellow'], 
+            amplitude = 1.0), 
+        name = 'spinpumpingyellow', 
         refpulse = 'initial delay')
 
     
@@ -768,8 +773,8 @@ LDE_DO_MW = False         # if True, there will be MW in the LDE seq
 MAX_HHDATA_LEN = int(100e6)
 DO_OPT_RABI_AMP_SWEEP = False # if true, we sweep the rabi parameters instead of doing LDE; essentially this only affects the sequence we make
 HH_MIN_SYNC_TIME = 0 # 9 us
-HH_MAX_SYNC_TIME = 2e6 # 10.2 us
-OPT_PI_PULSES = 1
+HH_MAX_SYNC_TIME = 3e6 # 10.2 us
+OPT_PI_PULSES = 5
 
 
        
@@ -830,7 +835,13 @@ def start_msmt(m):
     m.setup()
     m.run()
 
-### measurements
+def finish_msmnt():
+    qt.instruments['AWG'].set_runmode('CONT')
+    qt.instruments['AWG_lt1'].set_runmode('CONT')
+    qt.instruments['AWG_lt1'].set_ch2_offset(0)
+
+###measurements
+
 def default_msmt(name):
     ### first start the slave
     ### TODO: make more like master if at some point more dynamic settings are needed
@@ -838,19 +849,20 @@ def default_msmt(name):
         setup_remote_sequence()
 
     # setup the master measurement
-    m = setup_msmt('testing_'+name)
+    m = setup_msmt('TPQI_'+name)
 
     m.params_lt1['max_CR_starts'] = -1
     m.params_lt1['teleportation_repetitions'] = -1
-    m.params['measurement_time'] = 77000 # seconds; only affects msmt with HH.
+    m.params['measurement_time'] = 60 * 30 # seconds; only affects msmt with HH.
 
     # pts = 11
     # m.params['opt_rabi_sweep_pts'] = pts
     # m.params['eom_pulse_amplitudes'] = np.linspace(0.5,1.5,pts)
 
     start_msmt(m)
+    finish_msmnt()
 
 if __name__ == '__main__':
-    default_msmt('debugging')
+    default_msmt('tails')
 
                                                                                                                                                                                                                                                                                           

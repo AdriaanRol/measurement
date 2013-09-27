@@ -833,6 +833,10 @@ config['adwin_lt2_processes'] = {
                 'par': {
                     'completed_reps' : 77,
                     'total_CR_counts': 70,
+                    'get_noof_cr_checks' : 72,
+                    'get_cr_below_threshold_events': 71,
+                    'repump_counts':76,
+                    'noof_repumps':66,
                     },
                 'data_long' : {
                     'CR_before' : 22, 
@@ -840,6 +844,7 @@ config['adwin_lt2_processes'] = {
                     'CR_hist'   : 24,
                     'SSRO_lt2_data' : 25,
                     'statistics'    : 26,
+                    'CR_probe_timer' : 28,
                     },
                 'data_float': {
                     'repump_freq_voltages'      : 19,
@@ -1383,7 +1388,8 @@ config['adwin_lt1_processes'] = {
                     'CR_preselect'  : 75,
                     'CR_probe'      : 68,
                     'completed_reps' : 77,
-                    'total_red_CR_counts' : 70,
+                    'noof_starts' : 78,
+
                     },
                 'data_long' : {
                     'CR_hist_time_out' : 7,
@@ -1396,6 +1402,7 @@ config['adwin_lt1_processes'] = {
                     'SSRO2_results' : 26,
                     'PLU_Bell_states' : 25,
                     'CR_before' : 27,
+                    'CR_probe_timer': 29,
                     },
                 },        
         }

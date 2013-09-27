@@ -8,7 +8,7 @@
 ' ADbasic_Version                = 5.0.8
 ' Optimize                       = Yes
 ' Optimize_Level                 = 1
-' Info_Last_Save                 = TUD277246  TUD277246\localadmin
+' Info_Last_Save                 = TUD276629  TUD276629\localadmin
 '<Header End>
 ' Teleportation master controller program. lt1 is in charge, lt2 is remote
 
@@ -295,7 +295,7 @@ INIT:
   
   par_60 = 0                      'debug par used for measuring timer
   par_62 = 0                      'debug: remote mode
-  par_63 = 0                      'debug: CR probe timer 
+  par_63 = CR_probe_max_time      'debug: CR probe timer 
   par_64 = 0                      'debug: mode
   par_65 = 0                      'debug: timer
   par_66 = 0                      'debug par
@@ -365,7 +365,6 @@ EVENT:
   cr_threshold_probe = Par_68
   cr_repump = Par_69
    
-  par_63 = CR_probe_timer
   par_64 = mode
   par_65 = timer
   par_62 = remote_mode

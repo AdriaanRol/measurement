@@ -30,14 +30,19 @@ class lt2_ssro_optimizer(multiple_optimizer):
         self.plot_name='lt2_ssro_optimizer_plot'
         
         self._ins_adwin=qt.instruments['adwin']
+        self._ins_adwin_lt1=qt.instruments['adwin_lt1']
+        self._ins_physical_adwin=qt.instruments['physical_adwin']
+        self._ins_ivvi=qt.instruments['ivvi']
 
         ##values
         self._get_value_f={
                 't'             :    time.time,
-                'cr_checks'     :    lambda: self._ins_adwin.get_singleshot_var('get_noof_cr_checks'),
-                'probe_cts'     :    lambda: self._ins_adwin.get_singleshot_var('get_cr_check_counts'),
-                'repumps'       :    lambda: self._ins_adwin.get_singleshot_var('get_cr_below_threshold_events'),
-                'starts'        :    lambda: self._ins_adwin.get_singleshot_var('get_noof_repetitions'),
+                'cr_checks'     :    lambda: self._ins_adwin.get_teleportation_var('get_noof_cr_checks'),
+                'probe_cts'     :    lambda: self._ins_adwin.get_teleportation_var('total_CR_counts'),
+                'repumps'       :    lambda: self._ins_adwin.get_teleportation_var('get_cr_below_threshold_events'),
+                'starts'        :    lambda: self._ins_adwin_lt1.get_teleportation_var('noof_starts'),
+                'noof_repumps'  :    lambda: self._ins_adwin.get_teleportation_var('noof_repumps'),
+                'repump_counts' :    lambda: self._ins_adwin.get_teleportation_var('repump_counts'),
                 }  
         self._values={}
         for key in self._get_value_f.keys():
@@ -45,7 +50,7 @@ class lt2_ssro_optimizer(multiple_optimizer):
         
         ##optimizers
         #pids
-        
+        """
         pid='pidnewfocus'
         pid_ins=qt.instruments[pid]
         self.add_optimizer(pid+'_optimizer',
@@ -64,25 +69,28 @@ class lt2_ssro_optimizer(multiple_optimizer):
                           get_norm_f= self._get_value_f['cr_checks'],
                           plot_name=self.plot_name)
         #self.create_stepper_buttons(pid)
-        
+        """
         self._optimize_yellow=optimize_yellow
         if self._optimize_yellow:
             pid='pidyellow'
             pid_ins_y=qt.instruments[pid]
-            self.add_optimizer(pid+'_optimizer',
-                              get_control_f=pid_ins_y.get_value,
-                              set_control_f=lambda x: pid_ins_y.set_setpoint(x),
-                              get_value_f= self._get_value_f['probe_cts'],
-                              get_norm_f= self._get_value_f['cr_checks'],
-                              plot_name=self.plot_name)
+            #self.add_optimizer(pid+'_optimizer',
+            #                  get_control_f=pid_ins_y.get_value,
+            #                  set_control_f=lambda x: self._ins_physical_adwin.Set_FPar(52,x),
+            #                  get_value_f= self._get_value_f['repump_counts'],
+            #                  get_norm_f= self._get_value_f['noof_repumps'],
+            #                  plot_name=self.plot_name)
             #self.create_stepper_buttons(pid)
+        
         #gate
-        #self.add_optimizer('gate_optimizer',
-        #                  get_control_f=lambda:self._ins_adwin.get_dac_voltage('gate'),
-        #                  set_conrol_f=lambda x: self._gate_scan_to_voltage(x),
-        #                  get_value_f=self._get_value_f['probe_cts'],
-        #                  plot_name=self.plot_name)
-                # override from config       
+        self.add_optimizer('gate_optimizer',
+                          get_control_f=self._ins_ivvi.get_dac2,
+                          set_control_f=lambda x: self._ins_ivvi.set_dac2(x),
+                          get_value_f=self._get_value_f['probe_cts'],
+                          get_norm_f= self._get_value_f['cr_checks'],
+                          plot_name=self.plot_name)
+        
+        # override from config       
         cfg_fn = os.path.join(qt.config['ins_cfg_path'], name+'.cfg')
         if not os.path.exists(cfg_fn):
             _f = open(cfg_fn, 'w')
@@ -151,7 +159,8 @@ class lt2_ssro_optimizer(multiple_optimizer):
         if ins_opt.get_last_max()>self.get_threshold_init:
             self.set_low_threshold()
         
-        self._last_optimizer=cur_optimizer
+        if not(len(self.get_optimizers())==1):
+            self._last_optimizer=cur_optimizer
         self.start_waiting(ins_opt.get_wait_time())
         return True
     
@@ -163,20 +172,21 @@ class lt2_ssro_optimizer(multiple_optimizer):
             return True
             
         d_vals=self._update_values()
-        print 'average cr:', float(d_vals['probe_cts'])/d_vals['cr_checks'], 'starts per sec:', d_vals['starts']/d_vals['t']
+
+        if (d_vals['cr_checks']/d_vals['t'])<self._cr_checks_min:
+            print 'too little cr checks:', d_vals['cr_checks']/d_vals['t']
+            return True
+
+        print 'average cr:', float(d_vals['probe_cts'])/(d_vals['cr_checks']), 'starts per sec:', d_vals['starts']/d_vals['t']
         
         if float(d_vals['probe_cts'])/d_vals['cr_checks'] > self.get_threshold_init():
             self.set_low_thresholds()
         
-        if (d_vals['cr_checks']/d_vals['t'])<self.cr_checks_min:
-            print 'too little cr checks:', d_vals['cr_checks']/d_vals['t']
-            return True
-        
-        if (d_vals['starts']/d_vals['t'])>self.starts_min:
+        if (d_vals['starts']/d_vals['t'])>self._starts_min:
             print 'enough starts:', d_vals['starts']/d_vals['t']
             return True
          
-        if (1-float(d_vals['repumps'])/d_vals['cr_checks'])>self.cr_succes_min:
+        if (1-float(d_vals['repumps'])/d_vals['cr_checks'])>self._cr_succes_min:
             print 'cr succes fraction high enough:', \
                     (1-d_vals['repumps']/d_vals['cr_checks'])
             return True
@@ -213,11 +223,13 @@ class lt2_ssro_optimizer(multiple_optimizer):
         return self._optimize(cur_optimizer)
         
     def set_high_threshold(self):
+        return
         #self._current_low_threshold_probe=self._ins_adwin.get_singleshot_var('set_CR_probe')
         #self._current_low_threshold_preselect=self._ins_adwin.get_singleshot_var('set_CR_preselect')
-        self._ins_adwin.set_singleshot_var(set_CR_probe=1000,set_CR_preselect=1000)
+        #self._ins_adwin.set_singleshot_var(set_CR_probe=1000,set_CR_preselect=1000)
      
     def set_low_threshold(self):
-        self._ins_adwin.set_singleshot_var(set_CR_probe=self.get_threshold_probe(),
-                                           set_CR_preselect=self.get_threshold_preselect())
+        return
+        #self._ins_adwin.set_singleshot_var(set_CR_probe=self.get_threshold_probe(),
+                     #                      set_CR_preselect=self.get_threshold_preselect())
         

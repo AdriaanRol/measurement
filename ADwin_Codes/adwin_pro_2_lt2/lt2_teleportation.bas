@@ -8,7 +8,7 @@
 ' ADbasic_Version                = 5.0.8
 ' Optimize                       = Yes
 ' Optimize_Level                 = 1
-' Info_Last_Save                 = TUD277246  TUD277246\localadmin
+' Info_Last_Save                 = TUD276629  TUD276629\localadmin
 '<Header End>
 ' this program implements the part of the teleportation protocol controlled by ADwin Pro II
 ' ADwin Gold II is in charge of the experiment.
@@ -229,9 +229,10 @@ EVENT:
     CASE 0' repump
             
       IF (timer = 0) THEN
-        inc(par_66)
+       
         
         IF (cr_counts < CR_repump)  THEN  'only repump when counts are lower than cr_repump threshold
+          inc(par_66)
           P2_CNT_CLEAR(CTR_MODULE,  counter_pattern)    'clear counter
           P2_CNT_ENABLE(CTR_MODULE, counter_pattern)    'turn on counter
           P2_DAC(DAC_MODULE, repump_laser_DAC_channel, 3277*repump_voltage+32768) ' turn on green
