@@ -686,8 +686,8 @@ class TeleportationSlave:
         LDE_element = tseq._lt1_LDE_element(self)
         dummy_element = tseq._lt1_dummy_element(self)
         adwin_lt1_trigger_element = tseq._lt1_adwin_LT1_trigger_element(self)
-        N_init_element, BSM_CNOT_elt, BSM_UNROT_elt = tseq._lt1_N_init_and_BSM_for_teleportation(self)
-        N_RO_CNOT_elt = tseq._lt1_N_RO_CNOT_elt(self)
+        # N_init_element, BSM_CNOT_elt, BSM_UNROT_elt = tseq._lt1_N_init_and_BSM_for_teleportation(self)
+        # N_RO_CNOT_elt = tseq._lt1_N_RO_CNOT_elt(self)
 
         self.lt1_seq.append(name = 'N_pol_decision',
             wfname = N_pol_decision_element.name,
@@ -716,34 +716,35 @@ class TeleportationSlave:
             wfname = adwin_lt1_trigger_element.name,
             goto_target = 'N_pol_decision')
 
-        self.lt1_seq.append(name = 'N_init', 
-            wfname = N_init_element.name)
 
-        self.lt1_seq.append(name = 'BSM_CNOT',
-            wfname = BSM_CNOT_elt.name)
+        # self.lt1_seq.append(name = 'N_init', 
+        #     wfname = N_init_element.name)
 
-        self.lt1_seq.append(name = 'BSM_H_UNROT',
-            wfname = BSM_UNROT_elt.name)
+        # self.lt1_seq.append(name = 'BSM_CNOT',
+        #     wfname = BSM_CNOT_elt.name)
 
-        self.lt1_seq.append(name = 'sync_before_first_ro', 
-            wfname = adwin_lt1_trigger_element.name)
+        # self.lt1_seq.append(name = 'BSM_H_UNROT',
+        #     wfname = BSM_UNROT_elt.name)
 
-        self.lt1_seq.append(name = 'N_RO_CNOT',
-            trigger_wait = True,
-            wfname = N_RO_CNOT_elt.name)
+        # self.lt1_seq.append(name = 'sync_before_first_ro', 
+        #     wfname = adwin_lt1_trigger_element.name)
 
-        self.lt1_seq.append(name = 'sync_before_second_ro', 
-            wfname = adwin_lt1_trigger_element.name, 
-            goto_target = 'N_pol_decision')
+        # self.lt1_seq.append(name = 'N_RO_CNOT',
+        #     trigger_wait = True,
+        #     wfname = N_RO_CNOT_elt.name)
+
+        # self.lt1_seq.append(name = 'sync_before_second_ro', 
+        #     wfname = adwin_lt1_trigger_element.name, 
+        #     goto_target = 'N_pol_decision')
 
         elements = []
         elements.append(N_pol_decision_element)
         elements.append(adwin_lt1_trigger_element)
         elements.append(start_LDE_element)
-        elements.append(N_init_element)
-        elements.append(BSM_CNOT_elt)
-        elements.append(BSM_UNROT_elt)
-        elements.append(N_RO_CNOT_elt)
+        # elements.append(N_init_element)
+        # elements.append(BSM_CNOT_elt)
+        # elements.append(BSM_UNROT_elt)
+        # elements.append(N_RO_CNOT_elt)
 
         if DO_POLARIZE_N:
             elements.append(N_pol_element)
