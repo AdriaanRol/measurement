@@ -24,6 +24,7 @@ class Pulsar:
     AWG = None
     AWG_type = 'regular' # other option at this point is 'opt09'
     clock = 1e9
+    event_jump_timing = 'SYNC' #async jumping: 'ASYN'
     channel_ids = ['ch1', 'ch1_marker1', 'ch1_marker2', 
         'ch2', 'ch2_marker1', 'ch2_marker2',
         'ch3', 'ch3_marker1', 'ch3_marker2', 
@@ -248,6 +249,7 @@ class Pulsar:
         # prepare the awg
         self.AWG.stop()
         self.AWG.set_runmode('SEQ')
+        self.AWG.set_event_jump_timing(self.event_jump_timing)
         self.setup_channels()
 
         # this clears all element properties so we're sure not to
@@ -291,6 +293,19 @@ class Pulsar:
 
         # turn on the channel output
         self.activate_channels(channels)
+
+        # setting jump modes and loading the djump table
+        if sequence.djump_table != None:
+            self.AWG.set_event_jump_mode('DJUM')
+            print 'AWG set to dynamical jump'
+
+            for i in sequence.djump_table.keys():
+                idx = sequence.element_index(i)
+                self.AWG.set_djump_def(sequence.djump_table[i], idx)
+
+        else:
+            self.AWG.set_event_jump_mode('EJUM')
+            print 'AWG set to event jump'
 
         if start:
             self.AWG.start()
@@ -356,9 +371,18 @@ class Sequence:
         names = [self.elements[i]['name'] for i in range(len(self.elements))]
         return names.index(name)+start_idx 
 
+    def set_djump(self, state):
+        if state==True:
+            #if program_sequence gets a djump_table it will set the AWG later to DJUM
+            self.djump_table = {}
+
+        if state==False:
+            self.djump_table = None
+        return True
+
     def add_djump_address(self, name, pattern):
-
-
+        #name should be the name of the element and pattern the bit address
+        self.djump_table[name] = pattern
         return True
 
 
