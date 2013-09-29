@@ -516,7 +516,7 @@ class Tektronix_AWG5014_09(Instrument):
        self._visainstrument.write('AWGC:EVEN:DJUM:DEF %s, %s' %(pattern, target))
 
     def get_djump_def(self, pattern):
-        return self._visainstrument.ask('AWGC:EVEN:DJUM:DEF? %s')
+        return self._visainstrument.ask('AWGC:EVEN:DJUM:DEF? %s' %(pattern))
 
     def set_event_jump_mode(self, mode):
        self._visainstrument.write('AWGC:EVEN:JMOD %s' %(mode))

@@ -282,6 +282,11 @@ EVENT:
               first = 0
             ENDIF
             
+            IF (cr_probe_timer > CR_probe_max_time) THEN
+              current_cr_threshold = CR_preselect
+              cr_probe_timer = 0
+            ENDIF
+            
             IF (cr_counts < current_cr_threshold) THEN
               mode = 0
               INC(CR_failed)
@@ -289,12 +294,6 @@ EVENT:
             ELSE
               mode = 2
               DATA_22[repetition_counter+1] = cr_counts  ' CR before next SSRO sequence
-              IF (cr_probe_timer>CR_probe_max_time) THEN
-                current_cr_threshold = CR_preselect
-                cr_probe_timer = 0
-              ELSE
-                current_cr_threshold = CR_probe
-              ENDIF
             ENDIF
             
             timer = -1

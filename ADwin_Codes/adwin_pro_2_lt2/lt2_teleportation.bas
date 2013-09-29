@@ -26,11 +26,14 @@
 #INCLUDE configuration.inc
 ' #Include Math.inc
 
-#DEFINE max_repetitions   20000
+#DEFINE max_repetitions   10000
 #DEFINE max_CR_hist_bins    100
 #DEFINE max_stat             10
 #DEFINE max_repump_duration 1000
+#DEFINE max_repump_hist_cts  100            ' dimension of photon counts histogram for repump hist 
 
+DIM DATA_9[max_repump_hist_cts] AS LONG   AT EM_LOCAL ' histogram of counts during 1st repump after timed-out lde sequence
+DIM DATA_10[max_repump_hist_cts] AS LONG  AT EM_LOCAL ' histogram of counts during repump (all attempts)
 DIM DATA_19[max_repump_duration] AS FLOAT AT EM_LOCAL 'repump freq_aom voltages
 DIM DATA_20[25] AS LONG                             ' integer parameters
 DIM DATA_21[15] AS FLOAT                            ' float parameters
@@ -41,6 +44,7 @@ DIM DATA_25[max_repetitions] AS LONG AT DRAM_EXTERN ' SSRO counts
 DIM DATA_26[max_stat] AS LONG AT EM_LOCAL           ' statistics
 DIM DATA_27[max_repump_duration] AS FLOAT AT EM_LOCAL 'repump counts
 DIM DATA_28[max_repetitions] AS LONG AT EM_LOCAL    ' CR probe timer values
+DIM DATA_29[max_CR_hist_bins] AS LONG AT EM_LOCAL   ' CR counts after a trigger from lt1 and not in tuning mode
 
 DIM counter_channel AS LONG
 DIM repump_laser_DAC_channel AS LONG
@@ -80,6 +84,8 @@ DIM counter_pattern AS LONG
 DIM counts, cr_counts, old_counts AS LONG
 DIM current_ssro_counts AS LONG
 DIM cr_after_teleportation AS LONG
+DIM cr_after_adwin_lt1_trigger AS LONG 'a flag to make a CR_hist_time_out equivalent
+DIM repump_after_adwin_lt1_trigger AS LONG 'a flag that make a repump_hist_time_out equivalent
 DIM time_start, time_stop AS LONG
 
 'DIM ADwin_switched_to_high AS LONG
@@ -135,7 +141,13 @@ INIT:
   
   FOR i = 1 TO max_CR_hist_bins
     DATA_24[i] = 0
+    DATA_29[i] = 0
   NEXT i
+  
+  for i=1 to max_repump_hist_cts
+    DATA_9[i] = 0
+    DATA_10[i] = 0
+  next i
 
   FOR i = 1 TO max_stat
     DATA_26[i] = 0
@@ -154,6 +166,8 @@ INIT:
   total_repump_counts     = 0
   tele_event_id           = 0
   cr_after_teleportation  = 0
+  cr_after_adwin_lt1_trigger = 0
+  repump_after_adwin_lt1_trigger = 0
   current_ssro_counts     = 0
   counts                  = 0
   cr_counts               = 0
@@ -184,17 +198,18 @@ INIT:
   FPar_77 = 0                     ' repump frequency resonance monitor fpar
   
   par_59 = 0                      ' tune (1 is tuning, 0 is running)
+  par_60 = 0                      ' debug par
   
   par_63 = CR_probe_max_time
   
   par_64 = 0                      ' current mode
   par_65 = 0                      ' timer value
-  par_66 = 0                      ' number of repumps
+  par_66 = 0                      ' below CR threshold events (LT2)
   par_67 = 0                      ' number of CR times CR failed.
   par_68 = CR_probe
   par_69 = CR_repump  
   PAR_70 = 0                      ' cumulative counts during red CR check (LT2)
-  PAR_71 = 0                      ' below CR threshold events (LT2)
+  PAR_71 = 0                      ' number of repumps
   PAR_72 = 0                      ' number of CR checks performed (LT2)
   PAR_73 = 0                      ' number of CR OK signals to ADwin LT1
   PAR_74 = 0                      ' number of start CR triggers from ADwin LT1
@@ -232,10 +247,10 @@ EVENT:
        
         
         IF (cr_counts < CR_repump)  THEN  'only repump when counts are lower than cr_repump threshold
-          inc(par_66)
+          inc(par_71)
           P2_CNT_CLEAR(CTR_MODULE,  counter_pattern)    'clear counter
           P2_CNT_ENABLE(CTR_MODULE, counter_pattern)    'turn on counter
-          P2_DAC(DAC_MODULE, repump_laser_DAC_channel, 3277*repump_voltage+32768) ' turn on green
+          P2_DAC(DAC_MODULE, repump_laser_DAC_channel, 3277*repump_voltage+32768) ' turn on repump
           old_counts = 0
           repump_freq_control_amp = -1.0*repump_freq_control_amp
         ELSE
@@ -247,11 +262,21 @@ EVENT:
       ELSE 
         
         IF (timer = repump_duration) THEN
-          P2_DAC(DAC_MODULE, repump_laser_DAC_channel, 3277*repump_off_voltage+32768) ' turn off green
+          P2_DAC(DAC_MODULE, repump_laser_DAC_channel, 3277*repump_off_voltage+32768) ' turn off repump
           counts = P2_CNT_READ(CTR_MODULE, counter_channel)
           P2_CNT_ENABLE(CTR_MODULE, 0)
           total_repump_counts = total_repump_counts + counts
           PAR_76 = total_repump_counts
+          
+          IF (counts < max_repump_hist_cts) THEN      'make histograms
+            IF ((par_59 = 0) AND (repump_after_adwin_lt1_trigger = 1)) THEN
+              INC(DATA_9[counts+1])
+              repump_after_adwin_lt1_trigger = 0
+              inc(par_60)
+            ENDIF
+            
+            INC(DATA_10[counts+1])
+          ENDIF
           
           mode = 1
           timer = -1
@@ -291,25 +316,26 @@ EVENT:
                   
           IF (cr_counts < max_CR_hist_bins)THEN
             INC(DATA_24[cr_counts+1]) 'make histogram for all attempts
+            
+            IF ((par_59 = 0) AND (cr_after_adwin_lt1_trigger = 1)) THEN
+              INC(DATA_29[cr_counts+1]) 'make histogram equivalent to CR_hist_time_out
+              cr_after_adwin_lt1_trigger = 0
+            ENDIF 
           ENDIF      
+         
+          IF (CR_probe_timer > CR_probe_max_time) THEN
+            current_cr_threshold = CR_preselect
+            cr_probe_timer = 0
+          ENDIF
           
           IF (cr_counts < current_cr_threshold) THEN
             mode = 0
-            inc(par_71)
+            inc(par_66)
           ELSE
             DATA_22[tele_event_id+1] = cr_counts  ' CR before next SSRO sequence
             P2_DIGOUT(DIO_MODULE, ADwin_lt1_do_channel, 1)
             DATA_28[tele_event_id+1] = CR_probe_timer  'save CR timer just after CR check -> put to after LDE later?    
             mode = 2
-            
-            IF (CR_probe_timer>CR_probe_max_time) THEN
-              current_cr_threshold = CR_preselect
-              cr_probe_timer = 0
-            ELSE
-              current_cr_threshold = CR_probe
-            ENDIF
-            
-            
           ENDIF
                   
           timer = -1
@@ -328,6 +354,8 @@ EVENT:
         IF ((ADwin_in_was_high = 0) AND (ADwin_in_is_high > 0)) THEN 'Adwin triggers to start CR
           P2_DIGOUT(DIO_MODULE, ADwin_lt1_do_channel, 0) ' stop triggering CR done
           INC(par_74)     'Triggers to start CR
+          cr_after_adwin_lt1_trigger = 1
+          repump_after_adwin_lt1_trigger = 1
           mode = 1
           timer = -1
         ENDIF
@@ -363,10 +391,6 @@ EVENT:
           INC(par_77)   ' number of succesful teleportations.
           INC(tele_event_id)
           
-          IF (tele_event_id = teleportation_repetitions) THEN
-            END
-          ENDIF
-          
           cr_after_teleportation = 1
           mode = 4
           timer = -1
@@ -383,6 +407,8 @@ EVENT:
       IF ((ADwin_in_was_high = 0) AND (ADwin_in_is_high > 0)) THEN 'Adwin triggers to start CR
         P2_DIGOUT( DIO_MODULE, ADwin_lt1_do_channel, 0)
         INC(par_74)     'Triggers to start CR
+        cr_after_adwin_lt1_trigger = 1
+        repump_after_adwin_lt1_trigger = 1
         mode = 0
         timer = -1
       ENDIF

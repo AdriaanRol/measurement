@@ -8,7 +8,7 @@
 ' ADbasic_Version                = 5.0.8
 ' Optimize                       = Yes
 ' Optimize_Level                 = 1
-' Info_Last_Save                 = TUD277246  TUD277246\localadmin
+' Info_Last_Save                 = TUD276629  TUD276629\localadmin
 '<Header End>
 ' this program implements single-shot readout fully controlled by ADwin Gold II
 '
@@ -283,6 +283,12 @@ EVENT:
               first = 0
             ENDIF
             
+            IF (cr_probe_timer > CR_probe_max_time) THEN
+              current_cr_threshold = CR_preselect
+              cr_probe_timer = 0
+              Inc(Par_77)
+            ENDIF
+            
             IF (cr_counts < current_cr_threshold) THEN
               mode = 0
               inc(CR_failed)
@@ -290,13 +296,6 @@ EVENT:
             ELSE
               mode = 2
               DATA_22[repetition_counter+1] = cr_counts  ' CR before next SSRO sequence
-              IF (cr_probe_timer>CR_probe_max_time) THEN
-                current_cr_threshold = CR_preselect
-                cr_probe_timer = 0
-                Inc(Par_77)
-              ELSE
-                current_cr_threshold = CR_probe
-              ENDIF
             ENDIF
             
             timer = -1

@@ -218,9 +218,12 @@ class monitor_cryo(MonitorInstrument):
             print('current temperature: %.3f'%(self.get_temperature()))
 		
         if self.get_save_data():
-            with open('//tudelft.net/staff-groups/tnw/ns/qt/Diamond/setups/LT2/cryo.txt','a') as f:
-                f.write('%.0f\t%s\t%s\t%s\t%.3f V\n'%(t_num,t_str,lev1,lev2,volt))
-                f.close()
+            try:
+                with open('//tudelft.net/staff-groups/tnw/ns/qt/Diamond/setups/LT2/cryo.txt','a') as f:
+                    f.write('%.0f\t%s\t%s\t%s\t%.3f V\n'%(t_num,t_str,lev1,lev2,volt))
+                    f.close()
+            except Exception:
+                print ' error writing on network disk'
                 
         if self.get_send_email():
             try:

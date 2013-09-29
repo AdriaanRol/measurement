@@ -162,7 +162,9 @@ def run_calibrations(stage):
         cal_8mhz_rabi(name)
     
     if stage == 2:
-        #cal_CORPSE_pi(name)
+        print 'Cal CORPSE pi'
+        cal_CORPSE_pi(name)
+        print 'Cal CORPSE pi/2'
         cal_CORPSE_pi2(name)
         #cal_CORPSE_pi2_alternative(name, M=2)
         #cal_CORPSE_pi2_alternative(name, M=4)

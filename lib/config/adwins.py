@@ -842,9 +842,12 @@ config['adwin_lt2_processes'] = {
                     'CR_before' : 22, 
                     'CR_after'  : 23,
                     'CR_hist'   : 24,
+                    'repump_hist_time_out' : 9,
+                    'repump_hist_all' : 10,
                     'SSRO_lt2_data' : 25,
                     'statistics'    : 26,
                     'CR_probe_timer' : 28,
+                    'CR_hist_time_out' : 29,
                     },
                 'data_float': {
                     'repump_freq_voltages'      : 19,
@@ -1395,8 +1398,8 @@ config['adwin_lt1_processes'] = {
                 'data_long' : {
                     'CR_hist_time_out' : 7,
                     'CR_hist_all' : 8,
-                    'CR_hist_yellow_time_out' : 9,
-                    'CR_hist_yellow_all' : 10,
+                    'repump_hist_time_out' : 9,
+                    'repump_hist_all' : 10,
                     'CR_after' : 23,
                     'statistics' : 28,
                     'SSRO1_results' : 24,
@@ -1404,6 +1407,8 @@ config['adwin_lt1_processes'] = {
                     'PLU_Bell_states' : 25,
                     'CR_before' : 27,
                     'CR_probe_timer': 29,
+                    'CR_probe_timer_all': 30,
+                    'CR_timer_lt2': 31,
                     },
                 },        
         }

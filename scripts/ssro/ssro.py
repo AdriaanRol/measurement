@@ -149,9 +149,9 @@ def threshold_calibration(name, yellow=False):
 
     max_rep = 1
     repetitions =  np.arange(max_rep)+1
-    sweep_probes = [False]
+    sweep_probes = [True]
 
-    m = ssro.AdwinSSRO('SP_threshold_CRps_E12_13nW_Ey_4nW'+name)
+    m = ssro.AdwinSSRO('SP_threshold_CRps_E12_13nW_Ey_5nW'+name)
     
     m.params.from_dict(qt.cfgman['protocols']['AdwinSSRO'])
     m.params.from_dict(qt.cfgman['protocols']['hans-sil4-default']['AdwinSSRO'])
@@ -162,7 +162,7 @@ def threshold_calibration(name, yellow=False):
     _set_repump_settings(m,yellow) 
 
     m.params['A_CR_amplitude'] = 13e-9 
-    m.params['E_CR_amplitude'] = 4e-9
+    m.params['E_CR_amplitude'] = 5e-9
     m.params['CR_duration'] = 50
 
     m.params['A_SP_amplitude'] = 14e-9
@@ -183,14 +183,14 @@ def threshold_calibration(name, yellow=False):
                 m.params['pts'] = 12
                 pts = m.params['pts']
                 sweep_probe = True
-                m.params['CR_preselects'] = np.ones(pts)*30
-                m.params['CR_probes'] = [1,2,3,4,6,8,10,15,20,25,30]#[1,2,3,4,6,8,10,15,20,30,40,60]# [1,2,3,4,6,8,10,16,22,28,38,48]#
+                m.params['CR_preselects'] = np.ones(pts)*48
+                m.params['CR_probes'] = [1,2,3,4,6,8,10,16,22,28,38,48]#[1,2,3,4,6,8,10,15,20,25,30]#[1,2,3,4,6,8,10,15,20,30,40,60]# 
             else:
-                m.params['pts'] = 10
+                m.params['pts'] = 11
                 pts = m.params['pts']
                 sweep_probe = False              
 
-                m.params['CR_preselects'] = np.linspace(6,60,pts) #np.ones(pts)*30 ### #np.ones(pts)*30#
+                m.params['CR_preselects'] = np.linspace(6,66,pts) #np.ones(pts)*30 ### #np.ones(pts)*30#
                 m.params['CR_probes'] = m.params['CR_preselects']### np.ones(pts)*30#
 
             if sweep_probe:
@@ -303,6 +303,6 @@ def _set_repump_settings(m,yellow):
 if __name__ == '__main__':
     #RO_saturation_power('hans_sil4_Ey_saturation', yellow=False)
     #SP_saturation_power('hans-sil4_SP_saturation', yellow=False)
-    #threshold_calibration('hans-sil4_preselect', yellow=False)
-    max_probe_time_calibration('hans-sil4', yellow=False)
+    threshold_calibration('hans-sil4_probe', yellow=False)
+    #max_probe_time_calibration('hans-sil4', yellow=False)
 

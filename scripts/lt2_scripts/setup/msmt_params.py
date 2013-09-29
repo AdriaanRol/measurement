@@ -147,7 +147,7 @@ cfg.set(branch+        'repump_after_MBI_amp',                     15e-9)
 ### sil 9 ###
 branch='samples/sil9/'
 
-f_msm1_cntr = 2.828845e9 
+f_msm1_cntr = 2.828825e9 
 f_msp1_cntr = 2.925884e9 #not calibrated
 N_frq = 7.13429e6 #not calibrated
 N_HF_frq = 2.189e6 
@@ -161,15 +161,15 @@ cfg.set(branch+'N_HF_frq', N_HF_frq)
 branch='protocols/sil9-default/AdwinSSRO/'
 cfg.set(branch+'A_CR_amplitude', 10e-9)
 cfg.set(branch+'A_RO_amplitude' , 0)
-cfg.set(branch+'A_SP_amplitude', 30e-9)
+cfg.set(branch+'A_SP_amplitude', 20e-9)
 cfg.set(branch+'CR_duration' , 50)
 cfg.set(branch+'CR_preselect', 15)
 cfg.set(branch+'CR_probe', 2)
 cfg.set(branch+'CR_repump', 1000)
-cfg.set(branch+'Ex_CR_amplitude', 5e-9)
-cfg.set(branch+'Ex_RO_amplitude', 15e-9)
+cfg.set(branch+'Ex_CR_amplitude', 10e-9)
+cfg.set(branch+'Ex_RO_amplitude', 10e-9)
 cfg.set(branch+'Ex_SP_amplitude', 0e-9)
-cfg.set(branch+'SP_duration', 50)
+cfg.set(branch+'SP_duration', 250)
 cfg.set(branch+'SP_filter_duration', 0)
 cfg.set(branch+'SSRO_duration', 50)
 cfg.set(branch+'SSRO_repetitions', 5000)
@@ -180,7 +180,7 @@ cfg.set(branch+'MW_pulse_mod_risetime',10e-9)
 
 ### sil9, AdwinSSRO integrated ###
 branch='protocols/sil9-default/AdwinSSRO-integrated/'
-cfg.set(branch+'SSRO_duration', 50)
+cfg.set(branch+'SSRO_duration', 23)
 
 # # MBI 
 branch='protocols/sil9-default/AdwinSSRO+MBI/'

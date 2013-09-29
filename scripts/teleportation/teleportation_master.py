@@ -37,16 +37,19 @@ reload(misc)
 #DEFINE max_red_hist_cts        100            ' dimension of photon counts histogram for red CR
 #DEFINE max_yellow_hist_cts     100            ' dimension of photon counts histogram for yellow Resonance check
 #DEFINE max_statistics          15
+#DEFINE max_hist_CR_probe_time  500            '*1000 = 0.5 s is max time of CR probe time statistics
 ADWINLT1_MAX_REPS = 10000
 ADWINLT1_MAX_RED_HIST_CTS = 100
-ADWINLT1_MAX_YELLOW_HIST_CTS = 100
+ADWINLT1_MAX_REPUMP_HIST_CTS = 100
 ADWINLT1_MAX_STAT = 15
+ADWINLT1_MAX_CR_PROBE_TIMER_HIST_BINS = 500
 
 #DEFINE max_repetitions   20000
 #DEFINE max_CR_hist_bins    100
 #DEFINE max_stat             10
 ADWINLT2_MAX_REPS = 20000
 ADWINLT2_MAX_CR_HIST_CTS = 100
+ADWINLT2_MAX_REPUMP_HIST_CTS = 100
 ADWINLT2_MAX_STAT = 10
 
 
@@ -167,7 +170,7 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
                        
         self.params_lt2['repump_voltage'] = \
                 self.repump_aom_lt2.power_to_voltage(
-                        self.params_lt2['repump_amplitude'])
+                        self.params_lt2['repump_amplitude'], controller='pri')
 
         # add values from AWG calibrations
         self.params_lt2['SP_voltage_AWG'] = \
@@ -175,7 +178,7 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
                         self.params_lt2['AWG_SP_power'], controller='sec')
         # add values from AWG calibrations
         self.params_lt2['SP_voltage_AWG_yellow'] = \
-                self.A_aom_lt2.power_to_voltage(
+                self.repump_aom_lt2.power_to_voltage(
                         self.params_lt2['AWG_yellow_power'], controller='sec')
         
         qt.pulsar.set_channel_opt('AOM_Newfocus', 'high', self.params_lt2['SP_voltage_AWG'])
@@ -190,10 +193,10 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
         self.green_aom_lt1.set_power(0.)
         self.Ey_aom_lt1.set_power(0.)
         self.FT_aom_lt1.set_power(0.)
-        self.yellow_aom_lt1.set_cur_controller('ADWIN')
         self.green_aom_lt1.set_cur_controller('ADWIN')
         self.Ey_aom_lt1.set_cur_controller('ADWIN')
         self.FT_aom_lt1.set_cur_controller('ADWIN')
+        self.yellow_aom_lt1.set_cur_controller('ADWIN')
         self.yellow_aom_lt1.set_power(0.)
         self.green_aom_lt1.set_power(0.)
         self.Ey_aom_lt1.set_power(0.)
@@ -210,6 +213,7 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
         self.green_aom_lt2.set_power(0.)
         self.Ey_aom_lt2.set_power(0.)
         self.A_aom_lt2.set_power(0.)
+        self.yellow_aom_lt2.set_cur_controller('ADWIN')
         self.green_aom_lt2.set_cur_controller('ADWIN')
         self.Ey_aom_lt2.set_cur_controller('ADWIN')
         self.A_aom_lt2.set_cur_controller('ADWIN')
@@ -482,23 +486,29 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
     def save(self, HH_data=None):
         reps = self.adwin_var('adwin_lt1', 'completed_reps')
         self.save_adwin_data('adwin_lt1', 'data', 
-            ['CR_preselect', 'CR_probe', 'completed_reps', 'total_red_CR_counts', 
+            ['CR_preselect', 'CR_probe', 'completed_reps', 'noof_starts', 
                 ('CR_hist_time_out', ADWINLT1_MAX_RED_HIST_CTS),
                 ('CR_hist_all', ADWINLT1_MAX_RED_HIST_CTS),
-                ('CR_hist_yellow_time_out', ADWINLT1_MAX_YELLOW_HIST_CTS),
-                ('CR_hist_yellow_all', ADWINLT1_MAX_YELLOW_HIST_CTS),
+                ('repump_hist_time_out', ADWINLT1_MAX_REPUMP_HIST_CTS),
+                ('repump_hist_all', ADWINLT1_MAX_REPUMP_HIST_CTS),
                 ('CR_after', reps),
                 ('statistics', ADWINLT1_MAX_STAT),
                 ('SSRO1_results', reps),
                 ('SSRO2_results', reps),
                 ('PLU_Bell_states', reps),
-                ('CR_before', reps) ])
+                ('CR_before', reps),
+                ('CR_probe_timer', reps),
+                ('CR_probe_timer_all',ADWINLT1_MAX_CR_PROBE_TIMER_HIST_BINS),
+                ('CR_timer_lt2',ADWINLT1_MAX_CR_PROBE_TIMER_HIST_BINS) ])
 
         reps = self.adwin_var('adwin_lt1', 'completed_reps')
         self.save_adwin_data('adwin_lt2', 'data', ['completed_reps', 'total_CR_counts',
                 ('CR_before', reps),
                 ('CR_after', reps),
                 ('CR_hist', ADWINLT2_MAX_CR_HIST_CTS),
+                ('CR_hist_time_out', ADWINLT2_MAX_CR_HIST_CTS),
+                ('repump_hist_time_out', ADWINLT2_MAX_REPUMP_HIST_CTS),
+                ('repump_hist_all', ADWINLT2_MAX_REPUMP_HIST_CTS),
                 ('SSRO_lt2_data', reps),
                 ('statistics', ADWINLT2_MAX_STAT)])
 
@@ -836,9 +846,13 @@ def start_msmt(m):
     m.run()
 
 def finish_msmnt():
+    qt.instruments['AWG'].stop()
+    qt.instruments['AWG_lt1'].stop()
+    qt.instruments['AWG_lt1'].set_ch2_offset(0)
     qt.instruments['AWG'].set_runmode('CONT')
     qt.instruments['AWG_lt1'].set_runmode('CONT')
-    qt.instruments['AWG_lt1'].set_ch2_offset(0)
+
+
 
 ###measurements
 
@@ -863,6 +877,6 @@ def default_msmt(name):
     finish_msmnt()
 
 if __name__ == '__main__':
-    default_msmt('tails')
+    default_msmt('hist-checking-lt2')
 
                                                                                                                                                                                                                                                                                           
