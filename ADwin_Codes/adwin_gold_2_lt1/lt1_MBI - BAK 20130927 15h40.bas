@@ -42,8 +42,6 @@ DIM DATA_22[max_sweep_dim] AS LONG                ' CR counts before sequence
 DIM DATA_23[max_sweep_dim] AS LONG                ' CR counts after sequence
 DIM DATA_24[max_sweep_dim] AS LONG                ' number of MBI attempts needed in the successful cycle
 DIM DATA_25[max_sweep_dim] AS LONG                ' number of cycles before success
-DIM DATA_35[max_sweep_dim] AS LONG                ' time needed until mbi success (in process cycles)
-
 DIM DATA_26[max_stat] AS LONG AT EM_LOCAL         ' statistics
 DIM DATA_27[max_RO_dim] AS LONG AT DRAM_EXTERN    ' SSRO counts
 DIM DATA_28[max_sequences] AS LONG                ' A SP durations
@@ -108,7 +106,6 @@ DIM ROseq_cntr AS LONG
 dim next_MBI_stop, next_MBI_laser_stop as long
 dim current_MBI_step as long
 dim MBI_attempts as long
-dim mbi_timer as long
 
 DIM current_cr_threshold AS LONG
 DIM CR_probe AS LONG
@@ -152,14 +149,12 @@ INIT:
   Ex_MBI_voltage               = DATA_21[6]  
   Ex_off_voltage               = DATA_21[7]
   A_off_voltage                = DATA_21[8]
-  
   ' initialize the data arrays
   FOR i = 1 TO max_sweep_dim
     DATA_22[i] = 0
     DATA_23[i] = 0
     DATA_24[i] = 0
     DATA_25[i] = 0
-    DATA_35[i] = 0
   next i
     
   FOR i = 1 TO max_RO_dim
@@ -199,7 +194,6 @@ INIT:
   tmp = digin_edge(0)
   mode = 0
   timer = 0
-  mbi_timer = 0
   processdelay = cycle_duration
   
   awg_in_is_hi = 0
@@ -301,10 +295,10 @@ EVENT:
         ' turn on both lasers and start counting
         IF (timer = 0) THEN
           inc(data_26[mode+1])          
-          dac(Ex_laser_DAC_channel, 3277*Ex_CR_voltage+32768) ' turn on Ex laser
-          dac(A_laser_DAC_channel, 3277*A_CR_voltage+32768) ' turn on A laser
-          cnt_clear(counter_pattern)    'clear counter
-          cnt_enable(counter_pattern)    'turn on counter
+          dac( Ex_laser_DAC_channel, 3277*Ex_CR_voltage+32768) ' turn on Ex laser
+          dac( A_laser_DAC_channel, 3277*A_CR_voltage+32768) ' turn on A laser
+          cnt_clear(  counter_pattern)    'clear counter
+          cnt_enable( counter_pattern)    'turn on counter
           
         ELSE 
           
@@ -316,8 +310,8 @@ EVENT:
             PAR_70 = PAR_70 + cr_counts
             INC(PAR_72)
             
-            dac(Ex_laser_DAC_channel, 3277*Ex_off_voltage+ 32768) ' turn off Ex laser
-            dac(A_laser_DAC_channel, 3277*A_off_voltage+32768) ' turn off A laser
+            dac( Ex_laser_DAC_channel,3277*Ex_off_voltage+ 32768) ' turn off Ex laser
+            dac( A_laser_DAC_channel,3277*A_off_voltage+32768) ' turn off A laser
             DATA_22[seq_cntr] = cr_counts  ' CR before next SSRO sequence
             
             ' if it's the first attempt after a full sequence, we save it.
@@ -350,7 +344,7 @@ EVENT:
         ' turn on both lasers and start counting
         IF (timer = 0) THEN
           inc(data_26[mode+1])
-          dac(Ex_laser_DAC_channel, 3277*Ex_SP_voltage+32768) ' turn on Ex laser
+          dac( Ex_laser_DAC_channel, 3277*Ex_SP_voltage+32768) ' turn on Ex laser
           cnt_clear(counter_pattern)    'clear counter
           cnt_enable(counter_pattern)    'turn on counter
         
@@ -377,7 +371,7 @@ EVENT:
             inc(data_26[mode+1])
             INC(MBI_starts)
             PAR_78 = MBI_starts
-            inc(data_25[seq_cntr]) ' number of cycles to success
+            inc(data_25[seq_cntr])
           endif
           
           digout(AWG_start_DO_channel,1)  ' AWG trigger
@@ -400,15 +394,13 @@ EVENT:
                       
           else            
             IF (timer = next_MBI_stop) THEN
-              dac(Ex_laser_DAC_channel,3277*Ex_off_voltage+32768) ' turn off Ex laser
+              dac( Ex_laser_DAC_channel,3277*Ex_off_voltage+ 32768) ' turn off Ex laser
               counts = cnt_read( counter_channel)
-              cnt_enable(0)
+              cnt_enable(0)    'turn on counter
                               
               ' MBI succeeds if the counts surpass the threshold;
               ' we then trigger an AWG jump (sequence has to be long enough!) and move on to SP on A
-              ' if MBI fails, we
-              ' - try again (until max. number of attempts)
-              ' - go back to CR checking if max number of attempts is surpassed
+              ' if MBI failes we continue with checking CR again      
               IF (counts < MBI_threshold) THEN
                 INC(MBI_failed)
                 PAR_74 = MBI_failed
@@ -419,25 +411,21 @@ EVENT:
                 else
                   mode = 2
                   inc(current_MBI_step)
-                endif                
+                endif 
                 timer = -1      
-              
               else               
                 digout(AWG_event_jump_DO_channel,1)  ' AWG trigger
                 CPU_SLEEP(9)               ' need >= 20ns pulse width; adwin needs >= 9 as arg, which is 9*10ns
                 digout(AWG_event_jump_DO_channel,0)
                 
-                data_24[seq_cntr] = current_MBI_step ' number of attempts needed in the successful cycle
+                data_24[seq_cntr] = current_MBI_step
                 mode = 4
                 current_MBI_step = 1
-                mbi_timer = 0
               endif
               timer = -1
             endif          
           endif
         ENDIF
-        
-        inc(mbi_timer)
         
       CASE 4    ' A laser spin pumping
         A_SP_voltage = DATA_30[ROseq_cntr]
@@ -480,11 +468,11 @@ EVENT:
             ' we wait for the sequence to be finished. the AWG needs to tell us by a pulse,
             ' of which we detect the falling edge.
             ' we then move on to readout
-            if(awg_in_switched_to_hi > 0) then          
+            if(awg_in_switched_to_hi > 0) then              
               mode = 6
               timer = -1
               wait_time = 0
-            endif
+            endif         
           ENDIF
         
         else

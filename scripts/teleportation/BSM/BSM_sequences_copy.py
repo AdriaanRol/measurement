@@ -21,18 +21,17 @@ def prepare(m, yellow = False):
     m.params_lt2 = m2.MeasurementParameters('LT2Parameters')
 
     m.load_settings()
-
+    m.update_definitions()
     m.repump_aom = qt.instruments['GreenAOM']
     
     # m.params_lt1['MW_pulse_mod_risetime'] = 2e-9
 
 def finish(m, sequence=True, upload=True, debug=False):
-    m.autoconfig()
-    m.update_definitions()
-
     for key in m.params_lt1.to_dict():
         m.params[key] = m.params_lt1[key]
 
+    m.autoconfig()
+    
     if sequence:
         m.generate_sequence(upload=upload)
     
@@ -42,8 +41,8 @@ def finish(m, sequence=True, upload=True, debug=False):
         m.save()
         m.finish()
 
-def phaseref(frequency, time, offset=0):
-    return ((frequency*time + offset/360.) % 1) * 360.
+# def phaseref(frequency, time, offset=0):
+#     return ((frequency*time + offset/360.) % 1) * 360.
 
 def missing_grains(time, clock=1e9, granularity=4):
     if int(time*clock + 0.5) < 960:
@@ -74,11 +73,11 @@ class BSMMsmt(pulsar_msmt.MBI):
         self.N_RO_CNOT_elt = tseq._lt1_N_RO_CNOT_elt(self)
         self.wait_1us_elt = tseq._lt1_wait_1us_elt(self)
         
-        def UNROT_element(self, name, N_pulse, evolution_time, time_offset, **kw):
+    def UNROT_element(self, name, N_pulse, evolution_time, time_offset, **kw):
             return tseq._lt1_UNROT_element(self, name, N_pulse, evolution_time, time_offset, **kw)
-        def N_init_element(self, name, basis, **kw):
+    def N_init_element(self, name, basis, **kw):
             return tseq._lt1_N_init_element(self, name, basis, **kw)
-        def BSM_elements(self, name, time_offset, start_buffer_time, **kw):
+    def BSM_elements(self, name, time_offset, start_buffer_time = 240e-9, **kw):
             return tseq._lt1_BSM_elements(self, name, time_offset, start_buffer_time, **kw)
 
     def generate_sequence(self, upload=True):
@@ -250,7 +249,7 @@ class NReadoutMsmt(ElectronReadoutMsmt):
 
         # create the sequence
         seq = self._add_MBI_and_sweep_elements_to_sequence(
-            self.sweep_elements, N_RO_CNOT_elt, self.adwin_lt1_trigger_element,
+            self.sweep_elements, self.N_RO_CNOT_elt, self.adwin_lt1_trigger_element,
             append_sync = False)
 
         # make the list of elements required for uploading
@@ -372,16 +371,15 @@ class ENReadoutMsmt(BSMMsmt):
 
     def generate_sequence(self, upload=True):
         # load all the other pulsar resources
-        self._pulse_defs()
         self.sweep_elements = self.get_sweep_elements()
 
-        # CNOT element for nuclear spin readout
-        N_RO_CNOT_elt = element.Element('N-RO CNOT', pulsar=qt.pulsar)
-        N_RO_CNOT_elt.append(self.pi2pi_m1)
+        # # CNOT element for nuclear spin readout
+        # N_RO_CNOT_elt = element.Element('N-RO CNOT', pulsar=qt.pulsar)
+        # N_RO_CNOT_elt.append(self.pi2pi_m1)
 
         # create the sequence
         seq = self._add_MBI_and_sweep_elements_to_sequence(
-            self.sweep_elements, N_RO_CNOT_elt, self.adwin_lt1_trigger_element)
+            self.sweep_elements, self.N_RO_CNOT_elt, self.adwin_lt1_trigger_element)
 
         # make the list of elements required for uploading
         flattened_sweep_elements = self._flatten_sweep_element_list(
@@ -390,7 +388,7 @@ class ENReadoutMsmt(BSMMsmt):
         # program AWG
         if upload:
             qt.pulsar.upload(self.mbi_elt, self.adwin_lt1_trigger_element, 
-                N_RO_CNOT_elt, *flattened_sweep_elements)
+                self.N_RO_CNOT_elt, *flattened_sweep_elements)
         
         qt.pulsar.program_sequence(seq)
 
@@ -781,7 +779,6 @@ class TheRealBSM(ENReadoutMsmt):
     #         sweep_elements, self.N_RO_CNOT_elt, self.adwin_lt1_trigger_element)
 
     def test_BSM_superposition_in(self):
-        self._pulse_defs()
         sweep_elements = []
         self.flattened_elements = []
         self.seq = pulsar.Sequence('{}_{}-Sequence'.format(self.mprefix, 
@@ -825,7 +822,6 @@ class TheRealBSM(ENReadoutMsmt):
             sweep_elements, self.N_RO_CNOT_elt, self.adwin_lt1_trigger_element)
 
     def test_BSM_with_LDE_element_superposition_in(self):
-        self._pulse_defs()
         sweep_elements = []
         self.flattened_elements = []
         self.seq = pulsar.Sequence('{}_{}-Sequence'.format(self.mprefix, 
@@ -852,22 +848,28 @@ class TheRealBSM(ENReadoutMsmt):
             sweep_elements, self.N_RO_CNOT_elt, self.adwin_lt1_trigger_element)
 
     def test_BSM_with_LDE_element_calibrate_echo_time(self):
-        self._pulse_defs()
         sweep_elements = []
         self.flattened_elements = []
         self.seq = pulsar.Sequence('{}_{}-Sequence'.format(self.mprefix, 
             self.name))
 
-        for i in range(self.params['pts']):            
-            N_init = self.N_init_element(self, 
-                'N_init', 
-                basis = 'X', 
-                echo_time_after_LDE = self.params_lt1['echo_times_after_LDE'][i], 
-                end_offset_time = 0. )
+        e_pi2_elt = element.Element('e_pi2', pulsar = qt.pulsar, 
+            global_time = True, time_offset =0)
+        e_pi2_elt.append(pulse.cp(self.TIQ, 
+            length = 100e-9))
+        e_pi2_elt.append(self.fast_pi2)
             
-            self.flattened_elements.append(LDE_element)
+
+        for i in range(self.params['pts']):            
+            N_init = self.N_init_element('N_init-{}'.format(i), 
+                basis = 'Z', 
+                echo_time_after_LDE = self.params_lt1['echo_times_after_LDE'][i], 
+                end_offset_time = -100e-9)
+            
+            self.flattened_elements.append(self.LDE_element)
             self.flattened_elements.append(N_init)
-            sweep_elements.append([LDE_element,N_init])
+            self.flattened_elements.append(e_pi2_elt)
+            sweep_elements.append([self.LDE_element,N_init,e_pi2_elt])
             
         self.seq = self._add_MBI_and_sweep_elements_to_sequence(
             sweep_elements, self.N_RO_CNOT_elt, self.adwin_lt1_trigger_element)
@@ -942,7 +944,6 @@ class TheRealBSM(ENReadoutMsmt):
         Do a Hahn echo sequence with the CORPSE pi pulse, and sweep it's zero
         phase with respect the rotating frame at that time.
         """
-        self._pulse_defs()
         sweep_elements = []
         self.flattened_elements = []
         self.seq = pulsar.Sequence('{}_{}-Sequence'.format(self.mprefix, 
@@ -1015,7 +1016,6 @@ class TheRealBSM(ENReadoutMsmt):
         I'm a bit lazy for now, make sure to only give evolution times such
         that 2 * evolution_time - 1e6 fits with the granularity.
         """
-        self._pulse_defs()
         sweep_elements = []
         self.flattened_elements = []
         self.seq = pulsar.Sequence('{}_{}-Sequence'.format(self.mprefix, 
@@ -1386,7 +1386,7 @@ def bsm_calibrate_UNROT_X_timing(name):
 #     finish(m, debug=False, upload=True)
   
 
-def bsm_test_BSM_superposition_in(name):
+def bsm_test_BSM_superposition_in_sweep_H_phase(name):
     m = TheRealBSM('TestBSM_superposition_in_'+name)
     prepare(m)
     
@@ -1406,7 +1406,7 @@ def bsm_test_BSM_superposition_in(name):
     finish(m, debug=False, upload=True)    
 
 
-def bsm_test_BSM_with_LDE_superposition_in(name):
+def bsm_test_BSM_with_LDE_superposition_in_sweep_H_phase(name):
     m = TheRealBSM('TestBSM_superposition_in_'+name)
     prepare(m)
     
@@ -1429,7 +1429,7 @@ def bsm_test_BSM_with_LDE_superposition_in(name):
     finish(m, debug=False, upload=True)    
 
 
-def bsm_test_BSM_with_LDE_superposition_in(name):
+def bsm_test_BSM_with_LDE_superposition_in_calibrate_echo_time(name):
     m = TheRealBSM('TestBSM_superposition_in_'+name)
     prepare(m)
     

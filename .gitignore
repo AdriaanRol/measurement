@@ -15,3 +15,6 @@ CPLD
 config
 *.def
 *.o
+*.vi
+*.bmp
+*.png

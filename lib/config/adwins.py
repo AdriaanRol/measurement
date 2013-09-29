@@ -1305,6 +1305,7 @@ config['adwin_lt1_processes'] = {
                     'MBI_cycles' : 25,
                     'statistics' : 26,
                     'ssro_results' : 27,
+                    'MBI_time' : 35,
                     },
                 },
         

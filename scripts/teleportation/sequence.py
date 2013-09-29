@@ -171,8 +171,13 @@ def pulse_defs_lt1(msmt):
 
     ### synchronizing, etc
     msmt.adwin_lt1_trigger_pulse = pulse.SquarePulse(channel = 'adwin_sync',
-        length = 5e-6, amplitude = 2)
+        length = 10e-6, amplitude = 2)
 
+    msmt.adwin_lt1_trigger_pulse_mbi = pulse.SquarePulse(channel = 'adwin_sync',
+        length = 17e-6, amplitude = 2) 
+        # mbi pulse trigger should be longer, because it needs to receive a jump from the ADwin while still going. 
+        # it also needs to be short enough such that it is finished when the ADWin triggers the next element
+        
     msmt.AWG_LT2_trigger_pulse = pulse.SquarePulse(channel='AWG_LT2_trigger',
         length = 10e-9, amplitude = 2)
 
@@ -184,6 +189,10 @@ def pulse_defs_lt1(msmt):
 
 #************************ Sequence elements LT1   ******************************
 
+#this is used to couple to phases of two different-frequency pulses
+def phaseref(frequency, time, offset=0):
+    return ((frequency*time + offset/360.) % 1) * 360.
+
 def _lt1_mbi_element(msmt):
     """
     this generates the MBI element, with the (slow) CNOT pulse and adwin trigger
@@ -192,7 +201,7 @@ def _lt1_mbi_element(msmt):
     e.append(pulse.cp(msmt.T,
         length = 10e-9))
     e.append(msmt.slow_pi)
-    e.append(msmt.adwin_lt1_trigger_pulse)
+    e.append(msmt.adwin_lt1_trigger_pulse_mbi)
 
     return e
 
@@ -357,10 +366,8 @@ def _lt1_UNROT_element(msmt, name,
     elt = element.Element(name, pulsar=msmt.pulsar_lt1,
         global_time = True, time_offset = time_offset)
     
-    delay0_name = elt.append(pulse.cp(msmt.TIQ,
-        length = begin_offset_time))
     delay1_name = elt.append(pulse.cp(msmt.TIQ, 
-        length = evolution_time))
+        length = begin_offset_time + evolution_time))
     
     if N_pulse != None:
         
@@ -496,7 +503,7 @@ def _lt1_N_init_element(msmt, name, basis = 'X', **kw):
     UNROT_N_init_elt = _lt1_UNROT_element(msmt, 'N_init_element',
         N_pulse, 
         msmt.params_lt1['pi2_evolution_time'], 
-        _lt1_LDE_element.length(), 
+        msmt.params['LDE_element_length'], 
         begin_offset_time = echo_time_after_LDE,
         end_offset_time = end_offset_time)
         #end_offset time: to compensate for CNOT time in next element 
@@ -568,7 +575,7 @@ def _lt1_N_init_and_BSM_for_teleportation(msmt):
         basis = msmt.params['source_state_basis'])
     BSM_elts = _lt1_BSM_elements(msmt, 
         name = 'Teleportation', 
-        time_offset = _lt1_LDE_element.length() + N_init_elt.length())
+        time_offset = msmt.params['LDE_element_length'] + N_init_elt.length())
 
     return N_init_elt, BSM_elts[0], BSM_elts[1]
 

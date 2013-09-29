@@ -54,8 +54,8 @@ params_lt1['wait_before_SSRO1'] = 3
 params_lt1['wait_before_SP_after_RO'] = 3
 params_lt1['SP_after_RO_duration'] = 50
 params_lt1['wait_before_SSRO2'] = 3
-params_lt1['SSRO2_duration'] = 15
-params_lt1['SSRO1_duration'] = 15
+params_lt1['SSRO2_duration'] = 25#15 #15 is now not long enough!! 
+params_lt1['SSRO1_duration'] = 25#15
 
 params_lt2['SSRO_lt2_duration'] = 50
 
@@ -82,7 +82,7 @@ params_lt2['CR_probe_max_time'] = 500000 # us = 0.5 s
 ### SSRO, CR, SP Laser powers
 params_lt1['Ey_CR_amplitude'] = 5e-9
 params_lt1['FT_CR_amplitude'] = 13e-9               
-params_lt1['Ey_SP_amplitude'] = 0e-9               
+params_lt1['Ey_SP_amplitude'] = 10e-9               
 params_lt1['FT_SP_amplitude'] = 10e-9 
 params_lt1['Ey_RO_amplitude'] = 7e-9  
 params_lt1['FT_RO_amplitude'] = 0
@@ -115,6 +115,14 @@ params_lt1['mw_power'] = 20
 params_lt1['mI-1_mod_frq'] = finit_lt1
 params_lt1['MW_pulse_mod_risetime'] = 10e-9
 params_lt1['AWG_MBI_MW_pulse_mod_frq'] = finit_lt1
+
+# for the BSM:
+params_lt1['N_ref_frq'] = N_frq_lt1
+params_lt1['e_ref_frq'] = finit_lt1
+params_lt1['pi2_evolution_time'] = 51.086e-6
+params_lt1['H_evolution_time'] = 50.746e-6
+params_lt1['H_phase'] = 41
+params_lt1['echo_time_after_LDE'] = 200e-9
 
 ## pulses
 params_lt1['fast_pi_mod_frq'] = finit_lt1
@@ -216,7 +224,7 @@ params['MW_during_LDE']               = 0 #NOTE:MW stuff not implemented, yet
 params['LDE_SP_duration']             = 5e-6
 params['LDE_SP_duration_yellow']      = 3e-6
 params['wait_after_sp']               = 500e-9 #this should be large enough, so that the MW puls fits
-params['LDE_element_length']          = 9e-6 # 9k for TPQI.
+params['LDE_element_length']          = 6.8e-6 # 9k for TPQI.
 
 
 ### default process settings
@@ -234,19 +242,25 @@ params_lt2['teleportation_repetitions'] = -1
 ########
 ## parameters (for now) only used in calibration scripts
 ########
+
+params_lt1['AWG_wait_duration_before_MBI_MW_pulse'] = 1e-6
+params_lt1['AWG_wait_for_adwin_MBI_duration'] = 15e-6
+params_lt1['AWG_wait_duration_before_shelving_pulse'] = 100e-9
+
 params['nr_of_ROsequences'] = 1 # this is the standard
 params_lt1['MBI_duration'] = 4
-params_lt1['MBI_steps'] =1
-params_lt1['MBI_threshold'] =1 
+params_lt1['MBI_steps'] = 1
+params_lt1['MBI_threshold'] = 1 
 params_lt1['Ex_MBI_amplitude'] = 5e-9
+#params_lt1['AWG_to_adwin_ttl_trigger_duration'] = 2e-6
 
 params_lt1['repump_after_MBI_amplitude'] = 5e-9
 params_lt1['repump_after_MBI_duration'] = 10
-params_lt1['repump_after_E_RO_duration'] = 5e-9
-params_lt1['repump_after_E_RO_amplitude']  = 25e-9
+params_lt1['repump_after_E_RO_duration'] = 10
+params_lt1['repump_after_E_RO_amplitude']  = 5e-9
 params_lt1['Ex_CR_amplitude'] = params_lt1['Ey_CR_amplitude']
 params_lt1['A_CR_amplitude'] = params_lt1['FT_CR_amplitude']
-params_lt1['Ex_SP_amplitude'] = params_lt1['Ey_SP_amplitude']
+params_lt1['Ex_SP_amplitude'] = params_lt1['Ey_SP_amplitude'] # to pump to ms+- 1 before MBI slow pulse
 
 params_lt1['A_off_voltage'] = params_lt1['FT_off_voltage']
 params_lt1['Ex_off_voltage'] = params_lt1['Ey_off_voltage']
@@ -256,6 +270,7 @@ params_lt1['SP_E_duration'] = 100
 
 params_lt1['cycle_duration'] = 300
 params_lt1['repump_after_repetitions'] = 1 #could remove this altogether from adwin...
+params_lt1['send_AWG_start'] = 1
 params_lt1['AWG_done_DI_channel'] = params_lt1['AWG_lt1_di_channel']
 params_lt1['AWG_event_jump_DO_channel'] = params_lt1['AWG_lt1_event_do_channel']
 params_lt1['AWG_start_DO_channel'] = params_lt1['AWG_lt1_trigger_do_channel'] 

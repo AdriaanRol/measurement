@@ -4,6 +4,13 @@ Script for BSM calibration
 import numpy as np
 import qt
 
+SIL_NAME = 'hans-sil4'
+SETUP = 'lt1'
+NEW_STYLE = True
+STYLE = 'new_style' if NEW_STYLE else 'old_style'
+name = SIL_NAME+STYLE#+'with_new_BSM_sequences'
+
+
 from measurement.lib.measurement2.adwin_ssro import pulsar_mbi_espin
 
 from measurement.scripts.mbi import mbi_calibration_funcs as mbi_cal
@@ -12,7 +19,10 @@ from measurement.scripts.mbi import CORPSE_calibration
 reload(CORPSE_calibration)
 from measurement.scripts.mbi.CORPSE_calibration import CORPSEPiCalibration
 
-from measurement.scripts.teleportation.BSM import BSM_sequences_copy as BSM_sequences
+if NEW_STYLE:
+    from measurement.scripts.teleportation.BSM import BSM_sequences_copy as BSM_sequences
+else:
+    from measurement.scripts.teleportation.BSM import BSM_sequences as BSM_sequences
 reload(BSM_sequences)
 
 from measurement.scripts.mbi import mbi_funcs as funcs
@@ -229,7 +239,7 @@ def run_nmr_rabi(name):
     m.params_lt1['sweep_name'] = 'RF duration (us)'
     m.params_lt1['sweep_pts'] = m.params_lt1['RF_pulse_durations'] * 1e6
     
-    BSM_sequences.finish(m, debug=False)
+    BSM_sequences.finish(m, debug=False, upload=True)
 
 ### Calibration stage 5
 def bsm_calibrate_CORPSE_pi_phase_shift(name):
@@ -240,13 +250,13 @@ def bsm_calibrate_CORPSE_pi_phase_shift(name):
     m.params['pts'] = pts
     m.params['reps_per_ROsequence'] = 500
 
-    m.params['CORPSE_pi_phase_shifts'] = np.linspace(0,180,pts)
-    m.params['interpulse_delay'] = 50.9e-6
+    m.params_lt1['CORPSE_pi_phase_shifts'] = np.linspace(0,180,pts)
+    m.params_lt1['interpulse_delay'] = 50.9e-6
     m.calibrate_CORPSE_pi_phase_shift()
 
     # for the autoanalysis
-    m.params['sweep_name'] = 'CORPSE relative phase shift (deg)'
-    m.params['sweep_pts'] = m.params['CORPSE_pi_phase_shifts']
+    m.param_lt1s['sweep_name'] = 'CORPSE relative phase shift (deg)'
+    m.params_lt1['sweep_pts'] = m.params_lt1['CORPSE_pi_phase_shifts']
 
     BSM_sequences.finish(m, debug=False, upload=True)
 
@@ -259,13 +269,13 @@ def bsm_calibrate_CORPSE_pi_phase_shift_small_range(name):
     m.params['pts'] = pts
     m.params['reps_per_ROsequence'] = 500
 
-    m.params['CORPSE_pi_phase_shifts'] = 107+np.linspace(-20,20,pts)
-    m.params['interpulse_delay'] = 50.9e-6
+    m.params_lt1['CORPSE_pi_phase_shifts'] = 107+np.linspace(-40,40,pts)
+    m.params_lt1['interpulse_delay'] = 50.9e-6
     m.calibrate_CORPSE_pi_phase_shift()
 
     # for the autoanalysis
-    m.params['sweep_name'] = 'CORPSE relative phase shift (deg)'
-    m.params['sweep_pts'] = m.params['CORPSE_pi_phase_shifts']
+    m.params_lt1['sweep_name'] = 'CORPSE relative phase shift (deg)'
+    m.params_lt1['sweep_pts'] = m.params_lt1['CORPSE_pi_phase_shifts']
 
     BSM_sequences.finish(m, debug=False, upload=True)
 
@@ -278,12 +288,12 @@ def bsm_calibrate_UNROT_X_timing(name):
     m.params['pts'] = pts
     m.params['reps_per_ROsequence'] = 500
 
-    m.params['evolution_times'] = 50.9e-6 + np.linspace(-400e-9,400e-9,pts)
+    m.params_lt1['evolution_times'] = 50.9e-6 + np.linspace(-400e-9,400e-9,pts)
     m.calibrate_UNROT_X_timing(eigenstate='-1')
 
     # for the autoanalysis
-    m.params['sweep_name'] = 'evolution time (us)'
-    m.params['sweep_pts'] = m.params['evolution_times'] * 1e6
+    m.params_lt1['sweep_name'] = 'evolution time (us)'
+    m.params_lt1['sweep_pts'] = m.params_lt1['evolution_times'] * 1e6
 
     BSM_sequences.finish(m, debug=False, upload=True)
 
@@ -318,16 +328,16 @@ def bsm_test_BSM_superposition_in_sweep_H_phase(name):
     m.params['pts'] = pts
     m.params['reps_per_ROsequence'] = 1000
 
-    m.params['pi2_evolution_time'] = 51.089e-6 #calibrated value
-    m.params['H_evolution_times'] = np.ones(pts)*51.089e-6 #139.995e-6 + 194e-9#calibrated value + correction (234 deg).
-    m.params['H_phases'] = np.linspace(0,720,pts) 
+    #m.params['pi2_evolution_time'] = 51.089e-6 #calibrated value
+    m.params_lt1['H_evolution_times'] = np.ones(pts)*m.params_lt1['pi2_evolution_time']
+    m.params_lt1['H_phases'] = np.linspace(0,720,pts) 
 
-    m.params['sweep_name'] = 'CORPSE-UNROT-H phase'
-    m.params['sweep_pts'] = m.params['H_phases'] 
+    m.params_lt1['sweep_name'] = 'CORPSE-UNROT-H phase'
+    m.params_lt1['sweep_pts'] = m.params_lt1['H_phases'] 
 
     m.test_BSM_superposition_in()
     
-    BSM_sequences.finish(m, debug=False, upload=False)    
+    BSM_sequences.finish(m, debug=False, upload=True)    
 
 def bsm_test_BSM_superposition_in_sweep_H_phase_small_range(name):
     """
@@ -404,6 +414,73 @@ def bsm_test_BSM_superposition_in_sweep_H_ev_time_small_range(name):
     
     BSM_sequences.finish(m, debug=False, upload=True)    
 
+def bsm_test_BSM_with_LDE_superposition_in_calibrate_echo_time(name):
+    m = BSM_sequences.TheRealBSM('TestBSM_LDE_calibrate_echo'+name)
+    BSM_sequences.prepare(m)
+    
+    pts = 6
+    m.params['pts'] = pts
+    m.params['reps_per_ROsequence'] = 1000
+
+    m.params_lt1['repump_after_MBI_amplitude'] = 0. #SP is in LDE element!! :)
+
+    m.params_lt1['echo_times_after_LDE'] = np.linspace(0,500e-9,pts)
+    # m.params_lt1['pi2_evolution_time'] = 51.089e-6 #calibrated value
+    # m.params_lt1['H_evolution_times'] = np.ones(pts)*51.089e-6 #139.995e-6 + 194e-9#calibrated value + correction (234 deg).
+    # m.params_lt1['H_phases'] = np.linspace(0,720,pts) 
+
+    m.params_lt1['sweep_name'] = 'echo times after LDE'
+    m.params_lt1['sweep_pts'] = m.params_lt1['echo_times_after_LDE'] /1e-9
+
+    m.test_BSM_with_LDE_element_calibrate_echo_time()
+    
+    BSM_sequences.finish(m, debug=False, upload=True)    
+
+def bsm_test_BSM_with_LDE_superposition_in_sweep_H_phase(name):
+    m = BSM_sequences.TheRealBSM('TestBSM_superposition_in_'+name)
+    BSM_sequences.prepare(m)
+    
+    pts = 17
+    m.params['pts'] = pts
+    m.params['reps_per_ROsequence'] = 1000
+
+    m.params_lt1['repump_after_MBI_amplitude'] = 0. #SP is in LDE element!! :)
+
+    m.params_lt1['echo_times_after_LDE'] = np.ones*m.params_lt1['echo_time_after_LDE']
+    #m.params_lt1['pi2_evolution_time'] = 51.089e-6 #calibrated value
+    m.params_lt1['H_evolution_times'] = np.ones(pts) * m.params_lt1['pi2_evolution_time']
+    m.params_lt1['H_phases'] = np.linspace(0,720,pts) 
+
+    m.params_lt1['sweep_name'] = 'CORPSE-UNROT-H phase'
+    m.params_lt1['sweep_pts'] = m.params_lt1['H_phases'] 
+
+    m.test_BSM_with_LDE_element_superposition_in()
+    
+    finish(m, debug=False, upload=True)    
+
+def bsm_test_BSM_with_LDE_superposition_in_sweep_H_ev_time(name):
+    m = TheRealBSM('TestBSM_superposition_in_'+name)
+    prepare(m)
+    
+    pts = 17
+    m.params['pts'] = pts
+    m.params['reps_per_ROsequence'] = 1000
+
+    m.params_lt1['repump_after_MBI_amplitude'] = 0. #SP is in LDE element!! :)
+
+    m.params_lt1['echo_times_after_LDE'] = np.ones*m.params_lt1['echo_time_after_LDE']
+    m.params_lt1['pi2_evolution_time'] = 51.089e-6 #calibrated value
+    m.params_lt1['H_evolution_times'] = 51.089e-6 + np.linspace(-500e-9,0e-9,pts)
+    m.params_lt1['H_phases'] = np.ones(pts)*m.params_lt1['H_phase']
+
+
+    m.params_lt1['sweep_name'] = 'CORPSE-UNROT-H phase'
+    m.params_lt1['sweep_pts'] = m.params_lt1['H_phases'] 
+
+    m.test_BSM_with_LDE_element_superposition_in()
+    
+    finish(m, debug=False, upload=True)    
+
 
 ### master function
 def run_calibrations(stage, yellow):
@@ -419,7 +496,7 @@ def run_calibrations(stage, yellow):
         #cal_pi2pi_pi_mI0(name, yellow, mult=5)
     
     if stage == 3:
-        #run_nmr_frq(name) #not every time!
+        #run_nmr_frq_scan(name) #not every time!
         run_nmr_rabi(name)
 
     if stage == 4:
@@ -427,31 +504,33 @@ def run_calibrations(stage, yellow):
         bsm_calibrate_CORPSE_pi_phase_shift_small_range(name)
 
     if stage == 5:
-        #bsm_calibrate_UNROT_X_timing(name)
-        bsm_calibrate_UNROT_X_timing_small_range(name)
+        bsm_calibrate_UNROT_X_timing(name)
+        #bsm_calibrate_UNROT_X_timing_small_range(name)
 
     if stage == 6:
-        #bsm_test_BSM_superposition_in_sweep_H_phase(name)
-        bsm_test_BSM_superposition_in_sweep_H_phase_small_range(name)
+        bsm_test_BSM_superposition_in_sweep_H_phase(name)
+        #bsm_test_BSM_superposition_in_sweep_H_phase_small_range(name)
 
     if stage == 7:
         #bsm_test_BSM_superposition_in_sweep_H_ev_time(name)
         bsm_test_BSM_superposition_in_sweep_H_ev_time_small_range(name)
 
-SIL_NAME = 'hans-sil4'
-SETUP = 'lt1'
-name = SIL_NAME+'with_new_BSM_sequences'
+    if stage == 8:
+        #bsm_test_BSM_superposition_in_sweep_H_ev_time(name)
+        bsm_test_BSM_with_LDE_superposition_in_calibrate_echo_time(name)
+
 
 
 if __name__ == '__main__':
-    #execfile('d:/measuring/measurement/scripts/'+SETUP+'_scripts/setup/msmt_params.py')
+    execfile('d:/measuring/measurement/scripts/'+SETUP+'_scripts/setup/msmt_params.py')
     #run_calibrations(1, yellow=False)
     #run_calibrations(2, yellow=False)
-    run_calibrations(3, yellow=False)
+    #run_calibrations(3, yellow=False)
     #run_calibrations(4, yellow=False)
     #run_calibrations(5, yellow=False)
     #run_calibrations(6, yellow=False)
     #run_calibrations(7, yellow=False)
+    run_calibrations(8, yellow=False)
 
     """
     stage 0.0: do a ssro calibration
