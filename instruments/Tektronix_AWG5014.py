@@ -145,6 +145,8 @@ class Tektronix_AWG5014(Instrument):
         self.add_function('set_sq_length')
         self.add_function('get_state')
         self.add_function('get_runmode')
+        self.add_function('set_event_jump_timing')
+        self.add_function('get_event_jump_timing')
 
         if reset:
             self.reset()
@@ -524,6 +526,12 @@ class Tektronix_AWG5014(Instrument):
 
     def sq_forced_jump(self, jump_index_no):
         self._visainstrument.write('SEQ:JUMP:IMM %s' %jump_index_no)
+
+    def set_event_jump_timing(self, mode):
+        self._visainstrument.write('EVEN:JTIM %s' %(mode))
+
+    def get_event_jump_timing(self):
+        return self._visainstrument.ask('EVEN:JTIM?')
 
 ###################################################################
 
