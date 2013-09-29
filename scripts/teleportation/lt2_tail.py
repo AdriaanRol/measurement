@@ -128,4 +128,4 @@ def tail_lt2(name):
     # m.finish()
 
 if __name__ == '__main__':
-    tail_lt2('measure_dat_tail')
+    tail_lt2('lt2_tail_testing')

@@ -213,7 +213,7 @@ def _lt1_N_polarization_decision_element(msmt):
     """
 
     e = element.Element('N_pol_decision', pulsar = msmt.pulsar_lt1)
-    e.append(pulse.cp(msmnt.T, length=10e-6))
+    e.append(pulse.cp(msmt.T, length=10e-6))
 
     return e
 

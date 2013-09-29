@@ -774,7 +774,7 @@ class TeleportationSlave:
 
 
 ### CONSTANTS AND FLAGS
-YELLOW = True              # whether to use yellow on lt2
+YELLOW = False              # whether to use yellow on lt2
 HH = False                # if False no HH data acquisition from within qtlab.
 DO_POLARIZE_N = False      # if False, no N-polarization sequence on LT1 will be used
 DO_SEQUENCES = True      # if False, we won't use the AWG at all
@@ -784,7 +784,7 @@ MAX_HHDATA_LEN = int(100e6)
 DO_OPT_RABI_AMP_SWEEP = False # if true, we sweep the rabi parameters instead of doing LDE; essentially this only affects the sequence we make
 HH_MIN_SYNC_TIME = 0 # 9 us
 HH_MAX_SYNC_TIME = 3e6 # 10.2 us
-OPT_PI_PULSES = 5
+OPT_PI_PULSES = 2
 
 
        
@@ -877,6 +877,6 @@ def default_msmt(name):
     finish_msmnt()
 
 if __name__ == '__main__':
-    default_msmt('hist-checking-lt2')
+    default_msmt('lt2-tail')
 
                                                                                                                                                                                                                                                                                           
