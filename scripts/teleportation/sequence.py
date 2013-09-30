@@ -500,7 +500,7 @@ def _lt1_N_init_element(msmt, name, basis = 'X', **kw):
     elif basis == '-Z':
         N_pulse = pulse.cp(msmt.N_pi) #pulse onto -z
                             
-    UNROT_N_init_elt = _lt1_UNROT_element(msmt, 'N_init_element',
+    UNROT_N_init_elt = _lt1_UNROT_element(msmt, name,
         N_pulse, 
         msmt.params_lt1['pi2_evolution_time'], 
         msmt.params['LDE_element_length'], 

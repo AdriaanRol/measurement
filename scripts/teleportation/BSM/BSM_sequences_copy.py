@@ -829,7 +829,7 @@ class TheRealBSM(ENReadoutMsmt):
 
         for i in range(self.params['pts']):            
             N_init = self.N_init_element(self, 
-                'N_init', 
+                'N_init-{}', 
                 basis = 'X', 
                 echo_time_after_LDE = self.params_lt1['echo_times_after_LDE'][i])
 
