@@ -295,17 +295,21 @@ class Pulsar:
         self.activate_channels(channels)
 
         # setting jump modes and loading the djump table
-        if sequence.djump_table != None:
-            self.AWG.set_event_jump_mode('DJUM')
-            print 'AWG set to dynamical jump'
+        if sequence.djump_table != None and self.AWG_type not in ['opt09']:
+            raise Exception('The AWG configured does not support dynamic jumping')
 
-            for i in sequence.djump_table.keys():
-                idx = sequence.element_index(i)
-                self.AWG.set_djump_def(sequence.djump_table[i], idx)
+        if self.AWG_type in ['opt09']: 
+            if sequence.djump_table != None:
+                self.AWG.set_event_jump_mode('DJUM')
+                print 'AWG set to dynamical jump'
 
-        else:
-            self.AWG.set_event_jump_mode('EJUM')
-            print 'AWG set to event jump'
+                for i in sequence.djump_table.keys():
+                    idx = sequence.element_index(i)
+                    self.AWG.set_djump_def(sequence.djump_table[i], idx)
+
+            else:
+                self.AWG.set_event_jump_mode('EJUM')
+                print 'AWG set to event jump'
 
         if start:
             self.AWG.start()
