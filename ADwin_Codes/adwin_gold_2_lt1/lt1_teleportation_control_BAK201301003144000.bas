@@ -8,23 +8,33 @@
 ' ADbasic_Version                = 5.0.8
 ' Optimize                       = Yes
 ' Optimize_Level                 = 1
-' Info_Last_Save                 = TUD277246  TUD277246\localadmin
+' Info_Last_Save                 = TUD276629  TUD276629\localadmin
 '<Header End>
 ' Teleportation master controller program. lt1 is in charge, lt2 is remote
 
 ' modes:
 ' 0 : start
-' 1 : do local repumping
+' 1 : do local yellow repumping / resonance check
 ' 2 : do local red CR check
 ' 3 : wait for N polarization
 ' 4 : local CR OK, wait for remote
-' 5 : trigger AWG sequence (LDE element), wait for the done-signal (=timeout)
-'
+' 5 : run LDE
+' 6 : run nitrogen initialization, BSM
+' 7 : do SSRO 1 + SP
+' 8 : run nitrogen RO pulse
+' 9 : do SSRO 2
+' 10: run U and RO basis rotation
+' 11: wait for remote SSRO
+''
 ' remote modes:
 ' 0 : start remote CR check
 ' 1 : remote CR check running
 ' 2 : remote CR OK, waiting
+' 3 : remote SSRO running
+' 4 : remote SSRO OK
 
+' run-modes:
+' 0 : Teleportation
 
 #INCLUDE ADwinGoldII.inc
 #INCLUDE Math.inc
@@ -33,6 +43,7 @@
 #DEFINE max_red_hist_cts        100            ' dimension of photon counts histogram for red CR
 #DEFINE max_repump_hist_cts     100            ' dimension of photon counts histogram for repump hist
 #DEFINE max_statistics          15
+#DEFINE max_hist_CR_probe_time  500            '*1000 = 0.5 s is max time of CR probe time statistics
 
 ' parameters
 DIM DATA_20[40] AS LONG                   AT DRAM_EXTERN ' integer parameters
@@ -43,11 +54,13 @@ DIM DATA_9[max_repump_hist_cts] AS LONG   AT EM_LOCAL ' histogram of counts duri
 DIM DATA_10[max_repump_hist_cts] AS LONG  AT EM_LOCAL ' histogram of counts during repump (all attempts)
 DIM DATA_23[max_repetitions] AS LONG      AT DRAM_EXTERN 'CR counts after teleportation
 DIM DATA_24[max_repetitions] AS LONG      AT DRAM_EXTERN 'BSM SSRO 1 (electron) results
-
+DIM DATA_25[max_repetitions] AS LONG      AT DRAM_EXTERN 'PLU Bell states
 DIM DATA_26[max_repetitions] AS LONG      AT DRAM_EXTERN 'BSM SSRO2 (nitrogen) results
 DIM DATA_27[max_repetitions] AS LONG      AT EM_LOCAL    'CR check counts before teleportation event
 DIM DATA_28[max_statistics] AS LONG       AT EM_LOCAL    'statistics on entering modes
 DIM DATA_29[max_repetitions] AS LONG      AT EM_LOCAL    ' CR timer before LDE element of teleportation event
+DIM DATA_30[max_hist_CR_probe_time] AS LONG AT EM_LOCAL  ' CR probe time statistics before LDE sequence
+DIM DATA_31[max_hist_CR_probe_time] AS LONG AT EM_LOCAL  ' CR probe time lt2 statistics before LDE sequence
 
 ' general variables
 DIM i               AS LONG ' counter for array initalization
@@ -59,7 +72,7 @@ DIM wait_time       AS LONG
 DIM CR_probe_timer  AS LONG
 DIM CR_probe_time   AS LONG
 DIM CR_timer_lt2    AS LONG
-DIM CR_time_lt2     as LONG
+DIM CR_time_lt2      as LONG
 
 'tuning
 DIM tune_duration AS LONG
@@ -76,12 +89,12 @@ DIM e_sp_voltage AS FLOAT
 DIM e_ro_voltage AS FLOAT
 DIM e_tune_voltage AS FLOAT
 DIM e_off_voltage AS FLOAT
-DIM a_aom_channel AS LONG
-DIM a_cr_voltage AS FLOAT
-DIM a_sp_voltage AS FLOAT
-DIM a_ro_voltage AS FLOAT
-DIM a_tune_voltage AS FLOAT
-DIM a_off_voltage AS FLOAT 
+DIM fb_aom_channel AS LONG
+DIM fb_cr_voltage AS FLOAT
+DIM fb_sp_voltage AS FLOAT
+DIM fb_ro_voltage AS FLOAT
+DIM fb_tune_voltage AS FLOAT
+DIM fb_off_voltage AS FLOAT 
 DIM red_cr_check_steps AS LONG                        'how long to check, in units of process cycles (lt1)
 DIM current_red_cr_check_counts AS LONG        
 DIM current_repump_counts AS LONG 
@@ -200,6 +213,7 @@ INIT:
   for i=1 to max_repetitions
     DATA_23[i] = 0    'CR check counts after teleportation
     DATA_24[i] = 0    'SSRO1 results
+    DATA_25[i] = 0    'PLU Bell state
     DATA_26[i] = 0    'SSRO2 results
     DATA_27[i] = 0    'CR check counts before event
     DATA_29[i] = 0    'CR timer before LDE element of teleportation event
@@ -207,13 +221,18 @@ INIT:
      
   for i=1 to max_statistics
     DATA_28[i] = 0    'statistics
-  next i  
+  next i     
+  
+  for i=1 to max_hist_CR_probe_time
+    DATA_30[i] = 0   'lt1 CR probe timer
+    DATA_31[i] = 0   'lt2 CR probe timer
+  next i
       
   ' init variables
   counter                       = DATA_20[1]
   repump_aom_channel            = DATA_20[2]
   e_aom_channel                 = DATA_20[3]
-  a_aom_channel                 = DATA_20[4]
+  fb_aom_channel                = DATA_20[4]
   red_cr_check_steps            = DATA_20[5]
   cr_threshold_prepare          = DATA_20[6]
   cr_threshold_probe            = DATA_20[7]
@@ -253,15 +272,15 @@ INIT:
   repump_voltage                = DATA_21[1]
   repump_off_voltage            = DATA_21[2]
   e_cr_voltage                  = DATA_21[3]
-  a_cr_voltage                  = DATA_21[4]
+  fb_cr_voltage                 = DATA_21[4]
   e_sp_voltage                  = DATA_21[5]
-  a_sp_voltage                  = DATA_21[6]
+  fb_sp_voltage                 = DATA_21[6]
   e_ro_voltage                  = DATA_21[7]
-  a_ro_voltage                  = DATA_21[8]
+  fb_ro_voltage                 = DATA_21[8]
   e_off_voltage                 = DATA_21[9]
-  a_off_voltage                 = DATA_21[10] 
+  fb_off_voltage                = DATA_21[10] 
 
-  do_sequences                  = set_do_sequences
+  do_sequences = set_do_sequences
   current_red_cr_check_counts   = 0
   current_repump_counts         = 0
   current_cr_threshold          = cr_threshold_prepare
@@ -333,7 +352,7 @@ INIT:
   
   DAC(repump_aom_channel, 3277*repump_off_voltage+32768)   'turn off repump laser
   DAC(e_aom_channel, 3277*e_off_voltage + 32768)           'turn off Ey aom 
-  DAC(a_aom_channel, 3277*a_off_voltage + 32768)         'turn off FB aom
+  DAC(fb_aom_channel, 3277*fb_off_voltage + 32768)         'turn off FB aom
   CNT_ENABLE(0000b)                          'turn off all counters
   CNT_MODE(counter,00001000b)                'configure counter
   CONF_DIO(11)                               'configure DIO 16:23 as input, all other ports as output
@@ -386,7 +405,6 @@ EVENT:
       endif
                                       
     case 1 'remote CR check running
-      
       ' check state of other adwin and whether it has changed to ready
       ADwin_in_was_high = ADwin_in_is_high
       ADwin_in_is_high = DIGIN(ADwin_LT2_di_channel)
@@ -467,7 +485,7 @@ EVENT:
       
       endif
               
-    case 1 'repump
+    case 1 'yellow repump / resonance check
 
       IF (timer = 0) THEN
         
@@ -517,7 +535,7 @@ EVENT:
         CNT_ENABLE(1111b)    'enable counter
                           
         DAC(e_aom_channel, 3277*e_cr_voltage+32768)  'turn on red lasers
-        DAC(a_aom_channel, 3277*a_cr_voltage+32768)
+        DAC(fb_aom_channel, 3277*fb_cr_voltage+32768)
         'DAC(repump_aom_channel, 3277*repump_voltage+32768) 
                        
       ELSE
@@ -529,7 +547,7 @@ EVENT:
           Par_70 = Par_70 + current_red_cr_check_counts
                             
           DAC(e_aom_channel,  3277*e_off_voltage +32768)   'turn off red lasers
-          DAC(a_aom_channel, 3277*a_off_voltage+32768)
+          DAC(fb_aom_channel, 3277*fb_off_voltage+32768)
           'DAC(repump_aom_channel, 3277*repump_off_voltage+32768) 
                         
           IF (cr_after_teleportation > 0) THEN    ' save the number of CR counts with teleportation event
@@ -603,6 +621,12 @@ EVENT:
           mode = 5
           wait_time = 5 ' we need to make sure that the AWG is receptive for triggering now!
           DATA_29[tele_event_id + 1] = CR_probe_timer   ' save CR timer just before LDE sequence -> put to after LDE later?
+                    
+          CR_time_lt2 = Min_long(CR_timer_lt2/1000, max_hist_CR_probe_time-1)+1
+          INC(DATA_31[CR_time_lt2])
+          
+          CR_probe_time = Min_long(CR_probe_timer/1000, max_hist_CR_probe_time-1)+1
+          INC(DATA_30[CR_probe_time])
           
         endif        
         timer = -1
@@ -636,7 +660,11 @@ EVENT:
           wait_time = 5
         endif
         
-      endif           
+      endif
+        
+            
+        
+                    
     
   ENDSELECT
   '          
@@ -670,7 +698,7 @@ EVENT:
 FINISH:
   DAC(repump_aom_channel, 3277*repump_off_voltage+32768)   'turn off repump laser
   DAC(e_aom_channel, 3277*e_off_voltage + 32768)           'turn off Ey aom 
-  DAC(a_aom_channel, 3277*a_off_voltage + 32768)         'turn off FB aom
+  DAC(fb_aom_channel, 3277*fb_off_voltage + 32768)         'turn off FB aom
   CNT_ENABLE(0000b)                          'turn off all counters
   DIGOUT(ADwin_LT2_trigger_do_channel,0)     'trigger to ADwin LT2
   DIGOUT(AWG_lt1_trigger_do_channel, 0)      'trigger to AWG LT1

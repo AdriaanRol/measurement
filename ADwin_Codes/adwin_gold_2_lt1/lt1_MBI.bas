@@ -30,7 +30,7 @@
 
 #DEFINE max_SP_bins       500
 #DEFINE max_RO_dim     200000
-#define max_sweep_dim  100000
+#define max_sweep_dim  200000
 #DEFINE max_stat           10
 #DEFINE max_sequences     100
 #define max_time        10000
@@ -38,11 +38,11 @@
 
 DIM DATA_20[35] AS LONG                           ' integer parameters
 DIM DATA_21[10] AS FLOAT                          ' float parameters
-DIM DATA_22[max_sweep_dim] AS LONG                ' CR counts before sequence
-DIM DATA_23[max_sweep_dim] AS LONG                ' CR counts after sequence
-DIM DATA_24[max_sweep_dim] AS LONG                ' number of MBI attempts needed in the successful cycle
-DIM DATA_25[max_sweep_dim] AS LONG                ' number of cycles before success
-DIM DATA_35[max_sweep_dim] AS LONG                ' time needed until mbi success (in process cycles)
+DIM DATA_22[max_sweep_dim] AS LONG AT DRAM_EXTERN ' CR counts before sequence
+DIM DATA_23[max_sweep_dim] AS LONG AT DRAM_EXTERN ' CR counts after sequence
+DIM DATA_24[max_sweep_dim] AS LONG AT DRAM_EXTERN ' number of MBI attempts needed in the successful cycle
+DIM DATA_25[max_sweep_dim] AS LONG AT DRAM_EXTERN ' number of cycles before success
+DIM DATA_35[max_sweep_dim] AS LONG AT DRAM_EXTERN ' time needed until mbi success (in process cycles)
 
 DIM DATA_26[max_stat] AS LONG AT EM_LOCAL         ' statistics
 DIM DATA_27[max_RO_dim] AS LONG AT DRAM_EXTERN    ' SSRO counts
@@ -106,9 +106,11 @@ DIM ROseq_cntr AS LONG
 
 ' MBI stuff
 dim next_MBI_stop, next_MBI_laser_stop as long
-dim current_MBI_step as long
+dim current_MBI_attempt as long
 dim MBI_attempts as long
 dim mbi_timer as long
+dim trying_mbi as long
+
 
 DIM current_cr_threshold AS LONG
 DIM CR_probe AS LONG
@@ -121,12 +123,12 @@ dim awg_in_is_hi, awg_in_was_hi, awg_in_switched_to_hi as long
 INIT:
   
   counter_channel              = DATA_20[1]
-  repump_laser_DAC_channel      = DATA_20[2]
+  repump_laser_DAC_channel     = DATA_20[2]
   Ex_laser_DAC_channel         = DATA_20[3]
   A_laser_DAC_channel          = DATA_20[4]
   AWG_start_DO_channel         = DATA_20[5]
   AWG_done_DI_channel          = DATA_20[6]
-  repump_duration        = DATA_20[7]
+  repump_duration              = DATA_20[7]
   CR_duration                  = DATA_20[8]
   SP_E_duration                = DATA_20[9]
   wait_after_pulse_duration    = DATA_20[10]
@@ -183,7 +185,7 @@ INIT:
   par_80 = ROseq_cntr
   
   next_MBI_stop = -2
-  current_MBI_step = 1
+  current_MBI_attempt = 1
   next_MBI_laser_stop = -2
       
   dac(repump_laser_DAC_channel, 3277*repump_off_voltage+32768) ' turn off green
@@ -200,6 +202,7 @@ INIT:
   mode = 0
   timer = 0
   mbi_timer = 0
+  trying_mbi = 0
   processdelay = cycle_duration
   
   awg_in_is_hi = 0
@@ -235,15 +238,9 @@ INIT:
   cr_counts = 0
   
 EVENT:
-  
-  par_59 = AWG_done_DI_channel
-  par_60 = AWG_event_jump_DO_channel
-  par_61 = AWG_start_DO_channel
-  
+ 
   awg_in_was_hi = awg_in_is_hi
   awg_in_is_hi = digin(AWG_done_DI_channel)
-  
-  par_62 = awg_in_is_hi
   
   if ((awg_in_was_hi = 0) and (awg_in_is_hi > 0)) then
     awg_in_switched_to_hi = 1
@@ -256,6 +253,10 @@ EVENT:
   CR_probe = PAR_68
   CR_repump = PAR_69
   PAR_77 = mode
+  
+  if(trying_mbi > 0) then
+    inc(mbi_timer)
+  endif   
   
   IF (wait_time > 0) THEN
     wait_time = wait_time - 1
@@ -373,7 +374,12 @@ EVENT:
         ' then wait until we can assume this is done
         IF(timer=0) THEN
          
-          if (current_MBI_step = 1) then
+          if (current_MBI_attempt = 1) then
+            
+            if(data_25[seq_cntr] = 0) then
+              trying_mbi = 1
+            endif
+                        
             inc(data_26[mode+1])
             INC(MBI_starts)
             PAR_78 = MBI_starts
@@ -407,18 +413,20 @@ EVENT:
               ' MBI succeeds if the counts surpass the threshold;
               ' we then trigger an AWG jump (sequence has to be long enough!) and move on to SP on A
               ' if MBI fails, we
-              ' - try again (until max. number of attempts)
+              ' - try again (until max. number of attempts, after some scrambling -- we use CR without threshold for that)
               ' - go back to CR checking if max number of attempts is surpassed
               IF (counts < MBI_threshold) THEN
                 INC(MBI_failed)
                 PAR_74 = MBI_failed
       
-                if (current_MBI_step = MBI_attempts) then
+                if (current_MBI_attempt = MBI_attempts) then
+                  current_cr_threshold = cr_probe
                   mode = 1 '(check resonance and start over)
-                  current_MBI_step = 1
+                  current_MBI_attempt = 1
                 else
-                  mode = 2
-                  inc(current_MBI_step)
+                  current_cr_threshold = 0
+                  mode = 1
+                  inc(current_MBI_attempt)
                 endif                
                 timer = -1      
               
@@ -427,17 +435,19 @@ EVENT:
                 CPU_SLEEP(9)               ' need >= 20ns pulse width; adwin needs >= 9 as arg, which is 9*10ns
                 digout(AWG_event_jump_DO_channel,0)
                 
-                data_24[seq_cntr] = current_MBI_step ' number of attempts needed in the successful cycle
+                data_24[seq_cntr] = current_MBI_attempt ' number of attempts needed in the successful cycle
                 mode = 4
-                current_MBI_step = 1
-                mbi_timer = 0
+                current_MBI_attempt = 1
+                trying_mbi = 0
+                ' we want to save the time MBI takes
+                data_35[seq_cntr] = mbi_timer
+                mbi_timer = 0                
+              
               endif
               timer = -1
             endif          
           endif
         ENDIF
-        
-        inc(mbi_timer)
         
       CASE 4    ' A laser spin pumping
         A_SP_voltage = DATA_30[ROseq_cntr]
@@ -535,6 +545,7 @@ EVENT:
               ' we're done once we're at the last repetition and the last RO step
               IF (repetition_counter = RO_repetitions+1) THEN
                 dec(repetition_counter)
+                Par_73 = repetition_counter
                 END
               ENDIF
                  

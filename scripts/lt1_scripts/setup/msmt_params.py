@@ -48,7 +48,7 @@ print 'updating msmt params for {}'.format(cfg['samples']['current'])
 
 branch='samples/hans-sil4/'
 
-f_msm1_cntr = 2.826526e9
+f_msm1_cntr = 2.826504e9
 N_frq = 7.13377e6
 N_HF_frq = 2.19290e6
 cfg.set(branch+'ms-1_cntr_frq', f_msm1_cntr)
@@ -317,7 +317,7 @@ cfg.set(branch+        'CR_preselect',              1000)
 cfg.set(branch+        'CR_probe',                  10)
 cfg.set(branch+        'CR_repump',                 1000)
 cfg.set(branch+        'Ex_CR_amplitude',           3e-9)
-cfg.set(branch+        'Ex_RO_amplitude',           5e-9)
+cfg.set(branch+        'Ex_RO_amplitude',           3e-9)
 cfg.set(branch+        'Ex_SP_amplitude',           0.)
 cfg.set(branch+        'SP_duration',               250)
 cfg.set(branch+        'SP_filter_duration',        0)
@@ -343,10 +343,10 @@ cfg.set(branch+        'MBI_duration',                  4)
 cfg.set(branch+        'MBI_steps',                     1)
 cfg.set(branch+        'MBI_threshold',                 1)
 cfg.set(branch+        'SP_E_duration',                 100)
-cfg.set(branch+        'repump_after_MBI_duration',     5)
-cfg.set(branch+        'repump_after_MBI_amplitude',    10e-9)
-cfg.set(branch+        'repump_after_E_RO_duration',    5)
-cfg.set(branch+        'repump_after_E_RO_amplitude',   10e-9)
+cfg.set(branch+        'repump_after_MBI_duration',     15)
+cfg.set(branch+        'repump_after_MBI_amplitude',    5e-9)
+cfg.set(branch+        'repump_after_E_RO_duration',    15)
+cfg.set(branch+        'repump_after_E_RO_amplitude',   5e-9)
 
 # MBI pulse
 cfg.set(branch+        'AWG_wait_duration_before_MBI_MW_pulse',     50e-9)
@@ -365,7 +365,7 @@ cfg.set('protocols/hans-sil4-default/BSM/H_phase', 46)
 
 branch='protocols/hans-sil4-default/pulses/'
 
-cfg.set(branch+        'selective_pi_duration',     2439e-9)
+cfg.set(branch+        'selective_pi_duration',     2500e-9)
 cfg.set(branch+        'selective_pi_amp',          0.011)
 cfg.set(branch+        'selective_pi_mod_frq',      finit)
 cfg.set(branch+        'AWG_MBI_MW_pulse_mod_frq',  

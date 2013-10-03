@@ -3,14 +3,17 @@ import numpy as np
 
 from measurement.lib.measurement2.adwin_ssro import ssro, pulsar_mbi_espin
 
-def prepare(m, sil_name, yellow = False):
-    m.params.from_dict(qt.cfgman.get('samples/'+sil_name))
+SAMPLE = qt.cfgman['samples']['current']
+SAMPLE_CFG = qt.cfgman['protocols']['current']
+
+def prepare(m, sil_name=SAMPLE, yellow=False):
+    m.params.from_dict(qt.cfgman.get('samples/'+SAMPLE))
     m.params.from_dict(qt.cfgman.get('protocols/AdwinSSRO'))
-    m.params.from_dict(qt.cfgman.get('protocols/'+sil_name+'-default/AdwinSSRO'))
-    m.params.from_dict(qt.cfgman.get('protocols/'+sil_name+'-default/AdwinSSRO-integrated'))
+    m.params.from_dict(qt.cfgman.get('protocols/'+SAMPLE_CFG+'/AdwinSSRO'))
+    m.params.from_dict(qt.cfgman.get('protocols/'+SAMPLE_CFG+'/AdwinSSRO-integrated'))
     m.params.from_dict(qt.cfgman.get('protocols/AdwinSSRO+MBI'))
-    m.params.from_dict(qt.cfgman.get('protocols/'+sil_name+'-default/AdwinSSRO+MBI'))
-    m.params.from_dict(qt.cfgman.get('protocols/'+sil_name+'-default/pulses'))
+    m.params.from_dict(qt.cfgman.get('protocols/'+SAMPLE_CFG+'/AdwinSSRO+MBI'))
+    m.params.from_dict(qt.cfgman.get('protocols/'+SAMPLE_CFG+'/pulses'))
     # m.params.from_dict(qt.cfgman.get('protocols/hans-sil4-default/BSM'))
 
     if yellow:
