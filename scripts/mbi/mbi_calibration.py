@@ -33,8 +33,8 @@ def run(name):
     m.params['SP_E_duration'] = 50
     m.params['Ex_SP_amplitude'] = 15e-9
     # m.params['AWG_MBI_MW_pulse_amp'] = 0 # set to zero for testing (then the populations of all N-states should be the same )
-    m.params['MBI_threshold'] = 1
-    m.params['MBI_steps'] = 1
+    # m.params['MBI_threshold'] = 1
+    m.params['max_MBI_attempts'] = 1
 
     # MW pulses
     m.params['MW_pulse_multiplicities'] = np.ones(pts).astype(int)
@@ -57,4 +57,4 @@ def run(name):
     funcs.finish(m, debug=False)
 
 if __name__ == '__main__':
-    run(SAMPLE + '_' + 'MBI_timing_single_testing')
+    run(SAMPLE + '_' + 'MBI_timing_N=1-TH-37prep-16')

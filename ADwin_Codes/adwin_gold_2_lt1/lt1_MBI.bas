@@ -415,6 +415,7 @@ EVENT:
               ' if MBI fails, we
               ' - try again (until max. number of attempts, after some scrambling -- we use CR without threshold for that)
               ' - go back to CR checking if max number of attempts is surpassed
+              
               IF (counts < MBI_threshold) THEN
                 INC(MBI_failed)
                 PAR_74 = MBI_failed
