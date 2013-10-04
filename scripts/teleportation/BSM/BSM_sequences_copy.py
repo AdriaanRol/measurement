@@ -74,11 +74,11 @@ class BSMMsmt(pulsar_msmt.MBI):
         self.wait_1us_elt = tseq._lt1_wait_1us_elt(self)
         
     def UNROT_element(self, name, N_pulse, evolution_time, time_offset, **kw):
-            return tseq._lt1_UNROT_element(self, name, N_pulse, evolution_time, time_offset, **kw)
+        return tseq._lt1_UNROT_element(self, name, N_pulse, evolution_time, time_offset, **kw)
     def N_init_element(self, name, basis, **kw):
-            return tseq._lt1_N_init_element(self, name, basis, **kw)
+        return tseq._lt1_N_init_element(self, name, basis, **kw)
     def BSM_elements(self, name, time_offset, start_buffer_time = 240e-9, **kw):
-            return tseq._lt1_BSM_elements(self, name, time_offset, start_buffer_time, **kw)
+        return tseq._lt1_BSM_elements(self, name, time_offset, start_buffer_time, **kw)
 
     def generate_sequence(self, upload=True):
         pass

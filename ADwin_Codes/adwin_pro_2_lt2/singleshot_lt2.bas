@@ -216,6 +216,8 @@ INIT:
   
   
   Par_73 = repetition_counter
+  
+  par_66 = 0                      ' number of repumps
 
   PAR_70 = 0                      ' cumulative counts from probe intervals
   PAR_71 = 0                      ' below CR threshold events
@@ -243,6 +245,7 @@ EVENT:
             P2_CNT_ENABLE(CTR_MODULE, counter_pattern)    'turn on counter
             P2_DAC(DAC_MODULE, repump_laser_DAC_channel, 3277*repump_voltage+32768) ' turn on green
             repumps = repumps + 1
+            Inc(par_66)
           ELSE
             mode = 1
             timer = -1

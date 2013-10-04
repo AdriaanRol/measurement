@@ -79,6 +79,8 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
         self.params_lt1['do_sequences'] = 1 if DO_SEQUENCES else 0
         self.params_lt1['do_LDE_sequence'] = 1 if DO_LDE_SEQUENCE else 0
         self.params['MW_during_LDE'] = 1 if LDE_DO_MW else 0
+        self.params['opt_pi_pulses'] = OPT_PI_PULSES
+
     
     def update_definitions(self):
         """
@@ -239,7 +241,6 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
             self.hharp.start_T2_mode()
             self.hharp.calibrate()
   
-
     def lt2_sequence(self):
         print "Make lt2 sequence... "
 
@@ -249,6 +250,9 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
         LDE_element = _lt2_LDE_element(self)
         finished_element = _lt2_sequence_finished_element(self)
 
+        def dynamical_decoupling(seq, name, time_offset):
+            return _lt2_dynamical_decoupling(self, seq, name, time_offset)
+
         self.lt2_seq.append(name = 'LDE_LT2',
             wfname = (LDE_element.name if DO_LDE_SEQUENCE else dummy_element.name),
             trigger_wait = True,
@@ -256,9 +260,19 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
             goto_target = 'LDE_LT2',
             repetitions = self.params['LDE_attempts_before_CR'])
 
+        self.lt2_seq, total_elt_time, elts = self.dynamical_decoupling(self.lt2_seq, 
+            time_offset = LDE_element.length(),
+            begin_offset_time = self.params_lt2['dd_spin_echo_time'])
+
+        ### AND ADD READOUT PULSES 
+
         elements = []
         elements.append(dummy_element)
         elements.append(finished_element)
+
+        for e in elts: #the dynamical decoupling sequence elements
+            if e not in elements:
+                elements.append(e) 
 
         if DO_LDE_SEQUENCE:
             elements.append(LDE_element)
@@ -536,111 +550,6 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
 
 #************************ sequence elements LT2   ******************************
 
-def _lt2_sequence_finished_element(msmnt):
-    """
-    last element of a two-setup sequence. Sends a trigger to ADwin LT2.
-    """
-    e = element.Element('LT2_finished', pulsar = qt.pulsar)
-    e.append(msmnt.adwin_lt2_trigger_pulse)
-    return e
-
-def _lt2_dummy_element(msmnt):
-    """
-    A 1us empty element we can use to replace 'real' elements for certain modes.
-    """
-    e = element.Element('Dummy', pulsar = qt.pulsar)
-    e.append(pulse.cp(msmnt.T, length=1e-6))
-    return e
-
-def _lt2_LDE_element(msmnt, **kw):
-    """
-    This element contains the LDE part for LT2, i.e., spin pumping and MW pulses
-    for the LT2 NV and the optical pi pulses as well as all the markers for HH and PLU.
-    """
-
-    # variable parameters
-    name = kw.pop('name', 'LDE_LT2')
-    eom_pulse_amplitude = kw.pop('eom_pulse_amplitude', msmnt.params_lt2['eom_pulse_amplitude'])
-
-    ###
-    e = element.Element(name, pulsar = qt.pulsar, global_time = True)
-    e.add(pulse.cp(msmnt.SP_pulse,
-            amplitude = 0,
-            length = msmnt.params['LDE_element_length']))
-
-    #1 SP
-    e.add(pulse.cp(msmnt.SP_pulse, 
-            amplitude = 0, 
-            length = msmnt.params_lt2['initial_delay']), 
-        name = 'initial delay')
-    
-    e.add(pulse.cp(msmnt.SP_pulse, 
-            length = msmnt.params['LDE_SP_duration'], 
-            amplitude = 1.0), 
-        name = 'spinpumping', 
-        refpulse = 'initial delay')
-
-    e.add(pulse.cp(msmnt.yellow_pulse, 
-            length = msmnt.params['LDE_SP_duration_yellow'], 
-            amplitude = 1.0), 
-        name = 'spinpumpingyellow', 
-        refpulse = 'initial delay')
-
-    
-    for i in range(OPT_PI_PULSES):
-        name = 'opt pi {}'.format(i+1)
-        refpulse = 'opt pi {}'.format(i) if i > 0 else 'spinpumping'
-        start = msmnt.params_lt2['opt_pulse_separation'] if i > 0 else msmnt.params['wait_after_sp']
-        refpoint = 'start' if i > 0 else 'end'
-
-        e.add(pulse.cp(msmnt.eom_aom_pulse, 
-                eom_pulse_amplitude = eom_pulse_amplitude),
-            name = name, 
-            start = start,
-            refpulse = refpulse,
-            refpoint = refpoint)
-   
-    #4 MW pi/2
-    if LDE_DO_MW:
-        e.add(msmnt.CORPSE_pi2, 
-            start = -msmnt.params_lt2['MW_opt_puls1_separation'],
-            refpulse = 'opt pi 1', 
-            refpoint = 'start', 
-            refpoint_new = 'end')
-    #5 HHsync
-    syncpulse_name = e.add(msmnt.HH_sync, refpulse = 'opt pi 1', refpoint = 'start', refpoint_new = 'end')
-    
-    #6 plugate 1
-    e.add(msmnt.plu_gate, name = 'plu gate 1', refpulse = 'opt pi 1')
-
-    #8 MW pi
-    # if LDE_DO_MW:
-    #     e.add(msmnt.CORPSE_pi, start = - msmnt.params_lt2['MW_opt_puls2_separation'],
-    #             refpulse = 'opt pi 2', refpoint = 'start', refpoint_new = 'end')
-    
-    #10 plugate 2
-    e.add(msmnt.plu_gate, name = 'plu gate 2', refpulse = 'opt pi {}'.format(OPT_PI_PULSES))
-    
-    #11 plugate 3
-    e.add(pulse.cp(msmnt.plu_gate, 
-            length = msmnt.params_lt2['PLU_gate_3_duration']), 
-        name = 'plu gate 3', 
-        start = msmnt.params_lt2['PLU_3_delay'], 
-        refpulse = 'plu gate 2')
-    
-    #12 plugate 4
-    e.add(msmnt.plu_gate, name = 'plu gate 4', start = msmnt.params_lt2['PLU_4_delay'],
-            refpulse = 'plu gate 3')
-    
-    #13 final delay
-    # e.add(pulse.cp(msmnt.plu_gate, 
-    #         amplitude = 0, 
-    #         length = msmnt.params['finaldelay']), 
-    #     refpulse = 'plu gate 4')
-    
-    #14 optional more opt pulses for TPQI
-
-    return e
 
 class TeleportationSlave:
 
@@ -686,8 +595,8 @@ class TeleportationSlave:
         LDE_element = tseq._lt1_LDE_element(self)
         dummy_element = tseq._lt1_dummy_element(self)
         adwin_lt1_trigger_element = tseq._lt1_adwin_LT1_trigger_element(self)
-        # N_init_element, BSM_CNOT_elt, BSM_UNROT_elt = tseq._lt1_N_init_and_BSM_for_teleportation(self)
-        # N_RO_CNOT_elt = tseq._lt1_N_RO_CNOT_elt(self)
+        N_init_element, BSM_CNOT_elt, BSM_UNROT_elt = tseq._lt1_N_init_and_BSM_for_teleportation(self)
+        N_RO_CNOT_elt = tseq._lt1_N_RO_CNOT_elt(self)
 
         self.lt1_seq.append(name = 'N_pol_decision',
             wfname = N_pol_decision_element.name,
@@ -709,42 +618,44 @@ class TeleportationSlave:
 
         self.lt1_seq.append(name = 'LDE_LT1',
             wfname = (LDE_element.name if DO_LDE_SEQUENCE else dummy_element.name),
-            jump_target = 'N_init',
+            jump_target = ('N_init' if DO_BSM else None),
             repetitions = self.params['LDE_attempts_before_CR'])
 
         self.lt1_seq.append(name = 'LDE_timeout',
             wfname = adwin_lt1_trigger_element.name,
             goto_target = 'N_pol_decision')
 
+        if DO_BSM:
+            self.lt1_seq.append(name = 'N_init', 
+                wfname = N_init_element.name)
 
-        # self.lt1_seq.append(name = 'N_init', 
-        #     wfname = N_init_element.name)
+            self.lt1_seq.append(name = 'BSM_CNOT',
+                wfname = BSM_CNOT_elt.name)
 
-        # self.lt1_seq.append(name = 'BSM_CNOT',
-        #     wfname = BSM_CNOT_elt.name)
+            self.lt1_seq.append(name = 'BSM_H_UNROT',
+                wfname = BSM_UNROT_elt.name)
 
-        # self.lt1_seq.append(name = 'BSM_H_UNROT',
-        #     wfname = BSM_UNROT_elt.name)
+            self.lt1_seq.append(name = 'sync_before_first_ro', 
+                wfname = adwin_lt1_trigger_element.name)
 
-        # self.lt1_seq.append(name = 'sync_before_first_ro', 
-        #     wfname = adwin_lt1_trigger_element.name)
+            self.lt1_seq.append(name = 'N_RO_CNOT',
+                trigger_wait = True,
+                wfname = N_RO_CNOT_elt.name)
 
-        # self.lt1_seq.append(name = 'N_RO_CNOT',
-        #     trigger_wait = True,
-        #     wfname = N_RO_CNOT_elt.name)
-
-        # self.lt1_seq.append(name = 'sync_before_second_ro', 
-        #     wfname = adwin_lt1_trigger_element.name, 
-        #     goto_target = 'N_pol_decision')
+            self.lt1_seq.append(name = 'sync_before_second_ro', 
+                wfname = adwin_lt1_trigger_element.name, 
+                goto_target = 'N_pol_decision')
 
         elements = []
         elements.append(N_pol_decision_element)
         elements.append(adwin_lt1_trigger_element)
         elements.append(start_LDE_element)
-        # elements.append(N_init_element)
-        # elements.append(BSM_CNOT_elt)
-        # elements.append(BSM_UNROT_elt)
-        # elements.append(N_RO_CNOT_elt)
+
+        if DO_BSM:
+            elements.append(N_init_element)
+            elements.append(BSM_CNOT_elt)
+            elements.append(BSM_UNROT_elt)
+            elements.append(N_RO_CNOT_elt)
 
         if DO_POLARIZE_N:
             elements.append(N_pol_element)
@@ -775,8 +686,8 @@ class TeleportationSlave:
 
 
 ### CONSTANTS AND FLAGS
-YELLOW = False              # whether to use yellow on lt2
-HH = False                # if False no HH data acquisition from within qtlab.
+YELLOW = True              # whether to use yellow on lt2
+HH = True                # if False no HH data acquisition from within qtlab.
 DO_POLARIZE_N = False      # if False, no N-polarization sequence on LT1 will be used
 DO_SEQUENCES = True      # if False, we won't use the AWG at all
 DO_LDE_SEQUENCE = True    # if False, no LDE sequence (both setups) will be done
@@ -786,7 +697,7 @@ DO_OPT_RABI_AMP_SWEEP = False # if true, we sweep the rabi parameters instead of
 HH_MIN_SYNC_TIME = 0 # 9 us
 HH_MAX_SYNC_TIME = 3e6 # 10.2 us
 OPT_PI_PULSES = 2
-
+DO_BSM = False
 
        
 ### configure the hardware (statics)

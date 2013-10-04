@@ -190,5 +190,5 @@ def lt1_hans4_calibrate_msm1_pi2(name='hans4_msm1_pi'):
 
 if __name__ == '__main__':
     #sweep_amplitude('sil4_test')
-    #lt1_hans4_calibrate_msm1_pi()
+    lt1_hans4_calibrate_msm1_pi()
     lt1_hans4_calibrate_msm1_pi2()

@@ -69,7 +69,7 @@ params_lt1['repump_duration'] = 10#50
 params_lt1['time_before_forced_CR'] = 1 #1#20000 # FIXME
 params_lt1['N_pol_element_repetitions'] = 5 # FIXME
 
-params_lt2['repump_duration'] = 500
+params_lt2['repump_duration'] = 500#yellow 10#green #
 params_lt2['repump_freq_offset'] = 5.
 params_lt2['repump_freq_amplitude'] = 4.
 
@@ -90,11 +90,11 @@ params_lt1['repump_amplitude'] = 200e-6 #300e-6#
 
 params_lt2['Ey_CR_amplitude'] = 6e-9             
 params_lt2['A_CR_amplitude'] = 16e-9              
-params_lt2['Ey_SP_amplitude'] = 10e-9              
+params_lt2['Ey_SP_amplitude'] = 0e-9              
 params_lt2['A_SP_amplitude'] = 20e-9             
 params_lt2['Ey_RO_amplitude'] = 10e-9
 params_lt2['A_RO_amplitude'] = 0
-params_lt2['repump_amplitude'] = 50e-9 #yellow
+params_lt2['repump_amplitude'] = 50e-9#yellow 200e-6#green #
 
 ####################
 ### pulses and MW stuff LT1
@@ -158,30 +158,37 @@ params_lt1['N_pi_amp'] = 1.
 params_lt1['N_pi2_duration'] = 47.3e-6/2
 params_lt1['N_pi2_amp'] =1.
 
+
+
 ####################
-### pulses and MW stuff LT1
+### pulses and MW stuff LT2
 #####################
 ## general
-params_lt2['mw_frq'] = 2.8e9
+f_msm1_cntr_lt2 = 2.828825e9
+mw0_lt2 = 2.8e9
+f0_lt2 = f_msm1_cntr_lt2 - mw0_lt2
+params_lt2['ms-1_cntr_frq'] = f_msm1_cntr_lt2
+params_lt2['mw_frq'] = mw0_lt2
 params_lt2['mw_power'] = 20
 params_lt2['MW_pulse_mod_risetime'] = 10e-9
 
+CORPSE_frq_lt2 = 8.15e6
+params_lt2['CORPSE_pi_mod_frq'] = f0_lt2
+params_lt2['CORPSE_pi_amp'] = 0.438
+params_lt2['CORPSE_pi_60_duration'] =1./CORPSE_frq_lt2/6.
+params_lt2['CORPSE_pi_m300_duration'] = 5./CORPSE_frq_lt2/6.
+params_lt2['CORPSE_pi_420_duration'] = 7./CORPSE_frq_lt2/6.
 
+params_lt2['CORPSE_pi2_mod_frq'] = f0_lt2
+params_lt2['CORPSE_pi2_amp'] = 0.506
+params_lt2['CORPSE_pi2_24p3_duration'] = 24.3/CORPSE_frq_lt2/360.
+params_lt2['CORPSE_pi2_m318p6_duration'] = 318.6/CORPSE_frq_lt2/360.
+params_lt2['CORPSE_pi2_384p3_duration'] = 384.3/CORPSE_frq_lt2/360.
 
-## Hannes: i just copied these corpse parameters from msmt_params in setup
-CORPSE_frq = 8.035e6
-params_lt2['CORPSE_pi2_mod_frq'] = params_lt2['mw_frq']
-params_lt2['CORPSE_pi2_amp'] = 0.639
-params_lt2['CORPSE_pi2_24p3_duration'] = 24.3/CORPSE_frq/360.
-params_lt2['CORPSE_pi2_m318p6_duration'] = 318.6/CORPSE_frq/360.
-params_lt2['CORPSE_pi2_384p3_duration'] = 384.3/CORPSE_frq/360.
-
-params_lt2['CORPSE_pi_mod_frq'] = params_lt2['mw_frq']
-params_lt2['CORPSE_pi_amp'] = 0.605
-params_lt2['CORPSE_pi_60_duration'] =1./CORPSE_frq/6.
-params_lt2['CORPSE_pi_m300_duration'] = 5./CORPSE_frq/6.
-params_lt2['CORPSE_pi_420_duration'] = 7./CORPSE_frq/6.
-
+params_lt2['DD_pi_phases'] = [-90,0,-90] ## THIS DEFINES THE YXY SEQUENCE
+params_lt2['first_C_revival'] = 53.6e-6
+params_lt2['dd_extra_t_between_pi_pulses'] = 22e-9
+params_lt2['dd_spin_echo_time'] = 520e-9 
 
 ### LDE sequence settings
 params['HH_sync_period'] = 400e-9 # in seconds -- important for checking (see measurement_loop())
@@ -224,8 +231,9 @@ params['MW_during_LDE']               = 0 #NOTE:MW stuff not implemented, yet
 params['LDE_SP_duration']             = 5e-6
 params['LDE_SP_duration_yellow']      = 3e-6
 params['wait_after_sp']               = 500e-9 #this should be large enough, so that the MW puls fits
-params['LDE_element_length']          = 6.8e-6 # 9k for TPQI.
+params['LDE_element_length']          = 7e-6 # 9k for TPQI.
 
+params['source_state_basis'] = 'X'
 
 ### default process settings
 params['LDE_attempts_before_CR'] = 1000 # 1000 for tpqi seems ok
@@ -243,6 +251,9 @@ params_lt2['teleportation_repetitions'] = -1
 ## parameters (for now) only used in calibration scripts
 ########
 
+
+############### lt1
+####################
 params_lt1['AWG_wait_duration_before_MBI_MW_pulse'] = 1e-6
 params_lt1['AWG_wait_for_adwin_MBI_duration'] = 15e-6
 params_lt1['AWG_wait_duration_before_shelving_pulse'] = 100e-9
@@ -281,3 +292,27 @@ params_lt1['CR_probe'] = params_lt1['CR_threshold_probe']
 
 params_lt1['wait_after_RO_pulse_duration'] = 3
 params_lt1['wait_after_pulse_duration'] = 3
+
+
+############### lt1
+####################
+params_lt2['SP_duration'] = 250
+params_lt2['SSRO_duration'] = params_lt2['SSRO_lt2_duration'] 
+params_lt2['SSRO_stop_after_first_photon'] = 0
+params_lt2['SP_filter_duration'] = 0
+
+params_lt2['cycle_duration'] = 300
+params_lt2['sequence_wait_time'] = 1
+params_lt2['wait_after_RO_pulse_duration'] = 3
+params_lt2['wait_after_pulse_duration'] = 3
+params_lt2['send_AWG_start'] = 1
+params_lt2['repump_after_repetitions'] = 1
+
+params_lt2['AWG_done_DI_channel'] = params_lt2['AWG_lt2_di_channel']
+params_lt2['AWG_event_jump_DO_channel'] = 6
+params_lt2['AWG_start_DO_channel'] = 1
+
+params_lt2['Ex_CR_amplitude'] = params_lt2['Ey_CR_amplitude']
+params_lt2['Ex_SP_amplitude'] = params_lt2['Ey_SP_amplitude']
+params_lt2['Ex_RO_amplitude'] = params_lt2['Ey_RO_amplitude']
+params_lt2['Ex_off_voltage'] = params_lt2['Ey_off_voltage']

@@ -37,11 +37,14 @@ class Pulsar:
     def define_channel(self, id, name, type, delay, offset, 
             high, low, active):
 
+        _doubles = []
         for c in self.channels:
             if self.channels[c]['id'] == id:
                 logging.warning(
                     "Channel '%s' already in use, will overwrite." % id)
-                del self.channels[c]
+                _doubles.append(c)
+        for c in _doubles:
+            del self.channels[c]
         
         self.channels[name] = {
             'id' : id,

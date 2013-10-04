@@ -7,15 +7,15 @@ import qt
 from measurement.lib.measurement2.adwin_ssro import pulsar as pulsar_msmt
 
 #this is a CORPSE calibration based on electron Rabi.
-import measurement.scripts.lt2_scripts.adwin_ssro.teleportation.CORPSE_calibration as CORPSE_calibration
+import measurement.scripts.espin.calibrate_CORPSE as CORPSE_calibration
 reload(CORPSE_calibration)
-from measurement.scripts.lt2_scripts.adwin_ssro.teleportation.CORPSE_calibration import CORPSEPiCalibration
-from measurement.scripts.lt2_scripts.adwin_ssro.teleportation.CORPSE_calibration import CORPSEPi2Calibration
+from measurement.scripts.espin.calibrate_CORPSE import CORPSEPiCalibration
+from measurement.scripts.espin.calibrate_CORPSE import CORPSEPi2Calibration
 
 from measurement.scripts.lt2_scripts.adwin_ssro import espin_funcs as funcs
 reload(funcs)
 
-name = 'hans-sil4'
+name = 'sil9'
 
 
 ### Calibration stage 1
@@ -54,7 +54,7 @@ def cal_CORPSE_pi(name):
     m.params['wait_for_AWG_done'] = 1
 
     # sweep params
-    m.params['CORPSE_pi_sweep_amps'] = np.linspace(0.5, 0.6, pts)#
+    m.params['CORPSE_pi_sweep_amps'] = np.linspace(0.42, 0.52, pts)
     m.params['multiplicity'] = 11
     name = name + 'M={}'.format(m.params['multiplicity'])
     m.params['delay_reps'] = 15
@@ -75,7 +75,7 @@ def cal_CORPSE_pi2(name):
     m.params['wait_for_AWG_done'] = 1
 
     # sweep params
-    m.params['CORPSE_pi2_sweep_amps'] = np.linspace(0.5, 0.6, pts)#
+    m.params['CORPSE_pi2_sweep_amps'] = np.linspace(0.42, 0.52, pts)#
     m.params['multiplicity'] = 1
     name = name + 'M={}'.format(m.params['multiplicity'])
     m.params['delay_element_length'] = 1e-6

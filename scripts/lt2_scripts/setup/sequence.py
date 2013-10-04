@@ -11,6 +11,7 @@ try:
 except:
     pass
 qt.pulsar = pulsar.Pulsar()
+qt.pulsar.AWG_type = 'opt09'
 
 ### channels
 # RF

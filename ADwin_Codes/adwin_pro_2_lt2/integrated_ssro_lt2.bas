@@ -218,6 +218,7 @@ INIT:
   
   par_59 = SSRO_repetitions
   par_60 = sweep_length
+  par_66 = 0                      ' no of rempumps
   
   Par_73 = repetition_counter
   PAR_70 = 0                      ' CR counts
@@ -256,6 +257,7 @@ EVENT:
             P2_CNT_ENABLE(CTR_MODULE, counter_pattern)    'turn on counter
             P2_DAC(DAC_MODULE, green_laser_DAC_channel, 3277*green_repump_voltage+32768) ' turn on green
             repumps = repumps + 1
+            inc(par_66)
           ELSE
             mode = 1
             timer = -1

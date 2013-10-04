@@ -33,8 +33,8 @@ def darkesr(name, yellow = False):
 
     m.params['mw_frq'] = 2.8e9
 
-    m.params['ssbmod_frq_start'] = 28.288e6 + 4e6
-    m.params['ssbmod_frq_stop'] = 28.288e6 - 4e6
+    m.params['ssbmod_frq_start'] = 28.288e6 - 5e6
+    m.params['ssbmod_frq_stop'] = 28.288e6 + 5e6
     m.params['pts'] = 161
     m.params['mw_power'] = 20
     m.params['pulse_length'] = 2e-6
@@ -42,7 +42,7 @@ def darkesr(name, yellow = False):
     m.params['repetitions'] = 1000
     m.params['ssbmod_amplitude'] = 0.01
     m.params['MW_pulse_mod_risetime'] = 10e-9
-    m.params['SSRO_duration'] = 20
+    m.params['SSRO_duration'] = 40
     
     m.autoconfig()
     m.generate_sequence(upload=True)
@@ -51,4 +51,4 @@ def darkesr(name, yellow = False):
     m.finish()
 
 if __name__ == '__main__':
-    darkesr('sil9-default', yellow = False)
+    darkesr('sil9-default', yellow = True)

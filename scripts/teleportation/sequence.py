@@ -1,4 +1,6 @@
 from measurement.lib.pulsar import pulse, pulselib, element, pulsar
+import qt
+import numpy as np
 
 import parameters as tparams
 reload(tparams)
@@ -45,7 +47,8 @@ def pulse_defs_lt2(msmt):
 
     ### synchronizing, etc
     msmt.adwin_lt2_trigger_pulse = pulse.SquarePulse(channel = 'adwin_sync',
-        length = 5e-6, amplitude = 2)
+        length = 5e-6, amplitude = 2) #only used for calibrations!!
+
 
 
     ### LDE attempt
@@ -277,7 +280,7 @@ def _lt1_LDE_element(msmt):
                 start = msmt.params_lt1['MW_separation'],
                 refpulse = 'mw_pi2_pulse', refpoint = 'end', refpoint_new = 'start')
         
-    # e.add(pulse.cp(msmnt.TIQ, duration = msmnt.params_lt1['finaldelay']))
+    # e.add(pulse.cp(msmt.TIQ, duration = msmt.params_lt1['finaldelay']))
     
     # need some waiting pulse on IQ here to be certain to operate on spin echo after
 
@@ -578,4 +581,267 @@ def _lt1_N_init_and_BSM_for_teleportation(msmt):
         time_offset = msmt.params['LDE_element_length'] + N_init_elt.length())
 
     return N_init_elt, BSM_elts[0], BSM_elts[1]
+
+
+
+#************************ Sequence elements LT2   ******************************
+
+#### single elements
+def _lt2_sequence_finished_element(msmt):
+    """
+    last element of a two-setup sequence. Sends a trigger to ADwin LT2.
+    """
+    e = element.Element('LT2_finished', pulsar = qt.pulsar)
+    e.append(msmt.adwin_lt2_trigger_pulse)
+    return e
+
+def _lt2_dummy_element(msmt):
+    """
+    A 1us empty element we can use to replace 'real' elements for certain modes.
+    """
+    e = element.Element('Dummy', pulsar = qt.pulsar)
+    e.append(pulse.cp(msmt.T, length=1e-6))
+    return e
+
+def _lt2_wait_1us_element(msmt):
+    """
+    A 1us empty element we can use to replace 'real' elements for certain modes.
+    """
+    e = element.Element('wait_1_us', 
+        pulsar = qt.pulsar)
+    e.append(pulse.cp(msmt.T, length=1e-6))
+    return e
+
+def _lt2_LDE_element(msmt, **kw):
+    """
+    This element contains the LDE part for LT2, i.e., spin pumping and MW pulses
+    for the LT2 NV and the optical pi pulses as well as all the markers for HH and PLU.
+    """
+
+    # variable parameters
+    name = kw.pop('name', 'LDE_LT2')
+    eom_pulse_amplitude = kw.pop('eom_pulse_amplitude', msmt.params_lt2['eom_pulse_amplitude'])
+    pi2_pulse_amp = kw.pop('pi2_pulse_amp', msmt.params_lt2['CORPSE_pi2_amp'])
+    pi2_pulse_phase = kw.pop('pi2_pulse_phase', 0)
+
+    ###
+    e = element.Element(name, 
+        pulsar = qt.pulsar, 
+        global_time = True)
+    e.add(pulse.cp(msmt.SP_pulse,
+            amplitude = 0,
+            length = msmt.params['LDE_element_length']))
+
+    #1 SP
+    e.add(pulse.cp(msmt.SP_pulse, 
+            amplitude = 0, 
+            length = msmt.params_lt2['initial_delay']), 
+        name = 'initial delay')
+    
+    e.add(pulse.cp(msmt.SP_pulse, 
+            length = msmt.params['LDE_SP_duration'], 
+            amplitude = 1.0), 
+        name = 'spinpumping', 
+        refpulse = 'initial delay')
+
+    e.add(pulse.cp(msmt.yellow_pulse, 
+            length = msmt.params['LDE_SP_duration_yellow'], 
+            amplitude = 1.0), 
+        name = 'spinpumpingyellow', 
+        refpulse = 'initial delay')
+
+    
+    for i in range(msmt.params['opt_pi_pulses']):
+        name = 'opt pi {}'.format(i+1)
+        refpulse = 'opt pi {}'.format(i) if i > 0 else 'spinpumping'
+        start = msmt.params_lt2['opt_pulse_separation'] if i > 0 else msmt.params['wait_after_sp']
+        refpoint = 'start' if i > 0 else 'end'
+
+        e.add(pulse.cp(msmt.eom_aom_pulse, 
+                eom_pulse_amplitude = eom_pulse_amplitude),
+            name = name, 
+            start = start,
+            refpulse = refpulse,
+            refpoint = refpoint)
+   
+    #4 MW pi/2
+    if msmt.params['MW_during_LDE'] == 1:
+        e.add( pulse.cp(msmt.CORPSE_pi2, amplitude = pi2_pulse_amp, 
+            phase = pi2_pulse_phase), 
+            start = -msmt.params_lt2['MW_opt_puls1_separation'],
+            refpulse = 'opt pi 1', 
+            refpoint = 'start', 
+            refpoint_new = 'end')
+    #5 HHsync
+    syncpulse_name = e.add(msmt.HH_sync, refpulse = 'opt pi 1', refpoint = 'start', refpoint_new = 'end')
+    
+    #6 plugate 1
+    e.add(msmt.plu_gate, name = 'plu gate 1', refpulse = 'opt pi 1')
+
+    #8 MW pi
+    if msmt.params['MW_during_LDE'] == 1:
+        e.add(msmt.CORPSE_pi, 
+            start = - msmt.params_lt2['MW_opt_puls2_separation'],
+            refpulse = 'opt pi 2', 
+            refpoint = 'start', 
+            refpoint_new = 'end')
+    
+    #10 plugate 2
+    e.add(msmt.plu_gate, name = 'plu gate 2', refpulse = 'opt pi {}'.format(msmt.params['opt_pi_pulses']))
+    
+    #11 plugate 3
+    e.add(pulse.cp(msmt.plu_gate, 
+            length = msmt.params_lt2['PLU_gate_3_duration']), 
+        name = 'plu gate 3', 
+        start = msmt.params_lt2['PLU_3_delay'], 
+        refpulse = 'plu gate 2')
+    
+    #12 plugate 4
+    e.add(msmt.plu_gate, name = 'plu gate 4', start = msmt.params_lt2['PLU_4_delay'],
+            refpulse = 'plu gate 3')
+    
+    #13 final delay
+    # e.add(pulse.cp(msmt.plu_gate, 
+    #         amplitude = 0, 
+    #         length = msmt.params['finaldelay']), 
+    #     refpulse = 'plu gate 4')
+    
+    #14 optional more opt pulses for TPQI
+
+    return e
+
+
+def _lt2_adwin_lt2_trigger_elt(msmt): #only used in calibration
+    sync_elt = element.Element('adwin_sync', pulsar=qt.pulsar)
+    sync_elt.append(msmt.adwin_lt2_trigger_pulse)
+
+    return sync_elt
+
+def _lt2_first_pi2(msmt, **kw):
+    CORPSE_pi2_amp = kw.pop('CORPSE_pi2_amp', msmt.params_lt2['CORPSE_pi2_amp'])
+    CORPSE_pi_shelv_amp = kw.pop('CORPSE_pi_shelv_amp', msmt.params_lt2['CORPSE_pi_amp'])
+    init_ms1 = kw.pop('init_ms1', False)
+    # around each pulse I make an element with length 1600e-9; 
+    # the centre of the pulse is in the centre of the element.
+    # this helps me to introduce the right waiting times, counting from centre of the pulses
+    CORPSE_pi2_wait_length = 800e-9 #- (msmt.CORPSE_pi2.length - 2*msmt.params_lt2['MW_pulse_mod_risetime'])/2 
+
+    first_pi2_elt = element.Element('first_pi2_elt', pulsar= qt.pulsar, 
+        global_time = True, time_offset = 0.)
+
+    first_pi2_elt.append(pulse.cp(msmt.T, length = 100e-9))
+    
+    if init_ms1:
+        first_pi2_elt.append(pulse.cp(msmt.CORPSE_pi, 
+            amplitude = CORPSE_pi_shelv_amp))
+        first_pi2_elt.append(pulse.cp(msmt.T, length = 100e-9))
+    
+    first_pi2_elt.append(pulse.cp(msmt.CORPSE_pi2, 
+        amplitude = CORPSE_pi2_amp))
+    first_pi2_elt.append(pulse.cp(msmt.T, 
+        length =  CORPSE_pi2_wait_length))
+
+    return first_pi2_elt
+
+def _lt2_second_pi2(msmt, name, time_offset, **kw):
+    extra_t_before_pi2 = kw.pop('extra_t_before_pi2', 0)
+    CORPSE_pi2_amp = kw.pop('CORPSE_pi2_amp', msmt.params_lt2['CORPSE_pi2_amp'])
+    CORPSE_pi2_phase = kw.pop('CORPSE_pi2_phase', 0)
+
+    # around each pulse I make an element with length 1600e-9; 
+    # the centre of the pulse is in the centre of the element.
+    # this helps me to introduce the right waiting times, counting from centre of the pulses
+    CORPSE_pi2_wait_length = 800e-9 #- (msmt.CORPSE_pi2.length - 2*msmt.params_lt2['MW_pulse_mod_risetime'])/2 
+
+    second_pi2_elt = element.Element('second_pi2_elt-{}'.format(name), pulsar= qt.pulsar, 
+        global_time = True, time_offset = time_offset)
+    second_pi2_elt.append(pulse.cp(msmt.T, 
+        length = CORPSE_pi2_wait_length + extra_t_before_pi2))
+    second_pi2_elt.append(pulse.cp(msmt.CORPSE_pi2, 
+        amplitude = CORPSE_pi2_amp,
+        phase = CORPSE_pi2_phase))
+    second_pi2_elt.append(pulse.cp(msmt.T, length =  100e-9 ))           
+
+    return second_pi2_elt
+
+#### dynamical decoupling element for adding to sequence
+def _lt2_dynamical_decoupling(msmt, seq, time_offset, **kw):
+    free_evolution_time = kw.pop('free_evolution_time', msmt.params_lt2['first_C_revival'])
+    extra_t_between_pulses = kw.pop('extra_t_between_pulses', msmt.params_lt2['dd_extra_t_between_pi_pulses'])
+    begin_offset_time = kw.pop('begin_offset_time', 0.)
+    name = kw.pop('name', 'DD')
+
+    # around each pulse I make an element with length 1600e-9; 
+    # the centre of the pulse is in the centre of the element.
+    # this helps me to introduce the right waiting times, counting from centre of the pulses
+    CORPSE_pi_wait_length = 800e-9 - (msmt.CORPSE_pi.length - 2*msmt.params_lt2['MW_pulse_mod_risetime'])/2
+    reduced_free_ev_time = free_evolution_time - 800e-9 - 800e-9      
+
+    # calculate how many waits of 1 us fit in the free evolution time (-1 repetition)
+    # this is twice the 800e-9 s that are the wrap-arounds of the pulses
+    delay_reps = np.floor(reduced_free_ev_time/1e-6) - 2
+    #calculate how much wait time should be added to the above to fill the full free evolution time (+1 us to fill full elt)
+    rest_time = np.mod(reduced_free_ev_time,1e-6) + 2e-6
+
+    wait_1us = _lt2_wait_1us_element(msmt)
+           
+    wait_rest_elt = element.Element('wait_rest_elt-{}'.format(name), pulsar=qt.pulsar,
+        global_time = True)
+    wait_rest_elt.append(pulse.cp(msmt.T, length = rest_time))
+
+    elts = []   
+    elts.append(wait_1us)
+    elts.append(wait_rest_elt)     
+
+    for j,DD_pi_phase in enumerate(msmt.params_lt2['DD_pi_phases']):
+        #calculate the time offset for the CORPSE pulse element
+        # the case j>0 asks for adding extra wrap-around times, 
+        # that are added to the CORPSE elements.
+        time_offset_CORPSE = time_offset  \
+            + (2 * j + 1) * reduced_free_ev_time  
+        if j > 0:
+            time_offset_CORPSE  = time_offset_CORPSE + begin_offset_time \
+                + (2 * j - 1) * 1600e-9 \
+                + (j - 1) * extra_t_between_pulses
+                # 1600e-9 is free_ev_time - reduced_free_ev_time             
+       
+        CORPSE_elt = element.Element('CORPSE_elt-{}-{}'.format(name,j), pulsar= qt.pulsar, 
+            global_time = True, time_offset = time_offset_CORPSE)
+        # append a longer waiting time for the not first CORPSE pulse, to get the right evolution time
+        if j == 0:
+            CORPSE_elt.append(pulse.cp(msmt.T, 
+                length = CORPSE_pi_wait_length + begin_offset_time ))
+        else:
+            # add an extra 1600e-9, that would otherwise be the wrap-around of a pulse
+            # also add the possibility to make the time between pi pulses different,
+            # this could correct for where the centre of the pi/2 pulse is.
+            CORPSE_elt.append(pulse.cp(msmt.T, 
+                length = CORPSE_pi_wait_length + 1600e-9 + extra_t_between_pulses ))
+        CORPSE_elt.append(pulse.cp(msmt.CORPSE_pi, 
+            amplitude = msmt.params_lt2['CORPSE_pi_amp'],
+            phase = DD_pi_phase))
+        CORPSE_elt.append(pulse.cp(msmt.T, 
+            length = CORPSE_pi_wait_length ))
+        elts.append(CORPSE_elt)
+       
+
+        seq.append(name = 'wait1-{}-{}'.format(name,j), 
+            wfname = wait_1us.name, 
+            repetitions = delay_reps)
+        seq.append(name= 'wait_rest1-{}-{}'.format(name,j),
+            wfname = wait_rest_elt.name)
+        seq.append(name = CORPSE_elt.name+'-{}-{}'.format(name,j), 
+            wfname = CORPSE_elt.name)
+        seq.append(name = 'wait2-{}-{}'.format(name,j), 
+            wfname = wait_1us.name, 
+            repetitions = delay_reps)
+        seq.append(name= 'wait_rest2-{}-{}'.format(name,j),
+            wfname = wait_rest_elt.name)
+
+        total_time = (2 * len(msmt.params_lt2['DD_pi_phases']) - 1) * 1600e-9 \
+            + len(msmt.params_lt2['DD_pi_phases']) * 2 * reduced_free_ev_time \
+            + (len(msmt.params_lt2['DD_pi_phases']) - 1 ) * extra_t_between_pulses \
+            + begin_offset_time
+
+    return seq, total_time, elts
 

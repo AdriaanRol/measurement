@@ -200,6 +200,7 @@ INIT:
   par_59 = 0                      ' tune (1 is tuning, 0 is running)
   par_60 = 0                      ' debug par
   
+  par_62 = 0                      ' debug
   par_63 = CR_probe_max_time
   
   par_64 = 0                      ' current mode
@@ -227,6 +228,7 @@ EVENT:
   CR_probe                     = PAR_68
   CR_repump                    = PAR_69
   
+  par_62 = current_cr_threshold
   par_64 = mode
   par_65 = timer
   

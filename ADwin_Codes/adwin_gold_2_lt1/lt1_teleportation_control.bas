@@ -193,6 +193,7 @@ INIT:
   cr_after_teleportation  = 0
   tele_event_id           = 0
   remote_delay            = 5
+  wait_time = 10
   
   max_successful_repetitions = -1
   successful_repetitions = 0
@@ -652,12 +653,14 @@ EVENT:
         AWG_LT1_in_is_high = DIGIN(AWG_LT1_di_channel)
              
         IF ((AWG_LT1_in_was_high = 0) AND (AWG_LT1_in_is_high > 0)) THEN
+          
+          inc(par_80)
 
           first_cr_probe_after_unsuccessful_lde = 1
           mode = 0
           timer = -1
           remote_mode = 0
-          wait_time = 5
+          wait_time = 10
         endif
         
       endif

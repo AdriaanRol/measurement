@@ -261,7 +261,7 @@ def dd_sweep_free_ev_time(name):
     m = DynamicalDecoupling('calibrate_first_revival')
     prepare(m)
 
-    pts = 41
+    pts = 16
     m.params['pts'] = pts
     m.params['repetitions'] = 1000
     m.params['wait_for_AWG_done'] = 1
@@ -772,7 +772,7 @@ def twod_tau_sweep(name):
 
 if __name__ == '__main__':
     #calibrate the position of first Carbon revival. 
-    #dd_sweep_free_ev_time(name)
+    dd_sweep_free_ev_time(name)
 
     #calibrate the extra time between pi pulses (on top of free evolution time)
     #dd_sweep_t_between_pi_pulses(name)
@@ -792,7 +792,7 @@ if __name__ == '__main__':
     #dd_xy8_sweep_fet(name)
     
     #t1(name)
-    t2(name)
+    #t2(name)
     #t2_xy4(name)
 
     #zerothrevival(name)

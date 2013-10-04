@@ -75,7 +75,7 @@ class DarkESR(PulsarMeasurement):
         PulsarMeasurement.autoconfig(self)
         
         self.params['sequence_wait_time'] = \
-            int(np.ceil(self.params['pulse_length']*1e6)+10)
+            int(np.ceil(self.params['pulse_length']*1e6)+15)
             
         self.params['sweep_name'] = 'MW frq (GHz)'
         self.params['sweep_pts'] = (np.linspace(self.params['ssbmod_frq_start'],
