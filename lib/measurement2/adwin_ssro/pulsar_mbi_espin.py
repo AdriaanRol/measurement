@@ -23,7 +23,8 @@ class ElectronRabi(pulsar_msmt.MBI):
             PM_risetime = self.params['MW_pulse_mod_risetime'] )
 
         adwin_sync = pulse.SquarePulse(channel='adwin_sync',
-            length = 10e-6, amplitude = 2)
+            length = self.params['AWG_to_adwin_ttl_trigger_duration'], 
+            amplitude = 2)
 
         # electron manipulation elements
         elts = []
@@ -77,7 +78,8 @@ class ElectronRamsey(pulsar_msmt.MBI):
             PM_risetime = self.params['MW_pulse_mod_risetime'])
 
         adwin_sync = pulse.SquarePulse(channel='adwin_sync',
-            length = 10e-6, amplitude = 2)
+            length = self.params['AWG_to_adwin_ttl_trigger_duration'], 
+            amplitude = 2)
 
         # electron manipulation elements
         elts = []
@@ -138,7 +140,8 @@ class ElectronRabiSplitMultElements(pulsar_msmt.MBI):
             PM_risetime = self.params['MW_pulse_mod_risetime'] )
 
         adwin_sync = pulse.SquarePulse(channel='adwin_sync',
-            length = 10e-6, amplitude = 2)
+            length = self.params['AWG_to_adwin_ttl_trigger_duration'], 
+            amplitude = 2)
 
         # electron manipulation elements
         pulse_elts = []

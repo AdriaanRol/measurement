@@ -827,22 +827,21 @@ class TheRealBSM(ENReadoutMsmt):
         self.seq = pulsar.Sequence('{}_{}-Sequence'.format(self.mprefix, 
             self.name))
 
-        for i in range(self.params['pts']):            
-            N_init = self.N_init_element(self, 
-                'N_init', 
-                basis = 'X', 
-                echo_time_after_LDE = self.params_lt1['echo_times_after_LDE'][i])
+        N_init = self.N_init_element(name = 'N_init', 
+            basis = 'X')
+        self.flattened_elements.append(self.LDE_element)
+        self.flattened_elements.append(N_init)
 
+        for i in range(self.params['pts']):            
             CNOT, UNROT_H = self.BSM_elements('{}'.format(i), 
-                time_offset = e_pi2_elt.length()+UNROT_N_init.length(),
+                time_offset = self.LDE_element.length() + N_init.length(),
                 H_phase = self.params_lt1['H_phases'][i], 
                 evolution_time = self.params_lt1['H_evolution_times'][i])
             
-            self.flattened_elements.append(LDE_element)
-            self.flattened_elements.append(N_init)
             self.flattened_elements.append(CNOT)
             self.flattened_elements.append(UNROT_H)
-            sweep_elements.append([LDE_element,N_init,CNOT, UNROT_H])
+            
+            sweep_elements.append([self.LDE_element, N_init, CNOT, UNROT_H])
             
         self.seq = self._add_MBI_and_sweep_elements_to_sequence(
             sweep_elements, self.N_RO_CNOT_elt, self.adwin_lt1_trigger_element)
@@ -853,19 +852,19 @@ class TheRealBSM(ENReadoutMsmt):
         self.seq = pulsar.Sequence('{}_{}-Sequence'.format(self.mprefix, 
             self.name))
 
-        e_pi2_elt = element.Element('e_pi2', pulsar = qt.pulsar, 
-            global_time = True, time_offset =0)
-        e_pi2_elt.append(pulse.cp(self.TIQ, 
-            length = 100e-9))
-        e_pi2_elt.append(self.fast_pi2)
-            
-
         for i in range(self.params['pts']):            
             N_init = self.N_init_element('N_init-{}'.format(i), 
                 basis = 'Z', 
                 echo_time_after_LDE = self.params_lt1['echo_times_after_LDE'][i], 
                 end_offset_time = -100e-9)
             
+            e_pi2_elt = element.Element('e_pi2-{}'.format(i), pulsar = qt.pulsar, 
+                global_time = True, time_offset = self.LDE_element.length() + N_init.length())
+            e_pi2_elt.append(pulse.cp(self.TIQ, 
+                length = 100e-9))
+            e_pi2_elt.append(self.fast_pi2)
+
+
             self.flattened_elements.append(self.LDE_element)
             self.flattened_elements.append(N_init)
             self.flattened_elements.append(e_pi2_elt)

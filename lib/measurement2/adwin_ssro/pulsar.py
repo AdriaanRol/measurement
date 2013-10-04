@@ -353,7 +353,8 @@ class MBI(PulsarMeasurement):
                     ('MBI_attempts', sweeps),
                     ('statistics', 10),
                     ('ssro_results', reps), 
-                    ('MBI_cycles', sweeps) ] )
+                    ('MBI_cycles', sweeps),
+                    ('MBI_time', sweeps),  ])
         return
 
     def _MBI_element(self):

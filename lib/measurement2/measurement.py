@@ -217,14 +217,6 @@ class Measurement(object):
         '''
         save stack files, i.e. exectuted scripts, classes and so forth,
         into the subfolder specified by STACK_DIR.
-        the depth specifies how many files are saved:
-        - 1 is only the executing script,
-        - 2 adds the module that it imports that contains the measurement
-          class,
-        - 3 the module that is imported by the module in step 2 (the more
-          basic class), and so forth.
-        the desired value of depth depends therefore on the way the code is
-        organized and how much is supposed to be saved.
         '''
         sdir = os.path.join(self.datafolder, self.STACK_DIR)
         if not os.path.isdir(sdir):
@@ -232,9 +224,11 @@ class Measurement(object):
         
         # pprint.pprint(inspect.stack())
         
-        for i in range(depth):
-            # print inspect.stack()[i][1]
+        stack = inspect.stack()
+        i = 0
+        while stack[i][1][-3:] == '.py':
             shutil.copy(inspect.stack()[i][1], sdir)
+            i+=1
 
     def add_file(self, filepath):
         '''

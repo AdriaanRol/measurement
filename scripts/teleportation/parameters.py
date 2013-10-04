@@ -100,7 +100,7 @@ params_lt2['repump_amplitude'] = 50e-9#yellow 200e-6#green #
 ### pulses and MW stuff LT1
 #####################
 ## general
-f_msm1_cntr_lt1 = 2.826526e9
+f_msm1_cntr_lt1 = 2.826504e9
 N_frq_lt1 = 7.13377e6
 N_HF_frq_lt1 = 2.19290e6
 mw0_lt1= 2.8e9
@@ -119,43 +119,43 @@ params_lt1['AWG_MBI_MW_pulse_mod_frq'] = finit_lt1
 # for the BSM:
 params_lt1['N_ref_frq'] = N_frq_lt1
 params_lt1['e_ref_frq'] = finit_lt1
-params_lt1['pi2_evolution_time'] = 51.086e-6
-params_lt1['H_evolution_time'] = 50.746e-6
-params_lt1['H_phase'] = 41
-params_lt1['echo_time_after_LDE'] = 200e-9
+params_lt1['pi2_evolution_time'] = 51.084e-6
+params_lt1['H_evolution_time'] = 50.79e-6
+params_lt1['H_phase'] = 28
+params_lt1['echo_time_after_LDE'] = 170e-9
 
 ## pulses
 params_lt1['fast_pi_mod_frq'] = finit_lt1
-params_lt1['fast_pi_amp'] = 0.823
+params_lt1['fast_pi_amp'] = 0.820
 params_lt1['fast_pi_duration'] = 62e-9
 
 # fast pi/2 pulse
 params_lt1['fast_pi2_mod_frq'] = finit_lt1
-params_lt1['fast_pi2_amp'] = 0.820
+params_lt1['fast_pi2_amp'] = 0.808
 params_lt1['fast_pi2_duration'] = 33e-9
 
 # slow pi  pulse
 params_lt1['selective_pi_mod_frq'] = finit_lt1
 params_lt1['selective_pi_amp'] =  0.011
-params_lt1['selective_pi_duration'] = 2439e-9
+params_lt1['selective_pi_duration'] = 2500e-9
 
 CORPSE_frq_lt1 = 5e6
 params_lt1['CORPSE_pi_mod_frq'] = finit_lt1 + N_HF_frq_lt1/2.
 params_lt1['CORPSE_pi_60_duration'] = 1./CORPSE_frq_lt1/6.
 params_lt1['CORPSE_pi_m300_duration'] = 5./CORPSE_frq_lt1/6.
 params_lt1['CORPSE_pi_420_duration'] = 7./CORPSE_frq_lt1/6.
-params_lt1['CORPSE_pi_amp'] = 0.363
-params_lt1['CORPSE_pi_phase_shift'] = 104.
+params_lt1['CORPSE_pi_amp'] = 0.360
+params_lt1['CORPSE_pi_phase_shift'] = 96.
 params_lt1['CORPSE_pi_center_shift'] = 0.e-9
 
 params_lt1['pi2pi_mIm1_mod_frq'] = finit_lt1
-params_lt1['pi2pi_mIm1_amp'] = 0.083
+params_lt1['pi2pi_mIm1_amp'] = 0.082
 params_lt1['pi2pi_mIm1_duration'] = 396e-9
 
-params_lt1['N_pi_duration'] = 47.3e-6
+params_lt1['N_pi_duration'] = 48.0e-6
 params_lt1['N_pi_amp'] = 1.
 
-params_lt1['N_pi2_duration'] = 47.3e-6/2
+params_lt1['N_pi2_duration'] = 48.0e-6/2
 params_lt1['N_pi2_amp'] =1.
 
 

@@ -10,12 +10,16 @@ import measurement.lib.measurement2.measurement as m2
 from measurement.lib.measurement2.adwin_ssro import ssro
 from measurement.lib.measurement2.adwin_ssro import pulsar as pulsar_msmt
 
+SAMPLE= qt.cfgman['samples']['current']
+SAMPLE_CFG = qt.cfgman['protocols']['current']
+
 def darkesr(name, yellow = False):
     m = pulsar_msmt.DarkESR(name)
     
+    m.params.from_dict(qt.cfgman.get('samples/'+SAMPLE))
     m.params.from_dict(qt.cfgman['protocols']['AdwinSSRO'])
-    m.params.from_dict(qt.cfgman['protocols']['sil9-default']['AdwinSSRO'])
-    m.params.from_dict(qt.cfgman['protocols']['sil9-default']['AdwinSSRO-integrated'])
+    m.params.from_dict(qt.cfgman['protocols'][SAMPLE_CFG]['AdwinSSRO'])
+    m.params.from_dict(qt.cfgman['protocols'][SAMPLE_CFG]['AdwinSSRO-integrated'])
     m.params.from_dict(qt.cfgman['protocols']['AdwinSSRO+espin'])
     
     if yellow:
@@ -32,12 +36,14 @@ def darkesr(name, yellow = False):
         m.params['repump_after_repetitions']=m.params['green_repump_after_repetitions']
 
     m.params['mw_frq'] = 2.8e9
+    m.params['mw_power'] = 20
+    m.params['repetitions'] = 1000
 
     m.params['ssbmod_frq_start'] = 28.288e6 - 5e6
     m.params['ssbmod_frq_stop'] = 28.288e6 + 5e6
     m.params['pts'] = 161
-    m.params['mw_power'] = 20
     m.params['pulse_length'] = 2e-6
+    m.params['ssbmod_amplitude'] = 0.02
 
     m.params['repetitions'] = 1000
     m.params['ssbmod_amplitude'] = 0.01

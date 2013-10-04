@@ -10,10 +10,13 @@ reload(pulsar_mbi_espin)
 import mbi_funcs as funcs
 reload(funcs)
 
+SAMPLE = qt.cfgman['samples']['current']
+SAMPLE_CFG = qt.cfgman['protocols']['current']
+
 ### Calibration stage 1
 def cal_slow_pi(name):
     m = pulsar_mbi_espin.ElectronRabi('cal_slow_pi_'+name)
-    funcs.prepare(m, SIL_NAME)
+    funcs.prepare(m)
     
     # measurement settings
     pts = 11
@@ -23,7 +26,7 @@ def cal_slow_pi(name):
     m.params['MW_pulse_delays'] = np.ones(pts) * 1e-9
   
     # slow pi pulses
-    m.params['MW_pulse_durations'] = np.linspace(0,5e-6,pts) + 5e-9
+    m.params['MW_pulse_durations'] = np.linspace(0, 5e-6, pts) + 5e-9
     m.params['MW_pulse_amps'] = np.ones(pts) * 0.011
     m.params['MW_pulse_mod_frqs'] = np.ones(pts) * \
         m.params['AWG_MBI_MW_pulse_mod_frq']
@@ -176,7 +179,10 @@ if __name__ == '__main__':
     SETUP = 'lt1'
     execfile('d:/measuring/measurement/scripts/'+SETUP+'_scripts/setup/msmt_params.py')
     name = SIL_NAME
+    
+    cal_slow_pi(name)
+
     #run_calibrations(1)
     #run_calibrations(2)
-    run_calibrations(3)
+    # run_calibrations(3)
 

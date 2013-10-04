@@ -503,10 +503,10 @@ def _lt1_N_init_element(msmt, name, basis = 'X', **kw):
     elif basis == '-Z':
         N_pulse = pulse.cp(msmt.N_pi) #pulse onto -z
                             
-    UNROT_N_init_elt = _lt1_UNROT_element(msmt, 'N_init_element',
+    UNROT_N_init_elt = _lt1_UNROT_element(msmt, name,
         N_pulse, 
-        msmt.params_lt1['pi2_evolution_time'], 
-        msmt.params['LDE_element_length'], 
+        evolution_time = msmt.params_lt1['pi2_evolution_time'], 
+        time_offset = msmt.params['LDE_element_length'], 
         begin_offset_time = echo_time_after_LDE,
         end_offset_time = end_offset_time)
         #end_offset time: to compensate for CNOT time in next element 
