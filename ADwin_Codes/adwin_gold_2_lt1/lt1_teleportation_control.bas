@@ -54,12 +54,12 @@ DIM i               AS LONG ' counter for array initalization
 DIM mode            AS INTEGER
 DIM remote_mode     AS INTEGER
 DIM timer           AS LONG
-DIM CR_timer        AS LONG
+' DIM CR_timer        AS LONG
 DIM wait_time       AS LONG
 DIM CR_probe_timer  AS LONG
 DIM CR_probe_time   AS LONG
-DIM CR_timer_lt2    AS LONG
-DIM CR_time_lt2     as LONG
+' DIM CR_timer_lt2    AS LONG
+' DIM CR_time_lt2     as LONG
 
 'tuning
 DIM tune_duration AS LONG
@@ -82,18 +82,21 @@ DIM a_sp_voltage AS FLOAT
 DIM a_ro_voltage AS FLOAT
 DIM a_tune_voltage AS FLOAT
 DIM a_off_voltage AS FLOAT 
-DIM red_cr_check_steps AS LONG                        'how long to check, in units of process cycles (lt1)
+DIM red_cr_check_steps AS LONG             'how long to check, in units of process cycles (lt1)
 DIM current_red_cr_check_counts AS LONG        
 DIM current_repump_counts AS LONG 
 DIM cr_threshold_prepare AS LONG          ' initial CR threshold for first resonance check (lt1)
-DIM cr_threshold_probe AS LONG            'threshold for probe after sequence (charge check) (lt1)
+DIM cr_threshold_probe AS LONG            ' threshold for probe after sequence (charge check) (lt1)
 DIM CR_repump AS LONG                                 ' CR repump threshold (typically 1 for yellow, >9000 for green)       
 DIM repump_steps AS LONG                       'how long to rempump w/ yellow or green, in process cycles (lt1)
 DIM current_cr_threshold AS LONG 
 DIM first_cr_probe_after_unsuccessful_lde AS INTEGER  'first CR check after timed out lde sequence
 DIM cr_after_teleportation AS INTEGER                 'first CR check after teleportation
-DIM time_before_forced_CR AS LONG                     'time before forced CR check on LT1
+' DIM time_before_forced_CR AS LONG                     'time before forced CR check on LT1
 DIM CR_probe_max_time AS LONG
+
+' MBI settings
+dim e_sp_steps as long
 
 'LDE sequence
 DIM AWG_lt1_trigger_do_channel AS LONG
@@ -131,7 +134,7 @@ DIM current_RO2_counts AS LONG
 DIM wait_steps_before_RO1 AS LONG
 DIM wait_steps_before_RO2 AS LONG
 DIM wait_steps_before_SP AS LONG
-DIM spin_pumping_steps AS LONG 
+'DIM spin_pumping_steps AS LONG 
 
 ' remote things on lt2
 DIM ADwin_LT2_di_channel AS LONG 
@@ -142,7 +145,6 @@ DIM ADwin_in_is_high AS LONG
 DIM ADwin_in_was_high AS LONG
 DIM ADwin_switched_to_high AS LONG
 
-' for the N polarization on LT1, AWG needs to tell us it's done
 DIM AWG_LT1_in_is_high AS LONG
 DIM AWG_LT1_in_was_high AS LONG
 DIM AWG_LT1_switched_to_high AS LONG
@@ -157,9 +159,8 @@ DIM max_CR_starts AS LONG
 DIM CR_starts AS LONG
 DIM remote_delay as long
 
-
-dim do_remote as long
-dim do_N_polarization as long
+' dim do_remote as long
+' dim do_N_polarization as long
 dim do_sequences as long
 dim set_do_sequences as long
 
@@ -174,7 +175,7 @@ DIM A AS LONG
 
 INIT:
   ' general
-  mode                    = 0
+  mode                    = 1
   remote_mode             = 0
   timer                   = 0
   cr_after_teleportation  = 0
@@ -218,7 +219,8 @@ INIT:
   cr_threshold_prepare          = DATA_20[6]
   cr_threshold_probe            = DATA_20[7]
   repump_steps                  = DATA_20[8]
-  time_before_forced_CR         = DATA_20[9]
+  e_sp_steps                    = DATA_20[9]
+  ' time_before_forced_CR         = DATA_20[9]
   max_successful_repetitions    = DATA_20[10]
   electron_RO_steps             = DATA_20[11]
   ADwin_LT2_trigger_do_channel  = DATA_20[12]
@@ -229,7 +231,7 @@ INIT:
   PLU_di_channel                = DATA_20[17]  
   wait_steps_before_RO1         = DATA_20[18]
   wait_steps_before_SP          = DATA_20[19]
-  spin_pumping_steps            = DATA_20[20]
+  ' spin_pumping_steps            = DATA_20[20]
   wait_steps_before_RO2         = DATA_20[21]
   electron_RO2_steps            = DATA_20[22]
   CR_repump                     = DATA_20[23]
@@ -244,12 +246,11 @@ INIT:
   AWG_lt2_address_U2            = DATA_20[32]
   AWG_lt2_address_U3            = DATA_20[33]
   AWG_lt2_address_U4            = DATA_20[34]
-  do_remote                     = DATA_20[35]
-  do_N_polarization             = DATA_20[36]
+  ' do_remote                     = DATA_20[35]
+  ' do_N_polarization             = DATA_20[36]
   set_do_sequences              = DATA_20[37]
   CR_probe_max_time             = DATA_20[38]
-  
-    
+      
   repump_voltage                = DATA_21[1]
   repump_off_voltage            = DATA_21[2]
   e_cr_voltage                  = DATA_21[3]
@@ -259,7 +260,7 @@ INIT:
   e_ro_voltage                  = DATA_21[7]
   a_ro_voltage                  = DATA_21[8]
   e_off_voltage                 = DATA_21[9]
-  a_off_voltage                 = DATA_21[10] 
+  a_off_voltage                 = DATA_21[10]
 
   do_sequences                  = set_do_sequences
   current_red_cr_check_counts   = 0
@@ -275,13 +276,12 @@ INIT:
   ADwin_in_is_high              = 0
   ADwin_in_was_high             = 0
   ADwin_switched_to_high        = 0
-  CR_timer                      = 0
+  ' CR_timer                      = 0
   CR_probe_timer                = 0
   AWG_LT1_in_is_high            = 0
   AWG_LT1_in_was_high           = 0
   AWG_LT1_switched_to_high      = 0
 
-      
   ' prepare hardware 
   par_58 = 0
   par_59 = 0                      'tune (1 is tuning, 0 is running)
@@ -345,8 +345,7 @@ INIT:
   
   'debug 
   timervalue1=0
-  timervalue2=0
-    
+  timervalue2=0    
   
 EVENT:
 
@@ -361,13 +360,8 @@ EVENT:
   par_61 = CR_probe_timer
   par_64 = mode
   par_65 = timer
-  par_62 = remote_mode
-      
-  ' If only one setup is used, remote_mode is set to 2 => always ready.
-  if (do_remote = 0) then
-    remote_mode = 2
-  endif
-  
+  par_62 = remote_mode      
+ 
   selectcase remote_mode
     
     case 0 'start remote CR check
@@ -395,7 +389,7 @@ EVENT:
         DIGOUT(ADwin_LT2_trigger_do_channel, 0)
         remote_mode = 2
         INC(par_73)
-        CR_timer_lt2 = 0
+        ' CR_timer_lt2 = 0
       ENDIF
       
     case 2 'remote CR OK, waiting
@@ -418,67 +412,19 @@ EVENT:
   endif
   
   selectcase mode
-        
-    case 0
-      ' CR checking.
-      ' in this mode we always start the checking on LT2 (green!)
-      ' CR checking on LT1 is only started after a certain time
-            
-      if (timer = 0) then
-      
-        if (par_59 = 1) then 'only do this if timer = 0 to prevent switching between AWG triggers/events
-          do_sequences = 0 ' this is the tune mode
-          CR_timer = 1
-        else
-          do_sequences = set_do_sequences 
-        endif
-    
-        if (do_sequences > 0) then
-          if(wait_time > 0) then
-            timer = -1
-            dec(DATA_28[mode+1]) ' correct statistics
-          else
-            DIGOUT(AWG_lt1_trigger_do_channel, 1) ' trigger the AWG to start the waiting sequence (decide element)
-            CPU_SLEEP(9)
-            DIGOUT(AWG_lt1_trigger_do_channel, 0)
-          endif
-        endif
-                        
-        INC(CR_starts) ' number of times we started the CR decision mode
-        par_66 = CR_starts
-      
-      else
-          
-        IF (CR_timer < 1) THEN
-          mode = 2
-          timer = -1
-          CR_timer = time_before_forced_CR
-        ELSE
-          
-          if (do_sequences > 0) then
-            DIGOUT(AWG_lt1_event_do_channel, 1) ' event jump to AWG to jump to LDE sequence.
-            CPU_SLEEP(9)
-            DIGOUT(AWG_lt1_event_do_channel, 0)
-          endif
-          
-          mode = 4  ' go to wait for both ready; do not check CR, do not polarize N (it is still polarized)
-          timer = -1
-        ENDIF
-      
-      endif
-              
-    case 1 'repump
+         
+    case 0 ' repump
 
       IF (timer = 0) THEN
         
-        IF (current_red_cr_check_counts < CR_repump)  THEN    
+        IF (current_red_cr_check_counts < CR_repump) THEN    
           CNT_ENABLE(0000b)    'turn off counter
           CNT_CLEAR(1111b)     'clear counter    
           CNT_ENABLE(1111b)    'enable counter       
           DAC(repump_aom_channel, 3277*repump_voltage+32768)
           inc(par_71)
         ELSE
-          mode = 2
+          mode = 1
           timer = -1
           current_CR_threshold = CR_threshold_prepare
         ENDIF
@@ -495,20 +441,20 @@ EVENT:
             
             IF (first_cr_probe_after_unsuccessful_lde > 0) THEN
               INC(DATA_9[current_repump_counts+1])
-            ENDIF
-            
+            ENDIF            
             INC(DATA_10[current_repump_counts+1])
+          
           ENDIF
           
           first_CR_probe_after_unsuccessful_LDE = 0       'reset
           current_CR_threshold = CR_threshold_prepare
-          mode = 2
+          mode = 1
           timer = -1
         ENDIF
       
       ENDIF
       
-    case 2 'do local red CR check
+    case 1 'do local red CR check
       
       IF (timer = 0) THEN
         INC(par_72)          'number of red CR checks performed
@@ -517,9 +463,8 @@ EVENT:
         CNT_ENABLE(1111b)    'enable counter
                           
         DAC(e_aom_channel, 3277*e_cr_voltage+32768)  'turn on red lasers
-        DAC(a_aom_channel, 3277*a_cr_voltage+32768)
-        'DAC(repump_aom_channel, 3277*repump_voltage+32768) 
-                       
+        DAC(a_aom_channel, 3277*a_cr_voltage+32768)                       
+      
       ELSE
         
         IF (timer = red_cr_check_steps) THEN
@@ -530,21 +475,22 @@ EVENT:
                             
           DAC(e_aom_channel,  3277*e_off_voltage +32768)   'turn off red lasers
           DAC(a_aom_channel, 3277*a_off_voltage+32768)
-          'DAC(repump_aom_channel, 3277*repump_off_voltage+32768) 
                         
           IF (cr_after_teleportation > 0) THEN    ' save the number of CR counts with teleportation event
             DATA_23[tele_event_id] = current_red_cr_check_counts
             cr_after_teleportation = 0
           ENDIF
                             
-          IF (current_red_cr_check_counts < max_red_hist_cts) THEN      'make histograms
-            ' FIXME -- else into last bin 
-            
+          IF (current_red_cr_check_counts < max_red_hist_cts) THEN      
             IF (first_cr_probe_after_unsuccessful_lde > 0) THEN
               INC(DATA_7[current_red_cr_check_counts+1]) 'make histogram for only after unsuccessful lde
-            ENDIF
-            
+            ENDIF            
             INC(DATA_8[current_red_cr_check_counts+1]) 'make histogram for all attempts
+          else
+            IF (first_cr_probe_after_unsuccessful_lde > 0) THEN
+              INC(DATA_7[ max_red_hist_cts])
+            ENDIF            
+            INC(DATA_8[ max_red_hist_cts])
           ENDIF
           
           IF (cr_probe_timer > CR_probe_max_time) THEN
@@ -558,23 +504,48 @@ EVENT:
             timer = -1
           ELSE
             first_cr_probe_after_unsuccessful_lde = 0
-            CR_timer = time_before_forced_CR
             DATA_27[tele_event_id + 1] = current_red_cr_check_counts
             
-            if ((do_N_polarization = 0) or (do_sequences = 0)) then
-              mode = 4
+            ' in case we're not actually running anything or we're in tuning mode,
+            ' only do CR checking
+            if ((do_sequences = 0) or (par_59 = 1)) then
+              mode = 1
             else
-              mode = 3
-            endif
-                        
+              mode = 2
+            endif             
             timer = -1  
-          ENDIF
-        
-        ENDIF
-      
+          ENDIF        
+        ENDIF      
       ENDIF
       
-    case 3 ' N polarization
+    CASE 2 ' E spin pumping for MBI
+        
+      ' turn on both lasers and start counting
+      IF (timer = 0) THEN
+                
+        dac(e_aom_channel, 3277*e_sp_voltage+32768) ' turn on Ex laser
+        CNT_CLEAR(1111b)     'clear counter
+        CNT_ENABLE(1111b)    'enable counter        
+      
+      ELSE          
+        
+        ' turn off the lasers, and read the counter
+        IF (timer = e_sp_steps) THEN
+          cnt_enable(0)
+          dac( Ex_laser_DAC_channel, 3277*E_off_voltage+32768) ' turn off Ex laser
+          dac( A_laser_DAC_channel, 3277*A_off_voltage+32768) ' turn off A laser
+            
+          mode = 3
+          wait_time = 3
+          timer = -1
+        ENDIF
+      ENDIF
+    
+    
+      
+''' NOT REVIEWED BELOW 
+      
+    case 3 ' N polarization 
       
       if (timer = 0) then
         DIGOUT(AWG_lt1_trigger_do_channel, 1) ' trigger the AWG to start the waiting sequence (decide element)
