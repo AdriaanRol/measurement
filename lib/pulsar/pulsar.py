@@ -306,9 +306,12 @@ class Pulsar:
                 self.AWG.set_event_jump_mode('DJUM')
                 print 'AWG set to dynamical jump'
 
+                for i in range(16):
+                    self.AWG.set_djump_def(i, 0)
+
                 for i in sequence.djump_table.keys():
-                    idx = sequence.element_index(i)
-                    self.AWG.set_djump_def(sequence.djump_table[i], idx)
+                    el_idx = sequence.element_index(sequence.djump_table[i])
+                    self.AWG.set_djump_def(i, el_idx)
 
             else:
                 self.AWG.set_event_jump_mode('EJUM')
@@ -387,9 +390,9 @@ class Sequence:
             self.djump_table = None
         return True
 
-    def add_djump_address(self, name, pattern):
+    def add_djump_address(self, pattern, name):
         #name should be the name of the element and pattern the bit address
-        self.djump_table[name] = pattern
+        self.djump_table[pattern] = name
         return True
 
 
