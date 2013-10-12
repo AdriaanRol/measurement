@@ -269,13 +269,13 @@ def _lt1_LDE_element(msmt):
 
 
     #2 MW pi/2
-    if msmt.params['MW_during_LDE'] == 1:
+    if msmt.params_lt1['MW_during_LDE'] == 1:
         e.add(msmt.fast_pi2, name = 'mw_pi2_pulse', 
                 start = msmt.params_lt1['MW_wait_after_SP'],
                 refpulse = 'spinpumping', refpoint = 'end', refpoint_new = 'start')
 
     #3 MW pi
-    if msmt.params['MW_during_LDE'] == 1:
+    if msmt.params_lt1['MW_during_LDE'] == 1:
         e.add(msmt.fast_pi, name = 'mw_pi_pulse',
                 start = msmt.params_lt1['MW_separation'],
                 refpulse = 'mw_pi2_pulse', refpoint = 'end', refpoint_new = 'start')
@@ -301,7 +301,7 @@ def _lt1_dummy_element(msmt):
     """
     e = element.Element('dummy', pulsar = msmt.pulsar_lt1, global_time = True)
     
-    e.append(pulse.cp(msmt.T, length=1e-6))
+    e.append(pulse.cp(msmt.T, length=10e-6))
 
     return e
 
@@ -488,20 +488,20 @@ def _lt1_UNROT_element(msmt, name,
 ##################
 ##### Nitrogen initialization element
 ##################
-def _lt1_N_init_element(msmt, name, basis = 'X', **kw):
+def _lt1_N_init_element(msmt, name, basis = 'Y', **kw):
     echo_time_after_LDE = kw.pop('echo_time_after_LDE', msmt.params_lt1['echo_time_after_LDE'])
     end_offset_time = kw.pop('end_offset_time', -240e-9)
 
-    if basis == 'Z':
+    if basis == '-Z':
         N_pulse = pulse.cp(msmt.TN) # waiting time only -> change as little as possible
-    elif basis == 'X':
-        N_pulse = pulse.cp(msmt.N_pi2, 
-            phase = 0) #pulse along y onto x
     elif basis == 'Y':
         N_pulse = pulse.cp(msmt.N_pi2, 
-            phase = -90) #pulse along -x onto y
-    elif basis == '-Z':
-        N_pulse = pulse.cp(msmt.N_pi) #pulse onto -z
+            phase = 0) #pulse along x onto y (starting in -z)
+    elif basis == 'X':
+        N_pulse = pulse.cp(msmt.N_pi2, 
+            phase = 90) #pulse along -y onto x (starting in -z)
+    elif basis == 'Z':
+        N_pulse = pulse.cp(msmt.N_pi) #pulse onto z (starting in -z)
                             
     UNROT_N_init_elt = _lt1_UNROT_element(msmt, name,
         N_pulse, 
@@ -600,7 +600,7 @@ def _lt2_dummy_element(msmt):
     A 1us empty element we can use to replace 'real' elements for certain modes.
     """
     e = element.Element('Dummy', pulsar = qt.pulsar)
-    e.append(pulse.cp(msmt.T, length=1e-6))
+    e.append(pulse.cp(msmt.T, length=10e-6))
     return e
 
 def _lt2_wait_1us_element(msmt):
@@ -665,7 +665,7 @@ def _lt2_LDE_element(msmt, **kw):
             refpoint = refpoint)
    
     #4 MW pi/2
-    if msmt.params['MW_during_LDE'] == 1:
+    if msmt.params_lt2['MW_during_LDE'] == 1:
         e.add( pulse.cp(msmt.CORPSE_pi2, amplitude = pi2_pulse_amp, 
             phase = pi2_pulse_phase), 
             start = -msmt.params_lt2['MW_opt_puls1_separation'],
@@ -679,7 +679,7 @@ def _lt2_LDE_element(msmt, **kw):
     e.add(msmt.plu_gate, name = 'plu gate 1', refpulse = 'opt pi 1')
 
     #8 MW pi
-    if msmt.params['MW_during_LDE'] == 1:
+    if msmt.params_lt2['MW_during_LDE'] == 1:
         e.add(msmt.CORPSE_pi, 
             start = - msmt.params_lt2['MW_opt_puls2_separation'],
             refpulse = 'opt pi 2', 
@@ -687,8 +687,11 @@ def _lt2_LDE_element(msmt, **kw):
             refpoint_new = 'end')
     
     #10 plugate 2
-    e.add(msmt.plu_gate, name = 'plu gate 2', refpulse = 'opt pi {}'.format(msmt.params['opt_pi_pulses']))
-    
+    e.add(msmt.plu_gate, 
+        name = 'plu gate 2',
+        refpulse = 'opt pi {}'.format(msmt.params['opt_pi_pulses']),
+        start = 1e-9) #### NOTE somehow the second window inside the PLU arrives 1 ns earlier than the first
+
     #11 plugate 3
     e.add(pulse.cp(msmt.plu_gate, 
             length = msmt.params_lt2['PLU_gate_3_duration']), 
@@ -743,7 +746,7 @@ def _lt2_first_pi2(msmt, **kw):
 
     return first_pi2_elt
 
-def _lt2_second_pi2(msmt, name, time_offset, **kw):
+def _lt2_final_pi2(msmt, name, time_offset, **kw):
     extra_t_before_pi2 = kw.pop('extra_t_before_pi2', 0)
     CORPSE_pi2_amp = kw.pop('CORPSE_pi2_amp', msmt.params_lt2['CORPSE_pi2_amp'])
     CORPSE_pi2_phase = kw.pop('CORPSE_pi2_phase', 0)
@@ -763,6 +766,27 @@ def _lt2_second_pi2(msmt, name, time_offset, **kw):
     second_pi2_elt.append(pulse.cp(msmt.T, length =  100e-9 ))           
 
     return second_pi2_elt
+
+def _lt2_final_pi(msmt, name, time_offset, **kw):
+    extra_t_before_pi = kw.pop('extra_t_before_pi', 0)
+    CORPSE_pi_amp = kw.pop('CORPSE_pi_amp', msmt.params_lt2['CORPSE_pi_amp'])
+    CORPSE_pi_phase = kw.pop('CORPSE_pi_phase', 0)
+
+    # around each pulse I make an element with length 1600e-9; 
+    # the centre of the pulse is in the centre of the element.
+    # this helps me to introduce the right waiting times, counting from centre of the pulses
+    CORPSE_pi_wait_length = 800e-9 #- (msmt.CORPSE_pi2.length - 2*msmt.params_lt2['MW_pulse_mod_risetime'])/2 
+
+    final_pi_elt = element.Element('second_pi_elt-{}'.format(name), pulsar= qt.pulsar, 
+        global_time = True, time_offset = time_offset)
+    final_pi_elt.append(pulse.cp(msmt.T, 
+        length = CORPSE_pi_wait_length + extra_t_before_pi)
+    final_pi_elt.append(pulse.cp(msmt.CORPSE_pi, 
+        amplitude = CORPSE_pi_amp,
+        phase = CORPSE_pi_phase))
+    final_pi_elt.append(pulse.cp(msmt.T, length =  100e-9 ))           
+
+    return final_pi_elt
 
 #### dynamical decoupling element for adding to sequence
 def _lt2_dynamical_decoupling(msmt, seq, time_offset, **kw):

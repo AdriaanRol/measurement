@@ -22,12 +22,12 @@ def prepare(m, yellow = False):
     m.params.from_dict(qt.cfgman.get('protocols/'+SIL_NAME+'-default/BSM'))
 
     if yellow:
-        ssro.AdwinSSRO.repump_aom = qt.instruments['YellowAOM']
+        ssro.AdwinSSRO.repump_aom = ssro.AdwinSSRO.yellow_aom
         m.params['repump_duration']=m.params['yellow_repump_duration']
         m.params['repump_amplitude']=m.params['yellow_repump_amplitude']
         m.params['CR_repump']=m.params['yellow_CR_repump']
     else:
-        ssro.AdwinSSRO.repump_aom = qt.instruments['GreenAOM']
+        ssro.AdwinSSRO.repump_aom = ssro.AdwinSSRO.green_aom
         m.params['repump_duration']=m.params['green_repump_duration']
         m.params['repump_amplitude']=m.params['green_repump_amplitude']
         m.params['CR_repump']=m.params['green_CR_repump']

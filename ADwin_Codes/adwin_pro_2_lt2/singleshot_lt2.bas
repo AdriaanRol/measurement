@@ -297,6 +297,7 @@ EVENT:
             ELSE
               mode = 2
               DATA_22[repetition_counter+1] = cr_counts  ' CR before next SSRO sequence
+              current_cr_threshold = cr_probe
             ENDIF
             
             timer = -1

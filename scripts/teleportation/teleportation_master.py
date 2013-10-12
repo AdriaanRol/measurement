@@ -42,7 +42,6 @@ ADWINLT1_MAX_REPS = 10000
 ADWINLT1_MAX_RED_HIST_CTS = 100
 ADWINLT1_MAX_REPUMP_HIST_CTS = 100
 ADWINLT1_MAX_STAT = 15
-ADWINLT1_MAX_CR_PROBE_TIMER_HIST_BINS = 500
 
 #DEFINE max_repetitions   20000
 #DEFINE max_CR_hist_bins    100
@@ -75,11 +74,17 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
         for k in tparams.params_lt2.parameters:
             self.params_lt2[k] = tparams.params_lt2[k]
 
-        self.params_lt1['do_N_polarization'] = 1 if DO_POLARIZE_N else 0
+        # self.params_lt1['do_N_polarization'] = 1 if DO_POLARIZE_N else 0
+        #for the sequencer and saving
+        self.params_lt2['MW_during_LDE'] = 1 if LDE_DO_MW_LT2 else 0
+        self.params['opt_pi_pulses'] = OPT_PI_PULSES
+
+        #for saving only
         self.params_lt1['do_sequences'] = 1 if DO_SEQUENCES else 0
         self.params_lt1['do_LDE_sequence'] = 1 if DO_LDE_SEQUENCE else 0
-        self.params['MW_during_LDE'] = 1 if LDE_DO_MW else 0
-        self.params['opt_pi_pulses'] = OPT_PI_PULSES
+        self.params_lt1['use_yellow'] = YELLOW
+        
+        
 
     
     def update_definitions(self):
@@ -97,10 +102,10 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
         the correct AOM DAC channel from the specified AOM instrument.
         """
 
-        self.params_lt1['Ey_laser_DAC_channel'] = self.adwins['adwin_lt1']['ins'].get_dac_channels()\
-                [self.Ey_aom_lt1.get_pri_channel()]
-        self.params_lt1['FT_laser_DAC_channel'] = self.adwins['adwin_lt1']['ins'].get_dac_channels()\
-                [self.FT_aom_lt1.get_pri_channel()]
+        self.params_lt1['E_laser_DAC_channel'] = self.adwins['adwin_lt1']['ins'].get_dac_channels()\
+                [self.E_aom_lt1.get_pri_channel()]
+        self.params_lt1['A_laser_DAC_channel'] = self.adwins['adwin_lt1']['ins'].get_dac_channels()\
+                [self.A_aom_lt1.get_pri_channel()]
         self.params_lt1['yellow_laser_DAC_channel'] = self.adwins['adwin_lt1']['ins'].get_dac_channels()\
                 [self.yellow_aom_lt1.get_pri_channel()]
         self.params_lt1['green_laser_DAC_channel'] = self.adwins['adwin_lt1']['ins'].get_dac_channels()\
@@ -110,26 +115,26 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
             
         self.params_lt1['repump_laser_DAC_channel'] = self.params_lt1['green_laser_DAC_channel']
 
-        self.params_lt1['Ey_CR_voltage'] = \
-                self.Ey_aom_lt1.power_to_voltage(
-                        self.params_lt1['Ey_CR_amplitude'])
-        self.params_lt1['FT_CR_voltage'] = \
-                self.FT_aom_lt1.power_to_voltage(
-                        self.params_lt1['FT_CR_amplitude'])
+        self.params_lt1['E_CR_voltage'] = \
+                self.E_aom_lt1.power_to_voltage(
+                        self.params_lt1['E_CR_amplitude'])
+        self.params_lt1['A_CR_voltage'] = \
+                self.A_aom_lt1.power_to_voltage(
+                        self.params_lt1['A_CR_amplitude'])
 
-        self.params_lt1['Ey_SP_voltage'] = \
-                self.Ey_aom_lt1.power_to_voltage(
-                        self.params_lt1['Ey_SP_amplitude'])
-        self.params_lt1['FT_SP_voltage'] = \
-                self.FT_aom_lt1.power_to_voltage(
-                        self.params_lt1['FT_SP_amplitude'])
+        self.params_lt1['E_SP_voltage'] = \
+                self.E_aom_lt1.power_to_voltage(
+                        self.params_lt1['E_SP_amplitude'])
+        self.params_lt1['A_SP_voltage'] = \
+                self.A_aom_lt1.power_to_voltage(
+                        self.params_lt1['A_SP_amplitude'])
 
-        self.params_lt1['Ey_RO_voltage'] = \
-                self.Ey_aom_lt1.power_to_voltage(
-                        self.params_lt1['Ey_RO_amplitude'])
-        self.params_lt1['FT_RO_voltage'] = \
-                self.FT_aom_lt1.power_to_voltage(
-                        self.params_lt1['FT_RO_amplitude'])
+        self.params_lt1['E_RO_voltage'] = \
+                self.E_aom_lt1.power_to_voltage(
+                        self.params_lt1['E_RO_amplitude'])
+        self.params_lt1['A_RO_voltage'] = \
+                self.A_aom_lt1.power_to_voltage(
+                        self.params_lt1['A_RO_amplitude'])
                        
         self.params_lt1['repump_voltage'] = \
                 self.repump_aom_lt1.power_to_voltage(
@@ -193,16 +198,16 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
         """        
         self.yellow_aom_lt1.set_power(0.)
         self.green_aom_lt1.set_power(0.)
-        self.Ey_aom_lt1.set_power(0.)
-        self.FT_aom_lt1.set_power(0.)
+        self.E_aom_lt1.set_power(0.)
+        self.A_aom_lt1.set_power(0.)
         self.green_aom_lt1.set_cur_controller('ADWIN')
-        self.Ey_aom_lt1.set_cur_controller('ADWIN')
-        self.FT_aom_lt1.set_cur_controller('ADWIN')
+        self.E_aom_lt1.set_cur_controller('ADWIN')
+        self.A_aom_lt1.set_cur_controller('ADWIN')
         self.yellow_aom_lt1.set_cur_controller('ADWIN')
         self.yellow_aom_lt1.set_power(0.)
         self.green_aom_lt1.set_power(0.)
-        self.Ey_aom_lt1.set_power(0.)
-        self.FT_aom_lt1.set_power(0.)
+        self.E_aom_lt1.set_power(0.)
+        self.A_aom_lt1.set_power(0.)
 
         if DO_SEQUENCES:
             self.mwsrc_lt1.set_iq('on')
@@ -246,37 +251,141 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
 
         self.lt2_seq = pulsar.Sequence('TeleportationLT2')
 
-        dummy_element = _lt2_dummy_element(self)
-        LDE_element = _lt2_LDE_element(self)
-        finished_element = _lt2_sequence_finished_element(self)
-
-        def dynamical_decoupling(seq, name, time_offset):
-            return _lt2_dynamical_decoupling(self, seq, name, time_offset)
+        dummy_element = tseq._lt2_dummy_element(self)
+        LDE_element = tseq._lt2_LDE_element(self)
+        finished_element = tseq._lt2_sequence_finished_element(self)
 
         self.lt2_seq.append(name = 'LDE_LT2',
             wfname = (LDE_element.name if DO_LDE_SEQUENCE else dummy_element.name),
             trigger_wait = True,
-            # jump_target = 'DD', TODO: not implemented yet
             goto_target = 'LDE_LT2',
             repetitions = self.params['LDE_attempts_before_CR'])
 
-        self.lt2_seq, total_elt_time, elts = self.dynamical_decoupling(self.lt2_seq, 
-            time_offset = LDE_element.length(),
-            begin_offset_time = self.params_lt2['dd_spin_echo_time'])
+        if DO_DD:
+            self.lt2_seq, total_elt_time, elts = tseq._lt2_dynamical_decoupling(self,
+                self.lt2_seq, 
+                name = 'DD',
+                time_offset = LDE_element.length(),
+                begin_offset_time = self.params_lt2['dd_spin_echo_time'])
+        else:
+            self.lt2_seq.append(name = 'DD',
+                wfname = dummy_element.name)
 
-        ### AND ADD READOUT PULSES 
 
+        RO_time_offset = LDE_element.length() + total_elt_time
+        if self.params['source_state_basis'] == '-Z': #source state rotation = identity, since we start out in mI=-1 = |1>
+            A00_psimin_RO_rot_element = tseq._lt2_final_pi(self, name = 'A00_psi-_Xpi', time_offset = RO_time_offset, CORPSE_pi_phase = 0)
+            A01_psimin_RO_rot_element = tseq._lt2_final_pi(self, name = 'A01_psi-_I', time_offset = RO_time_offset, CORPSE_pi_amp = 0.)
+            A10_psimin_RO_rot_element = tseq._lt2_final_pi(self, name = 'A10_psi-_Xpi', time_offset = RO_time_offset, CORPSE_pi_phase = 0)
+            A11_psimin_RO_rot_element = tseq._lt2_final_pi(self, name = 'A11_psi-_I', time_offset = RO_time_offset, CORPSE_pi_amp = 0.)
+            A00_psiplus_RO_rot_element = tseq._lt2_final_pi(self, name = 'A00_psi+_Xpi', time_offset = RO_time_offset, CORPSE_pi_phase = 0)
+            A01_psiplus_RO_rot_element = tseq._lt2_final_pi(self, name = 'A01_psi+_I', time_offset = RO_time_offset, CORPSE_pi_amp = 0.)
+            A10_psiplus_RO_rot_element = tseq._lt2_final_pi(self, name = 'A10_psi+_Xpi', time_offset = RO_time_offset, CORPSE_pi_phase = 0)
+            A11_psiplus_RO_rot_element = tseq._lt2_final_pi(self, name = 'A11_psi+_I', time_offset = RO_time_offset, CORPSE_pi_amp = 0.)
+
+        if self.params['source_state_basis'] == 'X':
+            A00_psimin_RO_rot_element = tseq._lt2_final_pi2(self, name = 'A00_psi-_Ypi2', time_offset = RO_time_offset, CORPSE_pi2_phase = -90)
+            A01_psimin_RO_rot_element = tseq._lt2_final_pi2(self, name = 'A01_psi-_Y-pi2', time_offset = RO_time_offset, CORPSE_pi2_phase = 90)
+            A10_psimin_RO_rot_element = tseq._lt2_final_pi2(self, name = 'A10_psi-_Y-pi2', time_offset = RO_time_offset, CORPSE_pi2_phase = 90)
+            A11_psimin_RO_rot_element = tseq._lt2_final_pi2(self, name = 'A11_psi-_Ypi2', time_offset = RO_time_offset, CORPSE_pi2_phase = -90)
+            A00_psiplus_RO_rot_element = tseq._lt2_final_pi2(self, name = 'A00_psi+_Y-pi2', time_offset = RO_time_offset, CORPSE_pi2_phase = 90)
+            A01_psiplus_RO_rot_element = tseq._lt2_final_pi2(self, name = 'A01_psi+_Ypi2', time_offset = RO_time_offset, CORPSE_pi2_phase = -90)
+            A10_psiplus_RO_rot_element = tseq._lt2_final_pi2(self, name = 'A10_psi+_Ypi2', time_offset = RO_time_offset, CORPSE_pi2_phase = -90)
+            A11_psiplus_RO_rot_element = tseq._lt2_final_pi2(self, name = 'A11_psi+_Y-pi2', time_offset = RO_time_offset, CORPSE_pi2_phase = 90)
+
+        if self.params['source_state_basis'] == 'Y':
+            A00_psimin_RO_rot_element = tseq._lt2_final_pi2(self, name = 'A00_psi-_Xpi2', time_offset = RO_time_offset, CORPSE_pi2_phase = 0)
+            A01_psimin_RO_rot_element = tseq._lt2_final_pi2(self, name = 'A01_psi-_Xpi2', time_offset = RO_time_offset, CORPSE_pi2_phase = 0)
+            A10_psimin_RO_rot_element = tseq._lt2_final_pi2(self, name = 'A10_psi-_X-pi2', time_offset = RO_time_offset, CORPSE_pi2_phase = 180)
+            A11_psimin_RO_rot_element = tseq._lt2_final_pi2(self, name = 'A11_psi-_X-pi2', time_offset = RO_time_offset, CORPSE_pi2_phase = 180)
+            A00_psiplus_RO_rot_element = tseq._lt2_final_pi2(self, name = 'A00_psi+_X-pi2', time_offset = RO_time_offset, CORPSE_pi2_phase = 180)
+            A01_psiplus_RO_rot_element = tseq._lt2_final_pi2(self, name = 'A01_psi+_X-pi2', time_offset = RO_time_offset, CORPSE_pi2_phase = 180)
+            A10_psiplus_RO_rot_element = tseq._lt2_final_pi2(self, name = 'A10_psi+_Xpi2', time_offset = RO_time_offset, CORPSE_pi2_phase = 0)
+            A11_psiplus_RO_rot_element = tseq._lt2_final_pi2(self, name = 'A11_psi+_Xpi2', time_offset = RO_time_offset, CORPSE_pi2_phase = 90)
+
+        if self.params['source_state_basis'] == 'Z': #source state rotation = identity, since we start out in mI=-1 = |1>
+            A00_psimin_RO_rot_element = tseq._lt2_final_pi(self, name = 'A00_psi-_I', time_offset = RO_time_offset, CORPSE_pi_amp = 0.)
+            A01_psimin_RO_rot_element = tseq._lt2_final_pi(self, name = 'A01_psi-_Xpi', time_offset = RO_time_offset, CORPSE_pi_phase = 0)
+            A10_psimin_RO_rot_element = tseq._lt2_final_pi(self, name = 'A10_psi-_I', time_offset = RO_time_offset, CORPSE_pi_amp = 0.)
+            A11_psimin_RO_rot_element = tseq._lt2_final_pi(self, name = 'A11_psi-_Xpi', time_offset = RO_time_offset, CORPSE_pi_phase = 0)
+            A00_psiplus_RO_rot_element = tseq._lt2_final_pi(self, name = 'A00_psi+_I', time_offset = RO_time_offset, CORPSE_pi_amp = 0.)
+            A01_psiplus_RO_rot_element = tseq._lt2_final_pi(self, name = 'A01_psi+_Xpi', time_offset = RO_time_offset, CORPSE_pi_phase = 0)
+            A10_psiplus_RO_rot_element = tseq._lt2_final_pi(self, name = 'A10_psi+_I', time_offset = RO_time_offset, CORPSE_pi_amp = 0.)
+            A11_psiplus_RO_rot_element = tseq._lt2_final_pi(self, name = 'A11_psi+_Xpi', time_offset = RO_time_offset, CORPSE_pi_phase = 0)
+
+        if DO_READOUT:
+            self.lt2_seq.append(name = 'A00 psi-', 
+                wfname = A00_psimin_RO_rot_element,
+                goto_target = 'LT2_ready_for_RO')
+            self.lt2_seq.append(name = 'A01 psi-', 
+                wfname = A01_psimin_RO_rot_element,
+                goto_target = 'LT2_ready_for_RO')
+            self.lt2_seq.append(name = 'A10 psi-', 
+                wfname = A10_psimin_RO_rot_element,
+                goto_target = 'LT2_ready_for_RO')
+            self.lt2_seq.append(name = 'A11 psi-', 
+                wfname = A11_psimin_RO_rot_element,
+                goto_target = 'LT2_ready_for_RO')
+            self.lt2_seq.append(name = 'A00 psi+', 
+                wfname = A00_psiplus_RO_rot_element,
+                goto_target = 'LT2_ready_for_RO')
+            self.lt2_seq.append(name = 'A01 psi+', 
+                wfname = A01_psiplus_RO_rot_element,
+                goto_target = 'LT2_ready_for_RO')
+            self.lt2_seq.append(name = 'A10 psi+', 
+                wfname = A10_psiplus_RO_rot_element,
+                goto_target = 'LT2_ready_for_RO')
+            self.lt2_seq.append(name = 'A11 psi+', 
+                wfname = A11_psiplus_RO_rot_element,
+                goto_target = 'LT2_ready_for_RO')
+
+            self.lt2_seq.append(name = 'LT2_ready_for_RO',
+                wfname = finished_element.name,
+                goto_target = 'LDE_LT2')
+
+        ### JUMPING
+        # EV0: 0 = decoupling, 1 = tomography
+        # EV1: first BSM: ms0 = 0, ms-1 = 1
+        # EV2: second BSM: ms0 = 0, ms-1 = 1
+        # EV3: PLU: psi+ = 0,  psi- = 1
+
+        self.lt2_seq.set_djump(True)
+        for i in range(7):
+            self.lt2_seq.add_djump_address(i,'DD')
+
+        # note: A01 etc. gives out nitrogen value first, jump expects electron RO first. 
+        self.lt2_seq.add_djump_address(int('1001',2),'A00 psi-') 
+        self.lt2_seq.add_djump_address(int('1101',2),'A01 psi-')
+        self.lt2_seq.add_djump_address(int('1011',2),'A10 psi-')
+        self.lt2_seq.add_djump_address(int('1111',2),'A11 psi-')
+        self.lt2_seq.add_djump_address(int('1000',2),'A00 psi+')
+        self.lt2_seq.add_djump_address(int('1100',2),'A01 psi+')
+        self.lt2_seq.add_djump_address(int('1010',2),'A10 psi+')
+        self.lt2_seq.add_djump_address(int('1110',2),'A11 psi+')
+
+        ### AND ADD READOUT PULSES
         elements = []
         elements.append(dummy_element)
         elements.append(finished_element)
 
-        for e in elts: #the dynamical decoupling sequence elements
-            if e not in elements:
-                elements.append(e) 
+        if DO_DD:
+            for e in elts: #the dynamical decoupling sequence elements
+                if e not in elements:
+                    elements.append(e)
 
         if DO_LDE_SEQUENCE:
             elements.append(LDE_element)
 
+        if DO_RO:
+            elements.append(A00_psimin_RO_rot_element)
+            elements.append(A01_psimin_RO_rot_element)
+            elements.append(A10_psimin_RO_rot_element)
+            elements.append(A11_psimin_RO_rot_element)
+            elements.append(A00_psiplus_RO_rot_element)
+            elements.append(A01_psiplus_RO_rot_element)
+            elements.append(A10_psiplus_RO_rot_element)
+            elements.append(A11_psiplus_RO_rot_element)
+
         qt.pulsar.upload(*elements)
         qt.pulsar.program_sequence(self.lt2_seq)
         self.awg_lt2.set_runmode('SEQ')
@@ -295,49 +404,6 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
             qt.msleep(0.5)
         if not awg_ready: 
             raise Exception('AWG not ready')
-
-
-    def lt2_opt_rabi_sequence(self):
-        """
-        Generates a sequence for calibration of optical rabi oscillations.
-        We sweep the power of an optical pulse of a certain length here.
-        """
-
-        print 'Make optical Rabi sequence...'
-
-        self.lt2_seq = pulsar.Sequence('OpticalRabi')
-        elements = []
-        
-        for i in range(1,self.params['opt_rabi_sweep_pts']+1):
-            lde_elt = _lt2_LDE_element(self, name = 'OpticalRabi-{}'.format(i),
-                eom_pulse_amplitude = self.params['eom_pulse_amplitudes'][i-1])
-            
-            self.lt2_seq.append(name='OpticalRabi-{}'.format(i),
-                wfname = lde_elt.name,
-                trigger_wait = True,
-                goto_target = 'OpticalRabi-{}'.format(i+1 if i < self.params['opt_rabi_sweep_pts'] else 1),
-                repetitions = self.params['LDE_attempts_before_CR'])
-            elements.append(lde_elt)
-        
-        qt.pulsar.upload(*elements)
-        qt.pulsar.program_sequence(self.lt2_seq)
-        self.awg_lt2.set_runmode('SEQ')
-        self.awg_lt2.start()
-
-        i=0
-        awg_ready = False
-        while not awg_ready and i<40:
-            try:
-                if self.awg_lt2.get_state() == 'Waiting for trigger':
-                    awg_ready = True
-            except:
-                print 'waiting for awg: usually means awg is still busy and doesnt respond'
-                print 'waiting', i, '/40'
-                i=i+1
-            qt.msleep(0.5)
-        if not awg_ready: 
-            raise Exception('AWG not ready')
-
 
     ### Start and program adwins; Process control
     def _auto_adwin_params(self, adwin):
@@ -389,6 +455,7 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
         """
 
         running = True
+        T0 = time.time()
 
         # start up:
         # first the HH. for now, as the main stop condition for the loop use the HH measurement time.
@@ -413,8 +480,8 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
                 (0,), 'u4', maxshape=(None,))      
             current_dset_length = 0
             
-            self.hharp.StartMeas(int(self.params['measurement_time']* 1e3)) # this is in ms
-            qt.msleep(0.1)
+            self.hharp.StartMeas(int(self.params['measurement_time'] * 1e3)) # this is in ms
+            qt.msleep(1)
 
         # then the adwins; since the LT1 adwin triggers both adwin LT2 and AWGs, this is the last one
         self.start_lt2_process()
@@ -426,6 +493,11 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
 
         print misc.start_msg
         while running:
+
+
+            if self.params['measurement_time'] - (time.time() - T0) < 10:
+                print "Time's up!"
+                break
 
             # Stop condition: user interrupt
             self._keystroke_check('abort')
@@ -487,6 +559,10 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
 
                         self.h5data.flush()
         
+        self.adwins['adwin_lt1']['ins'].set_teleportation_var(kill_by_CR=1)
+        self.adwins['adwin_lt2']['ins'].set_teleportation_var(kill_by_CR=1)
+        qt.msleep(2)
+
         self.stop_adwin_processes()
         
         if HH:
@@ -509,11 +585,9 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
                 ('statistics', ADWINLT1_MAX_STAT),
                 ('SSRO1_results', reps),
                 ('SSRO2_results', reps),
-                ('PLU_Bell_states', reps),
+                # ('PLU_Bell_states', reps), we took that out for now (oct 7, 2013)
                 ('CR_before', reps),
-                ('CR_probe_timer', reps),
-                ('CR_probe_timer_all',ADWINLT1_MAX_CR_PROBE_TIMER_HIST_BINS),
-                ('CR_timer_lt2',ADWINLT1_MAX_CR_PROBE_TIMER_HIST_BINS) ])
+                ('CR_probe_timer', reps), ])
 
         reps = self.adwin_var('adwin_lt1', 'completed_reps')
         self.save_adwin_data('adwin_lt2', 'data', ['completed_reps', 'total_CR_counts',
@@ -547,9 +621,7 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
         self.save_params()
         # self.save_instrument_settings_file()
 
-
 #************************ sequence elements LT2   ******************************
-
 
 class TeleportationSlave:
 
@@ -571,7 +643,8 @@ class TeleportationSlave:
         for k in tparams.params_lt2.parameters:
             self.params_lt2[k] = tparams.params_lt2[k]
 
-        self.params_lt2['use_yellow'] = YELLOW
+        self.params_lt1['MW_during_LDE'] = 1 if LDE_DO_MW_LT1 else 0
+
 
     def update_definitions(self):
         tseq.pulse_defs_lt1(self)
@@ -580,17 +653,15 @@ class TeleportationSlave:
 
         ### AWG voltages
         self.params_lt1['SP_voltage_AWG'] = \
-                self.FT_aom_lt1.power_to_voltage(
+                self.A_aom_lt1.power_to_voltage(
                         self.params_lt1['AWG_SP_power'], controller='sec')
         qt.pulsar_remote.set_channel_opt('Velocity1AOM', 'high', self.params_lt1['SP_voltage_AWG'])
 
-  
 
     def lt1_sequence(self):
         self.lt1_seq = pulsar.Sequence('TeleportationLT1')
-
-        N_pol_decision_element = tseq._lt1_N_polarization_decision_element(self)
-        N_pol_element = tseq._lt1_N_pol_element(self)
+        
+        mbi_elt = tseq._lt1_mbi_element(self)
         start_LDE_element = tseq._lt1_start_LDE_element(self)
         LDE_element = tseq._lt1_LDE_element(self)
         dummy_element = tseq._lt1_dummy_element(self)
@@ -598,19 +669,11 @@ class TeleportationSlave:
         N_init_element, BSM_CNOT_elt, BSM_UNROT_elt = tseq._lt1_N_init_and_BSM_for_teleportation(self)
         N_RO_CNOT_elt = tseq._lt1_N_RO_CNOT_elt(self)
 
-        self.lt1_seq.append(name = 'N_pol_decision',
-            wfname = N_pol_decision_element.name,
+        self.lt1_seq.append(name = 'MBI',
             trigger_wait = True,
-            goto_target = 'N_polarization' if DO_POLARIZE_N else 'start_LDE',
-            jump_target = 'start_LDE')
-
-        if DO_POLARIZE_N:
-            self.lt1_seq.append(name = 'N_polarization',
-                wfname = N_pol_element.name,
-                trigger_wait = True,
-                repetitions = self.params_lt1['N_pol_element_repetitions'])
-            self.lt1_seq.append(name = 'N_polarization_done',
-                wfname = adwin_lt1_trigger_element.name)
+            wfname = mbi_elt.name,
+            jump_target = 'start_LDE',
+            goto_target = 'MBI')
 
         self.lt1_seq.append(name = 'start_LDE',
             trigger_wait = True,
@@ -618,12 +681,12 @@ class TeleportationSlave:
 
         self.lt1_seq.append(name = 'LDE_LT1',
             wfname = (LDE_element.name if DO_LDE_SEQUENCE else dummy_element.name),
-            jump_target = ('N_init' if DO_BSM else None),
+            jump_target = ('N_init' if DO_BSM else 'BSM_dummy'),
             repetitions = self.params['LDE_attempts_before_CR'])
 
         self.lt1_seq.append(name = 'LDE_timeout',
             wfname = adwin_lt1_trigger_element.name,
-            goto_target = 'N_pol_decision')
+            goto_target = 'MBI')
 
         if DO_BSM:
             self.lt1_seq.append(name = 'N_init', 
@@ -644,12 +707,21 @@ class TeleportationSlave:
 
             self.lt1_seq.append(name = 'sync_before_second_ro', 
                 wfname = adwin_lt1_trigger_element.name, 
-                goto_target = 'N_pol_decision')
+                goto_target = 'MBI')
+        else:
+            self.lt1_seq.append(name = 'BSM_dummy',
+                wfname = dummy_element.name)
+            
+            if DO_READOUT:
+                self.lt1_seq.append(name = 'trigger_ro',
+                    wfname = adwin_lt1_trigger_element.name,
+                    goto_target = 'MBI')
 
         elements = []
-        elements.append(N_pol_decision_element)
+        elements.append(mbi_elt)
         elements.append(adwin_lt1_trigger_element)
         elements.append(start_LDE_element)
+        elements.append(dummy_element)
 
         if DO_BSM:
             elements.append(N_init_element)
@@ -657,8 +729,8 @@ class TeleportationSlave:
             elements.append(BSM_UNROT_elt)
             elements.append(N_RO_CNOT_elt)
 
-        if DO_POLARIZE_N:
-            elements.append(N_pol_element)
+        # if DO_POLARIZE_N:
+        #     elements.append(N_pol_element)
         
         if DO_LDE_SEQUENCE:
             elements.append(LDE_element)
@@ -684,21 +756,22 @@ class TeleportationSlave:
             raise Exception('AWG not ready')
 
 
-
 ### CONSTANTS AND FLAGS
 YELLOW = True              # whether to use yellow on lt2
-HH = True                # if False no HH data acquisition from within qtlab.
-DO_POLARIZE_N = False      # if False, no N-polarization sequence on LT1 will be used
-DO_SEQUENCES = True      # if False, we won't use the AWG at all
-DO_LDE_SEQUENCE = True    # if False, no LDE sequence (both setups) will be done
-LDE_DO_MW = False         # if True, there will be MW in the LDE seq
+HH = True                  # if False no HH data acquisition from within qtlab.
+DO_POLARIZE_N = True      # if False, don't initialize N on lt1
+DO_SEQUENCES = True        # if False, we won't use the AWG at all
+DO_LDE_SEQUENCE = True     # if False, no LDE sequence (both setups) will be done
+LDE_DO_MW_LT1 = True          # if True, there will be MW in the LDE seq
+LDE_DO_MW_LT2 = False
 MAX_HHDATA_LEN = int(100e6)
 DO_OPT_RABI_AMP_SWEEP = False # if true, we sweep the rabi parameters instead of doing LDE; essentially this only affects the sequence we make
 HH_MIN_SYNC_TIME = 0 # 9 us
 HH_MAX_SYNC_TIME = 3e6 # 10.2 us
 OPT_PI_PULSES = 2
 DO_BSM = False
-
+DO_DD = False
+DO_READOUT = True
        
 ### configure the hardware (statics)
 TeleportationMaster.adwins = {
@@ -715,8 +788,8 @@ TeleportationMaster.adwins = {
 TeleportationMaster.adwin_dict = adwins_cfg.config
 TeleportationMaster.yellow_aom_lt1 = qt.instruments['YellowAOM_lt1']
 TeleportationMaster.green_aom_lt1 = qt.instruments['GreenAOM_lt1']
-TeleportationMaster.Ey_aom_lt1 = qt.instruments['MatisseAOM_lt1']
-TeleportationMaster.FT_aom_lt1 = qt.instruments['NewfocusAOM_lt1']
+TeleportationMaster.E_aom_lt1 = qt.instruments['MatisseAOM_lt1']
+TeleportationMaster.A_aom_lt1 = qt.instruments['NewfocusAOM_lt1']
 TeleportationMaster.mwsrc_lt1 = qt.instruments['SMB100_lt1']
 TeleportationMaster.repump_aom_lt1 = TeleportationMaster.green_aom_lt1
 
@@ -736,7 +809,7 @@ TeleportationMaster.hharp = qt.instruments['HH_400']
 
 ### This is ugly at this point. better merge classes at some point?
 TeleportationSlave.repump_aom_lt1 = qt.instruments['GreemAOM_lt1']
-TeleportationSlave.FT_aom_lt1 = qt.instruments['NewfocusAOM_lt1']
+TeleportationSlave.A_aom_lt1 = qt.instruments['NewfocusAOM_lt1']
 
 ### tool functions
 def setup_msmt(name): 
@@ -764,8 +837,6 @@ def finish_msmnt():
     qt.instruments['AWG'].set_runmode('CONT')
     qt.instruments['AWG_lt1'].set_runmode('CONT')
 
-
-
 ###measurements
 
 def default_msmt(name):
@@ -775,20 +846,19 @@ def default_msmt(name):
         setup_remote_sequence()
 
     # setup the master measurement
-    m = setup_msmt('TPQI_'+name)
+    m = setup_msmt(''+name)
 
-    m.params_lt1['max_CR_starts'] = -1
+    if not DO_POLARIZE_N:
+        m.params_lt1['MBI_threshold'] = 0
+
+    m.params_lt1['max_CR_starts'] = 1000
     m.params_lt1['teleportation_repetitions'] = -1
-    m.params['measurement_time'] = 60 * 30 # seconds; only affects msmt with HH.
-
-    # pts = 11
-    # m.params['opt_rabi_sweep_pts'] = pts
-    # m.params['eom_pulse_amplitudes'] = np.linspace(0.5,1.5,pts)
+    m.params['measurement_time'] = 30*60 # seconds -- will actually stop 10 sec earlier.
 
     start_msmt(m)
     finish_msmnt()
 
 if __name__ == '__main__':
-    default_msmt('lt2-tail')
+    default_msmt('LT1_spin_photon_with_MBI_and_calib_pulses')
 
                                                                                                                                                                                                                                                                                           

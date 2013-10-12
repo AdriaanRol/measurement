@@ -66,7 +66,7 @@ class DynamicalDecoupling(pulsar_msmt.PulsarMeasurement):
 
     def second_pi2(self, name, time_offset, **kw):
         # kws are extra_t_before_pi2, CORPSE_pi2_amp
-        return tseq._lt2_second_pi2(self, name, time_offset, **kw)
+        return tseq._lt2_final_pi2(self, name, time_offset, **kw)
 
     def dynamical_decoupling(self, seq, time_offset, **kw):
         # kws are free evolution time, extra_t_between_pulses
