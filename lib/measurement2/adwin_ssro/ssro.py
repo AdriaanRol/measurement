@@ -68,13 +68,14 @@ class AdwinSSRO(m2.AdwinControlledMeasurement):
             self.setup()
             
         for key,_val in self.adwin_dict[self.adwin_processes_key]\
-                [self.adwin_process]['params_long']:
+                [self.adwin_process]['params_long']:              
+            
             try:
                 self.adwin_process_params[key] = self.params[key]
             except:
                 logging.error("Cannot set adwin process variable '%s'" \
                         % key)
-                return False
+                raise Exception('Adwin process variable {} has not been set in the params dictionary!'.format(key))
 
         self.adwin_process_params['Ex_CR_voltage'] = \
                 self.E_aom.power_to_voltage(
