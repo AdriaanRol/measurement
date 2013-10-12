@@ -48,7 +48,7 @@ print 'updating msmt params for {}'.format(cfg['samples']['current'])
 
 branch='samples/hans-sil4/'
 
-f_msm1_cntr = 2.826552e9
+f_msm1_cntr = 2.826455e9
 N_frq = 7.13377e6
 N_HF_frq = 2.19290e6
 cfg.set(branch+'ms-1_cntr_frq', f_msm1_cntr)
@@ -98,8 +98,9 @@ cfg.set(branch+        'yellow_CR_repump',              1)
 cfg.set(branch+        'green_repump_after_repetitions',1)
 cfg.set(branch+        'green_CR_repump',              1000)
 cfg.set(branch+        'CR_probe_max_time',            1000000)
+cfg.set(branch+        'APD_DO_channel',                3)
 
-cfg.set(branch+        'A_CR_amplitude',            10e-9)
+cfg.set(branch+        'A_CR_amplitude',            16e-9)
 cfg.set(branch+        'A_RO_amplitude',            0.)
 cfg.set(branch+        'A_SP_amplitude',            10e-9)
 cfg.set(branch+        'CR_duration',               100)
@@ -309,7 +310,7 @@ cfg.set('protocols/hans-sil7-default/AdwinSSRO-integrated/SSRO_duration', 50)
 ##############################################################################
 
 branch='protocols/hans-sil4-default/AdwinSSRO/'  
-cfg.set(branch+        'A_CR_amplitude',            12e-9)
+cfg.set(branch+        'A_CR_amplitude',            10e-9)
 cfg.set(branch+        'A_RO_amplitude',            0.)
 cfg.set(branch+        'A_SP_amplitude',            10e-9)
 cfg.set(branch+        'CR_duration',               50)
@@ -378,11 +379,11 @@ cfg.set(branch+        'AWG_MBI_MW_pulse_duration',
     cfg.get(branch+        'selective_pi_duration'))
 
 cfg.set(branch+        'fast_pi_duration',         62e-9)
-cfg.set(branch+        'fast_pi_amp',              0.823)
+cfg.set(branch+        'fast_pi_amp',              0.844)
 cfg.set(branch+        'fast_pi_mod_frq',          finit)
 
 cfg.set(branch+        'fast_pi2_duration',         33e-9)
-cfg.set(branch+        'fast_pi2_amp',              0.820)
+cfg.set(branch+        'fast_pi2_amp',              0.812)
 cfg.set(branch+        'fast_pi2_mod_frq',          finit)
 
 ### CNOTs

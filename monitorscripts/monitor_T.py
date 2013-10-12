@@ -48,7 +48,7 @@ if temp_calib != None:
     while 1:
         if msvcrt.kbhit():
             kb_char=msvcrt.getch()
-            if kb_char == "q": 
+            if kb_char == "q":
                 break
 
         v,t = get_temperature()
