@@ -1281,22 +1281,26 @@ config['adwin_lt1_processes'] = {
                     ['nr_of_ROsequences'           ,   1],
                     ['wait_after_RO_pulse_duration',   3],
                     ['CR_repump'                   ,   0],
-                    ['repump_after_repetitions'    ,   1],                  
+                    ['repump_after_repetitions'    ,   1],
+                    ['N_randomize_duration'        ,  50],
                     ],
                 'params_long_index'  : 20,
                 'params_long_length' : 30,
                 'params_float' : [
-                    ['repump_voltage' , 0.8],
-                    ['repump_off_voltage'    , 0.0],
-                    ['Ex_CR_voltage'        , 0.8],
-                    ['A_CR_voltage'         , 0.8],
-                    ['Ex_SP_voltage'        , 0.8],
-                    ['Ex_MBI_voltage'       , 0.8],
-                    ['Ex_off_voltage'       , 0.0],
-                    ['A_off_voltage'        , 0.0]
+                    ['repump_voltage'               , 0.8],
+                    ['repump_off_voltage'           , 0.0],
+                    ['Ex_CR_voltage'                , 0.8],
+                    ['A_CR_voltage'                 , 0.8],
+                    ['Ex_SP_voltage'                , 0.8],
+                    ['Ex_MBI_voltage'               , 0.8],
+                    ['Ex_off_voltage'               , 0.0],
+                    ['A_off_voltage'                , 0.0],
+                    ['Ex_N_randomize_voltage'       , 0.0],
+                    ['A_N_randomize_voltage'        , 0.0],
+                    ['repump_N_randomize_voltage'   , 0.0],
                     ],
                 'params_float_index'  : 21,
-                'params_float_length' : 6,
+                'params_float_length' : 15,
                 'par' : {
                     'CR_preselect' : 75,
                     'CR_probe' : 68,
@@ -1312,8 +1316,7 @@ config['adwin_lt1_processes'] = {
                     'ssro_results' : 27,
                     'MBI_time' : 35,
                     },
-                },
-        
+                },        
         
         'set_gate_voltage': {
 

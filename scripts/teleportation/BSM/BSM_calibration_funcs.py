@@ -12,7 +12,7 @@ from measurement.scripts.mbi import CORPSE_calibration
 reload(CORPSE_calibration)
 from measurement.scripts.mbi.CORPSE_calibration import CORPSEPiCalibration
 
-from measurement.scripts.teleportation.BSM import BSM_sequences_copy as BSM_sequences
+from measurement.scripts.teleportation.BSM import BSM_sequences as BSM_sequences
 reload(BSM_sequences)
 
 from measurement.scripts.mbi import mbi_funcs as funcs

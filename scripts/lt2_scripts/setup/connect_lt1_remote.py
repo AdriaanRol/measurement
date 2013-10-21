@@ -121,11 +121,11 @@ qt.pulsar_remote.define_channel(id='ch3_marker2', name='adwin_sync', type='marke
 
 # light -- delay of SP is here *defined* as 700 (trigger comes from the other AWG); 
 # all other delays are then relative to that.
-qt.pulsar_remote.define_channel(id='ch2', name='Velocity1AOM', type='analog', 
-    high=0.4, low=0, offset=0., delay=700e-9, active=True)
+# qt.pulsar_remote.define_channel(id='ch2', name='YellowAOM', type='analog', 
+#     high=0.4, low=0, offset=0., delay=750e-9, active=True)
 
-qt.pulsar_remote.define_channel(id='ch2_marker2', name='YellowAOM', type='marker', 
-    high=0.4, low=0, offset=0., delay=750e-9, active=True) 
+qt.pulsar_remote.define_channel(id='ch2_marker2', name='Velocity1AOM', type='marker', 
+    high=0.4, low=0, offset=0., delay=700e-9, active=True) 
 
 # Trigger AWG LT2
 qt.pulsar_remote.define_channel(id='ch3_marker1', name='AWG_LT2_trigger', type='marker', 

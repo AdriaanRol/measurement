@@ -3,8 +3,8 @@ import qt
 cfg = qt.cfgman
 
 
-cfg['samples']['current'] = 'hans-sil4'
-cfg['protocols']['current'] = 'hans-sil4-default'
+cfg['samples']['current'] = 'hans-sil1'
+cfg['protocols']['current'] = 'hans-sil1-default'
 
 print 'updating msmt params for {}'.format(cfg['samples']['current'])
 
@@ -46,9 +46,26 @@ print 'updating msmt params for {}'.format(cfg['samples']['current'])
 ### HANS/4
 ##############################################################################
 
-branch='samples/hans-sil4/'
+# branch='samples/hans-sil4/'
 
-f_msm1_cntr = 2.826455e9
+# f_msm1_cntr = 2.826455e9
+# N_frq = 7.13377e6
+# N_HF_frq = 2.19290e6
+# cfg.set(branch+'ms-1_cntr_frq', f_msm1_cntr)
+# cfg.set(branch+'N_0-1_splitting_ms-1', N_frq)
+# cfg.set(branch+'N_HF_frq', N_HF_frq)
+# mw0 = 2.8e9
+# f0 = f_msm1_cntr - mw0
+# Nsplit = N_HF_frq
+# finit = f0 - Nsplit
+# fmIp1 = f_msm1_cntr - mw0 + N_HF_frq
+# cfg.set(branch+'mIm1_mod_frq',  f_msm1_cntr - mw0 - N_HF_frq)
+# cfg.set(branch+'mI0_mod_frq',  f_msm1_cntr - mw0)
+# cfg.set(branch+'mIp1_mod_frq',  f_msm1_cntr - mw0 + N_HF_frq)
+
+branch='samples/hans-sil1/'
+
+f_msm1_cntr = 2.828030e9
 N_frq = 7.13377e6
 N_HF_frq = 2.19290e6
 cfg.set(branch+'ms-1_cntr_frq', f_msm1_cntr)
@@ -91,13 +108,13 @@ cfg.set(branch+        'green_off_voltage',            0)
 cfg.set(branch+        'Ex_off_voltage',               0.)
 cfg.set(branch+        'A_off_voltage',                0.06)
 cfg.set(branch+        'repump_off_voltage',           0)
-cfg.set(branch+        'yellow_repump_amplitude',      80e-9)
-cfg.set(branch+        'yellow_repump_duration',       5000)
+cfg.set(branch+        'yellow_repump_amplitude',       50e-9)
+cfg.set(branch+        'yellow_repump_duration',        500)
 cfg.set(branch+        'yellow_repump_after_repetitions',100)
 cfg.set(branch+        'yellow_CR_repump',              1)
 cfg.set(branch+        'green_repump_after_repetitions',1)
-cfg.set(branch+        'green_CR_repump',              1000)
-cfg.set(branch+        'CR_probe_max_time',            1000000)
+cfg.set(branch+        'green_CR_repump',               1000)
+cfg.set(branch+        'CR_probe_max_time',             1000000)
 cfg.set(branch+        'APD_DO_channel',                3)
 
 cfg.set(branch+        'A_CR_amplitude',            16e-9)
@@ -131,7 +148,11 @@ cfg.set(branch+        'AWG_wait_duration_before_shelving_pulse',  100e-9)
 cfg.set(branch+        'nr_of_ROsequences',                        1)
 cfg.set(branch+        'MW_pulse_mod_risetime',                    10e-9)
 cfg.set(branch+        'AWG_to_adwin_ttl_trigger_duration',        2e-6)
-
+cfg.set(branch+        'max_MBI_attempts',                         1)
+cfg.set(branch+        'N_randomize_duration',                     50)
+cfg.set(branch+        'Ex_N_randomize_amplitude',                 5e-9)
+cfg.set(branch+        'A_N_randomize_amplitude',                  5e-9)
+cfg.set(branch+        'yellow_N_randomize_amplitude',             50e-9)
 
 ##############################################################################
 ##############################################################################
@@ -260,16 +281,34 @@ cfg.set('protocols/sil2-default/BSM/N_ref_frq', N_frq)
 cfg.set('protocols/sil2-default/BSM/e_ref_frq', finit)
 
 ##############################################################################
-### HANS/1
+### HANS/1 --- Pulses
+##############################################################################
+
+branch='protocols/hans-sil1-default/pulses/'
+
+cfg.set(branch+        'selective_pi_duration',     2500e-9)
+cfg.set(branch+        'selective_pi_amp',          0.015)
+cfg.set(branch+        'selective_pi_mod_frq',      finit)
+cfg.set(branch+        'AWG_MBI_MW_pulse_mod_frq',  
+    finit)
+cfg.set(branch+        'AWG_MBI_MW_pulse_ssbmod_frq',
+    finit)
+cfg.set(branch+        'AWG_MBI_MW_pulse_amp',      
+    cfg.get(branch+        'selective_pi_amp'))
+cfg.set(branch+        'AWG_MBI_MW_pulse_duration', 
+    cfg.get(branch+        'selective_pi_duration'))
+
+##############################################################################
+### HANS/1 --- SSRO
 ##############################################################################
 
 branch='protocols/hans-sil1-default/AdwinSSRO/'  
-cfg.set(branch+        'A_CR_amplitude',            10e-9)
+cfg.set(branch+        'A_CR_amplitude',            15e-9)
 cfg.set(branch+        'A_RO_amplitude',            0.)
-cfg.set(branch+        'A_SP_amplitude',            10e-9)
-cfg.set(branch+        'CR_duration',               100)
-cfg.set(branch+        'CR_preselect',              30)
-cfg.set(branch+        'CR_probe',                  30)
+cfg.set(branch+        'A_SP_amplitude',            15e-9)
+cfg.set(branch+        'CR_duration',               50)
+cfg.set(branch+        'CR_preselect',              1000)
+cfg.set(branch+        'CR_probe',                  20)
 cfg.set(branch+        'CR_repump',                 1000)
 cfg.set(branch+        'Ex_CR_amplitude',           5e-9)
 cfg.set(branch+        'Ex_RO_amplitude',           5e-9)
@@ -281,6 +320,28 @@ cfg.set(branch+        'SSRO_repetitions',          5000)
 cfg.set(branch+        'SSRO_stop_after_first_photon',  0)
 
 cfg.set('protocols/hans-sil1-default/AdwinSSRO-integrated/SSRO_duration', 15)
+
+##############################################################################
+### HANS/1 --- MBI
+##############################################################################
+
+branch='protocols/hans-sil1-default/AdwinSSRO+MBI/'
+cfg.set(branch+        'mw_frq',                        mw0)
+cfg.set(branch+        'mw_power',                      20)
+cfg.set(branch+        'Ex_MBI_amplitude',              5e-9)
+cfg.set(branch+        'Ex_SP_amplitude',               15e-9)
+cfg.set(branch+        'MBI_duration',                  4)
+cfg.set(branch+        'max_MBI_attempts',              1)
+cfg.set(branch+        'MBI_threshold',                 1)
+cfg.set(branch+        'SP_E_duration',                 60)
+cfg.set(branch+        'repump_after_MBI_duration',     15)
+cfg.set(branch+        'repump_after_MBI_amplitude',    15e-9)
+cfg.set(branch+        'repump_after_E_RO_duration',    15)
+cfg.set(branch+        'repump_after_E_RO_amplitude',   15e-9)
+
+# MBI pulse
+cfg.set(branch+        'AWG_wait_duration_before_MBI_MW_pulse',     50e-9)
+cfg.set(branch+        'AWG_wait_for_adwin_MBI_duration',           15e-6)
 
 ##############################################################################
 ### HANS/7

@@ -1,7 +1,6 @@
 import qt
 import numpy as np
 from measurement.lib.measurement2.adwin_ssro import pulsar_mbi_espin
-import inspect
 
 import mbi_funcs as funcs
 reload(funcs)
@@ -10,9 +9,9 @@ SAMPLE = qt.cfgman['samples']['current']
 SAMPLE_CFG = qt.cfgman['protocols']['current']
 
 # TODO should go into calibration file if this works
-MIM1_AMP = 0.005687
-MI0_AMP = 0.005608
-MIP1_AMP = 0.005659
+MIM1_AMP = 0.006578
+MI0_AMP = 0.006590
+MIP1_AMP = 0.006548
 
 # In principle the msmt is just a Rabi msmt - but I want a different prefix :)
 class MBICalibration(pulsar_mbi_espin.ElectronRabi):
@@ -21,20 +20,41 @@ class MBICalibration(pulsar_mbi_espin.ElectronRabi):
     def __init__(self, name):
         pulsar_mbi_espin.ElectronRabi.__init__(self, name)
 
-def run(name):
-    m = pulsar_mbi_espin.ElectronRabi(name)
-    funcs.prepare(m)
+    def autoconfig(self):
+        pulsar_mbi_espin.ElectronRabi.autoconfig(self)
+
+        self.adwin_process_params['Ex_N_randomize_voltage'] = \
+            self.E_aom.power_to_voltage(
+                    self.params['Ex_N_randomize_amplitude'])
+
+        self.adwin_process_params['A_N_randomize_voltage'] = \
+            self.A_aom.power_to_voltage(
+                    self.params['A_N_randomize_amplitude'])
+
+        self.adwin_process_params['repump_N_randomize_voltage'] = \
+            self.repump_aom.power_to_voltage(
+                    self.params['repump_N_randomize_amplitude'])
+
+def run(name, yellow):
+    m = MBICalibration(name)
+    funcs.prepare(m, yellow=yellow)
 
     pts = 4
     m.params['pts'] = pts
-    m.params['reps_per_ROsequence'] = 20000
+    m.params['reps_per_ROsequence'] = 1000
     
     # MBI
-    m.params['SP_E_duration'] = 50
+    m.params['SP_E_duration'] = 100
     m.params['Ex_SP_amplitude'] = 15e-9
     # m.params['AWG_MBI_MW_pulse_amp'] = 0 # set to zero for testing (then the populations of all N-states should be the same )
-    # m.params['MBI_threshold'] = 1
-    m.params['max_MBI_attempts'] = 1
+    # m.params['MBI_threshold'] = 0
+    m.params['max_MBI_attempts'] = 100
+
+    m.params['N_randomize_duration'] = 50
+    m.params['Ex_N_randomize_amplitude'] = 10e-9
+    m.params['A_N_randomize_amplitude'] = 10e-9
+    m.params['repump_N_randomize_amplitude'] = 0
+
 
     # MW pulses
     m.params['MW_pulse_multiplicities'] = np.ones(pts).astype(int)
@@ -57,4 +77,4 @@ def run(name):
     funcs.finish(m, debug=False)
 
 if __name__ == '__main__':
-    run(SAMPLE + '_' + 'MBI_timing_N=1-TH-37prep-16')
+    run(SAMPLE + '_' + 'testing', yellow=True)

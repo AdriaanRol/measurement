@@ -168,13 +168,14 @@ INIT:
   
   Par_73 = repetition_counter
   PAR_70 = 0                      ' cumulative counts from probe intervals
-  PAR_71 = 0                      ' below CR threshold events
+  PAR_71 = 0                      ' number of repumps
   PAR_72 = 0                      ' number of CR checks performed (lt1)
   Par_75 = CR_preselect
   Par_68 = CR_probe
   Par_69 = CR_repump              
   par_76 = 0                      ' cumulative counts during repumping
-  Par_80 = 0                      ' cumulative counts in PSB when not CR chekging or repummping 
+  Par_80 = 0                      ' cumulative counts in PSB when not CR chekging or repummping
+  PAR_79 = 0                      ' below CR threshold events 
  
   current_cr_threshold = CR_preselect
 
@@ -182,6 +183,7 @@ EVENT:
     
   CR_preselect                 = PAR_75
   CR_probe                     = PAR_68
+  cr_repump = Par_69
 
   IF (wait_after_pulse > 0) THEN
     wait_after_pulse = wait_after_pulse - 1
@@ -194,9 +196,10 @@ EVENT:
       CASE 0    ' repump
         IF (timer = 0) THEN
           IF  (cr_counts < CR_repump)  THEN  'only repump after x SSRO repetitions
-            CNT_CLEAR( counter_pattern)    'clear counter
+            CNT_CLEAR(counter_pattern)    'clear counter
             CNT_ENABLE(counter_pattern)    'turn on counter
             DAC(repump_laser_DAC_channel, 3277*repump_voltage+32768) ' turn on repump
+            inc(par_71)
           ELSE
             mode = 1
             timer = -1
@@ -238,7 +241,7 @@ EVENT:
             
             IF (cr_counts < current_cr_threshold) THEN
               mode = 0
-              inc(PAR_71)
+              inc(PAR_79)
             ELSE
               mode = 2
               DATA_22[repetition_counter+1] = cr_counts
