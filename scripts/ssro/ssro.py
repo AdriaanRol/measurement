@@ -119,7 +119,7 @@ def SP_saturation_power(name, yellow=False):
     m.params['SSRO_repetitions'] = 5000
     m.params['pts'] = 10
     pts = m.params['pts']
-    step = 1.5e-9
+    step = 3e-9
 
     #repump settings
     _set_repump_settings(m,yellow) 
@@ -264,28 +264,7 @@ def max_probe_time_calibration(name, yellow=False):
     
     m.finish()
 
-
-# def SP_RO_saturation_power(name, yellow=False):
-#     m = ssro.AdwinSSRO('RO_saturation_power_'+name)
-    
-#     m.params.from_dict(qt.cfgman['protocols']['AdwinSSRO'])
-#     m.params.from_dict(qt.cfgman['protocols']['sil9-default']['AdwinSSRO'])
-    
-#     #repump settings
-#     _set_repump_settings(m,yellow)
-    
-#     m.params['Ex_SP_amplitude'] = 0.
-#     m.params['Ex_RO_amplitudes'] = np.arange(20)*4e-9 + 2e-9
-
-#     for p in m.params['Ex_RO_amplitudes']:
-#         if (msvcrt.kbhit() and (msvcrt.getch() == 'c')): break
-#         m.params['Ex_RO_amplitude'] = p
-#         m.params['A_SP_amplitude'] = 0
-#         m.run()
-#         m.save('P_%dnW' % (p*1e9))
-        
-#     m.finish()
-    
+   
 def _set_repump_settings(m,yellow):
     if yellow:
         qt.instruments['GreenAOM'].set_power(0)
@@ -301,8 +280,8 @@ def _set_repump_settings(m,yellow):
         m.params['repump_amplitude']=m.params['green_repump_amplitude']
 
 if __name__ == '__main__':
-    #RO_saturation_power('hans_sil4_Ey_saturation', yellow=False)
-    #SP_saturation_power('hans-sil4_SP_saturation', yellow=False)
-    threshold_calibration('hans-sil4_probe', yellow=False)
+    # RO_saturation_power('hans_sil1_Ey_saturation', yellow=True)
+    SP_saturation_power('hans-sil1_SP_saturation', yellow=True)
+    #threshold_calibration('hans-sil4_probe', yellow=False)
     #max_probe_time_calibration('hans-sil4', yellow=False)
 

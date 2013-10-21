@@ -228,8 +228,8 @@ class ScanLT1(LaserFrequencyScan):
         
         self.single_line_scan(start_f, stop_f, voltage_step, integration_time_ms, power, **kw)\
 
-    def red_inonization_scan(self, start_f, stop_f, power=25e-9, **kw):
-        voltage_step = kw.pop('voltage_step', 0.02)
+    def red_inonization_scan(self, start_f, stop_f, power=15e-9, **kw):
+        voltage_step = kw.pop('voltage_step', 0.04)
         integration_time_ms = kw.pop('integration_time_ms', 20)
         _save=kw.pop('save', False)        
         
@@ -286,7 +286,6 @@ class ScanLT1(LaserFrequencyScan):
             data = yellow_data,
             **kw)        
 
-
     def green_yellow_during(self, y_start, y_stop, y_power, r_start, r_stop, r_step, r_int, r_power, g_p_during, y_p_during, **kw):
         red_data = kw.pop('red_data', None)
         yellow_data = kw.pop('yellow_data', None)
@@ -318,7 +317,6 @@ class ScanLT1(LaserFrequencyScan):
         self.yellow_scan(y_start, y_stop, y_power,
             data = yellow_data,
             **kw)
-
 
         print 'green repump pulse'
         qt.msleep(1)
@@ -397,8 +395,8 @@ def single_red_scan():
     SMB100.set_pulm('off')
     SMB100.set_status('on')
 
-    # m.yellow_red(20, 22, 0.2e-9, 55, 75, 0.01, 20, 1e-9)
-    m.oldschool_red_scan(55, 75, 0.01, 20, 0.5e-9)
+    m.yellow_red(5, 15, 0.2e-9, 42, 56, 0.02, 20, 0.5e-9)
+    # m.oldschool_red_scan(55, 75, 0.01, 20, 0.5e-9)
 
     SMB100.set_status('off')
 
@@ -414,7 +412,6 @@ def green_yellow_during_scan():
     m.green_yellow_during(20, 23, 0.2e-9, 55, 75, 0.01, 20, 1e-9, 0.2e-6, 30e-9)
 
     SMB100.set_status('off')
-
 
 def repeated_red_scans(**kw):
     pts = 100
@@ -503,7 +500,8 @@ def repeated_red_scans(**kw):
 
 if __name__ == '__main__':
     #single_red_scan()
-    green_yellow_during_scan()
+    #green_yellow_during_scan()
+    yellow_ionization_scan(13,20)
     # repeated_red_scans()
     # repeated_red_scans(spectral_diffusion=True)
 

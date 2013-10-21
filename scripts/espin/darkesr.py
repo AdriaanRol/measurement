@@ -28,6 +28,7 @@ def darkesr(name, yellow = False):
         m.params['repump_amplitude']=m.params['yellow_repump_amplitude']
         m.params['CR_repump']=m.params['yellow_CR_repump']
         m.params['repump_after_repetitions']=m.params['yellow_repump_after_repetitions']
+    
     else: ##!!!! CHANGE THIS BACK IF MEASURING ON LT2
         ssro.AdwinSSRO.repump_aom = qt.instruments['GreenAOM_lt1']
         m.params['repump_duration']=m.params['green_repump_duration']
@@ -39,17 +40,12 @@ def darkesr(name, yellow = False):
     m.params['mw_power'] = 20
     m.params['repetitions'] = 1000
 
-    m.params['ssbmod_frq_start'] = 28.288e6 - 5e6
-    m.params['ssbmod_frq_stop'] = 28.288e6 + 5e6
+    m.params['ssbmod_frq_start'] = 28.28e6 - 4e6
+    m.params['ssbmod_frq_stop'] = 28.28e6 + 4e6
     m.params['pts'] = 161
-    m.params['pulse_length'] = 2e-6
-    m.params['ssbmod_amplitude'] = 0.02
-
-    m.params['repetitions'] = 1000
+    m.params['pulse_length'] = 3e-6
     m.params['ssbmod_amplitude'] = 0.01
-    m.params['MW_pulse_mod_risetime'] = 10e-9
-    m.params['SSRO_duration'] = 40
-    
+   
     m.autoconfig()
     m.generate_sequence(upload=True)
     m.run()
@@ -57,4 +53,4 @@ def darkesr(name, yellow = False):
     m.finish()
 
 if __name__ == '__main__':
-    darkesr(SAMPLE_CFG, yellow = False)
+    darkesr(SAMPLE_CFG, yellow=True)

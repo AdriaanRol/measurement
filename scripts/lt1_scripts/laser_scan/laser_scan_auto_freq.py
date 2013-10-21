@@ -242,7 +242,7 @@ class YellowLaserScan(LabjackAdwinLaserScan):
 class RedLaserScan(LabjackAdwinLaserScan):
     def __init__(self, name, labjack_dac_nr):
         LabjackAdwinLaserScan.__init__(self, name,labjack_dac_nr)
-        self.set_laser_power = qt.instruments['Velocity2AOM'].set_power
+        self.set_laser_power = qt.instruments['Velocity1AOM'].set_power
         self.set_yellow_repump_power = qt.instruments['YellowAOM'].set_power
         self.set_red_repump_power = qt.instruments['Velocity1AOM'].set_power
         self.set_repump_power = qt.instruments['GreenAOM'].set_power
@@ -314,18 +314,18 @@ def yellow_laser_scan(name):
         m.finish_scan()
     
 def red_laser_scan(name):
-    labjack_dac_channel=4 #6 is coarse, 7 is fine for NF1 LT1
+    labjack_dac_channel=6 #6 is coarse, 7 is fine for NF1 LT1
                           #4 is coarse, 5 is fine fpr NF2 LT1
     m = RedLaserScan(name,labjack_dac_channel)
     
     # Hardware setup
-    m.wm_channel = 7 # 6 for nf 1, 7 for nf2
+    m.wm_channel = 6 # 6 for nf 1, 7 for nf2
     m.frq_offset = 0
     m.frq_factor = 1
     m.counter_channel = 0
 
     # MW setup
-    m.use_mw = True
+    m.use_mw = False
     m.mw_frq =  qt.cfgman['samples']['hans-sil1']['ms-1_cntr_frq']
     m.mw_power = -12
     
@@ -335,9 +335,9 @@ def red_laser_scan(name):
     m.red_repump_power=0e-9
     m.yellow_repump_duration=4 #seconds
     m.repump_power = 0e-6 #GREEN!!
-    m.use_repump_during = False
+    m.use_repump_during = True
     m.repump_duration = 0.5 # seconds
-    m.repump_power_during = 0.05e-6
+    m.repump_power_during = 0.01e-6
     
     #Scan setup
     m.laser_power = 2e-9
@@ -346,8 +346,8 @@ def red_laser_scan(name):
     m.max_v = 9.5
     m.v_step=0.015
     
-    m.start_frequency = 55 #GHz
-    m.stop_frequency = 80 #GHz    
+    m.start_frequency = 38 #GHz
+    m.stop_frequency = 60 #GHz    
     
     #Gate scan setup
     m.set_gate_to_zero_before_repump=False
@@ -367,5 +367,6 @@ def red_laser_scan(name):
 
 
 if __name__=='__main__':
-    red_laser_scan('red_scan_coarse_Hans_SIL4_2nW_tuning_gv22=4p5V')
+    stools.turn_off_all_lasers()
+    red_laser_scan('red_scan_coarse_Hans_SIL1_Green')
     #yellow_laser_scan('yellow_33V')

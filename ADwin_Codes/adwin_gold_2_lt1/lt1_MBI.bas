@@ -37,7 +37,7 @@
 #define max_mbi_steps     100
 
 DIM DATA_20[35] AS LONG                           ' integer parameters
-DIM DATA_21[10] AS FLOAT                          ' float parameters
+DIM DATA_21[15] AS FLOAT                          ' float parameters
 DIM DATA_22[max_sweep_dim] AS LONG AT DRAM_EXTERN ' CR counts before sequence
 DIM DATA_23[max_sweep_dim] AS LONG AT DRAM_EXTERN ' CR counts after sequence
 DIM DATA_24[max_sweep_dim] AS LONG AT DRAM_EXTERN ' number of MBI attempts needed in the successful cycle
@@ -90,6 +90,9 @@ DIM A_RO_voltage AS FLOAT
 DIM Ex_MBI_voltage AS FLOAT
 DIM A_off_voltage as float
 dim Ex_off_voltage as float
+dim Ex_N_randomize_voltage as float
+dim A_N_randomize_voltage as float
+dim repump_N_randomize_voltage as float
 
 DIM timer, mode, i, tmp AS LONG
 DIM wait_time AS LONG
@@ -107,10 +110,10 @@ DIM ROseq_cntr AS LONG
 ' MBI stuff
 dim next_MBI_stop, next_MBI_laser_stop as long
 dim current_MBI_attempt as long
-dim MBI_attempts as long
+dim MBI_attempts_before_CR as long
 dim mbi_timer as long
 dim trying_mbi as long
-
+dim N_randomize_duration as long
 
 DIM current_cr_threshold AS LONG
 DIM CR_probe AS LONG
@@ -139,12 +142,13 @@ INIT:
   CR_probe                     = DATA_20[15]
   AWG_event_jump_DO_channel    = DATA_20[16]
   MBI_duration                 = DATA_20[17]
-  MBI_attempts                 = DATA_20[18]
+  MBI_attempts_before_CR       = DATA_20[18]
   MBI_threshold                = DATA_20[19]
   nr_of_ROsequences            = DATA_20[20]
   wait_after_RO_pulse_duration = DATA_20[21]
   CR_repump                    = DATA_20[22]
   repump_after_repetitions     = DATA_20[23]
+  N_randomize_duration         = DATA_20[24]
   
   repump_voltage               = DATA_21[1]
   repump_off_voltage           = DATA_21[2]
@@ -154,6 +158,9 @@ INIT:
   Ex_MBI_voltage               = DATA_21[6]  
   Ex_off_voltage               = DATA_21[7]
   A_off_voltage                = DATA_21[8]
+  Ex_N_randomize_voltage       = DATA_21[9]
+  A_N_randomize_voltage        = DATA_21[10]
+  repump_N_randomize_voltage   = DATA_21[11]
   
   ' initialize the data arrays
   FOR i = 1 TO max_sweep_dim
@@ -268,13 +275,14 @@ EVENT:
                
         ' turn on the green laser and start counting
         IF (timer = 0) THEN
-          IF ((Mod(repetition_counter,repump_after_repetitions)=0) OR (cr_counts < CR_repump))  THEN  'only repump after x SSRO repetitions
+          IF (cr_counts < CR_repump) THEN  'only repump after x SSRO repetitions
             inc(data_26[mode+1])
             
             cnt_clear(counter_pattern)    'clear counter
             cnt_enable(counter_pattern)    'turn on counter
             dac(repump_laser_DAC_channel, 3277*repump_voltage+32768) ' turn on green
             repumps = repumps + 1
+            inc(par_71)
           ELSE
             mode = 1
             timer = -1
@@ -332,7 +340,7 @@ EVENT:
             ' if the counts are below the threshold, we go back to green repumping
             IF (cr_counts < current_cr_threshold) THEN
               mode = 0
-              inc(Par_71)
+              inc(Par_79)
             
               ' else, we proceed to pumping on the E line, into m_s = +/-1,
               ' and set the threshold to probing
@@ -373,16 +381,15 @@ EVENT:
         ' MBI starts now; we first need to trigger the AWG to do the selective pi-pulse
         ' then wait until we can assume this is done
         IF(timer=0) THEN
-         
+          
+          inc(data_26[mode+1])
+          INC(MBI_starts)
+          PAR_78 = MBI_starts
+                       
           if (current_MBI_attempt = 1) then
-            
             if(data_25[seq_cntr] = 0) then
               trying_mbi = 1
             endif
-                        
-            inc(data_26[mode+1])
-            INC(MBI_starts)
-            PAR_78 = MBI_starts
             inc(data_25[seq_cntr]) ' number of cycles to success
           endif
           
@@ -413,20 +420,19 @@ EVENT:
               ' MBI succeeds if the counts surpass the threshold;
               ' we then trigger an AWG jump (sequence has to be long enough!) and move on to SP on A
               ' if MBI fails, we
-              ' - try again (until max. number of attempts, after some scrambling -- we use CR without threshold for that)
+              ' - try again (until max. number of attempts, after some scrambling)
               ' - go back to CR checking if max number of attempts is surpassed
               
               IF (counts < MBI_threshold) THEN
                 INC(MBI_failed)
                 PAR_74 = MBI_failed
       
-                if (current_MBI_attempt = MBI_attempts) then
-                  current_cr_threshold = cr_probe
+                if (current_MBI_attempt = MBI_attempts_before_CR) then
+                  current_cr_threshold = cr_preselect
                   mode = 1 '(check resonance and start over)
                   current_MBI_attempt = 1
                 else
-                  current_cr_threshold = 0
-                  mode = 1
+                  mode = 7
                   inc(current_MBI_attempt)
                 endif                
                 timer = -1      
@@ -442,7 +448,7 @@ EVENT:
                 trying_mbi = 0
                 ' we want to save the time MBI takes
                 data_35[seq_cntr] = mbi_timer
-                mbi_timer = 0                
+                mbi_timer = 0
               
               endif
               timer = -1
@@ -557,10 +563,30 @@ EVENT:
             ENDIF
           ENDIF
         endif
+        
+      case 7 ' turn on the lasers to (hopefully) randomize the N-spin state before re-trying MBI
+        
+        if (timer = 0) then
+          inc(data_26[mode+1])
+          dac(Ex_laser_DAC_channel,3277*Ex_N_randomize_voltage+32768)
+          dac(A_laser_DAC_channel,3277*A_N_randomize_voltage+32768)
+          dac(repump_laser_DAC_channel,3277*repump_N_randomize_voltage+32768)
+        else
+          if (timer = N_randomize_duration) then
+            dac(Ex_laser_DAC_channel,3277*Ex_off_voltage+32768)
+            dac(A_laser_DAC_channel,3277*A_off_voltage+32768)
+            dac(repump_laser_DAC_channel,3277*repump_off_voltage+32768)
+            
+            mode = 2
+            timer = -1
+            wait_time = wait_after_pulse_duration
+          endif                    
+        endif
+                  
     endselect
     
     timer = timer + 1
-    par_79 = timer
+    ' par_79 = timer
     
   endif
   

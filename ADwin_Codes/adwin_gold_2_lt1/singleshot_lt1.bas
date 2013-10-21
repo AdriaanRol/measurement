@@ -8,7 +8,7 @@
 ' ADbasic_Version                = 5.0.8
 ' Optimize                       = Yes
 ' Optimize_Level                 = 1
-' Info_Last_Save                 = TUD276629  TUD276629\localadmin
+' Info_Last_Save                 = TUD277246  TUD277246\localadmin
 '<Header End>
 ' this program implements single-shot readout fully controlled by ADwin Gold II
 '
@@ -219,7 +219,7 @@ INIT:
   Par_73 = repetition_counter
 
   PAR_70 = 0                      ' cumulative counts from probe intervals
-  PAR_71 = 0                      ' below CR threshold events
+  PAR_71 = 0                      ' number of repumps
   PAR_72 = 0                      ' number of CR checks performed (lt1)
   Par_75 = CR_preselect
   Par_68 = CR_probe
@@ -229,6 +229,7 @@ INIT:
   
   Par_77=0' 
   Par_78=CR_probe_max_time
+  par_79 = 0                      ' CR below threshold events
  
   current_cr_threshold = CR_preselect
 EVENT:
@@ -249,8 +250,9 @@ EVENT:
             CNT_CLEAR(counter_pattern)    'clear counter
             CNT_ENABLE(counter_pattern)    'turn on counter
             DAC(repump_laser_DAC_channel, 3277*repump_voltage+32768) ' turn on green
-            DIGOUT(APD_gate_DO_channel,0)'turn off APD
+            ' DIGOUT(APD_gate_DO_channel,0)'turn off APD
             repumps = repumps + 1
+            inc(par_71)
           ELSE
             mode = 1
             timer = -1
@@ -262,7 +264,7 @@ EVENT:
           IF (timer = repump_duration) THEN
             
             DAC(repump_laser_DAC_channel, 3277*repump_off_voltage+32768) ' turn off green
-            DIGOUT(APD_gate_DO_channel,0) 'turn on APD
+            ' DIGOUT(APD_gate_DO_channel,0) 'turn on APD
             counts = CNT_READ(counter_channel)
             CNT_ENABLE(0)
             CNT_CLEAR(counter_pattern)
@@ -310,7 +312,7 @@ EVENT:
             IF (cr_counts < current_cr_threshold) THEN
               mode = 0
               inc(CR_failed)
-              inc(PAR_71)
+              inc(PAR_79)
             ELSE
               mode = 2
               DATA_22[repetition_counter+1] = cr_counts  ' CR before next SSRO sequence
