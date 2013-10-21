@@ -326,7 +326,7 @@ EVENT:
           P2_DAC(DAC_MODULE, A_laser_DAC_channel, 3277*A_off_voltage+32768) ' turn off A laser
           
           counts = P2_CNT_READ(CTR_MODULE, counter_channel)
-          ' DATA_24[timer] = DATA_24[timer] + counts
+          DATA_24[timer] = DATA_24[timer] + counts
           
           IF ((send_AWG_start > 0) or (sequence_wait_time > 0)) THEN
             mode = 3
