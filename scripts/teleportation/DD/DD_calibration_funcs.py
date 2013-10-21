@@ -18,7 +18,7 @@ reload(dd_msmt)
 from measurement.scripts.lt2_scripts.adwin_ssro import espin_funcs as funcs
 reload(funcs)
 
-name = 'sil9'
+name = 'sil10'
 
 ###############
 ##### Pulse calibration
@@ -68,6 +68,7 @@ def cal_CORPSE_pi2(name):
 def dd_calibrate_C13_revival(name):
     m = dd_msmt.DynamicalDecoupling('calibrate_first_revival')
     dd_msmt.prepare(m)
+    m.params['dd_use_delay_reps'] = False
 
     pts = 11
     m.params['pts'] = pts
@@ -76,7 +77,7 @@ def dd_calibrate_C13_revival(name):
 
     # sweep params
     #free evolutiona time is half the total evolution time!!! from centre to centre of pulses
-    m.params_lt2['free_evolution_times'] = 53.4e-6 + np.linspace(-2.5e-6, 2.5e-6, pts) #m.params_lt2['first_C_revival'] #
+    m.params_lt2['free_evolution_times'] = 52.4e-6 + np.linspace(-2.5e-6, 2.5e-6, pts) #m.params_lt2['first_C_revival'] #
 
     m.params_lt2['DD_pi_phases'] = [0]
     m.dd_sweep_free_ev_time_msmt()
@@ -88,14 +89,53 @@ def dd_calibrate_C13_revival(name):
     dd_msmt.finish(m,upload=True,debug=False)
 
 
+def dd_calibrate_T2(name):
+    m = dd_msmt.DynamicalDecoupling('calibrate_T2')
+    dd_msmt.prepare(m)
+    m.params['dd_use_delay_reps'] = True
+
+    pts_per_revival = 11
+    revivals=12
+    pts=pts_per_revival*(revivals-1)
+    m.params['pts'] = pts
+    m.params['repetitions'] = 2000
+    m.params_lt2['wait_for_AWG_done'] = 1
+
+    # sweep params
+    #free evolutiona time is half the total evolution time!!! from centre to centre of pulses
+  
+    sweep_array=  m.params_lt2['first_C_revival'] + np.linspace(-1e-6, 1e-6, pts_per_revival)
+    for r in range(2,revivals):
+        sweep_array=np.append(sweep_array, \
+            r * (m.params_lt2['first_C_revival'] \
+            + m.params_lt2['CORPSE_pi2_wait_length'] \
+            + m.params_lt2['dd_extra_t_between_pi_pulses'])
+            + np.linspace(-1e-6, 1e-6, pts_per_revival))
+    print sweep_array
+    m.params_lt2['free_evolution_times'] = sweep_array
+
+    m.params_lt2['DD_pi_phases'] = [0]
+    m.dd_sweep_free_ev_time_msmt()
+
+    # for the autoanalysis
+    m.params_lt2['sweep_name'] = 'total free evolution time (us)'
+    m.params_lt2['sweep_pts'] = 2*m.params_lt2['free_evolution_times'] / 1e-6  
+
+    dd_msmt.finish(m,upload=True,debug=False)
+
 def dd_sweep_LDE_spin_echo_time(name):
     m = dd_msmt.DynamicalDecoupling('calibrate_LDE_spin_echo_time')
     dd_msmt.prepare(m)
 
-    pts = 17
+    pts = 21
     m.params['pts'] = pts
     m.params['repetitions'] = 2000
     m.params_lt2['wait_for_AWG_done'] = 1
+    m.params['dd_use_delay_reps'] = False
+
+    #suppress optical pulses here
+    m.params_lt2['eom_aom_on'] = False
+    m.params_lt2['eom_pulse_amplitude'] = -0.26
 
     #free evolutiona time is half the total evolution time!!! from centre to centre of pulses
     m.params_lt2['free_evolution_times'] = np.ones(pts) * m.params_lt2['first_C_revival']
@@ -103,7 +143,7 @@ def dd_sweep_LDE_spin_echo_time(name):
    # m.params_lt2['A_SP_amplitude'] = 0. #use LDE element SP. 
     
     # sweep params
-    m.params_lt2['dd_spin_echo_times'] = np.linspace(450e-9, 610e-9, pts)
+    m.params_lt2['dd_spin_echo_times'] = np.linspace(-30e-9, 70e-9, pts)
     
     m.params_lt2['DD_pi_phases'] = [0]
     m.dd_sweep_LDE_spin_echo_time_msmt()
@@ -115,14 +155,19 @@ def dd_sweep_LDE_spin_echo_time(name):
     dd_msmt.finish(m,upload=True,debug=False)
 
 
-def dd_sweep_LDE_DD_YXY_t_between_pulse(name):
-    m = dd_msmt.DynamicalDecoupling('calibrate_yxy_t_between_pulses')
+def dd_sweep_LDE_DD_XYX_t_between_pulse(name):
+    m = dd_msmt.DynamicalDecoupling('calibrate_xyx_t_between_pulses')
     dd_msmt.prepare(m)
 
-    pts = 12
+    pts = 21
     m.params['pts'] = pts
     m.params['repetitions'] = 2000
     m.params_lt2['wait_for_AWG_done'] = 1
+    m.params['dd_use_delay_reps'] = False
+
+    #suppress optical pulses here
+    m.params_lt2['eom_aom_on'] = False
+    m.params_lt2['eom_pulse_amplitude'] = -0.26
 
     #free evolutiona time is half the total evolution time!!! from centre to centre of pulses
     m.params_lt2['free_evolution_times'] = np.ones(pts) * m.params_lt2['first_C_revival']
@@ -130,7 +175,7 @@ def dd_sweep_LDE_DD_YXY_t_between_pulse(name):
     #m.params_lt2['A_SP_amplitude'] = 0. #use LDE element SP. 
     
     # sweep params
-    m.params_lt2['extra_ts_between_pulses'] = np.linspace(-30e-9,80e-9,pts)
+    m.params_lt2['extra_ts_between_pulses'] = 400e-9 + np.linspace(-2e-6,2e-6,pts)
     
     m.params_lt2['DD_pi_phases'] = [-90,0,-90]
     m.dd_sweep_LDE_spin_echo_time_msmt()
@@ -141,8 +186,8 @@ def dd_sweep_LDE_DD_YXY_t_between_pulse(name):
 
     dd_msmt.finish(m,upload=True,debug=False)
 
-def dd_sweep_LDE_DD_YXY_free_evolution_time(name):
-    m = dd_msmt.DynamicalDecoupling('calibrate_yxy_fet_pi2phase_min90')
+def dd_sweep_LDE_DD_XYX_free_evolution_time(name):
+    m = dd_msmt.DynamicalDecoupling('calibrate_xyx_fet_pi2phase_min90')
     dd_msmt.prepare(m)
 
     pts = 17
@@ -159,7 +204,7 @@ def dd_sweep_LDE_DD_YXY_free_evolution_time(name):
     m.params_lt2['pi2_pulse_phase'] = -90
     m.params_lt2['free_evolution_times'] = np.linspace(-1e-6,1e-6,pts) + m.params_lt2['first_C_revival']
 
-    m.params_lt2['DD_pi_phases'] = [-90,0,-90]
+    m.params_lt2['DD_pi_phases'] = [90,0,90]
     m.dd_sweep_LDE_spin_echo_time_msmt()
 
     # for the autoanalysis
@@ -183,7 +228,7 @@ def run_calibrations(stage):
     if stage == 3:
         dd_sweep_LDE_spin_echo_time(name)
     if stage == 4:
-        dd_sweep_LDE_DD_YXY_t_between_pulse(name)
+        dd_sweep_LDE_DD_XYX_t_between_pulse(name)
 
 
 if __name__ == '__main__':
@@ -192,6 +237,7 @@ if __name__ == '__main__':
     #run_calibrations(2)
     #run_calibrations(3) 
     run_calibrations(4) 
+    #dd_calibrate_T2(name)
 
     """
     stage 0.0: SSRO calibration

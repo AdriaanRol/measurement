@@ -15,7 +15,7 @@ from measurement.scripts.teleportation import sequence as tseq
 reload(tseq)
 
 
-name = 'sil9'
+name = 'sil10'
 OPT_PI_PULSES = 2
 LDE_DO_MW = True
 
@@ -25,7 +25,7 @@ def prepare(m):
 
     m.load_settings()
     m.update_definitions()
-    m.repump_aom = qt.instruments['YellowAOM']
+    m.repump_aom = qt.instruments['GreenAOM']
 
 def finish(m, upload=True, debug=False, **kw):
     for key in m.params_lt2.to_dict():
@@ -51,7 +51,7 @@ class DynamicalDecoupling(pulsar_msmt.PulsarMeasurement):
             self.params_lt2[k] = tparams.params_lt2[k]
 
         self.params['opt_pi_pulses'] = OPT_PI_PULSES
-        self.params['MW_during_LDE'] = 1 if LDE_DO_MW else 0
+        self.params_lt2['MW_during_LDE'] = 1 if LDE_DO_MW else 0
 
     def update_definitions(self):
         tseq.pulse_defs_lt2(self)
@@ -94,7 +94,9 @@ class DynamicalDecoupling(pulsar_msmt.PulsarMeasurement):
 
             seq, total_elt_time, elts = self.dynamical_decoupling(self.seq, 
                 time_offset = first_pi2_elt.length(),
+                begin_offset_time = 0.,
                 free_evolution_time = self.params_lt2['free_evolution_times'][i],
+                use_delay_reps = self.params['dd_use_delay_reps'],
                 name = i)
 
             second_pi2_elt = self.second_pi2(name = i, 
@@ -117,12 +119,12 @@ class DynamicalDecoupling(pulsar_msmt.PulsarMeasurement):
         self.seq = pulsar.Sequence('{}_{}_sequence'.format(self.mprefix, self.name))
 
         self.elements = []
-       
-        for i in range(self.params['pts']):
-            LDE_elt = self.LDE_element(eom_pulse_amplitude = 0., 
-                name = 'LDE_element-{}'.format(i),
+        LDE_elt = self.LDE_element(name = 'LDE_element',
                 pi2_pulse_phase = self.params_lt2['pi2_pulse_phase'])
-            
+        self.elements.append(LDE_elt)
+
+        for i in range(self.params['pts']):
+
             self.seq.append(name = 'LDE_element-{}'.format(i), 
                 wfname = LDE_elt.name, 
                 trigger_wait = True)
@@ -132,6 +134,7 @@ class DynamicalDecoupling(pulsar_msmt.PulsarMeasurement):
                 begin_offset_time = self.params_lt2['dd_spin_echo_times'][i],
                 free_evolution_time = self.params_lt2['free_evolution_times'][i], 
                 extra_t_between_pulses = self.params_lt2['extra_ts_between_pulses'][i],
+                use_delay_reps = self.params['dd_use_delay_reps'],
                 name = i)
 
             second_pi2_elt = self.second_pi2(name = i, 
@@ -143,7 +146,7 @@ class DynamicalDecoupling(pulsar_msmt.PulsarMeasurement):
             self.seq.append(name = 'sync_elt-{}'.format(i), 
                 wfname = self.adwin_lt2_trigger_element.name)
 
-            self.elements.append(LDE_elt)
+            
             for e in elts:
                 if e not in self.elements:
                     self.elements.append(e)
@@ -169,6 +172,7 @@ class DynamicalDecoupling(pulsar_msmt.PulsarMeasurement):
             self.seq, total_elt_time, elts = self.dynamical_decoupling(self.seq, 
                 time_offset = LDE_elt.length(),
                 begin_offset_time = self.params_lt2['dd_spin_echo_time'],
+                use_delay_reps = self.params['dd_use_delay_reps'],
                 name = i)
 
             second_pi2_elt = self.second_pi2(name = i, 

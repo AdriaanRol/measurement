@@ -266,125 +266,141 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
                 self.lt2_seq, 
                 name = 'DD',
                 time_offset = LDE_element.length(),
-                begin_offset_time = self.params_lt2['dd_spin_echo_time'])
+                use_delay_reps = not(DO_READOUT))
         else:
             self.lt2_seq.append(name = 'DD',
-                wfname = dummy_element.name)
-
-
-        RO_time_offset = LDE_element.length() + total_elt_time
-        if self.params['source_state_basis'] == '-Z': #source state rotation = identity, since we start out in mI=-1 = |1>
-            A00_psimin_RO_rot_element = tseq._lt2_final_pi(self, name = 'A00_psi-_Xpi', time_offset = RO_time_offset, CORPSE_pi_phase = 0)
-            A01_psimin_RO_rot_element = tseq._lt2_final_pi(self, name = 'A01_psi-_I', time_offset = RO_time_offset, CORPSE_pi_amp = 0.)
-            A10_psimin_RO_rot_element = tseq._lt2_final_pi(self, name = 'A10_psi-_Xpi', time_offset = RO_time_offset, CORPSE_pi_phase = 0)
-            A11_psimin_RO_rot_element = tseq._lt2_final_pi(self, name = 'A11_psi-_I', time_offset = RO_time_offset, CORPSE_pi_amp = 0.)
-            A00_psiplus_RO_rot_element = tseq._lt2_final_pi(self, name = 'A00_psi+_Xpi', time_offset = RO_time_offset, CORPSE_pi_phase = 0)
-            A01_psiplus_RO_rot_element = tseq._lt2_final_pi(self, name = 'A01_psi+_I', time_offset = RO_time_offset, CORPSE_pi_amp = 0.)
-            A10_psiplus_RO_rot_element = tseq._lt2_final_pi(self, name = 'A10_psi+_Xpi', time_offset = RO_time_offset, CORPSE_pi_phase = 0)
-            A11_psiplus_RO_rot_element = tseq._lt2_final_pi(self, name = 'A11_psi+_I', time_offset = RO_time_offset, CORPSE_pi_amp = 0.)
-
-        if self.params['source_state_basis'] == 'X':
-            A00_psimin_RO_rot_element = tseq._lt2_final_pi2(self, name = 'A00_psi-_Ypi2', time_offset = RO_time_offset, CORPSE_pi2_phase = -90)
-            A01_psimin_RO_rot_element = tseq._lt2_final_pi2(self, name = 'A01_psi-_Y-pi2', time_offset = RO_time_offset, CORPSE_pi2_phase = 90)
-            A10_psimin_RO_rot_element = tseq._lt2_final_pi2(self, name = 'A10_psi-_Y-pi2', time_offset = RO_time_offset, CORPSE_pi2_phase = 90)
-            A11_psimin_RO_rot_element = tseq._lt2_final_pi2(self, name = 'A11_psi-_Ypi2', time_offset = RO_time_offset, CORPSE_pi2_phase = -90)
-            A00_psiplus_RO_rot_element = tseq._lt2_final_pi2(self, name = 'A00_psi+_Y-pi2', time_offset = RO_time_offset, CORPSE_pi2_phase = 90)
-            A01_psiplus_RO_rot_element = tseq._lt2_final_pi2(self, name = 'A01_psi+_Ypi2', time_offset = RO_time_offset, CORPSE_pi2_phase = -90)
-            A10_psiplus_RO_rot_element = tseq._lt2_final_pi2(self, name = 'A10_psi+_Ypi2', time_offset = RO_time_offset, CORPSE_pi2_phase = -90)
-            A11_psiplus_RO_rot_element = tseq._lt2_final_pi2(self, name = 'A11_psi+_Y-pi2', time_offset = RO_time_offset, CORPSE_pi2_phase = 90)
-
-        if self.params['source_state_basis'] == 'Y':
-            A00_psimin_RO_rot_element = tseq._lt2_final_pi2(self, name = 'A00_psi-_Xpi2', time_offset = RO_time_offset, CORPSE_pi2_phase = 0)
-            A01_psimin_RO_rot_element = tseq._lt2_final_pi2(self, name = 'A01_psi-_Xpi2', time_offset = RO_time_offset, CORPSE_pi2_phase = 0)
-            A10_psimin_RO_rot_element = tseq._lt2_final_pi2(self, name = 'A10_psi-_X-pi2', time_offset = RO_time_offset, CORPSE_pi2_phase = 180)
-            A11_psimin_RO_rot_element = tseq._lt2_final_pi2(self, name = 'A11_psi-_X-pi2', time_offset = RO_time_offset, CORPSE_pi2_phase = 180)
-            A00_psiplus_RO_rot_element = tseq._lt2_final_pi2(self, name = 'A00_psi+_X-pi2', time_offset = RO_time_offset, CORPSE_pi2_phase = 180)
-            A01_psiplus_RO_rot_element = tseq._lt2_final_pi2(self, name = 'A01_psi+_X-pi2', time_offset = RO_time_offset, CORPSE_pi2_phase = 180)
-            A10_psiplus_RO_rot_element = tseq._lt2_final_pi2(self, name = 'A10_psi+_Xpi2', time_offset = RO_time_offset, CORPSE_pi2_phase = 0)
-            A11_psiplus_RO_rot_element = tseq._lt2_final_pi2(self, name = 'A11_psi+_Xpi2', time_offset = RO_time_offset, CORPSE_pi2_phase = 90)
-
-        if self.params['source_state_basis'] == 'Z': #source state rotation = identity, since we start out in mI=-1 = |1>
-            A00_psimin_RO_rot_element = tseq._lt2_final_pi(self, name = 'A00_psi-_I', time_offset = RO_time_offset, CORPSE_pi_amp = 0.)
-            A01_psimin_RO_rot_element = tseq._lt2_final_pi(self, name = 'A01_psi-_Xpi', time_offset = RO_time_offset, CORPSE_pi_phase = 0)
-            A10_psimin_RO_rot_element = tseq._lt2_final_pi(self, name = 'A10_psi-_I', time_offset = RO_time_offset, CORPSE_pi_amp = 0.)
-            A11_psimin_RO_rot_element = tseq._lt2_final_pi(self, name = 'A11_psi-_Xpi', time_offset = RO_time_offset, CORPSE_pi_phase = 0)
-            A00_psiplus_RO_rot_element = tseq._lt2_final_pi(self, name = 'A00_psi+_I', time_offset = RO_time_offset, CORPSE_pi_amp = 0.)
-            A01_psiplus_RO_rot_element = tseq._lt2_final_pi(self, name = 'A01_psi+_Xpi', time_offset = RO_time_offset, CORPSE_pi_phase = 0)
-            A10_psiplus_RO_rot_element = tseq._lt2_final_pi(self, name = 'A10_psi+_I', time_offset = RO_time_offset, CORPSE_pi_amp = 0.)
-            A11_psiplus_RO_rot_element = tseq._lt2_final_pi(self, name = 'A11_psi+_Xpi', time_offset = RO_time_offset, CORPSE_pi_phase = 0)
-
-        if DO_READOUT:
-            self.lt2_seq.append(name = 'A00 psi-', 
-                wfname = A00_psimin_RO_rot_element,
-                goto_target = 'LT2_ready_for_RO')
-            self.lt2_seq.append(name = 'A01 psi-', 
-                wfname = A01_psimin_RO_rot_element,
-                goto_target = 'LT2_ready_for_RO')
-            self.lt2_seq.append(name = 'A10 psi-', 
-                wfname = A10_psimin_RO_rot_element,
-                goto_target = 'LT2_ready_for_RO')
-            self.lt2_seq.append(name = 'A11 psi-', 
-                wfname = A11_psimin_RO_rot_element,
-                goto_target = 'LT2_ready_for_RO')
-            self.lt2_seq.append(name = 'A00 psi+', 
-                wfname = A00_psiplus_RO_rot_element,
-                goto_target = 'LT2_ready_for_RO')
-            self.lt2_seq.append(name = 'A01 psi+', 
-                wfname = A01_psiplus_RO_rot_element,
-                goto_target = 'LT2_ready_for_RO')
-            self.lt2_seq.append(name = 'A10 psi+', 
-                wfname = A10_psiplus_RO_rot_element,
-                goto_target = 'LT2_ready_for_RO')
-            self.lt2_seq.append(name = 'A11 psi+', 
-                wfname = A11_psiplus_RO_rot_element,
+                wfname = dummy_element.name,
                 goto_target = 'LT2_ready_for_RO')
 
-            self.lt2_seq.append(name = 'LT2_ready_for_RO',
-                wfname = finished_element.name,
-                goto_target = 'LDE_LT2')
+        #A_[ms,mi]
+        #Y:=0 phase, X:=90
 
+        ################################################### FF, DD and RO ##################################################################
+        #TWO OPTIONS 'ALLES, of NIETS':
+        #alles:
+        #1. First program feaad forward pulse(s), independent of source_state_basis, but dependent on BSM RO result (and psi-/+)
+        #2. Then program tomography (ro pulse), dependent on source_state_basis, but independent on BSM RO result (and psi-/+)
+        #niets:
+        #both FF and RO in one pulse, depending on source_state_basis, BSM RO result (and psi-/+)
+        if DO_DD and DO_READOUT:
+            RO_time_offset = LDE_element.length() + total_elt_time
+
+            if self.params['source_state_basis'] == 'Z': #source state rotation = identity, since we start out in mI=-1 = |1>
+                A00_psimin_RO_rot_element  = tseq._lt2_final_id(self, name = 'A00_psi-_I',  time_offset = RO_time_offset)
+                A01_psimin_RO_rot_element  = tseq._lt2_final_pi(self, name = 'A01_psi-_Y',  time_offset = RO_time_offset, CORPSE_pi_phase = 0)
+                A10_psimin_RO_rot_element  = tseq._lt2_final_id(self, name = 'A10_psi-_I',  time_offset = RO_time_offset)
+                A11_psimin_RO_rot_element  = tseq._lt2_final_pi(self, name = 'A11_psi-_-Y', time_offset = RO_time_offset, CORPSE_pi_phase = 180)
+                
+                A00_psiplus_RO_rot_element = tseq._lt2_final_id(self, name = 'A00_psi+_I',  time_offset = RO_time_offset)
+                A01_psiplus_RO_rot_element = tseq._lt2_final_pi(self, name = 'A01_psi+_-Y', time_offset = RO_time_offset, CORPSE_pi_phase = 180)
+                A10_psiplus_RO_rot_element = tseq._lt2_final_id(self, name = 'A10_psi+_I',  time_offset = RO_time_offset)
+                A11_psiplus_RO_rot_element = tseq._lt2_final_pi(self, name = 'A11_psi+_Y',  time_offset = RO_time_offset, CORPSE_pi_phase = 0.)
+
+            if self.params['source_state_basis'] == 'X':
+                A00_psimin_RO_rot_element  = tseq._lt2_final_pi2(self, name = 'A00_psi-_y',  time_offset = RO_time_offset, CORPSE_pi2_phase = 0)
+                A01_psimin_RO_rot_element  = tseq._lt2_final_pi2(self, name = 'A01_psi-_y',  time_offset = RO_time_offset, CORPSE_pi2_phase = 0)
+                A10_psimin_RO_rot_element  = tseq._lt2_final_pi2(self, name = 'A10_psi-_-y', time_offset = RO_time_offset, CORPSE_pi2_phase = 180)
+                A11_psimin_RO_rot_element  = tseq._lt2_final_pi2(self, name = 'A11_psi-_-y', time_offset = RO_time_offset, CORPSE_pi2_phase = 180)
+                
+                A00_psiplus_RO_rot_element = tseq._lt2_final_pi2(self, name = 'A00_psi+_-y', time_offset = RO_time_offset, CORPSE_pi2_phase = 180)
+                A01_psiplus_RO_rot_element = tseq._lt2_final_pi2(self, name = 'A01_psi+_-y', time_offset = RO_time_offset, CORPSE_pi2_phase = 180)
+                A10_psiplus_RO_rot_element = tseq._lt2_final_pi2(self, name = 'A10_psi+_y',  time_offset = RO_time_offset, CORPSE_pi2_phase = 0)
+                A11_psiplus_RO_rot_element = tseq._lt2_final_pi2(self, name = 'A11_psi+_y',  time_offset = RO_time_offset, CORPSE_pi2_phase = 0)
+
+            if self.params['source_state_basis'] == 'Y':
+                A00_psimin_RO_rot_element  = tseq._lt2_final_pi2(self, name = 'A00_psi-_-x', time_offset = RO_time_offset, CORPSE_pi2_phase = -90)
+                A01_psimin_RO_rot_element  = tseq._lt2_final_pi2(self, name = 'A01_psi-_x',  time_offset = RO_time_offset, CORPSE_pi2_phase =  90)
+                A10_psimin_RO_rot_element  = tseq._lt2_final_pi2(self, name = 'A10_psi-_x',  time_offset = RO_time_offset, CORPSE_pi2_phase =  90)
+                A11_psimin_RO_rot_element  = tseq._lt2_final_pi2(self, name = 'A11_psi-_-x', time_offset = RO_time_offset, CORPSE_pi2_phase = -90)
+
+                A00_psiplus_RO_rot_element = tseq._lt2_final_pi2(self, name = 'A00_psi+_x',  time_offset = RO_time_offset, CORPSE_pi2_phase =  90)
+                A01_psiplus_RO_rot_element = tseq._lt2_final_pi2(self, name = 'A01_psi+_-x', time_offset = RO_time_offset, CORPSE_pi2_phase = -90)
+                A10_psiplus_RO_rot_element = tseq._lt2_final_pi2(self, name = 'A10_psi+_-x', time_offset = RO_time_offset, CORPSE_pi2_phase = -90)
+                A11_psiplus_RO_rot_element = tseq._lt2_final_pi2(self, name = 'A11_psi+_x',  time_offset = RO_time_offset, CORPSE_pi2_phase =  90)
+
+            
+            self.lt2_seq.append(name = 'A00_psi-', 
+                wfname = A00_psimin_RO_rot_element.name,
+                goto_target = 'LT2_ready_for_RO')
+            self.lt2_seq.append(name = 'A01_psi-', 
+                wfname = A01_psimin_RO_rot_element.name,
+                goto_target = 'LT2_ready_for_RO')
+            self.lt2_seq.append(name = 'A10_psi-', 
+                wfname = A10_psimin_RO_rot_element.name,
+                goto_target = 'LT2_ready_for_RO')
+            self.lt2_seq.append(name = 'A11_psi-', 
+                wfname = A11_psimin_RO_rot_element.name,
+                goto_target = 'LT2_ready_for_RO')
+            self.lt2_seq.append(name = 'A00_psi+', 
+                wfname = A00_psiplus_RO_rot_element.name,
+                goto_target = 'LT2_ready_for_RO')
+            self.lt2_seq.append(name = 'A01_psi+', 
+                wfname = A01_psiplus_RO_rot_element.name,
+                goto_target = 'LT2_ready_for_RO')
+            self.lt2_seq.append(name = 'A10_psi+', 
+                wfname = A10_psiplus_RO_rot_element.name,
+                goto_target = 'LT2_ready_for_RO')
+            self.lt2_seq.append(name = 'A11_psi+', 
+                wfname = A11_psiplus_RO_rot_element.name,
+                goto_target = 'LT2_ready_for_RO')
+
+        ################################################### END FF, DD and RO ##################################################################
         ### JUMPING
-        # EV0: 0 = decoupling, 1 = tomography
-        # EV1: first BSM: ms0 = 0, ms-1 = 1
-        # EV2: second BSM: ms0 = 0, ms-1 = 1
+        # EV0: first BSM: ms0 = 0, ms-1 = 1
+        # EV1: second BSM: ms0 = 0, ms-1 = 1
+        # EV2: EMPTY - -- 1 = decoupling, 0 = FF
         # EV3: PLU: psi+ = 0,  psi- = 1
 
         self.lt2_seq.set_djump(True)
-        for i in range(7):
-            self.lt2_seq.add_djump_address(i,'DD')
+        if DO_DD:
+            # note: A01 etc. gives out nitrogen value first, jump expects electron RO first. 
+            self.lt2_seq.add_djump_address(int('1100',2),'A00_psi-') 
+            self.lt2_seq.add_djump_address(int('1101',2),'A01_psi-')
+            self.lt2_seq.add_djump_address(int('1110',2),'A10_psi-')
+            self.lt2_seq.add_djump_address(int('1111',2),'A11_psi-')
+            self.lt2_seq.add_djump_address(int('0100',2),'A00_psi+')
+            self.lt2_seq.add_djump_address(int('0101',2),'A01_psi+')
+            self.lt2_seq.add_djump_address(int('0110',2),'A10_psi+')
+            self.lt2_seq.add_djump_address(int('0111',2),'A11_psi+')
 
-        # note: A01 etc. gives out nitrogen value first, jump expects electron RO first. 
-        self.lt2_seq.add_djump_address(int('1001',2),'A00 psi-') 
-        self.lt2_seq.add_djump_address(int('1101',2),'A01 psi-')
-        self.lt2_seq.add_djump_address(int('1011',2),'A10 psi-')
-        self.lt2_seq.add_djump_address(int('1111',2),'A11 psi-')
-        self.lt2_seq.add_djump_address(int('1000',2),'A00 psi+')
-        self.lt2_seq.add_djump_address(int('1100',2),'A01 psi+')
-        self.lt2_seq.add_djump_address(int('1010',2),'A10 psi+')
-        self.lt2_seq.add_djump_address(int('1110',2),'A11 psi+')
+            self.lt2_seq.add_djump_address(int('1000',2),'DD') 
+            self.lt2_seq.add_djump_address(int('1001',2),'DD')
+            self.lt2_seq.add_djump_address(int('1010',2),'DD') 
+            self.lt2_seq.add_djump_address(int('1011',2),'DD') 
+            self.lt2_seq.add_djump_address(int('0000',2),'DD') 
+            self.lt2_seq.add_djump_address(int('0001',2),'DD') 
+            self.lt2_seq.add_djump_address(int('0010',2),'DD') 
+            self.lt2_seq.add_djump_address(int('0011',2),'DD')
+        else:
+            for i in range(16):
+                self.lt2_seq.add_djump_address(i,'DD')
+
+        self.lt2_seq.append(name = 'LT2_ready_for_RO',
+            wfname = finished_element.name,
+            goto_target = 'LDE_LT2')
 
         ### AND ADD READOUT PULSES
         elements = []
         elements.append(dummy_element)
-        elements.append(finished_element)
+        
+        if DO_LDE_SEQUENCE:
+            elements.append(LDE_element)
 
         if DO_DD:
             for e in elts: #the dynamical decoupling sequence elements
                 if e not in elements:
                     elements.append(e)
 
-        if DO_LDE_SEQUENCE:
-            elements.append(LDE_element)
-
-        if DO_RO:
-            elements.append(A00_psimin_RO_rot_element)
-            elements.append(A01_psimin_RO_rot_element)
-            elements.append(A10_psimin_RO_rot_element)
-            elements.append(A11_psimin_RO_rot_element)
-            elements.append(A00_psiplus_RO_rot_element)
-            elements.append(A01_psiplus_RO_rot_element)
-            elements.append(A10_psiplus_RO_rot_element)
-            elements.append(A11_psiplus_RO_rot_element)
+            if DO_READOUT:
+                elements.append(A00_psimin_RO_rot_element)
+                elements.append(A01_psimin_RO_rot_element)
+                elements.append(A10_psimin_RO_rot_element)
+                elements.append(A11_psimin_RO_rot_element)
+                elements.append(A00_psiplus_RO_rot_element)
+                elements.append(A01_psiplus_RO_rot_element)
+                elements.append(A10_psiplus_RO_rot_element)
+                elements.append(A11_psiplus_RO_rot_element)
+        elements.append(finished_element)
 
         qt.pulsar.upload(*elements)
         qt.pulsar.program_sequence(self.lt2_seq)
@@ -858,7 +874,16 @@ def default_msmt(name):
     start_msmt(m)
     finish_msmnt()
 
-if __name__ == '__main__':
-    default_msmt('LT1_spin_photon_with_MBI_and_calib_pulses')
+def program_lt2_sequence_only(name):
+    m = setup_msmt(''+name)
+    global DO_DD 
+    DO_DD= True
+    m.update_definitions()
+    m.lt2_sequence()
+    qt.instruments['AWG'].stop()
+    qt.instruments['AWG'].set_runmode('CONT')
 
+if __name__ == '__main__':
+    #default_msmt('LT1_spin_photon_with_MBI_and_calib_pulses')
+    program_lt2_sequence_only('test_DD')
                                                                                                                                                                                                                                                                                           

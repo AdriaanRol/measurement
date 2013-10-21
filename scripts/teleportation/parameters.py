@@ -73,9 +73,9 @@ params_lt1['E_SP_duration'] = 50
 params_lt1['MBI_duration'] = 4
 params_lt1['MBI_threshold'] = 1 
 
-params_lt2['repump_duration'] = 500 #yellow 10#green #
-params_lt2['repump_freq_offset'] = 5.
-params_lt2['repump_freq_amplitude'] = 4.
+params_lt2['repump_duration'] = 10 #yellow 10#green #
+params_lt2['repump_freq_offset'] = 0#5.
+params_lt2['repump_freq_amplitude'] = 0#4.
 
 params_lt2['CR_duration'] = 50
 params_lt2['CR_preselect'] = 25
@@ -98,7 +98,7 @@ params_lt2['Ey_SP_amplitude'] = 0e-9
 params_lt2['A_SP_amplitude'] = 20e-9             
 params_lt2['Ey_RO_amplitude'] = 10e-9
 params_lt2['A_RO_amplitude'] = 0
-params_lt2['repump_amplitude'] = 50e-9 #yellow 200e-6#green #
+params_lt2['repump_amplitude'] = 200e-6#50e-9 #yellow 200e-6#green #
 
 ####################
 ### pulses and MW stuff LT1
@@ -168,7 +168,7 @@ params_lt1['N_pi2_amp'] =1.
 ### pulses and MW stuff LT2
 #####################
 ## general
-f_msm1_cntr_lt2 = 2.828825e9
+f_msm1_cntr_lt2 = 2.828778e9 
 mw0_lt2 = 2.8e9
 f0_lt2 = f_msm1_cntr_lt2 - mw0_lt2
 params_lt2['ms-1_cntr_frq'] = f_msm1_cntr_lt2
@@ -184,15 +184,16 @@ params_lt2['CORPSE_pi_m300_duration'] = 5./CORPSE_frq_lt2/6.
 params_lt2['CORPSE_pi_420_duration'] = 7./CORPSE_frq_lt2/6.
 
 params_lt2['CORPSE_pi2_mod_frq'] = f0_lt2
-params_lt2['CORPSE_pi2_amp'] = 0.506
+params_lt2['CORPSE_pi2_amp'] = 0.431
 params_lt2['CORPSE_pi2_24p3_duration'] = 24.3/CORPSE_frq_lt2/360.
 params_lt2['CORPSE_pi2_m318p6_duration'] = 318.6/CORPSE_frq_lt2/360.
 params_lt2['CORPSE_pi2_384p3_duration'] = 384.3/CORPSE_frq_lt2/360.
-
-params_lt2['DD_pi_phases'] = [-90,0,-90] ## THIS DEFINES THE YXY SEQUENCE
-params_lt2['first_C_revival'] = 53.6e-6
-params_lt2['dd_extra_t_between_pi_pulses'] = 22e-9
-params_lt2['dd_spin_echo_time'] = 520e-9 
+params_lt2['pi2_pulse_phase'] = 0 #Y
+params_lt2['DD_pi_phases'] = [90,0,90] ## THIS DEFINES THE XYX SEQUENCE
+params_lt2['CORPSE_pi2_wait_length']= 1300e-9
+params_lt2['first_C_revival'] = 105.913e-6/2. #C revival after CORPSE_pi2_wait_length 
+params_lt2['dd_extra_t_between_pi_pulses'] = 450e-9
+params_lt2['dd_spin_echo_time'] = 30e-9 
 
 ### LDE sequence settings
 params['HH_sync_period'] = 400e-9 # in seconds -- important for checking (see measurement_loop())
@@ -208,6 +209,7 @@ params_lt2['eom_overshoot1']            = -0.03
 params_lt2['eom_overshoot_duration2']   = 4e-9
 params_lt2['eom_overshoot2']            = -0.03
 params_lt2['aom_risetime']              = 42e-9
+params_lt2['eom_aom_on']                = True
 
 params_lt2['AWG_SP_power']            = 40e-9
 params_lt2['AWG_yellow_power']        = 50e-9 #yellow power during SP in LDE on LT1
@@ -237,7 +239,7 @@ params['LDE_SP_duration_yellow']      = 3e-6
 params['wait_after_sp']               = 500e-9 #this should be large enough, so that the MW puls fits
 params['LDE_element_length']          = 8e-6 # 9k for TPQI with 5 pulses
 
-params['source_state_basis'] = 'X'
+params['source_state_basis'] = 'Y'
 
 ### default process settings
 params['LDE_attempts_before_CR'] = 100 # 1000 for tpqi seems ok

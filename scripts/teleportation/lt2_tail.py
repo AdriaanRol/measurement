@@ -46,9 +46,9 @@ class LT2Tail(pulsar_msmt.PulsarMeasurement):
 
         self.lt2_seq = pulsar.Sequence('TeleportationLT2')
 
-        dummy_element = teleportation_master._lt2_dummy_element(self)
-        LDE_element = teleportation_master._lt2_LDE_element(self)
-        finished_element = teleportation_master._lt2_sequence_finished_element(self)
+        dummy_element = tseq._lt2_dummy_element(self)
+        LDE_element = tseq._lt2_LDE_element(self)
+        finished_element = tseq._lt2_sequence_finished_element(self)
 
         self.lt2_seq.append(name = 'LDE_LT2',
             wfname = (LDE_element.name if DO_LDE_SEQUENCE else dummy_element.name),
@@ -118,6 +118,9 @@ def tail_lt2(name):
     m.params['repetitions'] = 100000
     m.params['sequence_wait_time'] = m.params['LDE_attempts_before_CR']*m.params['LDE_element_length']*1e6 + 20
     m.params['SP_duration'] = 250
+
+    m.params['opt_pi_pulses'] = 2
+    m.params_lt2['MW_during_LDE'] = 0
 
     print  m.params['sequence_wait_time'] 
     m.autoconfig()
