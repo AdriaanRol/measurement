@@ -84,8 +84,6 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
         self.params_lt1['do_LDE_sequence'] = 1 if DO_LDE_SEQUENCE else 0
         self.params_lt1['use_yellow_lt2'] = YELLOW_lt2
         self.params_lt1['use_yellow_lt1'] = YELLOW_lt1
-        
-        
 
     
     def update_definitions(self):
@@ -103,6 +101,8 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
         the correct AOM DAC channel from the specified AOM instrument.
         """
 
+        # LT1 laser configuration
+
         self.params_lt1['E_laser_DAC_channel'] = self.adwins['adwin_lt1']['ins'].get_dac_channels()\
                 [self.E_aom_lt1.get_pri_channel()]
         self.params_lt1['A_laser_DAC_channel'] = self.adwins['adwin_lt1']['ins'].get_dac_channels()\
@@ -114,7 +114,8 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
         # self.params['gate_DAC_channel'] = self.adwin.get_dac_channels()\
         #        ['gate']
             
-        self.params_lt1['repump_laser_DAC_channel'] = self.params_lt1['green_laser_DAC_channel']
+        # self.params_lt1['repump_laser_DAC_channel'] = self.params_lt1['green_laser_DAC_channel']
+        self.params_lt1['repump_laser_DAC_channel'] = self.params_lt1['yellow_laser_DAC_channel']
 
         self.params_lt1['E_CR_voltage'] = \
                 self.E_aom_lt1.power_to_voltage(
@@ -140,7 +141,21 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
         self.params_lt1['repump_voltage'] = \
                 self.repump_aom_lt1.power_to_voltage(
                         self.params_lt1['repump_amplitude'])
-       
+
+        self.params_lt1['E_N_randomize_voltage'] = \
+            self.E_aom.power_to_voltage(
+                    self.params['E_N_randomize_amplitude'])
+
+        self.params_lt1['A_N_randomize_voltage'] = \
+            self.A_aom.power_to_voltage(
+                    self.params['A_N_randomize_amplitude'])
+
+        self.params_lt1['repump_N_randomize_voltage'] = \
+            self.repump_aom.power_to_voltage(
+                    self.params['repump_N_randomize_amplitude'])
+               
+        # LT2 laser configuration
+
         self.params_lt2['Ey_laser_DAC_channel'] = self.adwins['adwin_lt2']['ins'].get_dac_channels()\
                 [self.Ey_aom_lt2.get_pri_channel()]
         self.params_lt2['A_laser_DAC_channel'] = self.adwins['adwin_lt2']['ins'].get_dac_channels()\
@@ -153,7 +168,7 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
         if YELLOW_lt2:
             self.params_lt2['repump_laser_DAC_channel'] = self.params_lt2['yellow_laser_DAC_channel']
         else:
-            self.params_lt2['repump_laser_DAC_channel'] = self.params_lt2['green_laser_DAC_channel']
+        self.params_lt2['repump_laser_DAC_channel'] = self.params_lt2['green_laser_DAC_channel']
 
         self.params_lt2['Ey_CR_voltage'] = \
                 self.Ey_aom_lt2.power_to_voltage(
@@ -184,13 +199,14 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
         self.params_lt2['SP_voltage_AWG'] = \
                 self.A_aom_lt2.power_to_voltage(
                         self.params_lt2['AWG_SP_power'], controller='sec')
+        
         # add values from AWG calibrations
-        self.params_lt2['SP_voltage_AWG_yellow'] = \
-                self.repump_aom_lt2.power_to_voltage(
-                        self.params_lt2['AWG_yellow_power'], controller='sec')
+        # self.params_lt2['SP_voltage_AWG_yellow'] = \
+        #         self.repump_aom_lt2.power_to_voltage(
+        #                 self.params_lt2['AWG_yellow_power'], controller='sec')
         
         qt.pulsar.set_channel_opt('AOM_Newfocus', 'high', self.params_lt2['SP_voltage_AWG'])
-        qt.pulsar.set_channel_opt('AOM_Yellow', 'high', self.params_lt2['SP_voltage_AWG_yellow'])
+        # qt.pulsar.set_channel_opt('AOM_Yellow', 'high', self.params_lt2['SP_voltage_AWG_yellow'])
 
     def setup(self):
         """
@@ -672,7 +688,13 @@ class TeleportationSlave:
         self.params_lt1['SP_voltage_AWG'] = \
                 self.A_aom_lt1.power_to_voltage(
                         self.params_lt1['AWG_SP_power'], controller='sec')
+
+        self.params_lt1['SP_voltage_AWG_yellow'] = \
+                self.repump_aom_lt1.power_to_voltage(
+                        self.params_lt1['AWG_yellow_power'], controller='sec')    
+
         qt.pulsar_remote.set_channel_opt('Velocity1AOM', 'high', self.params_lt1['SP_voltage_AWG'])
+        qt.pulsar_remote.set_channel_opt('YellowAOM', 'high', self.params_lt1['SP_voltage_AWG_yellow'])
 
 
     def lt1_sequence(self):
@@ -813,7 +835,7 @@ TeleportationMaster.mwsrc_lt1 = qt.instruments['SMB100_lt1']
 if YELLOW_lt1:
     TeleportationMaster.repump_aom_lt1 = TeleportationMaster.yellow_aom_lt1
 else:
-    TeleportationMaster.repump_aom_lt1 = TeleportationMaster.green_aom_lt1
+TeleportationMaster.repump_aom_lt1 = TeleportationMaster.green_aom_lt1
 
 TeleportationMaster.repump_aom_lt1 = TeleportationMaster.green_aom_lt1
 

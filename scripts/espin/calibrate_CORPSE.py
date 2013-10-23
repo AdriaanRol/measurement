@@ -16,16 +16,26 @@ class CORPSEPiCalibration(pulsar_msmt.PulsarMeasurement):
         T = pulse.SquarePulse(channel='MW_pulsemod',
             length = 10e-9, amplitude = 0)
 
-        CORPSE_pi = pulselib.IQ_CORPSE_pi_pulse('CORPSE pi-pulse',
+        # CORPSE_pi = pulselib.IQ_CORPSE_pi_pulse('CORPSE pi-pulse',
+        #     I_channel = 'MW_Imod', 
+        #     Q_channel = 'MW_Qmod',
+        #     PM_channel = 'MW_pulsemod',
+        #     PM_risetime = self.params['MW_pulse_mod_risetime'],
+        #     frequency = self.params['CORPSE_pi_mod_frq'],
+        #     amplitude = self.params['CORPSE_pi_amp'],
+        #     length_60 = self.params['CORPSE_pi_60_duration'],
+        #     length_m300 = self.params['CORPSE_pi_m300_duration'],
+        #     length_420 = self.params['CORPSE_pi_420_duration'])
+
+        CORPSE_pi = pulselib.IQ_CORPSE_pulse('CORPSE pi-pulse',
             I_channel = 'MW_Imod', 
-            Q_channel = 'MW_Qmod',
+            Q_channel = 'MW_Qmod',    
             PM_channel = 'MW_pulsemod',
             PM_risetime = self.params['MW_pulse_mod_risetime'],
             frequency = self.params['CORPSE_pi_mod_frq'],
             amplitude = self.params['CORPSE_pi_amp'],
-            length_60 = self.params['CORPSE_pi_60_duration'],
-            length_m300 = self.params['CORPSE_pi_m300_duration'],
-            length_420 = self.params['CORPSE_pi_420_duration'])
+            rabi_frequency = self.params['CORPSE_rabi_frequency'],
+            eff_rotation_angle = 180)
 
         wait_1us = element.Element('1us_delay', pulsar=qt.pulsar)
         wait_1us.append(pulse.cp(T, length=1e-6))

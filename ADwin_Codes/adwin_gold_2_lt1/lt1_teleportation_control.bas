@@ -17,15 +17,19 @@
 ' 1 : do local red CR check
 ' 2 : MBI spin pumping
 ' 3 : MBI attempt
-' 4 : MBI re-pump
-' 5 : local init OK, wait for remote
-' 6 : trigger AWG sequence (LDE element), wait for the done-signal (=timeout)
-' 7 : first readout, once we get the signal from the AWG
+' 4 : randomize N
+' 5 : MBI re-pump
+' 6 : local init OK, wait for remote
+' 7 : trigger AWG sequence (LDE element), wait for the done-signal (timeout OR success)
+' 8 : first readout, once we get the signal from the AWG
+' 9 : wait for the adwin on LT2 to finish with its SSRO
 '
 ' remote modes:
 ' 0 : start remote CR check
 ' 1 : remote CR check running
 ' 2 : remote CR OK, waiting
+' 3 : remote SSRO running
+' 4 : remote OK, waiting for CR signal
 
 #INCLUDE ADwinGoldII.inc
 #INCLUDE Math.inc
@@ -36,8 +40,8 @@
 #DEFINE max_statistics          15
 
 ' parameters
-DIM DATA_20[40] AS LONG                   AT DRAM_EXTERN ' integer parameters
-DIM DATA_21[10] AS FLOAT                  AT DRAM_EXTERN ' float parameters
+DIM DATA_20[45] AS LONG                   AT DRAM_EXTERN ' integer parameters
+DIM DATA_21[15] AS FLOAT                  AT DRAM_EXTERN ' float parameters
 DIM DATA_7[max_red_hist_cts] AS LONG      AT EM_LOCAL ' histogram of counts during 1st red CR after timed-out lde sequence
 DIM DATA_8[max_red_hist_cts] AS LONG      AT EM_LOCAL ' histogram of counts during red CR (all attempts)
 DIM DATA_9[max_repump_hist_cts] AS LONG   AT EM_LOCAL ' histogram of counts during 1st repump after timed-out lde sequence
@@ -81,6 +85,10 @@ DIM a_sp_voltage AS FLOAT
 DIM a_ro_voltage AS FLOAT
 DIM a_tune_voltage AS FLOAT
 DIM a_off_voltage AS FLOAT 
+dim E_N_randomize_voltage as float
+dim A_N_randomize_voltage as float
+dim repump_N_randomize_voltage as float
+
 DIM red_cr_check_steps AS LONG             'how long to check, in units of process cycles (lt1)
 DIM current_red_cr_check_counts AS LONG        
 DIM current_repump_counts AS LONG 
@@ -97,8 +105,11 @@ DIM CR_probe_max_time AS LONG
 dim e_sp_duration as long
 dim a_sp_duration as long
 dim mbi_duration as long
+dim current_MBI_attempt as long
+dim MBI_attempts_before_CR as long
 dim mbi_stop as long
 dim mbi_threshold as long
+dim N_randomize_duration as long
 
 'LDE sequence
 DIM AWG_lt1_trigger_do_channel AS LONG
@@ -258,6 +269,8 @@ INIT:
   set_do_sequences              = DATA_20[36]
   CR_probe_max_time             = DATA_20[37]
   mbi_threshold                 = DATA_20[38]
+  MBI_attempts_before_CR        = DATA_20[39]
+  N_randomize_duration          = DATA_20[40]
       
   repump_voltage                = DATA_21[1]
   repump_off_voltage            = DATA_21[2]
@@ -269,6 +282,9 @@ INIT:
   a_ro_voltage                  = DATA_21[8]
   e_off_voltage                 = DATA_21[9]
   a_off_voltage                 = DATA_21[10]
+  E_N_randomize_voltage         = DATA_21[11]
+  A_N_randomize_voltage         = DATA_21[12]
+  repump_N_randomize_voltage    = DATA_21[13]
 
   do_sequences                  = set_do_sequences
   current_red_cr_check_counts   = 0
@@ -342,7 +358,6 @@ INIT:
   '  
   '  AWG_lt2_address_U4_in_bit = (AWG_lt2_address_U4 AND 8)/8 * 2^(AWG_lt2_address3_do_channel) + (AWG_lt2_address_U4 AND 4)/4 * 2^(AWG_lt2_address2_do_channel) 
   '  AWG_lt2_address_U4_in_bit = AWG_lt2_address_U4_in_bit + (AWG_lt2_address_U4 AND 2)/2 * 2^(AWG_lt2_address1_do_channel) + (AWG_lt2_address_U4 AND 1)/1 * 2^(AWG_lt2_address0_do_channel)
-       
   
   DAC(repump_aom_channel, 3277*repump_off_voltage+32768)   'turn off repump laser
   DAC(e_aom_channel, 3277*e_off_voltage + 32768)           'turn off Ey aom 
@@ -558,7 +573,7 @@ EVENT:
           IF (timer = e_sp_duration) THEN
             cnt_enable(0)
             dac(e_aom_channel, 3277*E_off_voltage+32768) ' turn off Ex laser
-            ' dac(a_aom_channel, 3277*A_off_voltage+32768) ' turn off A laser            
+                
             mode = 3
             wait_time = wait_after_pulse_duration
             timer = -1
@@ -572,7 +587,7 @@ EVENT:
         ' then wait until we can assume this is done
         IF(timer=0) THEN
           
-          INC(PAR_67)
+          INC(PAR_67)        
           digout(AWG_lt1_trigger_DO_channel,1)  ' AWG trigger for CNOT
           CPU_SLEEP(9)
           digout(AWG_lt1_trigger_DO_channel,0)
@@ -591,10 +606,7 @@ EVENT:
             CNT_CLEAR(1111b)     'clear counter
             CNT_ENABLE(1111b)    'enable counter
             dac(e_aom_channel, 3277*e_ro_voltage+32768) ' turn on Ex laser
-            
-            par_57 = MBI_stop
-            inc(par_58)           
-          
+         
           else
             
             IF (timer = MBI_stop) THEN
@@ -604,13 +616,22 @@ EVENT:
               cnt_enable(0)
                                          
               IF (counts < MBI_threshold) THEN
-                inc(PAR_80)
-                mode = 1 ' goto CR checking / N-spin randomizing     
+                inc(PAR_80)                
+                if (current_MBI_attempt = MBI_attempts_before_CR) then
+                  current_cr_threshold = cr_threshold_prepare
+                  mode = 1 '(check resonance and start over)
+                  current_MBI_attempt = 1
+                else
+                  mode = 4
+                  inc(current_MBI_attempt)
+                endif                
+                timer = -1
+              
               else
                 digout(AWG_lt1_event_do_channel,1)  ' jump to LDE element
                 CPU_SLEEP(9)
                 digout(AWG_lt1_event_do_channel,0)                
-                mode = 4 ' goto repumping to ms=0
+                mode = 5 ' goto repumping to ms=0
               endif
               
               timer = -1
@@ -619,7 +640,25 @@ EVENT:
           endif
         endif
       
-      CASE 4    ' A re-pumping to 0
+      case 4 ' randomize the N spin
+        if (timer = 0) then
+          dac(E_aom_channel,3277*E_N_randomize_voltage+32768)
+          dac(A_aom_channel,3277*A_N_randomize_voltage+32768)
+          dac(repump_aom_channel,3277*repump_N_randomize_voltage+32768)
+        else
+          if (timer = N_randomize_duration) then
+            dac(E_aom_channel,3277*E_off_voltage+32768)
+            dac(A_aom_channel,3277*A_off_voltage+32768)
+            dac(repump_aom_channel,3277*repump_off_voltage+32768)
+            
+            mode = 2
+            timer = -1
+            wait_time = wait_after_pulse_duration
+          endif                    
+        endif
+      
+      
+      CASE 5 ' A re-pumping to 0
        
         IF (timer = 0) THEN
           dac(a_aom_channel, 3277*A_SP_voltage+32768)
@@ -629,12 +668,12 @@ EVENT:
             dac(a_aom_channel, 3277*A_off_voltage+32768) ' turn off A laser
             wait_time = wait_after_pulse_duration
             
-            mode = 5
+            mode = 6
             timer = -1
           ENDIF
         ENDIF
         
-      case 5 'local init OK, wait for remote
+      case 6 'local init OK, wait for remote
       
         ' todo: we could save the waiting times, or at least averages of them.
         IF (remote_mode = 2) THEN
@@ -642,7 +681,7 @@ EVENT:
             mode = 1 
             remote_mode = 0
           else      
-            mode = 6
+            mode = 7
             wait_time = 5 ' we need to make sure that the AWG is receptive for triggering now!
             DATA_29[tele_event_id + 1] = CR_probe_timer   ' save CR timer just before LDE sequence -> put to after LDE later?
           
@@ -650,7 +689,7 @@ EVENT:
           timer = -1
         ENDIF      
     
-      case 6
+      case 7 ' trigger LDE, then wait for timeout (AWG) OR success (PLU)
       
         if (timer = 0) then
           
@@ -662,7 +701,7 @@ EVENT:
           
           DIGOUT(PLU_arm_do_channel, 1) ' arm the PLU once at the beginning of the LDE sequence
           CPU_SLEEP(9)
-          DIGOUT(PLU_arm_do_channel, 0)          
+          DIGOUT(PLU_arm_do_channel, 0)
           
           ' par_60 = (DIGIN_EDGE(1) AND (PLU_di_channel_in_bit))
         
@@ -681,12 +720,13 @@ EVENT:
           
           if ((PLU_was_high = 0) AND (PLU_is_high > 0)) then              
             inc(par_77)
-            mode = 7
+            mode = 8
             timer = -1            
           else         
             IF ((AWG_LT1_in_was_high = 0) AND (AWG_LT1_in_is_high > 0)) THEN
               inc(par_66)
               first_cr_probe_after_unsuccessful_lde = 1
+              
               mode = 1
               timer = -1
               remote_mode = 0
@@ -695,7 +735,7 @@ EVENT:
           endif        
         endif
         
-      case 7
+      case 8
         ' this is the first part of the BSM. we wait until we get a trigger from
         ' the AWG, then do SSRO
         
@@ -721,14 +761,14 @@ EVENT:
             cnt_enable(0)
             
             ' TODO: complete the readout. for now this is only up to the first readout.
-            mode = 8
+            mode = 9
             timer = -1          
             remote_mode = 3 ' LT2 will soon do SSRO now, we have to wait for it to be done
           endif
         
         endif
         
-      case 8
+      case 9
         
         ' we wait for LT2 to be done with its SSRO, then we start over
         if (remote_mode = 4) then
