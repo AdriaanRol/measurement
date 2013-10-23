@@ -36,21 +36,21 @@ def erabi(name, yellow):
     m.params['pts'] = 21
     pts = m.params['pts']
     
-    m.params['MW_pulse_durations'] = np.ones(pts) * 6e-6 # np.linspace(0, 30e-6, pts)
+    m.params['MW_pulse_durations'] =  np.linspace(0, 200e-9, pts)
     m.params['mw_frq'] = 2.80e9   
     m.params['mw_power'] = 20
     m.params['repetitions'] = 5000
     
-    m.params['MW_pulse_amplitudes'] = np.linspace(0.003, 0.01, pts) # np.ones(pts) * 0.014
-    m.params['MW_pulse_frequency'] = m.params['ms-1_cntr_frq'] + (+1) * m.params['N_HF_frq']\
+    m.params['MW_pulse_amplitudes'] = np.ones(pts) * 0.8
+    m.params['MW_pulse_frequency'] = m.params['ms-1_cntr_frq'] + (+0) * m.params['N_HF_frq']\
         - m.params['mw_frq']    
     
     # for autoanalysis
     # m.params['sweep_name'] = 'Pulse length (ns)'
-    # m.params['sweep_pts'] = m.params['MW_pulse_durations'] * 1e9
+    # m.params['sweep_pts'] = m.params['MW_pulse_durations'] 
 
-    m.params['sweep_name'] = 'Pulse amplitude (V)'
-    m.params['sweep_pts'] = m.params['MW_pulse_amplitudes']
+    m.params['sweep_name'] = 'Pulse MW_pulse_durations (ns)'
+    m.params['sweep_pts'] = m.params['MW_pulse_durations']* 1e9
 
     m.params['sequence_wait_time'] = \
             int(np.ceil(np.max(m.params['MW_pulse_durations'])*1e6)+10)
@@ -62,5 +62,5 @@ def erabi(name, yellow):
     m.finish()
 
 if __name__ == '__main__':
-    erabi(SAMPLE+'_'+'find_low_Rabi-frq_ms=-1_mI=+1', yellow=True)
+    erabi(SAMPLE+'_'+'find_high_rabi_sil1', yellow=False)
     # erabi(SAMPLE+'_'+'find_MBI_pulse', yellow=True)

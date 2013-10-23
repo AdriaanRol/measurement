@@ -744,7 +744,7 @@ def run_UNROT_vs_timing(name):
     BSM.finish(m, debug=True)
 
 if __name__ == '__main__':
-    echo_delay_sweep('sil2_zeroth_revival')
+    echo_delay_sweep('sil1_first_revival')
     # echo_phase_sweep('sil2_first_revival')
     # pi_position_sweep('sil2_short_delay_CORPSE_pi')
     

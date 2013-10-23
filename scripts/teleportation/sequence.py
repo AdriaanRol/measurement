@@ -280,10 +280,10 @@ def _lt1_LDE_element(msmt):
                 start = msmt.params_lt1['MW_separation'],
                 refpulse = 'mw_pi2_pulse', refpoint = 'end', refpoint_new = 'start')
         
-    # e.add(pulse.cp(msmt.TIQ, duration = msmt.params_lt1['finaldelay']))
+    ################
     
-    # need some waiting pulse on IQ here to be certain to operate on spin echo after
-
+    if e.length() != msmt.params['LDE_element_length']:
+        raise Exception('LDE element length' + e.name+' is not as specified - granylarity issue?')
     return e
 
 def _lt1_adwin_LT1_trigger_element(msmt):
@@ -348,7 +348,8 @@ def _lt1_UNROT_element(msmt, name,
     no_second_N_pulse = kw.pop('no_second_N_pulse', False)
 
     # to make sure that the zero-time of the element
-    # is zero-time on the IQ channels (and not of the N pulse due to delays)
+    # is zero-time on the IQ channels (and not of the N pulse due to delays).
+    # So it should be longer than the maximum difference between channel delays of all channels with pulses
     start_buffer = kw.pop('start_buffer', 200e-9)
 
     # verbosity: if verbose, print info about all phases and lengths
@@ -376,37 +377,19 @@ def _lt1_UNROT_element(msmt, name,
         
         # support for lists of pulses -- we need this for the H gate
         if type(N_pulse) != list:
-            
-            # first N operation, with adapted phase
-            # the resulting time of the pulse within the element
-            
-            # eff_t_op1 = start_buffer - elt.channel_delay('RF') + \
-            #    elt.channel_delay('MW_Imod')
-            
-            # op1_phase = (N_ref_phase + N_pulse.phase + \
-            #     phaseref(N_pulse.frequency, eff_t_op1) )        
-            
+                        
             op1_name = elt.add(N_pulse, start=start_buffer)
-
-            # if verbose:
-            #     print 'Phase of the first NROT:', op1_phase
 
         else:
             for i,op in enumerate(N_pulse):
                 if i == 0:
-                    # eff_t_op = start_buffer - elt.channel_delay('RF') + \
-                    #     elt.channel_delay('MW_Imod')
                     start = start_buffer
                 else:
-                    # eff_t_op += N_pulse[i-1].length
                     start += N_pulse[i-1].length
 
-                # op_phase = (N_ref_phase + op.phase + \
-                #     phaseref(op.frequency, eff_t_op))
                 n = elt.add(op, start = start)
 
                 if i == 0:
-                    # first_op_phase = op_phase
                     first_op_name = n
     
     if first_N_pulse_only == True:
@@ -418,20 +401,11 @@ def _lt1_UNROT_element(msmt, name,
         delta_t_CORPSE = - msmt.CORPSE_pi.effective_length()/2. + \
         msmt.params_lt1['CORPSE_pi_center_shift']
     
-        # t_CORPSE = evolution_time + delta_t_CORPSE
-        # CORPSE_phase = e_ref_phase + phaseref(
-        #     msmt.params_lt1['e_ref_frq'], t_CORPSE) + \
-        #     CORPSE_pi_phase_shift
-
         # want to have the CORPSE phase as a shift with respect to the current
         # rotating frame phase.
         CORPSE_phase = phaseref(msmt.params_lt1['e_ref_frq'],
-            elt.pulse_global_end_time(delay1_name, 'MW_Imod') + delta_t_CORPSE) \
+            elt.pulse_global_end_time(delay1_name, msmt.TIQ.channel) + delta_t_CORPSE) \
             + CORPSE_pi_phase_shift
-
-        # if verbose:
-        #     print 'Start time of the CORPSE:', t_CORPSE
-        #     print 'Phase of the CORPSE:', CORPSE_phase
 
         pi_name = elt.add(pulse.cp(msmt.CORPSE_pi,
             phaselock = False,
@@ -452,7 +426,8 @@ def _lt1_UNROT_element(msmt, name,
 
             if N_pulse != None:
                 # second Nitrogen operation; start at evolution time
-                # after the start of the first.
+                # after the start of the first. We add half of the corpse pulse length to make 
+                # sure it doies not overlap with the corpse.
         
                 if type(N_pulse) != list:
             
@@ -464,10 +439,6 @@ def _lt1_UNROT_element(msmt, name,
                         start = t_op2,
                         refpulse = op1_name,
                         refpoint = 'start')
-
-                    # if verbose:
-                    #     print 'Phase of the second NROT:', op2_phase
-
                 else:
                     for i,op in enumerate(N_pulse):
                         if i == 0:
@@ -476,9 +447,6 @@ def _lt1_UNROT_element(msmt, name,
                         else:
                             t_op += N_pulse[i-1].length
 
-                        # op_phase = first_op_phase + \
-                        #     phaseref(op.frequency, t_op)
-                
                         elt.add(op,
                             start = t_op,
                             refpulse = first_op_name,
@@ -490,7 +458,8 @@ def _lt1_UNROT_element(msmt, name,
 ##################
 def _lt1_N_init_element(msmt, name, basis = 'Y', **kw):
     echo_time_after_LDE = kw.pop('echo_time_after_LDE', msmt.params_lt1['echo_time_after_LDE'])
-    end_offset_time = kw.pop('end_offset_time', -240e-9)
+    end_offset_time = -msmt.params_lt1['buffer_time_for_CNOT']
+    #end_offset time: to compensate for CNOT time in next element 
 
     if basis == '-Z':
         N_pulse = pulse.cp(msmt.TN) # waiting time only -> change as little as possible
@@ -509,31 +478,23 @@ def _lt1_N_init_element(msmt, name, basis = 'Y', **kw):
         time_offset = msmt.params['LDE_element_length'], 
         begin_offset_time = echo_time_after_LDE,
         end_offset_time = end_offset_time)
-        #end_offset time: to compensate for CNOT time in next element 
-
+        
     return UNROT_N_init_elt
 
 ##################
 ##### BSM elements (CNOT + UNROT with Hadamard)
 ##################
-def _lt1_BSM_elements(msmt, name, time_offset, 
-    start_buffer_time=240e-9, **kw):
-    """
-    Attention: Make sure that the CNOT element time adds up to a length
-    that is a multiple of the granularity!
-    """
-
-    evo_offset = kw.pop('evo_offset', 1000e-9)
-    CNOT_offset = kw.pop('CNOT_offset', 0)
+def _lt1_BSM_elements(msmt, name, time_offset, **kw):
     CNOT_phase_shift = kw.pop('CNOT_phase_shift', 0)
     evo_time = kw.pop('evolution_time', msmt.params_lt1['H_evolution_time'])
     H_phase = kw.pop('H_phase', 0)
-    BSM_CNOT_amp = kw.pop('BSM_CNOT_amp', msmt.params_lt1['pi2pi_mIm1_amp'])
-    # N_frq = kw.pop('N_frq', msmt.N_pi2.frequency)
+
+    start_buffer_time = msmt.params_lt1['buffer_time_for_CNOT']
+    evo_offset = 1000e-9
     
     eff_evo_time = evo_time - evo_offset
 
-    # we make the evolution time a bit shorter (default 1000 ns), 
+    # we make the evolution time a bit shorter ( evo_offset = 1000 ns), 
     # then make an extra
     # element of length start_buffer_time plus this offset.
     # in this element we put the CNOT pulse such that it's centered
@@ -543,26 +504,16 @@ def _lt1_BSM_elements(msmt, name, time_offset,
         global_time = True,
         time_offset = time_offset)
 
-    t_CNOT = start_buffer_time - msmt.pi2pi_m1.effective_length()/2. + \
-        CNOT_offset
+    t_CNOT = start_buffer_time - msmt.pi2pi_m1.effective_length()/2.
     
-    # phi_CNOT = phaseref(msmt.pi2pi_m1.frequency,
-    #     t_CNOT) + e_ref_phase + CNOT_phase_shift
-
     CNOT_elt.append(pulse.cp(msmt.TIQ, 
         length = t_CNOT))
     CNOT_elt.append(pulse.cp(msmt.pi2pi_m1,
-        phase = CNOT_phase_shift,
-        amplitude = BSM_CNOT_amp))
+        phase = CNOT_phase_shift))
     CNOT_elt.append(pulse.cp(msmt.TIQ,
-        length = evo_offset + start_buffer_time - \
-            msmt.pi2pi_m1.effective_length() - t_CNOT))
+        length = evo_offset - msmt.pi2pi_m1.effective_length()/2.))
 
-    # UNROT_e_ref_phase = e_ref_phase + phaseref(msmt.params_lt1['e_ref_frq'], 
-    #     CNOT_elt.length())
-    # UNROT_N_ref_phase = N_ref_phase + phaseref(msmt.params_lt1['N_ref_frq'],
-    #     CNOT_elt.length())
-    
+   
     #do the BSM with just a pi/2 along the y axis.
     H_pulses = [ pulse.cp(msmt.N_pi2, phase=H_phase) ]#,
     #    pulse.cp(msmt.N_pi, phase= H_phase+90.) ]
@@ -702,14 +653,12 @@ def _lt2_LDE_element(msmt, **kw):
     #12 plugate 4
     e.add(msmt.plu_gate, name = 'plu gate 4', start = msmt.params_lt2['PLU_4_delay'],
             refpulse = 'plu gate 3')
-    
-    #13 final delay
-    # e.add(pulse.cp(msmt.plu_gate, 
-    #         amplitude = 0, 
-    #         length = msmt.params['finaldelay']), 
-    #     refpulse = 'plu gate 4')
-    
-    #14 optional more opt pulses for TPQI
+
+    ############
+
+    if e.length() != msmt.params['LDE_element_length']:
+        raise Exception('LDE element length'+e.name+' is not as specified - granylarity issue?')
+    return e
 
     return e
 
@@ -780,7 +729,7 @@ def _lt2_final_pi(msmt, name, time_offset, **kw):
     final_pi_elt = element.Element('second_pi_elt-{}'.format(name), pulsar= qt.pulsar, 
         global_time = True, time_offset = time_offset)
     final_pi_elt.append(pulse.cp(msmt.T, 
-        length = CORPSE_pi_wait_length + extra_t_before_pi)
+        length = CORPSE_pi_wait_length + extra_t_before_pi))
     final_pi_elt.append(pulse.cp(msmt.CORPSE_pi, 
         amplitude = CORPSE_pi_amp,
         phase = CORPSE_pi_phase))

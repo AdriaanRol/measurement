@@ -18,6 +18,12 @@ ssro.AdwinSSRO.green_aom = qt.instruments['GreenAOM']
 ssro.AdwinSSRO.yellow_aom = qt.instruments['YellowAOM']
 ssro.AdwinSSRO.adwin = qt.instruments['adwin']
 
+if qt.cfgman.get('protocols/AdwinSSRO/yellow'):
+    ssro.AdwinSSRO.repump_aom = ssro.AdwinSSRO.yellow_aom
+else:
+    ssro.AdwinSSRO.repump_aom = ssro.AdwinSSRO.green_aom
+
+
 sequence.SequenceSSRO.awg = qt.instruments['AWG']
 sequence.SequenceSSRO.mwsrc = qt.instruments['SMB100']
 sequence.SequenceSSRO.chan_mwI = 'MW_Imod'

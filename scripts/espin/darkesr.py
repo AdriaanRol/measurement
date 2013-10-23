@@ -30,7 +30,7 @@ def darkesr(name, yellow = False):
         m.params['repump_after_repetitions']=m.params['yellow_repump_after_repetitions']
     
     else: ##!!!! CHANGE THIS BACK IF MEASURING ON LT2
-        ssro.AdwinSSRO.repump_aom = qt.instruments['GreenAOM_lt1']
+        ssro.AdwinSSRO.repump_aom = qt.instruments['GreenAOM']
         m.params['repump_duration']=m.params['green_repump_duration']
         m.params['repump_amplitude']=m.params['green_repump_amplitude']
         m.params['CR_repump']=m.params['green_CR_repump']
@@ -53,4 +53,4 @@ def darkesr(name, yellow = False):
     m.finish()
 
 if __name__ == '__main__':
-    darkesr(SAMPLE_CFG, yellow=True)
+    darkesr(SAMPLE_CFG, yellow=False)

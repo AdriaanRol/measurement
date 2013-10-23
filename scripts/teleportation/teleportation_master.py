@@ -82,7 +82,8 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
         #for saving only
         self.params_lt1['do_sequences'] = 1 if DO_SEQUENCES else 0
         self.params_lt1['do_LDE_sequence'] = 1 if DO_LDE_SEQUENCE else 0
-        self.params_lt1['use_yellow'] = YELLOW
+        self.params_lt1['use_yellow_lt2'] = YELLOW_lt2
+        self.params_lt1['use_yellow_lt1'] = YELLOW_lt1
         
         
 
@@ -149,7 +150,7 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
         self.params_lt2['yellow_laser_DAC_channel'] = self.adwins['adwin_lt2']['ins'].get_dac_channels()\
                [self.yellow_aom_lt2.get_pri_channel()]
 
-        if YELLOW:
+        if YELLOW_lt2:
             self.params_lt2['repump_laser_DAC_channel'] = self.params_lt2['yellow_laser_DAC_channel']
         else:
             self.params_lt2['repump_laser_DAC_channel'] = self.params_lt2['green_laser_DAC_channel']
@@ -757,7 +758,8 @@ class TeleportationSlave:
 
 
 ### CONSTANTS AND FLAGS
-YELLOW = True              # whether to use yellow on lt2
+YELLOW_lt2 = False              # whether to use yellow on lt2
+YELLOW_lt1 = True               # whether to use yellow on lt1
 HH = True                  # if False no HH data acquisition from within qtlab.
 DO_POLARIZE_N = True      # if False, don't initialize N on lt1
 DO_SEQUENCES = True        # if False, we won't use the AWG at all
@@ -791,6 +793,12 @@ TeleportationMaster.green_aom_lt1 = qt.instruments['GreenAOM_lt1']
 TeleportationMaster.E_aom_lt1 = qt.instruments['MatisseAOM_lt1']
 TeleportationMaster.A_aom_lt1 = qt.instruments['NewfocusAOM_lt1']
 TeleportationMaster.mwsrc_lt1 = qt.instruments['SMB100_lt1']
+
+if YELLOW_lt1:
+    TeleportationMaster.repump_aom_lt1 = TeleportationMaster.yellow_aom_lt1
+else:
+    TeleportationMaster.repump_aom_lt1 = TeleportationMaster.green_aom_lt1
+
 TeleportationMaster.repump_aom_lt1 = TeleportationMaster.green_aom_lt1
 
 TeleportationMaster.yellow_aom_lt2 = qt.instruments['YellowAOM']
@@ -800,7 +808,7 @@ TeleportationMaster.A_aom_lt2 = qt.instruments['NewfocusAOM']
 TeleportationMaster.mwsrc_lt2 = qt.instruments['SMB100']
 TeleportationMaster.awg_lt2 = qt.instruments['AWG']
 
-if YELLOW:
+if YELLOW_lt2:
     TeleportationMaster.repump_aom_lt2 = TeleportationMaster.yellow_aom_lt2
 else:
     TeleportationMaster.repump_aom_lt2 = TeleportationMaster.green_aom_lt2
