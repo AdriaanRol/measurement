@@ -23,27 +23,36 @@ def pulse_defs_lt2(msmt):
         PM_risetime = msmt.params_lt2['MW_pulse_mod_risetime'])
 
     # CORPSE pulses
-    msmt.CORPSE_pi = pulselib.IQ_CORPSE_pi_pulse('CORPSE pi-pulse',
+    # msmt.CORPSE_pi = pulselib.IQ_CORPSE_pi_pulse('CORPSE pi-pulse',
+    #     I_channel = 'MW_Imod', 
+    #     Q_channel = 'MW_Qmod',    
+    #     PM_channel = 'MW_pulsemod',
+    #     PM_risetime = msmt.params_lt2['MW_pulse_mod_risetime'],
+    #     frequency = msmt.params_lt2['CORPSE_pi_mod_frq'],
+    #     amplitude = msmt.params_lt2['CORPSE_pi_amp'],
+    #     length_60 = msmt.params_lt2['CORPSE_pi_60_duration'],
+    #     length_m300 = msmt.params_lt2['CORPSE_pi_m300_duration'],
+    #     length_420 = msmt.params_lt2['CORPSE_pi_420_duration'])    
+
+    msmt.CORPSE_pi = pulselib.IQ_CORPSE_pulse('CORPSE pi-pulse',
         I_channel = 'MW_Imod', 
         Q_channel = 'MW_Qmod',    
         PM_channel = 'MW_pulsemod',
         PM_risetime = msmt.params_lt2['MW_pulse_mod_risetime'],
         frequency = msmt.params_lt2['CORPSE_pi_mod_frq'],
         amplitude = msmt.params_lt2['CORPSE_pi_amp'],
-        length_60 = msmt.params_lt2['CORPSE_pi_60_duration'],
-        length_m300 = msmt.params_lt2['CORPSE_pi_m300_duration'],
-        length_420 = msmt.params_lt2['CORPSE_pi_420_duration'])    
+        rabi_frequency = msmt.params_lt2['CORPSE_rabi_frequency'],
+        eff_rotation_angle = 180)
 
-    msmt.CORPSE_pi2 = pulselib.IQ_CORPSE_pi2_pulse('CORPSE pi2-pulse',
+    msmt.CORPSE_pi2 = pulselib.IQ_CORPSE_pulse('CORPSE pi2-pulse',
         I_channel = 'MW_Imod', 
         Q_channel = 'MW_Qmod',
         PM_channel = 'MW_pulsemod',
         PM_risetime = msmt.params_lt2['MW_pulse_mod_risetime'],
         frequency = msmt.params_lt2['CORPSE_pi2_mod_frq'],
         amplitude = msmt.params_lt2['CORPSE_pi2_amp'],
-        length_24p3 = msmt.params_lt2['CORPSE_pi2_24p3_duration'],
-        length_m318p6 = msmt.params_lt2['CORPSE_pi2_m318p6_duration'],
-        length_384p3 = msmt.params_lt2['CORPSE_pi2_384p3_duration'])
+        rabi_frequency = msmt.params_lt2['CORPSE_rabi_frequency'],
+        eff_rotation_angle = 90)
 
     ### synchronizing, etc
     msmt.adwin_lt2_trigger_pulse = pulse.SquarePulse(channel = 'adwin_sync',
@@ -67,7 +76,7 @@ def pulse_defs_lt2(msmt):
 
     msmt.HH_sync = pulse.SquarePulse(channel = 'HH_sync', length = 50e-9, amplitude = 1.0)
     msmt.SP_pulse = pulse.SquarePulse(channel = 'AOM_Newfocus', amplitude = 1.0)
-    msmt.yellow_pulse = pulse.SquarePulse(channel = 'AOM_Yellow', amplitude = 1.0)
+    # msmt.yellow_pulse = pulse.SquarePulse(channel = 'AOM_Yellow', amplitude = 1.0)
     msmt.plu_gate = pulse.SquarePulse(channel = 'plu_sync', amplitude = 1.0, 
                                     length = msmt.params_lt2['PLU_gate_duration'])
     
@@ -258,15 +267,21 @@ def _lt1_LDE_element(msmt):
     #
     #1 SP
     e.add(pulse.cp(msmt.SP_pulse,
-            amplitude = 0, 
-            length = msmt.params_lt1['initial_delay']), 
+                amplitude = 0, 
+                length = msmt.params_lt1['initial_delay']), 
             name = 'initial_delay')
+    
     e.add(pulse.cp(msmt.SP_pulse, 
-            length = msmt.params['LDE_SP_duration'], 
-            amplitude = 1.0),
+                length = msmt.params['LDE_SP_duration'], 
+                amplitude = 1.0),
             name = 'spinpumping',
             refpulse = 'initial_delay')
 
+    e.add(pulse.cp(msmt.yellow_pulse, 
+                length = msmt.params['LDE_SP_duration_yellow'], 
+                amplitude = 1.0), 
+            name = 'spinpumpingyellow', 
+            refpulse = 'initial delay')
 
     #2 MW pi/2
     if msmt.params_lt1['MW_during_LDE'] == 1:
@@ -643,11 +658,11 @@ def _lt2_LDE_element(msmt, **kw):
         name = 'spinpumping', 
         refpulse = 'initial delay')
 
-    e.add(pulse.cp(msmt.yellow_pulse, 
-            length = msmt.params['LDE_SP_duration_yellow'], 
-            amplitude = 1.0), 
-        name = 'spinpumpingyellow', 
-        refpulse = 'initial delay')
+    # e.add(pulse.cp(msmt.yellow_pulse, 
+    #         length = msmt.params['LDE_SP_duration_yellow'], 
+    #         amplitude = 1.0), 
+    #     name = 'spinpumpingyellow', 
+    #     refpulse = 'initial delay')
 
     
     for i in range(msmt.params['opt_pi_pulses']):

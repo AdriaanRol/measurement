@@ -6,6 +6,8 @@ from measurement.lib.pulsar import pulse, pulselib, element, pulsar
 import mbi_funcs as funcs
 reload(funcs)
 
+SAMPLE = qt.cfgman['samples']['current']
+SAMPLE_CFG = qt.cfgman['protocols']['current']
 
 ### msmt class
 class NSpinflips(pulsar_msmt.MBI):
@@ -89,9 +91,8 @@ class NSpinflips(pulsar_msmt.MBI):
 
 def nspinflips(name):
     m = NSpinflips(name)
-    sil_name='hans-sil4'
-    funcs.prepare(m, sil_name, yellow=False)
-
+    funcs.prepare(m, yellow=False)
+    
     SP_power = 5e-9
     m.params['AWG_SP_amplitude'] = qt.instruments['Velocity1AOM'].power_to_voltage(
         SP_power, controller='sec')

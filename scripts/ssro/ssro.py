@@ -88,7 +88,7 @@ def RO_saturation_power(name, yellow=False):
     m.params['SSRO_repetitions'] = 5000
     m.params['pts'] = 12
     pts = m.params['pts']
-    step = 1e-9
+    step = 2e-9
 
     #repump settings
     _set_repump_settings(m,yellow) 
@@ -106,6 +106,7 @@ def RO_saturation_power(name, yellow=False):
         print
         print '{}/{}: P = {} '.format(i+1, pts, p) 
         m.params['Ex_RO_amplitude'] = p
+        #m.params['A_RO_amplitude'] = p
         m.run()
         m.save('P_{:.1f}_nW'.format(p*1e9))
         

@@ -19,8 +19,8 @@ def ssrocalibration(name, yellow=False):
     # parameters
     m.params['SSRO_repetitions'] = 5000
 
-    m.params['A_CR_amplitude'] = 16e-9 #5e-9
-    m.params['E_CR_amplitude'] = 6e-9 #5e-9
+    m.params['A_CR_amplitude'] = 5e-9
+    m.params['E_CR_amplitude'] = 7e-9
 
     m.params['green_repump_amplitude'] = 200e-6
     m.params['green_repump_duration'] = 10
@@ -41,7 +41,7 @@ def ssrocalibration(name, yellow=False):
         m.params['repump_duration']=m.params['green_repump_duration']
         m.params['repump_amplitude']=m.params['green_repump_amplitude']
 
-    m.params['Ex_RO_amplitude'] = 10e-9 #10e-9
+    m.params['Ex_RO_amplitude'] = 20e-9 #10e-9
     
     # ms = 0 calibration
     m.params['SP_duration'] = 60

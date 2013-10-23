@@ -45,7 +45,7 @@ params_lt2['Adwin_lt1_di_channel'] = 17
 params_lt2['AWG_lt2_di_channel'] = 16
 params_lt2['repump_off_voltage'] = 0.0
 params_lt2['Ey_off_voltage'] = 0.0
-params_lt2['A_off_voltage'] = -0.09
+params_lt2['A_off_voltage'] = -0.00
 params_lt2['freq_AOM_DAC_channel'] = 4
 
 ### RO settings
@@ -59,46 +59,52 @@ params_lt1['SSRO1_duration'] = 25 #15
 params_lt2['SSRO_lt2_duration'] = 50
 
 ### CR and asynchronous preparation settings
+# ATM (October 21, green on LT2, yellow+gate on LT1)
 params_lt1['CR_duration'] = 50
 params_lt1['CR_threshold_preselect'] = 4000
 params_lt1['CR_threshold_probe'] = 20
-params_lt1['CR_repump'] = 1000
-params_lt1['CR_probe_max_time'] = 10000 #us
-params_lt1['repump_duration'] = 10 #50
-# params_lt1['time_before_forced_CR'] = 1 #1#20000 # FIXME
-# params_lt1['N_pol_element_repetitions'] = 5 # FIXME
+params_lt1['CR_repump'] = 1 # 1 for yellow, 1000 for green
+params_lt1['CR_probe_max_time'] = 10000 # in us # TODO is this still valid?
+params_lt1['repump_duration'] = 500 # 500 for yellow, 10 for green
+
+# params_lt1['time_before_forced_CR'] = 1 # 1 # 20000 # FIXME
 
 ### MBI on LT1
-params_lt1['E_SP_duration'] = 50
+params_lt1['E_SP_duration'] = 60
 params_lt1['MBI_duration'] = 4
-params_lt1['MBI_threshold'] = 1 
+params_lt1['MBI_threshold'] = 1
+params_lt1['max_MBI_attempts'] = 100
+params_lt1['N_randomize_duration'] = 50 # This could still be optimized, 50 is a guess
+params_lt1['E_N_randomize_amplitude'] = 10e-9 # 10 nW is a guess, not optimized
+params_lt1['A_N_randomize_amplitude'] = 10e-9 # 10 nW is a guess, not optimized
+params_lt1['repump_N_randomize_amplitude'] = 0
 
-params_lt2['repump_duration'] = 10 #yellow 10#green #
-params_lt2['repump_freq_offset'] = 0#5.
-params_lt2['repump_freq_amplitude'] = 0#4.
+params_lt2['repump_duration'] = 10 # 10 for green, 500 for yellow
+params_lt2['repump_freq_offset'] = 0 # 5.
+params_lt2['repump_freq_amplitude'] = 0 # 4.
 
 params_lt2['CR_duration'] = 50
 params_lt2['CR_preselect'] = 25
 params_lt2['CR_probe'] = 2
-params_lt2['CR_repump'] = 1
-params_lt2['CR_probe_max_time'] = 500000 # us = 0.5 s 
+params_lt2['CR_repump'] = 1000 # 1 for yellow, 1000 for green
+params_lt2['CR_probe_max_time'] = 500000 # in us # TODO is that still valid?
  
 ### SSRO, CR, SP Laser powers
 params_lt1['E_CR_amplitude'] = 5e-9
-params_lt1['A_CR_amplitude'] = 13e-9               
-params_lt1['E_SP_amplitude'] = 8e-9 #was 10e-9              
-params_lt1['A_SP_amplitude'] = 10e-9 
-params_lt1['E_RO_amplitude'] = 7e-9  
+params_lt1['A_CR_amplitude'] = 15e-9               
+params_lt1['E_SP_amplitude'] = 15e-9 # was 10e-9
+params_lt1['A_SP_amplitude'] = 15e-9 
+params_lt1['E_RO_amplitude'] = 5e-9  
 params_lt1['A_RO_amplitude'] = 0
-params_lt1['repump_amplitude'] = 200e-6 #300e-6#
+params_lt1['repump_amplitude'] = 50e-9 # 50e-9 for yellow 200e-6 for green
 
-params_lt2['Ey_CR_amplitude'] = 6e-9             
-params_lt2['A_CR_amplitude'] = 16e-9              
+params_lt2['Ey_CR_amplitude'] = 30e-9#6e-9             
+params_lt2['A_CR_amplitude'] = 20e-9#16e-9              
 params_lt2['Ey_SP_amplitude'] = 0e-9              
 params_lt2['A_SP_amplitude'] = 20e-9             
 params_lt2['Ey_RO_amplitude'] = 10e-9
 params_lt2['A_RO_amplitude'] = 0
-params_lt2['repump_amplitude'] = 200e-6#50e-9 #yellow 200e-6#green #
+params_lt2['repump_amplitude'] = 200e-6 # 50e-9 #yellow 200e-6#green #
 
 ####################
 ### pulses and MW stuff LT1
@@ -176,18 +182,19 @@ params_lt2['mw_frq'] = mw0_lt2
 params_lt2['mw_power'] = 20
 params_lt2['MW_pulse_mod_risetime'] = 10e-9
 
-CORPSE_frq_lt2 = 8.15e6
+params_lt2['CORPSE_rabi_frequency'] = 8.15e6
+
 params_lt2['CORPSE_pi_mod_frq'] = f0_lt2
 params_lt2['CORPSE_pi_amp'] = 0.438
-params_lt2['CORPSE_pi_60_duration'] =1./CORPSE_frq_lt2/6.
-params_lt2['CORPSE_pi_m300_duration'] = 5./CORPSE_frq_lt2/6.
-params_lt2['CORPSE_pi_420_duration'] = 7./CORPSE_frq_lt2/6.
+# params_lt2['CORPSE_pi_60_duration'] =1./CORPSE_frq_lt2/6.
+# params_lt2['CORPSE_pi_m300_duration'] = 5./CORPSE_frq_lt2/6.
+# params_lt2['CORPSE_pi_420_duration'] = 7./CORPSE_frq_lt2/6.
 
 params_lt2['CORPSE_pi2_mod_frq'] = f0_lt2
 params_lt2['CORPSE_pi2_amp'] = 0.431
-params_lt2['CORPSE_pi2_24p3_duration'] = 24.3/CORPSE_frq_lt2/360.
-params_lt2['CORPSE_pi2_m318p6_duration'] = 318.6/CORPSE_frq_lt2/360.
-params_lt2['CORPSE_pi2_384p3_duration'] = 384.3/CORPSE_frq_lt2/360.
+# params_lt2['CORPSE_pi2_24p3_duration'] = 24.3/CORPSE_frq_lt2/360.
+# params_lt2['CORPSE_pi2_m318p6_duration'] = 318.6/CORPSE_frq_lt2/360.
+# params_lt2['CORPSE_pi2_384p3_duration'] = 384.3/CORPSE_frq_lt2/360.
 params_lt2['pi2_pulse_phase'] = 0 #Y
 params_lt2['DD_pi_phases'] = [90,0,90] ## THIS DEFINES THE XYX SEQUENCE
 params_lt2['CORPSE_pi2_wait_length']= 1300e-9
@@ -212,7 +219,7 @@ params_lt2['aom_risetime']              = 42e-9
 params_lt2['eom_aom_on']                = True
 
 params_lt2['AWG_SP_power']            = 40e-9
-params_lt2['AWG_yellow_power']        = 50e-9 #yellow power during SP in LDE on LT1
+params_lt2['AWG_yellow_power']        = 0e-9 #yellow power during SP in LDE on LT1
 params_lt2['opt_pulse_separation']    = 600e-9
 params_lt2['MW_opt_puls1_separation'] = 50e-9 #distance between the end of the MW and the start of opt puls1
 params_lt2['MW_opt_puls2_separation'] = 50e-9
@@ -223,7 +230,7 @@ params_lt2['PLU_3_delay']             = 50e-9
 params_lt2['PLU_4_delay']             = 150e-9
 
 params_lt1['AWG_SP_power']            = 20e-9 # the 
-params_lt1['AWG_yellow_power']        = 0e-9  # yellow power during SP in LDE on LT1
+params_lt1['AWG_yellow_power']        = 50e-9  # yellow power during SP in LDE on LT1
 params_lt1['MW_wait_after_SP']        = 200e-9 # wait time between end of SP_lt1 and start of first MW
 params_lt1['MW_separation']           = 600e-9 # separation between the two MW pulses on LT1
 
@@ -263,7 +270,6 @@ params_lt1['AWG_wait_for_adwin_MBI_duration'] = 15e-6
 params_lt1['AWG_wait_duration_before_shelving_pulse'] = 100e-9
 
 params['nr_of_ROsequences'] = 1 # this is the standard
-params_lt1['max_MBI_attempts'] = 1
 params_lt1['Ex_MBI_amplitude'] = 5e-9
 #params_lt1['AWG_to_adwin_ttl_trigger_duration'] = 2e-6
 

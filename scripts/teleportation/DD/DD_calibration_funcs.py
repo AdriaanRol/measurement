@@ -42,7 +42,7 @@ def cal_CORPSE_pi(name):
     m.params['sweep_name'] = 'CORPSE amplitude (V)'
     m.params['sweep_pts'] = m.params['CORPSE_pi_sweep_amps']  
 
-    funcs.finish(m)
+    funcs.finish(m, upload = False, debug = True)
 
 def cal_CORPSE_pi2(name):
     m = CORPSEPi2Calibration(name+'M=1')
@@ -63,7 +63,7 @@ def cal_CORPSE_pi2(name):
     m.params['sweep_name'] = 'CORPSE pi/2 amplitude (V)'
     m.params['sweep_pts'] = m.params['CORPSE_pi2_sweep_amps']  
 
-    funcs.finish(m)
+    funcs.finish(m, upload = False, debug = True)
 
 def dd_calibrate_C13_revival(name):
     m = dd_msmt.DynamicalDecoupling('calibrate_first_revival')
@@ -233,10 +233,10 @@ def run_calibrations(stage):
 
 if __name__ == '__main__':
     execfile('d:/measuring/measurement/scripts/lt2_scripts/setup/msmt_params.py')
-    #run_calibrations(1)
+    run_calibrations(1)
     #run_calibrations(2)
     #run_calibrations(3) 
-    run_calibrations(4) 
+    #run_calibrations(4) 
     #dd_calibrate_T2(name)
 
     """
