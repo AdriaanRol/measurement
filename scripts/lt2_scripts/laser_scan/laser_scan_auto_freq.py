@@ -324,8 +324,8 @@ def red_laser_scan(name):
 
     # MW setup
     m.use_mw = True
-    m.mw_frq =  qt.cfgman['samples']['sil9']['ms-1_cntr_frq']
-    m.mw_power = -8
+    m.mw_frq =  qt.cfgman['samples']['sil10']['ms-1_cntr_frq']
+    m.mw_power = -6
     
     # repump setup
     m.yellow_repump = False
@@ -339,14 +339,14 @@ def red_laser_scan(name):
     m.repump_power_during = 0.1e-6
     
     #Scan setup
-    m.laser_power = 5e-9
+    m.laser_power = 15e-9
     m.integration_time = 10 # ms
     m.min_v = -9
     m.max_v = 9
     m.v_step=0.01
     
-    m.start_frequency = 55 #GHz
-    m.stop_frequency = 72 #GHz
+    m.start_frequency = 43 #GHz
+    m.stop_frequency = 65 #GHz
     
     
     #Gate scan setup
@@ -369,7 +369,7 @@ def red_laser_scan(name):
 if __name__=='__main__':
     
     stools.turn_off_all_lt2_lasers()
-    red_laser_scan('red_scan_coarse_lt2_sil5')
+    red_laser_scan('red_scan_coarse_lt2_sil10_MWs')
     #yellow_laser_scan('yellow_1nW')
 
         

@@ -42,10 +42,10 @@ seq.append(name = 'djump3', wfname = elt4.name, trigger_wait = False, repetition
 seq.append(name = 'djump4', wfname = elt5.name, trigger_wait = False, repetitions = 1, goto_target = 'idle')
 
 seq.set_djump(True)
-seq.add_djump_address('djump1', 0)
-seq.add_djump_address('djump2', 1)
-seq.add_djump_address('djump3', 2)
-seq.add_djump_address('djump4', 3)
+seq.add_djump_address(int('0000',2),'djump1')
+seq.add_djump_address(int('0001',2),'djump2')
+seq.add_djump_address(int('0010',2),'djump3')
+seq.add_djump_address(int('0011',2),'djump4')
 
 qt.pulsar.upload(elt1)
 qt.pulsar.upload(elt2)

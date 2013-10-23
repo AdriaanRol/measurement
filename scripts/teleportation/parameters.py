@@ -176,7 +176,7 @@ params_lt1['N_pi2_amp'] =1.
 ### pulses and MW stuff LT2
 #####################
 ## general
-f_msm1_cntr_lt2 = 2.828825e9
+f_msm1_cntr_lt2 = 2.828778e9 
 mw0_lt2 = 2.8e9
 f0_lt2 = f_msm1_cntr_lt2 - mw0_lt2
 params_lt2['ms-1_cntr_frq'] = f_msm1_cntr_lt2
@@ -192,15 +192,16 @@ params_lt2['CORPSE_pi_m300_duration'] = 5./CORPSE_frq_lt2/6.
 params_lt2['CORPSE_pi_420_duration'] = 7./CORPSE_frq_lt2/6.
 
 params_lt2['CORPSE_pi2_mod_frq'] = f0_lt2
-params_lt2['CORPSE_pi2_amp'] = 0.506
+params_lt2['CORPSE_pi2_amp'] = 0.431
 params_lt2['CORPSE_pi2_24p3_duration'] = 24.3/CORPSE_frq_lt2/360.
 params_lt2['CORPSE_pi2_m318p6_duration'] = 318.6/CORPSE_frq_lt2/360.
 params_lt2['CORPSE_pi2_384p3_duration'] = 384.3/CORPSE_frq_lt2/360.
-
-params_lt2['DD_pi_phases'] = [-90,0,-90] ## THIS DEFINES THE YXY SEQUENCE
-params_lt2['first_C_revival'] = 53.6e-6
-params_lt2['dd_extra_t_between_pi_pulses'] = 22e-9
-params_lt2['dd_spin_echo_time'] = 520e-9 
+params_lt2['pi2_pulse_phase'] = 0 #Y
+params_lt2['DD_pi_phases'] = [90,0,90] ## THIS DEFINES THE XYX SEQUENCE
+params_lt2['CORPSE_pi2_wait_length']= 1300e-9
+params_lt2['first_C_revival'] = 105.913e-6/2. #C revival after CORPSE_pi2_wait_length 
+params_lt2['dd_extra_t_between_pi_pulses'] = 450e-9
+params_lt2['dd_spin_echo_time'] = 30e-9 
 
 ### LDE sequence settings
 params['HH_sync_period'] = 400e-9 # in seconds -- important for checking (see measurement_loop())
