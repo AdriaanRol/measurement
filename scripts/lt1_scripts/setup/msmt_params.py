@@ -65,7 +65,7 @@ print 'updating msmt params for {}'.format(cfg['samples']['current'])
 
 branch='samples/hans-sil1/'
 
-f_msm1_cntr = 2.828040e9
+f_msm1_cntr = 2.828077e9
 N_frq = 7.13456e6
 N_HF_frq = 2.19290e6
 cfg.set(branch+'ms-1_cntr_frq', f_msm1_cntr)
@@ -151,9 +151,9 @@ cfg.set(branch+        'MW_pulse_mod_risetime',                    10e-9)
 cfg.set(branch+        'AWG_to_adwin_ttl_trigger_duration',        2e-6)
 cfg.set(branch+        'max_MBI_attempts',                         1)
 cfg.set(branch+        'N_randomize_duration',                     50)
-cfg.set(branch+        'Ex_N_randomize_amplitude',                 5e-9)
-cfg.set(branch+        'A_N_randomize_amplitude',                  5e-9)
-cfg.set(branch+        'yellow_N_randomize_amplitude',             50e-9)
+cfg.set(branch+        'Ex_N_randomize_amplitude',                 0e-9)
+cfg.set(branch+        'A_N_randomize_amplitude',                  0e-9)
+cfg.set(branch+        'yellow_N_randomize_amplitude',             0e-9)
 
 ##############################################################################
 ##############################################################################
@@ -174,8 +174,8 @@ cfg.set(branch+        'CR_duration',               50)
 cfg.set(branch+        'CR_preselect',              1000)
 cfg.set(branch+        'CR_probe',                  20)
 cfg.set(branch+        'CR_repump',                 1000)
-cfg.set(branch+        'Ex_CR_amplitude',           10e-9)
-cfg.set(branch+        'Ex_RO_amplitude',           10e-9)
+cfg.set(branch+        'Ex_CR_amplitude',           5e-9)
+cfg.set(branch+        'Ex_RO_amplitude',           5e-9)
 cfg.set(branch+        'Ex_SP_amplitude',           0.)
 cfg.set(branch+        'SP_duration',               250)
 cfg.set(branch+        'SP_filter_duration',        0)
@@ -192,9 +192,9 @@ cfg.set('protocols/hans-sil1-default/AdwinSSRO-integrated/SSRO_duration', 18)
 branch='protocols/hans-sil1-default/AdwinSSRO+MBI/'
 cfg.set(branch+        'mw_frq',                        mw0)
 cfg.set(branch+        'mw_power',                      20)
-cfg.set(branch+        'Ex_MBI_amplitude',              10e-9)
-cfg.set(branch+        'Ex_SP_amplitude',               15e-9)
-cfg.set(branch+        'MBI_duration',                  5)#put back to 4 with gate
+cfg.set(branch+        'Ex_MBI_amplitude',              5e-9)
+cfg.set(branch+        'Ex_SP_amplitude',               10e-9)
+cfg.set(branch+        'MBI_duration',                  4) #put back to 4 with gate
 cfg.set(branch+        'max_MBI_attempts',              1)
 cfg.set(branch+        'MBI_threshold',                 1)
 cfg.set(branch+        'SP_E_duration',                 60)
@@ -214,7 +214,7 @@ cfg.set(branch+        'AWG_wait_for_adwin_MBI_duration',           15e-6)
 branch='protocols/hans-sil1-default/pulses/'
 
 cfg.set(branch+        'selective_pi_duration',     2500e-9)
-cfg.set(branch+        'selective_pi_amp',          0.0181)
+cfg.set(branch+        'selective_pi_amp',          0.0170)
 cfg.set(branch+        'selective_pi_mod_frq',      finit)
 cfg.set(branch+        'AWG_MBI_MW_pulse_mod_frq',  
     finit)
