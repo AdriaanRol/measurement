@@ -6,7 +6,7 @@ from measurement.lib.measurement2.adwin_ssro import ssro, pulsar_mbi_espin
 SAMPLE = qt.cfgman['samples']['current']
 SAMPLE_CFG = qt.cfgman['protocols']['current']
 
-def prepare(m, sil_name=SAMPLE, yellow=False):
+def prepare(m, sil_name=SAMPLE):
     m.params.from_dict(qt.cfgman.get('samples/'+SAMPLE))
     m.params.from_dict(qt.cfgman.get('protocols/AdwinSSRO'))
     m.params.from_dict(qt.cfgman.get('protocols/'+SAMPLE_CFG+'/AdwinSSRO'))
@@ -15,19 +15,6 @@ def prepare(m, sil_name=SAMPLE, yellow=False):
     m.params.from_dict(qt.cfgman.get('protocols/'+SAMPLE_CFG+'/AdwinSSRO+MBI'))
     m.params.from_dict(qt.cfgman.get('protocols/'+SAMPLE_CFG+'/pulses'))
     # m.params.from_dict(qt.cfgman.get('protocols/hans-sil4-default/BSM'))
-
-    if yellow:
-        ssro.AdwinSSRO.repump_aom = ssro.AdwinSSRO.yellow_aom
-        m.params['repump_duration']=m.params['yellow_repump_duration']
-        m.params['repump_amplitude']=m.params['yellow_repump_amplitude']
-        m.params['CR_repump']=m.params['yellow_CR_repump']
-        m.params['repump_after_repetitions']=m.params['yellow_repump_after_repetitions']
-    else:
-        ssro.AdwinSSRO.repump_aom =  ssro.AdwinSSRO.green_aom
-        m.params['repump_duration']=m.params['green_repump_duration']
-        m.params['repump_amplitude']=m.params['green_repump_amplitude']
-        m.params['CR_repump']=m.params['green_CR_repump']
-        m.params['repump_after_repetitions']=m.params['green_repump_after_repetitions']
 
 def finish(m, upload=True, debug=False):
     m.autoconfig()

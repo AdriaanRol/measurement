@@ -13,7 +13,7 @@ from measurement.lib.measurement2.adwin_ssro import pulsar as pulsar_msmt
 SAMPLE = qt.cfgman['samples']['current']
 SAMPLE_CFG = qt.cfgman['protocols']['current']
 
-def erabi(name):
+def erabi(name, yellow):
     m = pulsar_msmt.ElectronRabi(name)
     
     m.params.from_dict(qt.cfgman.get('samples/'+SAMPLE))
@@ -22,29 +22,35 @@ def erabi(name):
     m.params.from_dict(qt.cfgman['protocols'][SAMPLE_CFG]['AdwinSSRO-integrated'])    
     m.params.from_dict(qt.cfgman['protocols']['AdwinSSRO+espin'])
 
-    ssro.AdwinSSRO.repump_aom = qt.instruments['GreenAOM']
-    m.params['repump_duration']=m.params['green_repump_duration']
-    m.params['repump_amplitude']=m.params['green_repump_amplitude']
+    if yellow:
+        ssro.AdwinSSRO.repump_aom = qt.instruments['YellowAOM']
+        m.params['repump_duration']=m.params['yellow_repump_duration']
+        m.params['repump_amplitude']=m.params['yellow_repump_amplitude']
+        m.params['CR_repump']=1
+    else:
+        ssro.AdwinSSRO.repump_aom = ssro.AdwinSSRO.green_aom
+        m.params['repump_duration']=m.params['green_repump_duration']
+        m.params['repump_amplitude']=m.params['green_repump_amplitude']
     
 
     m.params['pts'] = 21
     pts = m.params['pts']
     
-    m.params['MW_pulse_durations'] = np.linspace(0, 200e-9, pts)
+    m.params['MW_pulse_durations'] =  np.linspace(0, 200e-9, pts)
     m.params['mw_frq'] = 2.80e9   
     m.params['mw_power'] = 20
     m.params['repetitions'] = 5000
     
-    m.params['MW_pulse_amplitudes'] =np.ones(pts) * 0.7 #np.linspace(0.003, 0.008, pts) # 
-    m.params['MW_pulse_frequency'] = m.params['ms-1_cntr_frq'] - m.params['mw_frq']
-    
+    m.params['MW_pulse_amplitudes'] = np.ones(pts) * 0.8
+    m.params['MW_pulse_frequency'] = m.params['ms-1_cntr_frq'] + (+0) * m.params['N_HF_frq']\
+        - m.params['mw_frq']    
     
     # for autoanalysis
-    m.params['sweep_name'] = 'Pulse length (ns)'
-    m.params['sweep_pts'] = m.params['MW_pulse_durations'] * 1e9
+    # m.params['sweep_name'] = 'Pulse length (ns)'
+    # m.params['sweep_pts'] = m.params['MW_pulse_durations'] 
 
-    #m.params['sweep_name'] = 'Pulse amplitude (V)'
-    #m.params['sweep_pts'] = m.params['MW_pulse_amplitudes']
+    m.params['sweep_name'] = 'Pulse MW_pulse_durations (ns)'
+    m.params['sweep_pts'] = m.params['MW_pulse_durations']* 1e9
 
     m.params['sequence_wait_time'] = \
             int(np.ceil(np.max(m.params['MW_pulse_durations'])*1e6)+10)
@@ -56,4 +62,5 @@ def erabi(name):
     m.finish()
 
 if __name__ == '__main__':
-    erabi(SAMPLE+'_'+'find_high_Rabi-frq_ms=-1')
+    erabi(SAMPLE+'_'+'find_high_rabi_sil1', yellow=False)
+    # erabi(SAMPLE+'_'+'find_MBI_pulse', yellow=True)

@@ -35,9 +35,9 @@ class MBICalibration(pulsar_mbi_espin.ElectronRabi):
             self.repump_aom.power_to_voltage(
                     self.params['repump_N_randomize_amplitude'])
 
-def run(name, yellow):
+def run(name):
     m = MBICalibration(name)
-    funcs.prepare(m, yellow=yellow)
+    funcs.prepare(m)
 
     pts = 4
     m.params['pts'] = pts
@@ -48,11 +48,11 @@ def run(name, yellow):
     m.params['Ex_SP_amplitude'] = 15e-9
     # m.params['AWG_MBI_MW_pulse_amp'] = 0 # set to zero for testing (then the populations of all N-states should be the same )
     # m.params['MBI_threshold'] = 0
-    m.params['max_MBI_attempts'] = 100
+    m.params['max_MBI_attempts'] = 1
 
-    m.params['N_randomize_duration'] = 50
-    m.params['Ex_N_randomize_amplitude'] = 10e-9
-    m.params['A_N_randomize_amplitude'] = 10e-9
+    m.params['N_randomize_duration'] = 1
+    m.params['Ex_N_randomize_amplitude'] = 0e-9
+    m.params['A_N_randomize_amplitude'] = 0e-9
     m.params['repump_N_randomize_amplitude'] = 0
 
 
@@ -77,4 +77,4 @@ def run(name, yellow):
     funcs.finish(m, debug=False)
 
 if __name__ == '__main__':
-    run(SAMPLE + '_' + 'testing', yellow=True)
+    run(SAMPLE + '_' + 'testing')

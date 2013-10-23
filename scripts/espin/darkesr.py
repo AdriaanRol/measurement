@@ -53,4 +53,4 @@ def darkesr(name, yellow = False):
     m.finish()
 
 if __name__ == '__main__':
-    darkesr(SAMPLE_CFG, yellow=True)
+    darkesr(SAMPLE_CFG, yellow=False)
