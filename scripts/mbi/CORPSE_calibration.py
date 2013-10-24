@@ -79,7 +79,7 @@ def sweep_amplitude(name):
     m.params['reps_per_ROsequence'] = 1000
 
     # sweep params
-    m.params['CORPSE_pi_sweep_amps'] = np.linspace(0.6, 0.8, pts)
+    m.params['CORPSE_pi_sweep_amps'] = np.linspace(0.48, 0.57, pts)
     m.params['multiplicity'] = 11
     m.params['delay_reps'] = 15
 
@@ -90,4 +90,4 @@ def sweep_amplitude(name):
     funcs.finish(m, debug=False)
 
 if __name__ == '__main__':
-    sweep_amplitude('sil9_test')
+    sweep_amplitude('sil1')

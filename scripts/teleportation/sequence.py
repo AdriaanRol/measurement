@@ -281,7 +281,7 @@ def _lt1_LDE_element(msmt):
                 length = msmt.params['LDE_SP_duration_yellow'], 
                 amplitude = 1.0), 
             name = 'spinpumpingyellow', 
-            refpulse = 'initial delay')
+            refpulse = 'initial_delay')
 
     #2 MW pi/2
     if msmt.params_lt1['MW_during_LDE'] == 1:

@@ -15,18 +15,18 @@ class RR(pulsar_msmt.MBI):
     def __init__(self, name):
         pulsar_msmt.MBI.__init__(self, name)
 
-    def autoconfig(self):
-        pulsar_msmt.MBI.autoconfig(self)
+    # def autoconfig(self):
+    #     pulsar_msmt.MBI.autoconfig(self)
 
-        self.params['AWG_RO_SP_voltage'] = self.A_aom.power_to_voltage(
-            self.params['AWG_RO_SP_amplitude'], 
-            controller='sec')
+    #     self.params['AWG_RO_SP_voltage'] = self.A_aom.power_to_voltage(
+    #         self.params['AWG_RO_SP_amplitude'], 
+    #         controller='sec')
 
-    def setup(self):
-        pulsar_msmt.MBI.setup(self)
+    # def setup(self):
+    #     pulsar_msmt.MBI.setup(self)
 
-        qt.pulsar.set_channel_opt('Velocity1AOM', 'high', 
-            self.params['AWG_RO_SP_voltage'])
+    #     qt.pulsar.set_channel_opt('Velocity1AOM', 'high', 
+    #         self.params['AWG_RO_SP_voltage'])
 
 
     def generate_sequence(self, upload=True):
@@ -68,15 +68,18 @@ class RR(pulsar_msmt.MBI):
 
         N_ro_elt = element.Element('N_RO', pulsar=qt.pulsar,
             global_time = True)
-        N_ro_elt.append(T_SP)
-        N_ro_elt.append(pulse.cp(SP_pulse,
-                                 length = self.params['RO_SP_duration']),
-                        )
+        
+        # N_ro_elt.append(T_SP)
+        # N_ro_elt.append(pulse.cp(SP_pulse,
+        #                          length = self.params['RO_SP_duration']),
+        #                 )
+        
         N_ro_elt.append(T_MW)
         N_ro_elt.append(CORPSE_pi)
         N_ro_elt.append(T_MW)
-        N_ro_elt.append(CNOT_pi)
-        N_ro_elt.append(adwin_sync)
+        N_ro_elt.append(CNOT_pi2pi)
+        N_ro_elt.append(pulse.cp(T_MW, length=1e-6))
+        # N_ro_elt.append(adwin_sync)
 
         seq = pulsar.Sequence('N-RR')
         seq.append(name = 'MBI', 
@@ -85,7 +88,7 @@ class RR(pulsar_msmt.MBI):
             goto_target = 'MBI', 
             jump_target = 'RO-1')
 
-        for i,r in enumerate(self.params['RO_repetitions']):
+        for i in range(self.params['nr_of_ROsequences']):
             seq.append(name = 'RO-{}'.format(i+1),
                 wfname = N_ro_elt.name,
                 trigger_wait = True)
@@ -100,8 +103,8 @@ class RR(pulsar_msmt.MBI):
 def finish_RR(m, reps=1, upload=True, debug=False):
     m.autoconfig()
 
-    m.params['A_SP_durations'] = np.ones(reps).astype(int)
-    m.params['A_SP_amplitudes'] = np.zeros(reps)
+    m.params['A_SP_durations'] = np.ones(reps).astype(int) * 15
+    m.params['A_SP_amplitudes'] = np.ones(reps) * 15e-9
     m.params['E_RO_durations'] = np.ones(reps) * m.params['SSRO_duration']
     m.params['E_RO_amplitudes'] = np.ones(reps) * m.params['Ex_RO_amplitude']
     m.params['send_AWG_start'] = np.ones(reps).astype(int)
@@ -117,26 +120,26 @@ def finish_RR(m, reps=1, upload=True, debug=False):
 
 def rr(name):
     m = RR(name)
-    funcs.prepare(m, yellow=True)
+    funcs.prepare(m)
 
     pts = 1
     m.params['pts'] = pts
     m.params['reps_per_ROsequence'] = 1000
 
     # RR settings
-    m.params['AWG_RO_SP_amplitude'] = 15e-9
-    m.params['RO_SP_duration'] = 10e-6
-    m.params['RO_repetitions'] = 10
+    # m.params['CORPSE_pi_amp'] = 0 # 0 for RO from ms=0!
+    m.params['nr_of_ROsequences'] = 10
+    m.params['AWG_MBI_MW_pulse_ssbmod_frq'] = m.params['mI0_mod_frq'] # m.params['mIm1_mod_frq']
 
     # for the autoanalysis
     m.params['sweep_name'] = 'n/a'
     m.params['sweep_pts'] = m.params['pts']
 
-    finish_RR(m, m.params['RO_repetitions'], upload=True, debug=True)
+    finish_RR(m, m.params['nr_of_ROsequences'], upload=True, debug=False)
 
 
 if __name__ == '__main__':
-    rr(SAMPLE + '_' + 'testing', yellow=True)
+    rr(SAMPLE + '_' + 'from_ms=-1_MBI_mI=0')
 
 
 

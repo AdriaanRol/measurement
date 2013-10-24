@@ -148,7 +148,7 @@ cfg.set(branch+        'AWG_wait_for_adwin_MBI_duration',
 cfg.set(branch+        'AWG_wait_duration_before_shelving_pulse',  100e-9)
 cfg.set(branch+        'nr_of_ROsequences',                        1)
 cfg.set(branch+        'MW_pulse_mod_risetime',                    10e-9)
-cfg.set(branch+        'AWG_to_adwin_ttl_trigger_duration',        2e-6)
+cfg.set(branch+        'AWG_to_adwin_ttl_trigger_duration',        5e-6)
 cfg.set(branch+        'max_MBI_attempts',                         1)
 cfg.set(branch+        'N_randomize_duration',                     50)
 cfg.set(branch+        'Ex_N_randomize_amplitude',                 0e-9)
@@ -235,7 +235,7 @@ cfg.set(branch+        'fast_pi2_mod_frq',          finit)
 
 ### CNOTs
 cfg.set(branch+        'pi2pi_mIm1_duration',        396e-9)
-cfg.set(branch+        'pi2pi_mIm1_amp',             0.110)
+cfg.set(branch+        'pi2pi_mIm1_amp',             0.111)
 cfg.set(branch+        'pi2pi_mIm1_mod_frq',         finit)
 
 ### CORPSE used in the BSM
@@ -244,7 +244,7 @@ cfg.set(branch+        'CORPSE_pi_60_duration',     1./CORPSE_frq/6.)
 cfg.set(branch+        'CORPSE_pi_m300_duration',   5./CORPSE_frq/6.)
 cfg.set(branch+        'CORPSE_pi_420_duration',    7./CORPSE_frq/6.)
 cfg.set(branch+        'CORPSE_pi_mod_frq',         finit + Nsplit/2.)
-cfg.set(branch+        'CORPSE_pi_amp',             0.526)
+cfg.set(branch+        'CORPSE_pi_amp',             0.529)
 
 # ### TODO
 cfg.set(branch+        'CORPSE_pi_phase_shift',     104.0)

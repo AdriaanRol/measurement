@@ -267,21 +267,21 @@ params_lt2['teleportation_repetitions'] = -1
 CALIBRATION = True
 if CALIBRATION:
 
-############### lt1
-####################
-params_lt1['AWG_wait_duration_before_MBI_MW_pulse'] = 1e-6
-params_lt1['AWG_wait_for_adwin_MBI_duration'] = 15e-6
-params_lt1['AWG_wait_duration_before_shelving_pulse'] = 100e-9
+    ############### lt1
+    ####################
+    params_lt1['AWG_wait_duration_before_MBI_MW_pulse'] = 1e-6
+    params_lt1['AWG_wait_for_adwin_MBI_duration'] = 15e-6
+    params_lt1['AWG_wait_duration_before_shelving_pulse'] = 100e-9
 
-params['nr_of_ROsequences'] = 1 # this is the standard
-params_lt1['Ex_MBI_amplitude'] = 5e-9
-#params_lt1['AWG_to_adwin_ttl_trigger_duration'] = 2e-6
+    params['nr_of_ROsequences'] = 1 # this is the standard
+    params_lt1['Ex_MBI_amplitude'] = 5e-9
+    #params_lt1['AWG_to_adwin_ttl_trigger_duration'] = 2e-6
 
 
     params_lt1['A_SP_amplitude'] = 15e-9 #was 10
     params_lt1['repump_after_MBI_amplitude'] = params_lt1['A_SP_amplitude']
     params_lt1['repump_after_MBI_duration'] = params_lt1['A_SP_duration']
-params_lt1['repump_after_E_RO_duration'] = 10
+    params_lt1['repump_after_E_RO_duration'] = 10
     params_lt1['repump_after_E_RO_amplitude']  = params_lt1['A_SP_amplitude']
 
     #MBI
@@ -289,46 +289,46 @@ params_lt1['repump_after_E_RO_duration'] = 10
     params_lt1['AWG_MBI_MW_pulse_amp'] = params_lt1['selective_pi_amp']
     params_lt1['AWG_MBI_MW_pulse_duration'] = params_lt1['selective_pi_duration']
 
-params_lt1['Ex_CR_amplitude'] = params_lt1['E_CR_amplitude']
-params_lt1['A_CR_amplitude'] = params_lt1['A_CR_amplitude']
-params_lt1['Ex_SP_amplitude'] = params_lt1['E_SP_amplitude'] # to pump to ms+- 1 before MBI slow pulse
-params_lt1['A_off_voltage'] = params_lt1['A_off_voltage']
-params_lt1['Ex_off_voltage'] = params_lt1['E_off_voltage']
-params_lt1['SP_E_duration'] = params_lt1['E_SP_duration']
+    params_lt1['Ex_CR_amplitude'] = params_lt1['E_CR_amplitude']
+    params_lt1['A_CR_amplitude'] = params_lt1['A_CR_amplitude']
+    params_lt1['Ex_SP_amplitude'] = params_lt1['E_SP_amplitude'] # to pump to ms+- 1 before MBI slow pulse
+    params_lt1['A_off_voltage'] = params_lt1['A_off_voltage']
+    params_lt1['Ex_off_voltage'] = params_lt1['E_off_voltage']
+    params_lt1['SP_E_duration'] = params_lt1['E_SP_duration']
 
-params_lt1['cycle_duration'] = 300
-params_lt1['repump_after_repetitions'] = 1 #could remove this altogether from adwin...
-params_lt1['send_AWG_start'] = 1
-params_lt1['AWG_done_DI_channel'] = params_lt1['AWG_lt1_di_channel']
-params_lt1['AWG_event_jump_DO_channel'] = params_lt1['AWG_lt1_event_do_channel']
-params_lt1['AWG_start_DO_channel'] = params_lt1['AWG_lt1_trigger_do_channel'] 
+    params_lt1['cycle_duration'] = 300
+    params_lt1['repump_after_repetitions'] = 1 #could remove this altogether from adwin...
+    params_lt1['send_AWG_start'] = 1
+    params_lt1['AWG_done_DI_channel'] = params_lt1['AWG_lt1_di_channel']
+    params_lt1['AWG_event_jump_DO_channel'] = params_lt1['AWG_lt1_event_do_channel']
+    params_lt1['AWG_start_DO_channel'] = params_lt1['AWG_lt1_trigger_do_channel'] 
 
-params_lt1['CR_preselect'] = params_lt1['CR_threshold_preselect']
-params_lt1['CR_probe'] = params_lt1['CR_threshold_probe']
+    params_lt1['CR_preselect'] = params_lt1['CR_threshold_preselect']
+    params_lt1['CR_probe'] = params_lt1['CR_threshold_probe']
 
-params_lt1['wait_after_RO_pulse_duration'] = 3
-params_lt1['wait_after_pulse_duration'] = 3
+    params_lt1['wait_after_RO_pulse_duration'] = 3
+    params_lt1['wait_after_pulse_duration'] = 3
 
 
-############### lt2
-####################
-params_lt2['SP_duration'] = 250
-params_lt2['SSRO_duration'] = params_lt2['SSRO_lt2_duration'] 
-params_lt2['SSRO_stop_after_first_photon'] = 0
-params_lt2['SP_filter_duration'] = 0
+    ############### lt2
+    ####################
+    params_lt2['SP_duration'] = 250
+    params_lt2['SSRO_duration'] = params_lt2['SSRO_lt2_duration'] 
+    params_lt2['SSRO_stop_after_first_photon'] = 0
+    params_lt2['SP_filter_duration'] = 0
 
-params_lt2['cycle_duration'] = 300
-params_lt2['sequence_wait_time'] = 1
-params_lt2['wait_after_RO_pulse_duration'] = 3
-params_lt2['wait_after_pulse_duration'] = 3
-params_lt2['send_AWG_start'] = 1
-params_lt2['repump_after_repetitions'] = 1
+    params_lt2['cycle_duration'] = 300
+    params_lt2['sequence_wait_time'] = 1
+    params_lt2['wait_after_RO_pulse_duration'] = 3
+    params_lt2['wait_after_pulse_duration'] = 3
+    params_lt2['send_AWG_start'] = 1
+    params_lt2['repump_after_repetitions'] = 1
 
-params_lt2['AWG_done_DI_channel'] = params_lt2['AWG_lt2_di_channel']
-params_lt2['AWG_event_jump_DO_channel'] = 6
-params_lt2['AWG_start_DO_channel'] = 1
+    params_lt2['AWG_done_DI_channel'] = params_lt2['AWG_lt2_di_channel']
+    params_lt2['AWG_event_jump_DO_channel'] = 6
+    params_lt2['AWG_start_DO_channel'] = 1
 
-params_lt2['Ex_CR_amplitude'] = params_lt2['Ey_CR_amplitude']
-params_lt2['Ex_SP_amplitude'] = params_lt2['Ey_SP_amplitude']
-params_lt2['Ex_RO_amplitude'] = params_lt2['Ey_RO_amplitude']
-params_lt2['Ex_off_voltage'] = params_lt2['Ey_off_voltage']
+    params_lt2['Ex_CR_amplitude'] = params_lt2['Ey_CR_amplitude']
+    params_lt2['Ex_SP_amplitude'] = params_lt2['Ey_SP_amplitude']
+    params_lt2['Ex_RO_amplitude'] = params_lt2['Ey_RO_amplitude']
+    params_lt2['Ex_off_voltage'] = params_lt2['Ey_off_voltage']

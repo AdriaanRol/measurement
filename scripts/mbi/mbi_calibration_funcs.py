@@ -122,8 +122,8 @@ def cal_pi2pi_pi(name, mult=1):
     m.params['MW_pulse_delays'] = np.ones(pts) * 15e-6
     
     # hard pi pulses
-    m.params['MW_pulse_durations'] = 1e-9 * (np.ones(pts) + 395)
-    m.params['MW_pulse_amps'] = np.linspace(0.12,0.16,pts)
+    m.params['MW_pulse_durations'] = np.ones(pts) * 395e-9
+    m.params['MW_pulse_amps'] = np.linspace(0.09, 0.12, pts)
     m.params['MW_pulse_mod_frqs'] = np.ones(pts) * \
         m.params['AWG_MBI_MW_pulse_mod_frq']
         
@@ -174,4 +174,4 @@ def run_calibrations(stage):
 
 
 if __name__ == '__main__':    
-    cal_slow_pi(SAMPLE_CFG)
+    cal_pi2pi_pi(SAMPLE_CFG, 5)
