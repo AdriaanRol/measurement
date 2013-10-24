@@ -758,7 +758,7 @@ class TeleportationSlave:
         dummy_element = tseq._lt1_dummy_element(self)
         adwin_lt1_trigger_element = tseq._lt1_adwin_LT1_trigger_element(self)
         N_init_element, BSM_CNOT_elt, BSM_UNROT_elt = tseq._lt1_N_init_and_BSM_for_teleportation(self)
-        N_RO_CNOT_elt = tseq._lt1_N_RO_CNOT_elt(self)
+        N_RO_elt = tseq._lt1_N_RO_elt(self)
 
         self.lt1_seq.append(name = 'MBI',
             trigger_wait = True,
@@ -792,13 +792,16 @@ class TeleportationSlave:
             self.lt1_seq.append(name = 'sync_before_first_ro', 
                 wfname = adwin_lt1_trigger_element.name)
 
-            self.lt1_seq.append(name = 'N_RO_CNOT',
-                trigger_wait = True,
-                wfname = N_RO_CNOT_elt.name)
-
-            self.lt1_seq.append(name = 'sync_before_second_ro', 
-                wfname = adwin_lt1_trigger_element.name, 
-                goto_target = 'MBI')
+            for i in range(self.params_lt1['N_RO_repetitions']):
+                
+                self.lt1_seq.append(name = 'N_RO-{}'.format(i+1),
+                    trigger_wait = True,
+                    wfname = N_RO_elt.name)
+                
+                self.lt1_seq.append(name = 'N_RO-{}_sync'.format(i+1), 
+                    wfname = adwin_lt1_trigger_element.name, 
+                    goto_target = 'MBI' if i==(self.params_lt1['N_RO_repetitions']-1) else 'N_RO-{}'.format(i+2) )
+        
         else:
             self.lt1_seq.append(name = 'BSM_dummy',
                 wfname = dummy_element.name)

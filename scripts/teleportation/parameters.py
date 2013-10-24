@@ -16,7 +16,7 @@ params_lt1 = m2.MeasurementParameters('LT1Parameters')
 params_lt2 = m2.MeasurementParameters('LT2Parameters')
 
 ### Hardware stuff
-params['HH_binsize_T3'] = 8
+# params['HH_binsize_T3'] = 8
 
 params_lt1['counter_channel'] = 1
 params_lt1['ADwin_lt2_trigger_do_channel'] = 8 # OK
@@ -26,15 +26,10 @@ params_lt1['AWG_lt1_di_channel'] = 16 # OK
 params_lt1['PLU_arm_do_channel'] = 11
 params_lt1['PLU_di_channel'] = 18
 params_lt1['AWG_lt1_event_do_channel'] = 14
-params_lt1['AWG_lt2_address0_do_channel'] = 0
-params_lt1['AWG_lt2_address1_do_channel'] = 1
-params_lt1['AWG_lt2_address2_do_channel'] = 2
-params_lt1['AWG_lt2_address3_do_channel'] = 3
-params_lt1['AWG_lt2_address_LDE'] = 1
-params_lt1['AWG_lt2_address_U1'] = 2                    
-params_lt1['AWG_lt2_address_U2'] = 3
-params_lt1['AWG_lt2_address_U3'] = 4
-params_lt1['AWG_lt2_address_U4'] = 5       
+params_lt1['AWG_lt2_RO1_bit_channel'] = 1
+params_lt1['AWG_lt2_RO2_bit_channel'] = 0
+params_lt1['AWG_lt2_do_DD_bit_channel'] = 2
+params_lt1['AWG_lt2_strobe_channel'] = 9   
 params_lt1['repump_off_voltage'] = 0.0         
 params_lt1['E_off_voltage'] = 0.0
 params_lt1['A_off_voltage'] = 0.0
@@ -49,12 +44,12 @@ params_lt2['A_off_voltage'] = -0.00
 params_lt2['freq_AOM_DAC_channel'] = 4
 
 ### RO settings
-params_lt1['wait_before_SSRO1'] = 3
-params_lt1['wait_before_SP_after_RO'] = 3
+# params_lt1['wait_before_SSRO1'] = 3
+# params_lt1['wait_before_SP_after_RO'] = 3
 params_lt1['A_SP_duration'] = 10 # 10 used after MBI and after the first RO of the BSM
 params_lt1['wait_before_SSRO2'] = 3
-params_lt1['SSRO2_duration'] = 15 #15
-params_lt1['SSRO1_duration'] = 15 #15
+params_lt1['SSRO_duration'] = 15 #15
+# params_lt1['SSRO1_duration'] = 15 #15
 
 params_lt2['SSRO_lt2_duration'] = 50
 
@@ -95,10 +90,16 @@ params_lt1['A_CR_amplitude'] = 15e-9
 params_lt1['E_SP_amplitude'] = 10e-9 #was 10e-9              
 params_lt1['E_RO_amplitude'] = 7e-9  
 params_lt1['A_RO_amplitude'] = 0
+params_lt1['A_SP_amplitude'] = 20e-9
 params_lt1['repump_amplitude'] = 50e-9 # 50e-9 for yellow 200e-6 for green
 
-params_lt2['Ey_CR_amplitude'] = 7e-9#6e-9             
-params_lt2['A_CR_amplitude'] = 5e-9#16e-9              
+# for the N-readout of LT1
+params_lt1['N_RO_SP_amplitude'] = params_lt1['A_SP_amplitude']
+params_lt1['N_RO_SP_duration'] = 15e-6
+params_lt1['N_RO_repetitions'] = 2 # THIS IS COMPILED INTO THE ADWIN CODE!
+
+params_lt2['Ey_CR_amplitude'] = 30e-9#6e-9             
+params_lt2['A_CR_amplitude'] = 20e-9#16e-9              
 params_lt2['Ey_SP_amplitude'] = 0e-9              
 params_lt2['A_SP_amplitude'] = 20e-9             
 params_lt2['Ey_RO_amplitude'] = 10e-9
@@ -172,8 +173,6 @@ params_lt1['N_pi_amp'] = 1.
 params_lt1['N_pi2_duration'] = params_lt1['N_pi_duration']/2.
 params_lt1['N_pi2_amp'] =1.
 
-
-
 ####################
 ### pulses and MW stuff LT2
 #####################
@@ -225,7 +224,7 @@ params_lt2['PLU_gate_3_duration']     = 40e-9
 params_lt2['PLU_3_delay']             = 50e-9
 params_lt2['PLU_4_delay']             = 150e-9
 
-params_lt1['AWG_SP_power']            = 20e-9 # the 
+params_lt1['AWG_SP_power']            = params_lt1['A_SP_amplitude'] 
 params_lt1['AWG_yellow_power']        = 50e-9  # yellow power during SP in LDE on LT1
 params_lt1['MW_wait_after_SP']        = 200e-9 # wait time between end of SP_lt1 and start of first MW
 params_lt1['MW_separation']           = 600e-9 # separation between the two MW pulses on LT1

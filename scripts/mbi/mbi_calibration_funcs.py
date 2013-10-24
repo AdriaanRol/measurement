@@ -26,14 +26,14 @@ def cal_slow_pi(name):
     m.params['MW_pulse_delays'] = np.ones(pts) * 1e-9
   
     # slow pi pulses
-    m.params['MW_pulse_durations'] = np.linspace(0, 5e-6, pts) + 5e-9
-    m.params['MW_pulse_amps'] = np.ones(pts) * 0.011
+    m.params['MW_pulse_durations'] = np.ones(pts) * 2500e-9
+    m.params['MW_pulse_amps'] = np.linspace(0,0.03,pts) 
     m.params['MW_pulse_mod_frqs'] = np.ones(pts) * \
         m.params['AWG_MBI_MW_pulse_mod_frq']
 
     # for the autoanalysis
-    m.params['sweep_name'] = 'MW pulse duration (ns)'
-    m.params['sweep_pts'] = m.params['MW_pulse_durations'] * 1e9
+    m.params['sweep_name'] = 'MW pulse amp (V)'
+    m.params['sweep_pts'] = m.params['MW_pulse_amps']
     
     funcs.finish(m)
 
@@ -59,7 +59,6 @@ def cal_fast_rabi(name):
     m.params['sweep_pts'] = m.params['MW_pulse_durations'] * 1e9
     
     funcs.finish(m)
-
 
 ### Calibration stage 3
 def cal_fast_pi(name, mult=1):
@@ -123,8 +122,8 @@ def cal_pi2pi_pi(name, mult=1):
     m.params['MW_pulse_delays'] = np.ones(pts) * 15e-6
     
     # hard pi pulses
-    m.params['MW_pulse_durations'] = 1e-9 * (np.ones(pts) + 395)
-    m.params['MW_pulse_amps'] = np.linspace(0.12,0.16,pts)
+    m.params['MW_pulse_durations'] = np.ones(pts) * 395e-9
+    m.params['MW_pulse_amps'] = np.linspace(0.09, 0.12, pts)
     m.params['MW_pulse_mod_frqs'] = np.ones(pts) * \
         m.params['AWG_MBI_MW_pulse_mod_frq']
         
@@ -174,15 +173,5 @@ def run_calibrations(stage):
         #cal_pi2pi_pi_len(name, mult=11)
 
 
-if __name__ == '__main__':
-    SIL_NAME = 'hans-sil4'
-    SETUP = 'lt1'
-    execfile('d:/measuring/measurement/scripts/'+SETUP+'_scripts/setup/msmt_params.py')
-    name = SIL_NAME
-    
-    cal_slow_pi(name)
-
-    #run_calibrations(1)
-    #run_calibrations(2)
-    # run_calibrations(3)
-
+if __name__ == '__main__':    
+    cal_pi2pi_pi(SAMPLE_CFG, 5)

@@ -14,7 +14,6 @@ def prepare(m, sil_name=SAMPLE):
     m.params.from_dict(qt.cfgman.get('protocols/AdwinSSRO+MBI'))
     m.params.from_dict(qt.cfgman.get('protocols/'+SAMPLE_CFG+'/AdwinSSRO+MBI'))
     m.params.from_dict(qt.cfgman.get('protocols/'+SAMPLE_CFG+'/pulses'))
-    # m.params.from_dict(qt.cfgman.get('protocols/hans-sil4-default/BSM'))
 
 def finish(m, upload=True, debug=False):
     m.autoconfig()

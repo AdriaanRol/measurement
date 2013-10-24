@@ -17,8 +17,8 @@ qt.pulsar = pulsar.Pulsar()
 
 spin_of = -69e-9
 
-qt.pulsar.define_channel(id='ch1', name='RF', type='analog', high=1.0,
-    low=-1.0, offset=0., delay=spin_of+165e-9, active=True)
+qt.pulsar.define_channel(id='ch1', name='RF', type='analog', high=1.5,
+    low=-1.5, offset=0., delay=spin_of+165e-9, active=True)
 
 # MW
 qt.pulsar.define_channel(id='ch1_marker1', name='MW_pulsemod', type='marker', 
@@ -35,8 +35,8 @@ qt.pulsar.define_channel(id='ch3_marker2', name='adwin_sync', type='marker',
 # light
 qt.pulsar.define_channel(id='ch2_marker2', name='Velocity1AOM', type='marker', 
     high=0.4, low=0, offset=0., delay=700e-9, active=True)
-#qt.pulsar.define_channel(id='ch2', name='YellowAOM', type='analog', 
-#    high=0.4, low=0, offset=0., delay=750e-9, active=True)
+qt.pulsar.define_channel(id='ch1_marker2', name='YellowAOM', type='marker', 
+    high=0.4, low=0, offset=0., delay=750e-9, active=True)
 
 #qt.pulsar.define_channel(id='ch2', name='Velocity1AOM', type='analog', 
 #    high=0.4, low=0, offset=0., delay=700e-9, active=True)

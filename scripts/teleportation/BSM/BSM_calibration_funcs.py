@@ -236,7 +236,7 @@ def run_nmr_rabi(name):
 
     # MW pulses
     m.params_lt1['RF_pulse_durations'] = np.linspace(1e-6, 201e-6, pts)
-    m.params_lt1['RF_pulse_amps'] = np.ones(pts) * 1
+    m.params_lt1['RF_pulse_amps'] = np.ones(pts) * 1.4
     m.params_lt1['RF_pulse_frqs'] = np.ones(pts) * m.params_lt1['N_0-1_splitting_ms-1']
 
     # for the autoanalysis
@@ -256,7 +256,7 @@ def bsm_calibrate_CORPSE_pi_phase_shift(name):
 
     m.params_lt1['CORPSE_pi_phase_shifts'] = np.linspace(0,180,pts)
     m.params_lt1['interpulse_delays'] = np.ones(pts) * 52.5e-6 #this is the C13 revival, 
-                                               #but do not need a very accurate number for this calibration
+                                               #but do not need a very a`ccurate number for this calibration
     m.calibrate_CORPSE_pi_phase_shift_or_e_time()
 
     # for the autoanalysis
@@ -460,12 +460,12 @@ if __name__ == '__main__':
     #run_calibrations(0)
     #run_calibrations(1)
     #run_calibrations(2)
-    #run_calibrations(3)
+    run_calibrations(3)
     #run_calibrations(4)
     #run_calibrations(5)
     #run_calibrations(6)
     #run_calibrations(7)
-    run_calibrations(8)
+    #run_calibrations(8)
     #cal_pi2pi_pi(name,
     """
 

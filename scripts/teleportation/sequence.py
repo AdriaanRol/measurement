@@ -269,7 +269,7 @@ def _lt1_LDE_element(msmt):
                 length = msmt.params['LDE_SP_duration_yellow'], 
                 amplitude = 1.0), 
             name = 'spinpumpingyellow', 
-            refpulse = 'initial delay')
+            refpulse = 'initial_delay')
 
     #2 MW pi/2
     if msmt.params_lt1['MW_during_LDE'] == 1:
@@ -286,7 +286,7 @@ def _lt1_LDE_element(msmt):
     ################
     
     if e.length() != msmt.params['LDE_element_length']:
-        raise Exception('LDE element length' + e.name+' is not as specified - granylarity issue?')
+        raise Exception('LDE element length' + e.name+' is not as specified - granularity issue?')
     return e
 
 def _lt1_adwin_LT1_trigger_element(msmt):
@@ -308,17 +308,20 @@ def _lt1_dummy_element(msmt):
 
     return e
 
-
-def _lt1_N_RO_CNOT_elt(msmt):
+def _lt1_N_RO_elt(msmt):
     """
-    This is an element with the (pi-2pi) CNOT pulse for the nitrogen readout.
+    This is an element with spin pumping to ms=0 and a (pi-2pi) CNOT pulse for the nitrogen readout.
     """
-    N_RO_CNOT_elt = element.Element('N-RO CNOT', pulsar=msmt.pulsar_lt1)
-    N_RO_CNOT_elt.append(pulse.cp(msmt.T,
-        length=100e-9))
-    N_RO_CNOT_elt.append(msmt.pi2pi_m1)
+    N_RO_elt = element.Element('N-RO', pulsar=msmt.pulsar_lt1)
+    N_RO_elt.append(pulse.cp(msmt.T,
+                              length=500e-9))    
+    N_RO_elt.append(pulse.cp(msmt.SP_pulse,
+                             length = msmt.params_lt1['N_RO_SP_duration']))
+    N_RO_elt.append(pulse.cp(msmt.T,
+                             length=2000e-9))
+    N_RO_elt.append(msmt.pi2pi_m1)
 
-    return N_RO_CNOT_elt
+    return N_RO_elt
 
 def _lt1_wait_1us_elt(msmt):
     wait_1us_elt = element.Element('1us_delay', pulsar=msmt.pulsar_lt1)
