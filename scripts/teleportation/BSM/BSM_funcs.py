@@ -4,7 +4,7 @@ import numpy as np
 from measurement.lib.measurement2.adwin_ssro import ssro, pulsar_mbi_espin
 from measurement.scripts.teleportation import parameters as tparams
 
-def prepare(m, sil_name):
+def prepare(m):
 
     for k in tparams.params.parameters:
         m.params[k] = tparams.params[k]

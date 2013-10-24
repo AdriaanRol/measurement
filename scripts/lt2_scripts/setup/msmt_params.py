@@ -5,6 +5,8 @@ cfg = qt.cfgman
 cfg['samples']['current'] = 'sil10'
 cfg['protocols']['current'] = 'sil10-default'
 
+print 'updating msmt params lt2 for {}'.format(cfg['samples']['current'])
+
 # ### sil 15 ###
 # branch='samples/sil15/'
 
@@ -120,6 +122,21 @@ cfg.set(branch+        'SSRO_duration',             50)
 cfg.set(branch+        'SSRO_repetitions',          1000)
 cfg.set(branch+        'SSRO_stop_after_first_photon',  0)
 
+yellow=False
+cfg.set(branch + 'yellow', yellow)
+if yellow:
+    cfg.set(branch + 'repump_duration',             cfg.get(branch+ 'yellow_repump_duration'))
+    cfg.set(branch + 'repump_amplitude',            cfg.get(branch+ 'yellow_repump_amplitude')) 
+    cfg.set(branch + 'CR_repump',                   cfg.get(branch+ 'yellow_CR_repump'))
+    cfg.set(branch + 'repump_after_repetitions',    cfg.get(branch+ 'yellow_repump_after_repetitions'))
+else:
+    cfg.set(branch + 'repump_duration',             cfg.get(branch+ 'green_repump_duration'))
+    cfg.set(branch + 'repump_amplitude',            cfg.get(branch+ 'green_repump_amplitude')) 
+    print branch
+    print cfg.get(branch + 'repump_amplitude')
+    cfg.set(branch + 'CR_repump',                   cfg.get(branch+ 'green_CR_repump'))
+    cfg.set(branch + 'repump_after_repetitions',    cfg.get(branch+ 'green_repump_after_repetitions'))
+
 ### General settings for AdwinSSRO+espin
 branch='protocols/AdwinSSRO+espin/'
 cfg.set(branch+        'send_AWG_start',                 1)
@@ -178,9 +195,10 @@ cfg.set(branch+'mw_frq',2.8e9)
 cfg.set(branch+'mw_power',20)
 cfg.set(branch+'MW_pulse_mod_risetime',10e-9)
 
-
 branch='protocols/sil10-default/AdwinSSRO-integrated/'
 cfg.set(branch+'SSRO_duration', 30)
+
+
 
 #### sil9 ###
 #### sil9, AdwinSSRO ###

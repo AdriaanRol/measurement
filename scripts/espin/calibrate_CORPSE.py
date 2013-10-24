@@ -16,24 +16,12 @@ class CORPSEPiCalibration(pulsar_msmt.PulsarMeasurement):
         T = pulse.SquarePulse(channel='MW_pulsemod',
             length = 10e-9, amplitude = 0)
 
-        # CORPSE_pi = pulselib.IQ_CORPSE_pi_pulse('CORPSE pi-pulse',
-        #     I_channel = 'MW_Imod', 
-        #     Q_channel = 'MW_Qmod',
-        #     PM_channel = 'MW_pulsemod',
-        #     PM_risetime = self.params['MW_pulse_mod_risetime'],
-        #     frequency = self.params['CORPSE_pi_mod_frq'],
-        #     amplitude = self.params['CORPSE_pi_amp'],
-        #     length_60 = self.params['CORPSE_pi_60_duration'],
-        #     length_m300 = self.params['CORPSE_pi_m300_duration'],
-        #     length_420 = self.params['CORPSE_pi_420_duration'])
-
         CORPSE_pi = pulselib.IQ_CORPSE_pulse('CORPSE pi-pulse',
             I_channel = 'MW_Imod', 
             Q_channel = 'MW_Qmod',    
             PM_channel = 'MW_pulsemod',
             PM_risetime = self.params['MW_pulse_mod_risetime'],
             frequency = self.params['CORPSE_pi_mod_frq'],
-            amplitude = self.params['CORPSE_pi_amp'],
             rabi_frequency = self.params['CORPSE_rabi_frequency'],
             eff_rotation_angle = 180)
 
@@ -73,26 +61,26 @@ class CORPSEPiCalibration(pulsar_msmt.PulsarMeasurement):
 
 # class CORPSEPi2Calibration
 
-class CORPSEPi2Calibration(pulsar_msmt.PulsarMeasurement):
-    mprefix = 'CORPSEPi2Calibration'
+class CORPSECalibration(pulsar_msmt.PulsarMeasurement):
+    """
+    This is a CORPSE calibration for sweeping the amplitude and effective rotation angle
+    It can thus be used for any CORPSE pulse (e.g. pi/2, 109.5 degrees etc).
+    The multiplicity is fixed to 1. 
+    """
+    mprefix = 'CORPSECalibration'
 
     def generate_sequence(self, upload=True):
         # electron manipulation pulses
         T = pulse.SquarePulse(channel='MW_pulsemod',
             length = 10e-9, amplitude = 0)
 
-        CORPSE_pi2 = pulselib.IQ_CORPSE_pi2_pulse('CORPSE pi-pulse',
+        CORPSE = pulselib.IQ_CORPSE_pulse('CORPSE pulse',
             I_channel = 'MW_Imod', 
-            Q_channel = 'MW_Qmod',
+            Q_channel = 'MW_Qmod',    
             PM_channel = 'MW_pulsemod',
             PM_risetime = self.params['MW_pulse_mod_risetime'],
-            frequency = self.params['CORPSE_pi2_mod_frq'],
-            amplitude = self.params['CORPSE_pi2_amp'],
-            length_24p3 = self.params['CORPSE_pi2_24p3_duration'],
-            length_m318p6 = self.params['CORPSE_pi2_m318p6_duration'],
-            length_384p3 = self.params['CORPSE_pi2_384p3_duration'])
-
-        delay_pulse = (pulse.cp(T, length=self.params['delay_element_length']))
+            frequency = self.params['CORPSE_mod_frq'],
+            rabi_frequency = self.params['CORPSE_rabi_frequency'])
 
         sync_elt = element.Element('adwin_sync', pulsar=qt.pulsar)
         adwin_sync = pulse.SquarePulse(channel='adwin_sync',
@@ -103,15 +91,16 @@ class CORPSEPi2Calibration(pulsar_msmt.PulsarMeasurement):
         for i in range(self.params['pts']):
             e = element.Element('CORPSE-{}'.format(i), pulsar=qt.pulsar, global_time = True)
             e.append(T)
-            for j in range(self.params['multiplicity']):
-                e.append(pulse.cp(CORPSE_pi2,
-                    amplitude=self.params['CORPSE_pi2_sweep_amps'][i]), delay_pulse)
+            e.append(pulse.cp(CORPSE,
+                amplitude=self.params['CORPSE_sweep_amps'][i],
+                eff_rotation_angle = self.params['CORPSE_effective_rotation_angles'][i]))
+
             elts.append(e)
 
         # sequence
-        seq = pulsar.Sequence('CORPSE pi over 2 calibration')
+        seq = pulsar.Sequence('CORPSE (any angle) calibration')
         for i,e in enumerate(elts):           
-            seq.append(name = e.name+'-{}'.format(j), 
+            seq.append(name = e.name+'-{}'.format(i), 
                     wfname = e.name,
                     trigger_wait = True)
             seq.append(name='sync-{}'.format(i),

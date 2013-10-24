@@ -71,22 +71,19 @@ class IQ_CORPSE_pulse(MW_IQmod_pulse):
 
     def __init__(self, *arg, **kw):
         MW_IQmod_pulse.__init__(self, *arg, **kw)
-
-        self.eff_rotation_angle = kw.pop('rotation_angle', 0)
+   
+        self.eff_rotation_angle = kw.pop('eff_rotation_angle', 0)
         self.rabi_frequency = kw.pop('rabi_frequency', 0)
+        self.eff_rotation_angle_rad = self.eff_rotation_angle/360.*2*np.pi #np.sin expects radians
 
         # this is the CORPSE pulse family with n1 = 1, n2 = 1, n3 = 0 (see Cummins 2008)
-        self.rotation_angle_1 = 2*np.pi + self.eff_rotation_angle/2 - np.arcsin(np.sin(self.eff_rotation_angle/2)/2)
-        self.rotation_angle_2 = - 2 * np.arcsin(np.sin(self.eff_rotation_angle/2)/2)
-        self.rotation_angle_3 = 2*np.pi + self.eff_rotation_angle/2-np.arcsin(np.sin(self.eff_rotation_angle/2)/2)
-        
-        print self.rotation_angle_1
-        print self.rotation_angle_2
-        print self.rotation_angle_3
+        self.rotation_angle_1 = 2*np.pi + self.eff_rotation_angle_rad/2 - np.arcsin(np.sin(self.eff_rotation_angle_rad/2)/2)
+        self.rotation_angle_2 = 2*np.pi - 2 * np.arcsin(np.sin(self.eff_rotation_angle_rad/2)/2)
+        self.rotation_angle_3 = self.eff_rotation_angle_rad/2-np.arcsin(np.sin(self.eff_rotation_angle_rad/2)/2)
 
-        self.length_1 = self.rotation_angle_1/360./self.rabi_frequency # 420 for pi
-        self.length_2 = self.rotation_angle_2/360./self.rabi_frequency # 300 for pi
-        self.length_3 = self.rotation_angle_3/360./self.rabi_frequency # 60 for pi
+        self.length_1 = self.rotation_angle_1/(2*np.pi)/self.rabi_frequency # 420 for pi
+        self.length_2 = self.rotation_angle_2/(2*np.pi)/self.rabi_frequency # 300 for pi
+        self.length_3 = self.rotation_angle_3/(2*np.pi)/self.rabi_frequency # 60 for pi
         self.pulse_delay = kw.pop('pulse_delay', 1e-9)
 
         self.length = self.length_1 + self.length_2 + self.length_3 + \
@@ -98,10 +95,19 @@ class IQ_CORPSE_pulse(MW_IQmod_pulse):
     def __call__(self, **kw):
         MW_IQmod_pulse.__call__(self, **kw)
 
-        self.length_1 = kw.pop('length_1', self.length_1)
-        self.length_2 = kw.pop('length_2', self.length_2)
-        self.length_3 = kw.pop('length_3', self.length_3)
-        self.pulse_delay = kw.pop('pulse_delay', self.pulse_delay)
+        self.eff_rotation_angle = kw.pop('eff_rotation_angle', self.eff_rotation_angle)
+        self.rabi_frequency = kw.pop('rabi_frequency', self.rabi_frequency)
+        self.eff_rotation_angle_rad = self.eff_rotation_angle/360.*2*np.pi #np.sin expects radians
+
+        # this is the CORPSE pulse family with n1 = 1, n2 = 1, n3 = 0 (see Cummins 2008)
+        self.rotation_angle_1 = 2*np.pi + self.eff_rotation_angle_rad/2 - np.arcsin(np.sin(self.eff_rotation_angle_rad/2)/2)
+        self.rotation_angle_2 = 2*np.pi - 2 * np.arcsin(np.sin(self.eff_rotation_angle_rad/2)/2)
+        self.rotation_angle_3 = self.eff_rotation_angle_rad/2-np.arcsin(np.sin(self.eff_rotation_angle_rad/2)/2)
+     
+        self.length_1 = self.rotation_angle_1/(2*np.pi)/self.rabi_frequency # 420 for pi
+        self.length_2 = self.rotation_angle_2/(2*np.pi)/self.rabi_frequency # 300 for pi
+        self.length_3 = self.rotation_angle_3/(2*np.pi)/self.rabi_frequency # 60 for pi
+        self.pulse_delay = kw.pop('pulse_delay', 1e-9)
 
         self.length = self.length_1 + self.length_2 + self.length_3 + \
             2*self.pulse_delay + 2*self.PM_risetime
@@ -109,10 +115,6 @@ class IQ_CORPSE_pulse(MW_IQmod_pulse):
         return self
 
     def chan_wf(self, chan, tvals):
-        print self.rotation_angle_1
-        print self.rotation_angle_2
-        print self.rotation_angle_3
-
         if chan == self.PM_channel:
             return np.ones(len(tvals))
 
