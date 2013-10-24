@@ -1384,7 +1384,7 @@ config['adwin_lt1_processes'] = {
                     ['A_off_voltage'                ,   0.0],
                     ['E_N_randomize_voltage',           0.0],
                     ['A_N_randomize_voltage',           0.0],
-                    ['repump_N_randomize_voltage',      0.0],        
+                    ['repump_N_randomize_voltage',      0.0], 
                     ],
                 'params_float_index'    : 21,
                 'params_float_length'   : 10,
