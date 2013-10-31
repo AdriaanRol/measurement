@@ -10,12 +10,12 @@ from measurement.lib.measurement2.adwin_ssro import pulsar as pulsar_msmt
 import measurement.scripts.espin.calibrate_CORPSE as CORPSE_calibration
 reload(CORPSE_calibration)
 from measurement.scripts.espin.calibrate_CORPSE import CORPSEPiCalibration
-from measurement.scripts.espin.calibrate_CORPSE import CORPSEPi2Calibration
+from measurement.scripts.espin.calibrate_CORPSE import CORPSECalibration
 
 from measurement.scripts.teleportation.DD import dd_measurements as dd_msmt
 reload(dd_msmt)
 
-from measurement.scripts.lt2_scripts.adwin_ssro import espin_funcs as funcs
+import DD_funcs as funcs
 reload(funcs)
 
 name = 'sil10'
@@ -33,8 +33,8 @@ def cal_CORPSE_pi(name):
     m.params['wait_for_AWG_done'] = 1
 
     # sweep params
-    m.params['CORPSE_pi_sweep_amps'] = np.linspace(0.39, 0.49, pts)
-    m.params['multiplicity'] = 11
+    m.params['CORPSE_pi_sweep_amps'] = np.linspace(0.37, 0.44, pts)
+    m.params['multiplicity'] = 5
     name = name + 'M={}'.format(m.params['multiplicity'])
     m.params['delay_reps'] = 15
 
@@ -42,28 +42,58 @@ def cal_CORPSE_pi(name):
     m.params['sweep_name'] = 'CORPSE amplitude (V)'
     m.params['sweep_pts'] = m.params['CORPSE_pi_sweep_amps']  
 
-    funcs.finish(m, upload = False, debug = True)
+    funcs.finish(m, upload = True, debug = False)
 
-def cal_CORPSE_pi2(name):
-    m = CORPSEPi2Calibration(name+'M=1')
+# def cal_CORPSE_pi2(name):
+#     m = CORPSECalibration(name+'M=1')
+#     funcs.prepare(m)
+
+#     pts = 11
+#     m.params['pts'] = pts
+#     m.params['repetitions'] = 1000
+#     m.params['wait_for_AWG_done'] = 1
+
+#     m.params['CORPSE_mod_frq'] = m.params['CORPSE_pi2_mod_frq']
+
+
+#     # sweep params
+#     m.params['CORPSE_sweep_amps'] = np.linspace(0.42, 0.50, pts)#
+#     m.params['effective_rotation_angles'] = np.ones(pts) * 90
+#     m.params['multiplicity'] = 1
+#     name = name + 'M={}'.format(m.params['multiplicity'])
+#     m.params['delay_element_length'] = 1e-6
+
+#     # for the autoanalysis
+#     m.params['sweep_name'] = 'CORPSE pi/2 amplitude (V)'
+#     m.params['sweep_pts'] = m.params['CORPSE_sweep_amps']  
+
+#     funcs.finish(m, upload = True, debug = False)
+
+def cal_CORPSE_rotation_angle(name):
+    m = CORPSECalibration(name+'M=1')
     funcs.prepare(m)
 
-    pts = 11
+    pts = 41
     m.params['pts'] = pts
     m.params['repetitions'] = 1000
     m.params['wait_for_AWG_done'] = 1
 
+    # fixed params
+    m.params['CORPSE_mod_frq'] = m.params['CORPSE_pi_mod_frq']
+    m.params['CORPSE_sweep_amps'] = np.ones(pts) * m.params['CORPSE_amp']#
+    
     # sweep params
-    m.params['CORPSE_pi2_sweep_amps'] = np.linspace(0.42, 0.50, pts)#
+    m.params['CORPSE_effective_rotation_angles'] = np.linspace(0,3*360,pts)
     m.params['multiplicity'] = 1
     name = name + 'M={}'.format(m.params['multiplicity'])
     m.params['delay_element_length'] = 1e-6
 
     # for the autoanalysis
-    m.params['sweep_name'] = 'CORPSE pi/2 amplitude (V)'
-    m.params['sweep_pts'] = m.params['CORPSE_pi2_sweep_amps']  
+    m.params['sweep_name'] = 'CORPSE effective rotation angle'
+    m.params['sweep_pts'] = m.params['CORPSE_effective_rotation_angles']  
 
-    funcs.finish(m, upload = False, debug = True)
+    funcs.finish(m, upload = True, debug = False)
+
 
 def dd_calibrate_C13_revival(name):
     m = dd_msmt.DynamicalDecoupling('calibrate_first_revival')
@@ -221,8 +251,8 @@ def run_calibrations(stage):
     if stage == 1:
         print 'Cal CORPSE pi'
         cal_CORPSE_pi(name)
-        print 'Cal CORPSE pi/2'
-        cal_CORPSE_pi2(name)
+    if stage == 1.5:
+        print 'CORPSE vs effective angle'
     if stage == 2:
         dd_calibrate_C13_revival(name)
     if stage == 3:
@@ -232,19 +262,23 @@ def run_calibrations(stage):
 
 
 if __name__ == '__main__':
-    execfile('d:/measuring/measurement/scripts/lt2_scripts/setup/msmt_params.py')
-    run_calibrations(1)
+    #execfile('d:/measuring/measurement/scripts/lt2_scripts/setup/msmt_params.py')
+    #run_calibrations(1)
+    #run_calibrations(1.5)
     #run_calibrations(2)
     #run_calibrations(3) 
     #run_calibrations(4) 
     #dd_calibrate_T2(name)
+    
 
     """
     stage 0.0: SSRO calibration
     stage 0.5: dark ESR
             --> f_msm1_cntr_lt2 in parameters.py AND msmt_params.py
-    stage 1: pulses: CORPSE pi and pi2
-            --> CORPSE_pi_amp, CORPSE_pi2_amp in parameters.py
+    stage 1: pulses: CORPSE pi 
+            --> CORPSE_amp in parameters.py]
+    stage 1.5: pulses: CORPSE vs angle. If (f-f0)/f0 < 0.005 -> happy. (f0 = 1/360) 
+            --> CORPSE_amp in parameters.py
     stage 2: C13 revival time
             --> first_C_revival in parameters.py
     stage 3: LDE - DD spin echo time

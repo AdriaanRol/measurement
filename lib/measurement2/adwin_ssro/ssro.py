@@ -104,7 +104,7 @@ class AdwinSSRO(m2.AdwinControlledMeasurement):
         self.adwin_process_params['repump_voltage'] = \
                 self.repump_aom.power_to_voltage(
                         self.params['repump_amplitude'])
-                
+
         self.adwin_process_params['repump_off_voltage'] = \
                 self.params['repump_off_voltage']
         self.adwin_process_params['A_off_voltage'] = \

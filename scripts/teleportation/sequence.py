@@ -22,25 +22,13 @@ def pulse_defs_lt2(msmt):
         PM_channel = 'MW_pulsemod',
         PM_risetime = msmt.params_lt2['MW_pulse_mod_risetime'])
 
-    # CORPSE pulses
-    # msmt.CORPSE_pi = pulselib.IQ_CORPSE_pi_pulse('CORPSE pi-pulse',
-    #     I_channel = 'MW_Imod', 
-    #     Q_channel = 'MW_Qmod',    
-    #     PM_channel = 'MW_pulsemod',
-    #     PM_risetime = msmt.params_lt2['MW_pulse_mod_risetime'],
-    #     frequency = msmt.params_lt2['CORPSE_pi_mod_frq'],
-    #     amplitude = msmt.params_lt2['CORPSE_pi_amp'],
-    #     length_60 = msmt.params_lt2['CORPSE_pi_60_duration'],
-    #     length_m300 = msmt.params_lt2['CORPSE_pi_m300_duration'],
-    #     length_420 = msmt.params_lt2['CORPSE_pi_420_duration'])    
-
     msmt.CORPSE_pi = pulselib.IQ_CORPSE_pulse('CORPSE pi-pulse',
         I_channel = 'MW_Imod', 
         Q_channel = 'MW_Qmod',    
         PM_channel = 'MW_pulsemod',
         PM_risetime = msmt.params_lt2['MW_pulse_mod_risetime'],
         frequency = msmt.params_lt2['CORPSE_pi_mod_frq'],
-        amplitude = msmt.params_lt2['CORPSE_pi_amp'],
+        amplitude = msmt.params_lt2['CORPSE_amp'],
         rabi_frequency = msmt.params_lt2['CORPSE_rabi_frequency'],
         eff_rotation_angle = 180)
 
@@ -50,7 +38,7 @@ def pulse_defs_lt2(msmt):
         PM_channel = 'MW_pulsemod',
         PM_risetime = msmt.params_lt2['MW_pulse_mod_risetime'],
         frequency = msmt.params_lt2['CORPSE_pi2_mod_frq'],
-        amplitude = msmt.params_lt2['CORPSE_pi2_amp'],
+        amplitude = msmt.params_lt2['CORPSE_amp'],
         rabi_frequency = msmt.params_lt2['CORPSE_rabi_frequency'],
         eff_rotation_angle = 90)
 

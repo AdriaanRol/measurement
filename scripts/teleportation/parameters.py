@@ -66,7 +66,7 @@ params_lt1['repump_duration'] = 500 # 500 for yellow, 10 for green
 
 ### MBI on LT1
 params_lt1['E_SP_duration'] = 100
-params_lt1['MBI_duration'] = 4 # put back to 4 with gate
+params_lt1['MBI_duration'] = 4 #put back to 4 with gate
 params_lt1['MBI_threshold'] = 1
 params_lt1['max_MBI_attempts'] = 100
 params_lt1['N_randomize_duration'] = 50 # This could still be optimized, 50 is a guess
@@ -100,7 +100,7 @@ params_lt1['N_RO_repetitions'] = 2 # THIS IS COMPILED INTO THE ADWIN CODE!
 
 params_lt2['Ey_CR_amplitude'] = 30e-9#6e-9             
 params_lt2['A_CR_amplitude'] = 20e-9#16e-9              
-params_lt2['Ey_SP_amplitude'] = 0e-9 
+params_lt2['Ey_SP_amplitude'] = 0e-9              
 params_lt2['A_SP_amplitude'] = 20e-9             
 params_lt2['Ey_RO_amplitude'] = 10e-9
 params_lt2['A_RO_amplitude'] = 0
@@ -186,18 +186,11 @@ params_lt2['mw_power'] = 20
 params_lt2['MW_pulse_mod_risetime'] = 10e-9
 
 params_lt2['CORPSE_rabi_frequency'] = 8.15e6
+params_lt2['CORPSE_amp'] = 0.401
 
 params_lt2['CORPSE_pi_mod_frq'] = f0_lt2
-params_lt2['CORPSE_pi_amp'] = 0.438
-# params_lt2['CORPSE_pi_60_duration'] =1./CORPSE_frq_lt2/6.
-# params_lt2['CORPSE_pi_m300_duration'] = 5./CORPSE_frq_lt2/6.
-# params_lt2['CORPSE_pi_420_duration'] = 7./CORPSE_frq_lt2/6.
-
 params_lt2['CORPSE_pi2_mod_frq'] = f0_lt2
-params_lt2['CORPSE_pi2_amp'] = 0.431
-# params_lt2['CORPSE_pi2_24p3_duration'] = 24.3/CORPSE_frq_lt2/360.
-# params_lt2['CORPSE_pi2_m318p6_duration'] = 318.6/CORPSE_frq_lt2/360.
-# params_lt2['CORPSE_pi2_384p3_duration'] = 384.3/CORPSE_frq_lt2/360.
+
 params_lt2['pi2_pulse_phase'] = 0 #Y
 params_lt2['DD_pi_phases'] = [90,0,90] ## THIS DEFINES THE XYX SEQUENCE
 params_lt2['CORPSE_pi2_wait_length']= 1300e-9
@@ -248,7 +241,8 @@ params['LDE_SP_duration_yellow']      = 3e-6
 params['wait_after_sp']               = 500e-9 #this should be large enough, so that the MW puls fits
 params['LDE_element_length']          = 8e-6 # 9k for TPQI with 5 pulses
 
-params['source_state_basis'] = 'X'
+params['source_state_basis'] = 'X'  # 'Z', '-Z', 'X', '-X', 'Y', '-Y' 
+params['ro_basis'] = 'Z'            # 'Z', ending up in ms=0, or '-Z' ending up in ms=-1 (maybe)
 
 ### default process settings
 params['LDE_attempts_before_CR'] = 100 # 1000 for tpqi seems ok
