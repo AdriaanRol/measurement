@@ -111,6 +111,17 @@ class ConfigManager:
 
         else:
             logging.error("Please delete config objects using remove_cfg")
+
+    def clear(self, cfg):
+        """
+        remove all entries from the config object cfg.
+        this clears the file in which the settings are stored!
+        """
+        d = self.configs[cfg].get_all()
+        for k in d:
+            self.delete(cfg+'/'+k)
+
+        return True
     
     def keys(self):
         return self.configs.keys()
