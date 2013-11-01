@@ -30,14 +30,16 @@ def _do_remote_connect_lt1():
                 remote_name='powermeter', inssrv=remote_ins_server_lt1)
         SMB100_lt1 = qt.instruments.create('SMB100_lt1', 'Remote_Instrument',
                 remote_name='SMB100', inssrv=remote_ins_server_lt1)
-        AWG_lt1 = qt.instruments.create('AWG_lt1', 'Remote_Instrument',
-                remote_name='AWG', inssrv=remote_ins_server_lt1)
+        #AWG_lt1 = qt.instruments.create('AWG_lt1', 'Remote_Instrument',
+        #        remote_name='AWG', inssrv=remote_ins_server_lt1)
+        AWG_lt1 = qt.instruments.create('AWG_lt1', 'Tektronix_AWG5014',
+                address='TCPIP0::192.168.0.22::inst0::INSTR',reset=False,numpoints=1e3)
         PMServo_lt1= qt.instruments.create('PMServo_lt1', 'Remote_Instrument',
                 remote_name='PMServo', inssrv=remote_ins_server_lt1)
         ZPLServo_lt1= qt.instruments.create('ZPLServo_lt1', 'Remote_Instrument',
                 remote_name='ZPLServo', inssrv=remote_ins_server_lt1)
-        #ivvi = qt.instruments.create('ivvi_lt1', 'Remote_Instrument',
-                #remote_name='ivvi', inssrv=remote_ins_server_lt1)
+        ivvi_lt1 = qt.instruments.create('ivvi_lt1', 'Remote_Instrument',
+                remote_name='ivvi', inssrv=remote_ins_server_lt1)
 
         return True
     
@@ -65,28 +67,28 @@ setup_controller_lt1 = qt.instruments.create('setup_controller_lt1',
     use = { 'master_of_space_lt1' : 'mos'} )
 
 
-pos_maxjog_cfg_lt1 = { 1 : {'positive' : 1.000,
-                            'negative' : 0.940},
-                       2 : {'positive' : 1.000,
-                            'negative' : 0.900},
-                     }
-
-#normalized to ~ 481 steps/degree
-pos_maxpr_cfg_lt1  = { 1 : {'positive' : 1.000,
-                            'negative' : 0.981},
-                       2 : {'positive' : 1.000,
-                            'negative' : 1.130},
-                      }
-
-#values provided here are in deg/step
-pos_step_deg_cfg_lt1 = { 1 : 10/5000.,
-                      2 : 10/5000.}
-
-positioner_lt1 = qt.instruments.create('positioner_lt1', 'NewportAgilisUC2_v2', 
-        address = 'COM6', maxjog_cfg=pos_maxjog_cfg_lt1, maxpr_cfg=pos_maxpr_cfg_lt1,
-        step_deg_cfg=pos_step_deg_cfg_lt1 )
-rejecter_lt1 = qt.instruments.create('rejecter_lt1', 'laser_reject0r', positioner=positioner_lt1, 
-        adwin=adwin_lt1, red_laser= MatisseAOM_lt1)
+#pos_maxjog_cfg_lt1 = { 1 : {'positive' : 1.000,
+#                            'negative' : 0.940},
+#                       2 : {'positive' : 1.000,
+#                            'negative' : 0.900},
+#                     }
+#
+##normalized to ~ 481 steps/degree
+#pos_maxpr_cfg_lt1  = { 1 : {'positive' : 1.000,
+#                            'negative' : 0.981},
+#                       2 : {'positive' : 1.000,
+#                            'negative' : 1.130},
+#                      }
+#
+##values provided here are in deg/step
+#pos_step_deg_cfg_lt1 = { 1 : 10/5000.,
+#                      2 : 10/5000.}
+#
+#positioner_lt1 = qt.instruments.create('positioner_lt1', 'NewportAgilisUC2_v2', 
+#        address = 'COM6', maxjog_cfg=pos_maxjog_cfg_lt1, maxpr_cfg=pos_maxpr_cfg_lt1,
+#        step_deg_cfg=pos_step_deg_cfg_lt1 )
+#rejecter_lt1 = qt.instruments.create('rejecter_lt1', 'laser_reject0r', positioner=positioner_lt1, 
+#        adwin=adwin_lt1, red_laser= MatisseAOM_lt1)
 
 #### make a remote pulsar and configure it
 from measurement.lib.pulsar import pulse, pulselib, element, pulsar
@@ -121,8 +123,8 @@ qt.pulsar_remote.define_channel(id='ch3_marker2', name='adwin_sync', type='marke
 
 # light -- delay of SP is here *defined* as 700 (trigger comes from the other AWG); 
 # all other delays are then relative to that.
-# qt.pulsar_remote.define_channel(id='ch2', name='YellowAOM', type='analog', 
-#     high=0.4, low=0, offset=0., delay=750e-9, active=True)
+qt.pulsar_remote.define_channel(id='ch1_marker2', name='YellowAOM', type='marker', 
+     high=0.4, low=0, offset=0., delay=750e-9, active=True)
 
 qt.pulsar_remote.define_channel(id='ch2_marker2', name='Velocity1AOM', type='marker', 
     high=0.4, low=0, offset=0., delay=700e-9, active=True) 

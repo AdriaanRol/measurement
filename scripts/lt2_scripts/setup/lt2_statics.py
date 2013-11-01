@@ -4,7 +4,12 @@ ssro.AdwinSSRO.A_aom = qt.instruments['NewfocusAOM']
 ssro.AdwinSSRO.green_aom = qt.instruments['GreenAOM']
 ssro.AdwinSSRO.yellow_aom = qt.instruments['YellowAOM']
 ssro.AdwinSSRO.adwin = qt.instruments['adwin']
-ssro.AdwinSSRO.repump_aom = qt.instruments['GreenAOM']
+
+
+if qt.cfgman.get('protocols/AdwinSSRO/yellow'):
+    ssro.AdwinSSRO.repump_aom = ssro.AdwinSSRO.yellow_aom
+else:
+    ssro.AdwinSSRO.repump_aom = ssro.AdwinSSRO.green_aom
 
 sequence.SequenceSSRO.awg = qt.instruments['AWG']
 sequence.SequenceSSRO.mwsrc = qt.instruments['SMB100']
@@ -14,6 +19,8 @@ sequence.SequenceSSRO.chan_mw_pm = 'MW_pulsemod'
 sequence.SequenceSSRO.chan_nf_aom = 'AOM_Newfocus'
 sequence.SequenceSSRO.awgcfg_module = awgcfg
 sequence.SequenceSSRO.awgcfg_args = ['spin','optical_rabi']
+
+
 
 mbi.MBIMeasurement.chan_RF  = 'RF' 
 mbi.MBIMeasurement.chan_adwin_sync = 'adwin_sync'

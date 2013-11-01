@@ -1368,6 +1368,7 @@ config['adwin_lt1_processes'] = {
                     ['MBI_threshold'                ,       1],
                     ['max_MBI_attempts'             ,       1],
                     ['N_randomize_duration'         ,      50],
+                    ['wait_before_send_BSM_done'    ,      30],
                     ],
                 'params_long_index'    : 20,
                 'params_long_length'   : 40,

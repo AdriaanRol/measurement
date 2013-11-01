@@ -2,6 +2,13 @@ import types
 import qt
 cfg = qt.cfgman
 
+cfg.remove_cfg('protocols')
+cfg.remove_cfg('samples')
+cfg.remove_cfg('setup')
+cfg.add_cfg('protocols')
+cfg.add_cfg('samples')
+cfg.add_cfg('setup')
+
 cfg['samples']['current'] = 'sil10'
 cfg['protocols']['current'] = 'sil10-default'
 
@@ -102,7 +109,7 @@ cfg.set(branch+        'A_off_voltage',                -0.0)
 cfg.set(branch+        'repump_off_voltage',           0)
 cfg.set(branch+        'yellow_repump_amplitude',      50e-9)
 cfg.set(branch+        'yellow_repump_duration',       500)
-cfg.set(branch+        'yellow_CR_repump',              1)
+cfg.set(branch+        'yellow_CR_repump',             1)
 cfg.set(branch+        'green_CR_repump',              1000)
 cfg.set(branch+        'CR_probe_max_time',            1000000)
 
@@ -164,7 +171,7 @@ cfg.set(branch+        'repump_after_MBI_amp',                     15e-9)
 ### sil 10 ###
 branch='samples/sil10/'
 
-f_msm1_cntr = 2.828778e9 
+f_msm1_cntr = 2.82881e9 
 f_msp1_cntr = 2.925884e9 #not calibrated
 N_frq = 7.13429e6 #not calibrated
 N_HF_frq = 2.16042e6 

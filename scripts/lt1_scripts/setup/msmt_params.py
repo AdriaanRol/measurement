@@ -2,6 +2,12 @@ import types
 import qt
 cfg = qt.cfgman
 
+cfg.remove_cfg('protocols')
+cfg.remove_cfg('samples')
+cfg.remove_cfg('setup')
+cfg.add_cfg('protocols')
+cfg.add_cfg('samples')
+cfg.add_cfg('setup')
 
 cfg['samples']['current'] = 'hans-sil1'
 cfg['protocols']['current'] = 'hans-sil1-default'
@@ -65,7 +71,7 @@ print 'updating msmt params for {}'.format(cfg['samples']['current'])
 
 branch='samples/hans-sil1/'
 
-f_msm1_cntr = 2.828077e9
+f_msm1_cntr = 2.828081e9
 N_frq = 7.13456e6
 N_HF_frq = 2.19290e6
 cfg.set(branch+'ms-1_cntr_frq', f_msm1_cntr)
@@ -106,7 +112,7 @@ cfg.set(branch+        'wait_after_pulse_duration',    3)
 cfg.set(branch+        'wait_for_AWG_done',            0)
 cfg.set(branch+        'green_off_voltage',            0)
 cfg.set(branch+        'Ex_off_voltage',               0.)
-cfg.set(branch+        'A_off_voltage',                0.06)
+cfg.set(branch+        'A_off_voltage',                0.0)
 cfg.set(branch+        'repump_off_voltage',           0)
 cfg.set(branch+        'yellow_repump_amplitude',       50e-9)
 cfg.set(branch+        'yellow_repump_duration',        500)
