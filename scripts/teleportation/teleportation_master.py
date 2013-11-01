@@ -143,21 +143,21 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
                         self.params_lt1['repump_amplitude'])
 
         self.params_lt1['E_N_randomize_voltage'] = \
-            self.E_aom.power_to_voltage(
-                    self.params['E_N_randomize_amplitude'])
+            self.E_aom_lt1.power_to_voltage(
+                    self.params_lt1['E_N_randomize_amplitude'])
 
         self.params_lt1['A_N_randomize_voltage'] = \
-            self.A_aom.power_to_voltage(
-                    self.params['A_N_randomize_amplitude'])
+            self.A_aom_lt1.power_to_voltage(
+                    self.params_lt1['A_N_randomize_amplitude'])
 
         self.params_lt1['repump_N_randomize_voltage'] = \
-            self.repump_aom.power_to_voltage(
-                    self.params['repump_N_randomize_amplitude'])
+            self.repump_aom_lt1.power_to_voltage(
+                    self.params_lt1['repump_N_randomize_amplitude'])
                
         # LT2 laser configuration
 
         self.params_lt2['Ey_laser_DAC_channel'] = self.adwins['adwin_lt2']['ins'].get_dac_channels()\
-                [self.Ey_aom_lt2.get_pri_channel()]
+                [self.E_aom_lt2.get_pri_channel()]
         self.params_lt2['A_laser_DAC_channel'] = self.adwins['adwin_lt2']['ins'].get_dac_channels()\
                 [self.A_aom_lt2.get_pri_channel()]
         self.params_lt2['green_laser_DAC_channel'] = self.adwins['adwin_lt2']['ins'].get_dac_channels()\
@@ -168,24 +168,24 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
         if YELLOW_lt2:
             self.params_lt2['repump_laser_DAC_channel'] = self.params_lt2['yellow_laser_DAC_channel']
         else:
-        self.params_lt2['repump_laser_DAC_channel'] = self.params_lt2['green_laser_DAC_channel']
+            self.params_lt2['repump_laser_DAC_channel'] = self.params_lt2['green_laser_DAC_channel']
 
         self.params_lt2['Ey_CR_voltage'] = \
-                self.Ey_aom_lt2.power_to_voltage(
+                self.E_aom_lt2.power_to_voltage(
                         self.params_lt2['Ey_CR_amplitude'])
         self.params_lt2['A_CR_voltage'] = \
                 self.A_aom_lt2.power_to_voltage(
                         self.params_lt2['A_CR_amplitude'])
 
         self.params_lt2['Ey_SP_voltage'] = \
-                self.Ey_aom_lt2.power_to_voltage(
+                self.E_aom_lt2.power_to_voltage(
                         self.params_lt2['Ey_SP_amplitude'])
         self.params_lt2['A_SP_voltage'] = \
                 self.A_aom_lt2.power_to_voltage(
                         self.params_lt2['A_SP_amplitude'])
 
         self.params_lt2['Ey_RO_voltage'] = \
-                self.Ey_aom_lt2.power_to_voltage(
+                self.E_aom_lt2.power_to_voltage(
                         self.params_lt2['Ey_RO_amplitude'])
         self.params_lt2['A_RO_voltage'] = \
                 self.A_aom_lt2.power_to_voltage(
@@ -232,17 +232,17 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
             self.mwsrc_lt1.set_frequency(self.params_lt1['mw_frq'])
             self.mwsrc_lt1.set_power(self.params_lt1['mw_power'])
         
-        self.mwsrc_lt1.set_status('on' if DO_SEQUENCES else 'off')
+        self.mwsrc_lt1.set_status('on' if (DO_SEQUENCES and LDE_DO_MW_LT1) else 'off')
 
         self.green_aom_lt2.set_power(0.)
-        self.Ey_aom_lt2.set_power(0.)
+        self.E_aom_lt2.set_power(0.)
         self.A_aom_lt2.set_power(0.)
         self.yellow_aom_lt2.set_cur_controller('ADWIN')
         self.green_aom_lt2.set_cur_controller('ADWIN')
-        self.Ey_aom_lt2.set_cur_controller('ADWIN')
+        self.E_aom_lt2.set_cur_controller('ADWIN')
         self.A_aom_lt2.set_cur_controller('ADWIN')
         self.green_aom_lt2.set_power(0.)
-        self.Ey_aom_lt2.set_power(0.)
+        self.E_aom_lt2.set_power(0.)
         self.A_aom_lt2.set_power(0.)
         
         if DO_SEQUENCES:
@@ -257,7 +257,7 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
             else:
                 self.lt2_sequence()
 
-        self.mwsrc_lt2.set_status('on' if DO_SEQUENCES else 'off')
+        self.mwsrc_lt2.set_status('on' if (DO_SEQUENCES and LDE_DO_MW_LT2) else 'off')
 
         if HH:
             self.hharp.start_T2_mode()
@@ -280,14 +280,18 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
 
         if DO_DD:
             self.lt2_seq, total_elt_time, elts = tseq._lt2_dynamical_decoupling(self,
-                self.lt2_seq, 
+                self.lt2_seq,
                 name = 'DD',
                 time_offset = LDE_element.length(),
                 use_delay_reps = not(DO_READOUT))
+            self.lt2_seq.append(name = 'dummy_after_DD',
+                wfname = dummy_element.name,
+                goto_target = 'dummy_after_DD')
         else:
             self.lt2_seq.append(name = 'DD',
                 wfname = dummy_element.name,
-                goto_target = 'LT2_ready_for_RO')
+                goto_target = 'LT2_ready_for_RO',
+                repetitions = 20)
 
         #A_[ms,mi]
         #Y:=0 phase, X:=90
@@ -320,7 +324,7 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
                 A11_psimin_RO_el  = piY_el
                 
                 A00_psiplus_RO_el = piY_el
-                A01_psiplus_RO_el = id_el 
+                A01_psiplus_RO_el = id_el
                 A10_psiplus_RO_el = piY_el
                 A11_psiplus_RO_el = id_el
 
@@ -414,8 +418,8 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
 
         ################################################### END FF, DD and RO ##################################################################
         ### JUMPING
-        # EV0: first BSM: ms0 = 0, ms-1 = 1
-        # EV1: second BSM: ms0 = 0, ms-1 = 1
+        # EV0: first BSM: ms0 = 0, ms-1 = 1 --> espin
+        # EV1: second BSM: ms0 = 0, ms-1 = 1 --> Nspin
         # EV2: EMPTY - -- 1 = decoupling, 0 = FF
         # EV3: PLU: psi+ = 0,  psi- = 1
         # int('xxxx',2) --> EV (3210)
@@ -423,23 +427,23 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
         self.lt2_seq.set_djump(True)
         if DO_DD:
             # note: A01 etc. gives out nitrogen value first, jump expects electron RO first. 
-            self.lt2_seq.add_djump_address(int('1100',2),'A00_psi-') 
-            self.lt2_seq.add_djump_address(int('1101',2),'A01_psi-')
-            self.lt2_seq.add_djump_address(int('1110',2),'A10_psi-')
-            self.lt2_seq.add_djump_address(int('1111',2),'A11_psi-')
-            self.lt2_seq.add_djump_address(int('0100',2),'A00_psi+')
-            self.lt2_seq.add_djump_address(int('0101',2),'A01_psi+')
-            self.lt2_seq.add_djump_address(int('0110',2),'A10_psi+')
-            self.lt2_seq.add_djump_address(int('0111',2),'A11_psi+')
+            self.lt2_seq.add_djump_address(int('1000',2),'A00_psi-') 
+            self.lt2_seq.add_djump_address(int('1001',2),'A01_psi-')
+            self.lt2_seq.add_djump_address(int('1010',2),'A10_psi-')
+            self.lt2_seq.add_djump_address(int('1011',2),'A11_psi-')
+            self.lt2_seq.add_djump_address(int('0000',2),'A00_psi+')
+            self.lt2_seq.add_djump_address(int('0001',2),'A01_psi+')
+            self.lt2_seq.add_djump_address(int('0010',2),'A10_psi+')
+            self.lt2_seq.add_djump_address(int('0011',2),'A11_psi+')
 
-            self.lt2_seq.add_djump_address(int('1000',2),'DD') 
-            self.lt2_seq.add_djump_address(int('1001',2),'DD')
-            self.lt2_seq.add_djump_address(int('1010',2),'DD') 
-            self.lt2_seq.add_djump_address(int('1011',2),'DD') 
-            self.lt2_seq.add_djump_address(int('0000',2),'DD') 
-            self.lt2_seq.add_djump_address(int('0001',2),'DD') 
-            self.lt2_seq.add_djump_address(int('0010',2),'DD') 
-            self.lt2_seq.add_djump_address(int('0011',2),'DD')
+            self.lt2_seq.add_djump_address(int('1100',2),'DD') 
+            self.lt2_seq.add_djump_address(int('1101',2),'DD')
+            self.lt2_seq.add_djump_address(int('1110',2),'DD') 
+            self.lt2_seq.add_djump_address(int('1111',2),'DD') 
+            self.lt2_seq.add_djump_address(int('0100',2),'DD') 
+            self.lt2_seq.add_djump_address(int('0101',2),'DD') 
+            self.lt2_seq.add_djump_address(int('0110',2),'DD') 
+            self.lt2_seq.add_djump_address(int('0111',2),'DD')
         else:
             for i in range(16):
                 self.lt2_seq.add_djump_address(i,'DD')
@@ -807,21 +811,33 @@ class TeleportationSlave:
                 wfname = dummy_element.name)
             
             if DO_READOUT:
-                self.lt1_seq.append(name = 'trigger_ro',
-                    wfname = adwin_lt1_trigger_element.name,
-                    goto_target = 'MBI')
+
+                self.lt1_seq.append(name = 'sync_before_first_ro', 
+                    wfname = adwin_lt1_trigger_element.name)
+                
+                for i in range(self.params_lt1['N_RO_repetitions']):
+
+                    self.lt1_seq.append(name='N_RO-{}'.format(i+1),
+                        trigger_wait = True,
+                        wfname = N_RO_elt.name)
+
+                    self.lt1_seq.append(name = 'N_RO-{}_sync'.format(i+1), 
+                        wfname = adwin_lt1_trigger_element.name, 
+                        goto_target = 'MBI' if i==(self.params_lt1['N_RO_repetitions']-1) else 'N_RO-{}'.format(i+2) )
+
+
 
         elements = []
         elements.append(mbi_elt)
         elements.append(adwin_lt1_trigger_element)
         elements.append(start_LDE_element)
         elements.append(dummy_element)
+        elements.append(N_RO_elt)
 
         if DO_BSM:
             elements.append(N_init_element)
             elements.append(BSM_CNOT_elt)
             elements.append(BSM_UNROT_elt)
-            elements.append(N_RO_CNOT_elt)
 
         # if DO_POLARIZE_N:
         #     elements.append(N_pol_element)
@@ -854,19 +870,20 @@ class TeleportationSlave:
 YELLOW_lt2 = False              # whether to use yellow on lt2
 YELLOW_lt1 = True               # whether to use yellow on lt1
 HH = True                  # if False no HH data acquisition from within qtlab.
-DO_POLARIZE_N = True      # if False, don't initialize N on lt1
-DO_SEQUENCES = True        # if False, we won't use the AWG at all
-DO_LDE_SEQUENCE = True     # if False, no LDE sequence (both setups) will be done
-LDE_DO_MW_LT1 = True          # if True, there will be MW in the LDE seq
-LDE_DO_MW_LT2 = False
+DO_POLARIZE_N = True       # if False, don't initialize N on lt1
+DO_SEQUENCES = True         # if False, we won't use the AWG at all
+DO_LDE_SEQUENCE = True      # if False, no LDE sequence (both setups) will be done
+LDE_DO_MW_LT1 = True         # if True, there will be MW in the LDE seq. If false, the MW source status is set to off
+LDE_DO_MW_LT2 = True         # if True, there will be MW in the LDE seq. If false, the MW source status is set to off
 MAX_HHDATA_LEN = int(100e6)
 DO_OPT_RABI_AMP_SWEEP = False # if true, we sweep the rabi parameters instead of doing LDE; essentially this only affects the sequence we make
 HH_MIN_SYNC_TIME = 0 # 9 us
 HH_MAX_SYNC_TIME = 3e6 # 10.2 us
 OPT_PI_PULSES = 2
-DO_BSM = False
-DO_DD = False
-DO_READOUT = True
+DO_BSM = True
+DO_DD = True
+
+DO_READOUT = True ##don't change this!
        
 ### configure the hardware (statics)
 TeleportationMaster.adwins = {
@@ -890,13 +907,11 @@ TeleportationMaster.mwsrc_lt1 = qt.instruments['SMB100_lt1']
 if YELLOW_lt1:
     TeleportationMaster.repump_aom_lt1 = TeleportationMaster.yellow_aom_lt1
 else:
-TeleportationMaster.repump_aom_lt1 = TeleportationMaster.green_aom_lt1
-
-TeleportationMaster.repump_aom_lt1 = TeleportationMaster.green_aom_lt1
+    TeleportationMaster.repump_aom_lt1 = TeleportationMaster.green_aom_lt1
 
 TeleportationMaster.yellow_aom_lt2 = qt.instruments['YellowAOM']
 TeleportationMaster.green_aom_lt2 = qt.instruments['GreenAOM']
-TeleportationMaster.Ey_aom_lt2 = qt.instruments['MatisseAOM']
+TeleportationMaster.E_aom_lt2 = qt.instruments['MatisseAOM']
 TeleportationMaster.A_aom_lt2 = qt.instruments['NewfocusAOM']
 TeleportationMaster.mwsrc_lt2 = qt.instruments['SMB100']
 TeleportationMaster.awg_lt2 = qt.instruments['AWG']
@@ -909,8 +924,8 @@ else:
 TeleportationMaster.hharp = qt.instruments['HH_400']
 
 ### This is ugly at this point. better merge classes at some point?
-TeleportationSlave.repump_aom_lt1 = qt.instruments['GreemAOM_lt1']
-TeleportationSlave.A_aom_lt1 = qt.instruments['NewfocusAOM_lt1']
+TeleportationSlave.repump_aom_lt1 = TeleportationMaster.repump_aom_lt1 
+TeleportationSlave.A_aom_lt1 = TeleportationMaster.A_aom_lt1 
 
 ### tool functions
 def setup_msmt(name): 
@@ -943,6 +958,13 @@ def finish_msmnt():
 def default_msmt(name):
     ### first start the slave
     ### TODO: make more like master if at some point more dynamic settings are needed
+
+    if qt.instruments['HH_400'].OpenDevice():
+        print 'HH opened'
+    else:
+        raise Exception('HH not opened, please close HH software, you moron.')
+
+
     if DO_SEQUENCES:
         setup_remote_sequence()
 
@@ -960,6 +982,7 @@ def default_msmt(name):
     finish_msmnt()
 
 def program_lt2_sequence_only(name):
+
     m = setup_msmt(''+name)
     global DO_DD 
     DO_DD= True
@@ -969,6 +992,6 @@ def program_lt2_sequence_only(name):
     qt.instruments['AWG'].set_runmode('CONT')
 
 if __name__ == '__main__':
-    #default_msmt('LT1_spin_photon_with_MBI_and_calib_pulses')
-    program_lt2_sequence_only('test_DD')
+    default_msmt('LT2_SPCORR')
+    #program_lt2_sequence_only('test_DD')
                                                                                                                                                                                                                                                                                           

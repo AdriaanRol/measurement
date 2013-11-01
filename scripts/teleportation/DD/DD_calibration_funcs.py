@@ -20,10 +20,38 @@ reload(funcs)
 
 name = 'sil10'
 
+
+###############
+##### SSRO calibration
+##### Calibration stage 0
+def cal_ssro_teleportation(name, A_SP_duration = 250):
+    m = ssro.AdwinSSRO('SSROCalibration_'+name) 
+    m.params.from_dict(qt.cfgman['protocols']['AdwinSSRO'])  
+    funcs.prepare(m)
+    m.params['SSRO_repetitions'] = 5000
+    m.params['SSRO_duration'] = 50
+    m.params['SP_duration'] = A_SP_duration # we want to calibrate the RO, not the SP
+
+     # ms = 1 calibration
+    m.params['Ex_SP_amplitude'] = 0
+    m.run()
+    m.save('ms0')
+
+    # ms = 1 calibration
+    m.params['A_SP_amplitude'] = 0.
+    m.params['SP_duration'] = 250
+    m.params['Ex_SP_amplitude'] =  10e-9
+
+    m.run()
+    m.save('ms1')
+    m.finish()
+
+
+
 ###############
 ##### Pulse calibration
 ##### Calibration stage 1
-def cal_CORPSE_pi(name):
+def cal_CORPSE_pi(name, multiplicity = 5):
     m = CORPSEPiCalibration(name+'M=11')
     funcs.prepare(m)
 
@@ -34,7 +62,7 @@ def cal_CORPSE_pi(name):
 
     # sweep params
     m.params['CORPSE_pi_sweep_amps'] = np.linspace(0.37, 0.44, pts)
-    m.params['multiplicity'] = 5
+    m.params['multiplicity'] = multiplicity
     name = name + 'M={}'.format(m.params['multiplicity'])
     m.params['delay_reps'] = 15
 
@@ -42,7 +70,7 @@ def cal_CORPSE_pi(name):
     m.params['sweep_name'] = 'CORPSE amplitude (V)'
     m.params['sweep_pts'] = m.params['CORPSE_pi_sweep_amps']  
 
-    funcs.finish(m, upload = True, debug = False)
+    funcs.finish(m, upload = UPLOAD, debug = False)
 
 # def cal_CORPSE_pi2(name):
 #     m = CORPSECalibration(name+'M=1')
@@ -92,7 +120,7 @@ def cal_CORPSE_rotation_angle(name):
     m.params['sweep_name'] = 'CORPSE effective rotation angle'
     m.params['sweep_pts'] = m.params['CORPSE_effective_rotation_angles']  
 
-    funcs.finish(m, upload = True, debug = False)
+    funcs.finish(m, upload = UPLOAD, debug = False)
 
 
 def dd_calibrate_C13_revival(name):
@@ -116,7 +144,7 @@ def dd_calibrate_C13_revival(name):
     m.params_lt2['sweep_name'] = 'total free evolution time (us)'
     m.params_lt2['sweep_pts'] = 2*m.params_lt2['free_evolution_times'] / 1e-6  
 
-    dd_msmt.finish(m,upload=True,debug=False)
+    dd_msmt.finish(m,upload=UPLOAD,debug=False)
 
 
 def dd_calibrate_T2(name):
@@ -151,7 +179,7 @@ def dd_calibrate_T2(name):
     m.params_lt2['sweep_name'] = 'total free evolution time (us)'
     m.params_lt2['sweep_pts'] = 2*m.params_lt2['free_evolution_times'] / 1e-6  
 
-    dd_msmt.finish(m,upload=True,debug=False)
+    dd_msmt.finish(m,upload=UPLOAD,debug=False)
 
 def dd_sweep_LDE_spin_echo_time(name):
     m = dd_msmt.DynamicalDecoupling('calibrate_LDE_spin_echo_time')
@@ -173,7 +201,7 @@ def dd_sweep_LDE_spin_echo_time(name):
    # m.params_lt2['A_SP_amplitude'] = 0. #use LDE element SP. 
     
     # sweep params
-    m.params_lt2['dd_spin_echo_times'] = np.linspace(-30e-9, 70e-9, pts)
+    m.params_lt2['dd_spin_echo_times'] = np.linspace(-250e-9, -100e-9, pts)
     
     m.params_lt2['DD_pi_phases'] = [0]
     m.dd_sweep_LDE_spin_echo_time_msmt()
@@ -182,7 +210,7 @@ def dd_sweep_LDE_spin_echo_time(name):
     m.params_lt2['sweep_name'] = 'extra dd spin echo time (us)'
     m.params_lt2['sweep_pts'] = m.params_lt2['dd_spin_echo_times'] / 1e-6  
 
-    dd_msmt.finish(m,upload=True,debug=False)
+    dd_msmt.finish(m,upload=UPLOAD,debug=False)
 
 
 def dd_sweep_LDE_DD_XYX_t_between_pulse(name):
@@ -214,7 +242,7 @@ def dd_sweep_LDE_DD_XYX_t_between_pulse(name):
     m.params_lt2['sweep_name'] = 'extra t between pi pulses (us)'
     m.params_lt2['sweep_pts'] = m.params_lt2['extra_ts_between_pulses'] / 1e-6  
 
-    dd_msmt.finish(m,upload=True,debug=False)
+    dd_msmt.finish(m,upload=UPLOAD,debug=False)
 
 def dd_sweep_LDE_DD_XYX_free_evolution_time(name):
     m = dd_msmt.DynamicalDecoupling('calibrate_xyx_fet_pi2phase_min90')
@@ -242,17 +270,24 @@ def dd_sweep_LDE_DD_XYX_free_evolution_time(name):
     m.params_lt2['sweep_pts'] = m.params_lt2['dd_extra_t_between_pi_pulses'] * (len(m.params_lt2['DD_pi_phases']) -1) + \
         2 * len(m.params_lt2['DD_pi_phases']) * m.params_lt2['free_evolution_times'] / 1e-6 
          
-    dd_msmt.finish(m,upload=True,debug=False)
+    dd_msmt.finish(m,upload=UPLOAD,debug=False)
 
 
 
 ### master function
 def run_calibrations(stage):  
+    if stage==0:
+        print 'Cal SSRO 7 us SP'
+        cal_ssro_teleportation(name, A_SP_duration = 7)
+    if stage==0.25:
+        print 'Cal SSRO'
+        cal_ssro_teleportation(name, A_SP_duration = 250)
     if stage == 1:
         print 'Cal CORPSE pi'
-        cal_CORPSE_pi(name)
+        cal_CORPSE_pi(name,multiplicity = 11)
     if stage == 1.5:
-        print 'CORPSE vs effective angle'
+        print 'CORPSE vs effective angle'       
+        cal_CORPSE_rotation_angle(name)
     if stage == 2:
         dd_calibrate_C13_revival(name)
     if stage == 3:
@@ -260,19 +295,22 @@ def run_calibrations(stage):
     if stage == 4:
         dd_sweep_LDE_DD_XYX_t_between_pulse(name)
 
-
+UPLOAD = True
 if __name__ == '__main__':
     #execfile('d:/measuring/measurement/scripts/lt2_scripts/setup/msmt_params.py')
+    #run_calibrations(0)
+    #run_calibrations(0.25)
     #run_calibrations(1)
     #run_calibrations(1.5)
     #run_calibrations(2)
     #run_calibrations(3) 
-    #run_calibrations(4) 
+    run_calibrations(4) 
     #dd_calibrate_T2(name)
     
 
     """
-    stage 0.0: SSRO calibration
+    stage 0.0: SSRO calibration with 7 us SP
+    stage 0.25: regular SSRO calibration    
     stage 0.5: dark ESR
             --> f_msm1_cntr_lt2 in parameters.py AND msmt_params.py
     stage 1: pulses: CORPSE pi 

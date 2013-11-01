@@ -31,17 +31,18 @@ reload(funcs)
 def cal_ssro_teleportation(name):
     m = ssro.AdwinSSRO('SSROCalibration_'+name) 
     m.params.from_dict(qt.cfgman['protocols']['AdwinSSRO'])  
-    funcs.prepare(m, SIL_NAME)
+    funcs.prepare(m)
     m.params['SSRO_repetitions'] = 5000
+    m.params['SP_duration'] = 250 # we want to calibrate the RO, not the SP
+    m.params['SSRO_duration'] = 50
 
      # ms = 1 calibration
-    m.params['SP_duration'] = 7#m.params['A_SP_duration']
+
     m.params['Ex_SP_amplitude'] = 0
     m.run()
     m.save('ms0')
 
     # ms = 1 calibration
-    m.params['SP_duration'] = m.params['E_SP_duration']
     m.params['A_SP_amplitude'] = 0.
     m.params['Ex_SP_amplitude'] =  m.params['E_SP_amplitude']
 
@@ -57,7 +58,7 @@ def cal_ssro_teleportation(name):
 def cal_slow_pi(name):
     m = pulsar_mbi_espin.ElectronRabi('cal_slow_pi_'+name)
     m.params.from_dict(qt.cfgman['protocols']['AdwinSSRO+MBI']) 
-    funcs.prepare(m, SIL_NAME)
+    funcs.prepare(m)
     # measurement settings
     pts = 11
     m.params['reps_per_ROsequence'] = 500
@@ -83,7 +84,7 @@ def cal_slow_pi(name):
 def cal_fast_rabi(name):
     m = pulsar_mbi_espin.ElectronRabi('cal_fast_rabi'+name)
     m.params.from_dict(qt.cfgman['protocols']['AdwinSSRO+MBI']) 
-    funcs.prepare(m, SIL_NAME)
+    funcs.prepare(m)
 
     pts = 21
     m.params['pts'] = pts
@@ -107,7 +108,7 @@ def cal_fast_pi(name, mult=1):
     m = pulsar_mbi_espin.ElectronRabiSplitMultElements(
         'cal_fast_pi_'+name+'_M=%d' % mult)
     m.params.from_dict(qt.cfgman['protocols']['AdwinSSRO+MBI']) 
-    funcs.prepare(m, SIL_NAME)
+    funcs.prepare(m)
     
     # measurement settings
     pts = 11
@@ -132,7 +133,7 @@ def cal_fast_pi2(name,  mult=1):
     m = pulsar_mbi_espin.ElectronRabi(
         'cal_fast_pi_over_2_'+name+'_M=%d' % mult)
     m.params.from_dict(qt.cfgman['protocols']['AdwinSSRO+MBI']) 
-    funcs.prepare(m, SIL_NAME)    
+    funcs.prepare(m)    
     
     # measurement settings
     pts = 11
@@ -156,7 +157,7 @@ def cal_fast_pi2(name,  mult=1):
 def cal_CORPSE_pi(name , mult=1):
     m = CORPSEPiCalibration(name+'_M=%d' % mult)
     m.params.from_dict(qt.cfgman['protocols']['AdwinSSRO+MBI']) 
-    funcs.prepare(m,SIL_NAME)
+    funcs.prepare(m)
 
     pts = 11
     m.params['pts'] = pts
@@ -177,7 +178,7 @@ def cal_pi2pi_pi(name, mult=1):
     m = pulsar_mbi_espin.ElectronRabiSplitMultElements(
         'cal_pi2pi_pi_'+name+'_M=%d' % mult)
     m.params.from_dict(qt.cfgman['protocols']['AdwinSSRO+MBI']) 
-    funcs.prepare(m,SIL_NAME)
+    funcs.prepare(m)
     
     # measurement settings
     pts = 11
@@ -236,7 +237,7 @@ def run_nmr_rabi(name):
 
     # MW pulses
     m.params_lt1['RF_pulse_durations'] = np.linspace(1e-6, 201e-6, pts)
-    m.params_lt1['RF_pulse_amps'] = np.ones(pts) * 1.4
+    m.params_lt1['RF_pulse_amps'] = np.ones(pts) * .55
     m.params_lt1['RF_pulse_frqs'] = np.ones(pts) * m.params_lt1['N_0-1_splitting_ms-1']
 
     # for the autoanalysis
@@ -296,7 +297,7 @@ def bsm_calibrate_CORPSE_pi_phase_shift_small_range(name):
     m.params_lt1['CORPSE_pi_phase_shifts'] = 107 + np.linspace(-40,40,pts)
     m.params_lt1['interpulse_delays'] = np.ones(pts) * 52.5e-6 #this is the C13 revival, 
                                                #but do not need an accurate number for this calibration 
-    m.calibrate_CORPSE_pi_phase_shift()
+    m.calibrate_CORPSE_pi_phase_shift_or_e_time()
 
     # for the autoanalysis
     m.params_lt1['sweep_name'] = 'CORPSE relative phase shift (deg)'
@@ -313,7 +314,7 @@ def bsm_calibrate_UNROT_X_timing(name):
     m.params['pts'] = pts
     m.params['reps_per_ROsequence'] = 500
 
-    m.params_lt1['evolution_times'] = 50.9e-6 + np.linspace(-400e-9,400e-9,pts)
+    m.params_lt1['evolution_times'] = 52.5e-6 + np.linspace(-400e-9,400e-9,pts)
     m.calibrate_UNROT_X_timing(eigenstate='-1')
 
     # for the autoanalysis
@@ -330,7 +331,7 @@ def bsm_calibrate_UNROT_X_timing_small_range(name):
     m.params['pts'] = pts
     m.params['reps_per_ROsequence'] = 500
 
-    m.params['evolution_times'] = 51.089e-6 + np.linspace(-50e-9,50e-9,pts)
+    m.params['evolution_times'] = 52.5e-6 + np.linspace(-50e-9,50e-9,pts)
     m.calibrate_UNROT_X_timing(eigenstate='-1')
 
     # for the autoanalysis
@@ -398,7 +399,7 @@ def bsm_test_BSM_with_LDE_superposition_in_sweep_H_ev_time(name):
 
     m.params_lt1['repump_after_MBI_amplitude'] = 0. #SP is in LDE element!! :)
     #H evolution time should be more than N pi/2 pulse duration = 28e-6
-    m.params_lt1['H_evolution_times'] = 35e-6 + np.linspace(-200e-9,300e-9,pts) 
+    m.params_lt1['H_evolution_times'] = 35.1e-6 + np.linspace(-200e-9,300e-9,pts) 
     m.params_lt1['H_phases'] = np.ones(pts) * m.params_lt1['H_phase']
 
 
@@ -422,7 +423,7 @@ def run_calibrations(stage):
     if stage == 2:
         #cal_fast_rabi(name)
         cal_fast_pi(name, mult=11)
-        cal_fast_pi2(name)
+        #cal_fast_pi2(name)
         cal_CORPSE_pi(name, mult=11)
         cal_pi2pi_pi(name, mult=5)
         #cal_pi2pi_pi_mI0(name, mult=5)
@@ -433,8 +434,8 @@ def run_calibrations(stage):
 
     if stage == 4:
         #bsm_calibrate_interpulsedelay(name) #for eg first time sil use
-        bsm_calibrate_CORPSE_pi_phase_shift(name)
-        #bsm_calibrate_CORPSE_pi_phase_shift_small_range(name)
+        #bsm_calibrate_CORPSE_pi_phase_shift(name)
+        bsm_calibrate_CORPSE_pi_phase_shift_small_range(name)
 
     if stage == 5:
         bsm_calibrate_UNROT_X_timing(name)
@@ -456,23 +457,23 @@ UPLOAD=True
 
 if __name__ == '__main__':
     #execfile('d:/measuring/measurement/scripts/'+SETUP+'_scripts/setup/msmt_params.py')
-    GreenAOM.set_power(0)
+    GreenAOM_lt1.set_power(0)
     #run_calibrations(0)
     #run_calibrations(1)
     #run_calibrations(2)
-    run_calibrations(3)
+    #run_calibrations(3)
     #run_calibrations(4)
     #run_calibrations(5)
     #run_calibrations(6)
     #run_calibrations(7)
-    #run_calibrations(8)
-    #cal_pi2pi_pi(name,
+    run_calibrations(8)
+
     """
 
     #note on yellow: Yellow setting is in msmnt_params, params, BSM_funcs and BSM_sequences
     stage 0.0: ssro calibration (first execfile ssro/ssro_calibration.py for coarse)
     ### RO settings
-                --> RO settings A_SP_duration, SSRO1_duration, SSRO2_duration', E_RO_amplitude
+                --> RO settings A_SP_duration, SSRO_duration, E_RO_amplitude
                 --> MBI on LT1 'E_SP_duration', 'A_SP_amplitude'
     stage 0.5: dark ESR  (execfile espin/darkesr.py) 
             --> f_msm1_cntr_lt1  in parameters.py AND msmt_params.py

@@ -155,44 +155,6 @@ class DynamicalDecoupling(pulsar_msmt.PulsarMeasurement):
 
         self.elements.append(self.adwin_lt2_trigger_element)
 
-    def dd_sweep_LDE_DD_second_pi2(self):
-        self.seq = pulsar.Sequence('{}_{}_sequence'.format(self.mprefix, self.name))
-
-        self.elements = []
-
-        for i in range(self.params['pts']):
-            LDE_elt = self.LDE_element(eom_pulse_amplitude = 0., 
-                name = 'LDE_element-{}'.format(i),
-                pi2_pulse_amp = self.params_lt2['pi2_pulse_amps'][i])
-
-            self.seq.append(name = 'LDE_element-{}'.format(i), 
-                wfname = LDE_elt.name, 
-                trigger_wait = True)
-
-            self.seq, total_elt_time, elts = self.dynamical_decoupling(self.seq, 
-                time_offset = LDE_elt.length(),
-                begin_offset_time = self.params_lt2['dd_spin_echo_time'],
-                use_delay_reps = self.params['dd_use_delay_reps'],
-                name = i)
-
-            second_pi2_elt = self.second_pi2(name = i, 
-                time_offset = LDE_elt.length() + total_elt_time,
-                extra_t_before_pi2 = self.params_lt2['extra_ts_before_pi2'][i], 
-                CORPSE_pi2_amp = self.params_lt2['pi2_pulse_amps'][i])
-
-            self.seq.append(name = 'second_pi2-{}'.format(i), 
-                wfname = second_pi2_elt.name)
-            self.seq.append(name = 'sync_elt-{}'.format(i), 
-                wfname = self.adwin_lt2_trigger_element.name)
-
-            self.elements.append(LDE_elt)
-            for e in elts:
-                if e not in self.elements:
-                    self.elements.append(e)          
-            self.elements.append(second_pi2_elt)
-
-        self.elements.append(self.adwin_lt2_trigger_element)
-
 
 def dd_sweep_free_ev_time(name):
     m = DynamicalDecoupling('calibrate_first_revival')

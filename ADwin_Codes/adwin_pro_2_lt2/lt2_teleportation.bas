@@ -32,6 +32,8 @@
 #DEFINE max_repump_duration 1000
 #DEFINE max_repump_hist_cts  100            ' dimension of photon counts histogram for repump hist 
 
+#define wait_after_pulse_duration 3
+
 DIM DATA_9[max_repump_hist_cts] AS LONG   AT EM_LOCAL ' histogram of counts during 1st repump after timed-out lde sequence
 DIM DATA_10[max_repump_hist_cts] AS LONG  AT EM_LOCAL ' histogram of counts during repump (all attempts)
 DIM DATA_19[max_repump_duration] AS FLOAT AT EM_LOCAL 'repump freq_aom voltages
@@ -388,17 +390,23 @@ EVENT:
       
         if (timer = 0) then
           P2_CNT_CLEAR(CTR_MODULE, counter_pattern)    ' clear counter
-          ' P2_CNT_ENABLE(CTR_MODULE, counter_pattern)    'turn on counter
-          ' P2_DAC(DAC_MODULE, Ex_laser_DAC_channel, 3277*Ex_RO_voltage+32768) ' turn on readout laser
+          P2_CNT_ENABLE(CTR_MODULE, counter_pattern)    'turn on counter
+          P2_DAC(DAC_MODULE, Ex_laser_DAC_channel, 3277*Ex_RO_voltage+32768) ' turn on readout laser
       
         else
       
           IF (timer = SSRO_duration) THEN
             P2_DIGOUT(DIO_MODULE, ADwin_lt1_do_channel, 1) ' Notify ADwin LT1 that we're done.
+            P2_DAC(DAC_MODULE, Ex_laser_DAC_channel, 3277*Ex_off_voltage+32768) ' turn off Ex laser
+            
+            counts = P2_CNT_READ(CTR_MODULE, counter_channel)
+            if (counts = 0) then
+              DATA_25[tele_event_id+1] = 1
+            endif
+                        
             INC(Par_80)   ' number of SSRO done signals to ADwin lt1.
             INC(par_77)   ' number of succesful teleportations.
             INC(tele_event_id)
-          
             cr_after_teleportation = 1
             mode = 4
             timer = -1
@@ -419,6 +427,7 @@ EVENT:
           repump_after_adwin_lt1_trigger = 1
           mode = 1
           timer = -1
+          'wait_time=wait_after_pulse_duration
         ENDIF
           
         '      IF (timer = 0) THEN

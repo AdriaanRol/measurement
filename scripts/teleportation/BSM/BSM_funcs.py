@@ -19,7 +19,7 @@ def finish(m, upload=True, debug=False):
 
     m.params['A_SP_durations'] = [tparams.params_lt1['repump_after_MBI_duration']]
     m.params['A_SP_amplitudes'] = [tparams.params_lt1['repump_after_MBI_amplitude']]
-    m.params['E_RO_durations'] = [tparams.params_lt1['SSRO1_duration']]
+    m.params['E_RO_durations'] = [tparams.params_lt1['SSRO_duration']]
     m.params['E_RO_amplitudes'] = [tparams.params_lt1['E_RO_amplitude']]
     m.params['send_AWG_start'] = [1]
     m.params['sequence_wait_time'] = [0]

@@ -73,7 +73,7 @@ class BSMMsmt(pulsar_msmt.MBI):
         self.mbi_elt = tseq._lt1_mbi_element(self)
         self.LDE_element = tseq._lt1_LDE_element(self)
         self.adwin_lt1_trigger_element = tseq._lt1_adwin_LT1_trigger_element(self)
-        self.N_RO_CNOT_elt = tseq._lt1_N_RO_CNOT_elt(self)
+        self.N_RO_CNOT_elt = tseq._lt1_N_RO_elt(self)
         self.wait_1us_elt = tseq._lt1_wait_1us_elt(self)
         
     def UNROT_element(self, name, N_pulse, evolution_time, time_offset, **kw):
@@ -159,7 +159,7 @@ class ElectronReadoutMsmt(BSMMsmt):
 
         self.params['A_SP_durations'] = [self.params_lt1['repump_after_MBI_duration']]
         self.params['A_SP_amplitudes'] = [self.params_lt1['repump_after_MBI_amplitude']]
-        self.params['E_RO_durations'] = [self.params_lt1['SSRO1_duration']]
+        self.params['E_RO_durations'] = [self.params_lt1['SSRO_duration']]
         self.params['E_RO_amplitudes'] = [self.params_lt1['E_RO_amplitude']]
         self.params['send_AWG_start'] = [1]
         self.params['sequence_wait_time'] = [0]
@@ -305,8 +305,8 @@ class ENReadoutMsmt(BSMMsmt):
             self.params_lt1['repump_after_MBI_amplitude'],
             self.params_lt1['repump_after_E_RO_amplitude'] ]
         self.params['E_RO_durations'] = [
-            self.params_lt1['SSRO1_duration'],
-            self.params_lt1['SSRO2_duration'] ]
+            self.params_lt1['SSRO_duration'],
+            self.params_lt1['SSRO_duration'] ]
         self.params['E_RO_amplitudes'] = [
             self.params_lt1['E_RO_amplitude'],
             self.params_lt1['E_RO_amplitude'] ]

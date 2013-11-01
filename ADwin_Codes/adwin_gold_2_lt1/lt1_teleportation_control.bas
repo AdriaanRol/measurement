@@ -8,7 +8,7 @@
 ' ADbasic_Version                = 5.0.8
 ' Optimize                       = Yes
 ' Optimize_Level                 = 1
-' Info_Last_Save                 = TUD277246  TUD277246\localadmin
+' Info_Last_Save                 = TUD276629  TUD276629\localadmin
 '<Header End>
 ' Teleportation master controller program. lt1 is in charge, lt2 is remote
 
@@ -104,6 +104,7 @@ DIM current_cr_threshold AS LONG
 DIM first_cr_probe_after_unsuccessful_lde AS INTEGER  'first CR check after timed out lde sequence
 DIM cr_after_teleportation AS INTEGER                 'first CR check after teleportation
 DIM CR_probe_max_time AS LONG
+DIM wait_before_send_BSM_done AS LONG
 
 ' MBI settings
 dim e_sp_duration as long
@@ -232,6 +233,7 @@ INIT:
   mbi_threshold                 = DATA_20[27]
   MBI_attempts_before_CR        = DATA_20[28]
   N_randomize_duration          = DATA_20[29]
+  wait_before_send_BSM_done     = DATA_20[30]
       
   repump_voltage                = DATA_21[1]
   repump_off_voltage            = DATA_21[2]
@@ -476,6 +478,7 @@ EVENT:
               INC(par_79) ' CR below threshold events
               mode = 0
               timer = -1
+              wait_time = wait_after_pulse_duration
             ELSE
               first_cr_probe_after_unsuccessful_lde = 0
               DATA_27[tele_event_id + 1] = current_red_cr_check_counts
@@ -690,10 +693,10 @@ EVENT:
           
           if (timer = RO_stop) then
             dac(e_aom_channel, 3277*E_off_voltage+32768) ' turn off Ex laser
-            if (cnt_read(counter) = 0) then
-              inc(data_24[tele_event_id+1])
+            if (cnt_read(counter) > 0) then
               DIGOUT(AWG_lt2_RO1_bit_channel, 0)
             else
+              inc(data_24[tele_event_id+1])
               DIGOUT(AWG_lt2_RO1_bit_channel, 1)
             endif           
             cnt_enable(0)
@@ -701,6 +704,7 @@ EVENT:
             mode = 9 ' next up: repetitive readout of the nuclear spin
             current_ro_repetition = 1
             timer = -1
+            current_ro_counts = 0
            
           endif
         
@@ -735,13 +739,14 @@ EVENT:
               if (current_ro_repetition = second_readout_reps) then
                 ' we're done, evaluate the readout result                
                 if (current_ro_counts > 0) then
-                  inc(data_26[tele_event_id+1])
                   DIGOUT(AWG_lt2_RO2_bit_channel, 0)
                 else
+                  inc(data_26[tele_event_id+1])
                   DIGOUT(AWG_lt2_RO2_bit_channel, 1)
                 endif
                 
                 mode = 10
+                wait_time = wait_before_send_BSM_done
                 timer = -1
                 current_ro_repetition = 1
                 current_RO_counts = 0
@@ -764,7 +769,7 @@ EVENT:
         else
           if (timer=1) then
             DIGOUT(AWG_lt2_strobe_channel, 0)
-          endif          
+          endif
         endif
                               
         ' we wait for LT2 to be done with its SSRO, then we start over

@@ -185,7 +185,8 @@ def pulse_defs_lt1(msmt):
 
     # light
     msmt.SP_pulse = pulse.SquarePulse(channel = 'Velocity1AOM', amplitude = 1.0)
-    msmt.yellow_pulse = pulse.SquarePulse(channel = 'YellowAOM', amplitude = 1.0)
+    msmt.yellow_pulse = pulse.SquarePulse(channel = 'YellowAOM', amplitude = 1.0 )
+
 
 #************************ Sequence elements LT1   ******************************
 
@@ -267,7 +268,7 @@ def _lt1_LDE_element(msmt):
 
     e.add(pulse.cp(msmt.yellow_pulse, 
                 length = msmt.params['LDE_SP_duration_yellow'], 
-                amplitude = 1.0), 
+                amplitude = 1. if msmt.params_lt1['AWG_yellow_use']  else 0.), 
             name = 'spinpumpingyellow', 
             refpulse = 'initial_delay')
 
@@ -314,7 +315,7 @@ def _lt1_N_RO_elt(msmt):
     """
     N_RO_elt = element.Element('N-RO', pulsar=msmt.pulsar_lt1)
     N_RO_elt.append(pulse.cp(msmt.T,
-                              length=500e-9))    
+                              length=1000e-9))    
     N_RO_elt.append(pulse.cp(msmt.SP_pulse,
                              length = msmt.params_lt1['N_RO_SP_duration']))
     N_RO_elt.append(pulse.cp(msmt.T,
@@ -464,7 +465,7 @@ def _lt1_UNROT_element(msmt, name,
 ##################
 def _lt1_N_init_element(msmt, name, basis = 'Y', **kw):
     echo_time_after_LDE = kw.pop('echo_time_after_LDE', msmt.params_lt1['echo_time_after_LDE'])
-    end_offset_time = -msmt.params_lt1['buffer_time_for_CNOT']
+    end_offset_time = kw.pop('end_offset_time',-msmt.params_lt1['buffer_time_for_CNOT'])
     #end_offset time: to compensate for CNOT time in next element 
 
     if basis == '-Z':
@@ -477,6 +478,8 @@ def _lt1_N_init_element(msmt, name, basis = 'Y', **kw):
             phase = 90) #pulse along -y onto x (starting in -z)
     elif basis == 'Z':
         N_pulse = pulse.cp(msmt.N_pi) #pulse onto z (starting in -z)
+    else :
+        raise Exception('Basis state not recognised')
                             
     UNROT_N_init_elt = _lt1_UNROT_element(msmt, name,
         N_pulse, 
@@ -577,7 +580,6 @@ def _lt2_LDE_element(msmt, **kw):
 
     # variable parameters
     name = kw.pop('name', 'LDE_LT2')
-    pi2_pulse_amp = kw.pop('pi2_pulse_amp', msmt.params_lt2['CORPSE_pi2_amp'])
     pi2_pulse_phase = kw.pop('pi2_pulse_phase', 0)
 
     ###
@@ -624,7 +626,7 @@ def _lt2_LDE_element(msmt, **kw):
     
     #4 MW pi/2
     if msmt.params_lt2['MW_during_LDE'] == 1:
-        e.add( pulse.cp(msmt.CORPSE_pi2, amplitude = pi2_pulse_amp, 
+        e.add( pulse.cp(msmt.CORPSE_pi2, 
             phase = pi2_pulse_phase), 
             start = -msmt.params_lt2['MW_opt_puls1_separation'],
             refpulse = 'opt pi 1', 
@@ -634,7 +636,9 @@ def _lt2_LDE_element(msmt, **kw):
     syncpulse_name = e.add(msmt.HH_sync, refpulse = 'opt pi 1', refpoint = 'start', refpoint_new = 'end')
     
     #6 plugate 1
-    e.add(msmt.plu_gate, name = 'plu gate 1', refpulse = 'opt pi 1')
+    e.add(msmt.plu_gate, name = 'plu gate 1', 
+        refpulse = 'opt pi 1',
+        start = msmt.params_lt2['PLU_1_delay'])
 
     #8 MW pi
     if msmt.params_lt2['MW_during_LDE'] == 1:
@@ -648,7 +652,7 @@ def _lt2_LDE_element(msmt, **kw):
     e.add(msmt.plu_gate, 
         name = 'plu gate 2',
         refpulse = 'opt pi {}'.format(msmt.params['opt_pi_pulses']),
-        start = 1e-9) #### NOTE somehow the second window inside the PLU arrives 1 ns earlier than the first
+        start = msmt.params_lt2['PLU_2_delay']) 
 
     #11 plugate 3
     e.add(pulse.cp(msmt.plu_gate, 
@@ -677,8 +681,6 @@ def _lt2_adwin_lt2_trigger_elt(msmt): #only used in calibration
     return sync_elt
 
 def _lt2_first_pi2(msmt, **kw):
-    CORPSE_pi2_amp = kw.pop('CORPSE_pi2_amp', msmt.params_lt2['CORPSE_pi2_amp'])
-    CORPSE_pi_shelv_amp = kw.pop('CORPSE_pi_shelv_amp', msmt.params_lt2['CORPSE_pi_amp'])
     init_ms1 = kw.pop('init_ms1', False)
     # around each pulse I make an element with length 1600e-9; 
     # the centre of the pulse is in the centre of the element.
@@ -691,12 +693,10 @@ def _lt2_first_pi2(msmt, **kw):
     first_pi2_elt.append(pulse.cp(msmt.T, length = 100e-9))
     
     if init_ms1:
-        first_pi2_elt.append(pulse.cp(msmt.CORPSE_pi, 
-            amplitude = CORPSE_pi_shelv_amp))
+        first_pi2_elt.append(pulse.cp(msmt.CORPSE_pi))
         first_pi2_elt.append(pulse.cp(msmt.T, length = 100e-9))
     
-    first_pi2_elt.append(pulse.cp(msmt.CORPSE_pi2, 
-        amplitude = CORPSE_pi2_amp))
+    first_pi2_elt.append(pulse.cp(msmt.CORPSE_pi2))
     first_pi2_elt.append(pulse.cp(msmt.T, 
         length =  CORPSE_pi2_wait_length))
 
@@ -818,7 +818,6 @@ def _lt2_dynamical_decoupling(msmt, seq, time_offset, **kw):
             CORPSE_elt.append(pulse.cp(msmt.T, 
                 length = CORPSE_pi_wait_length + 2.*CORPSE_pi2_wait_length + extra_t_between_pulses ))
         CORPSE_elt.append(pulse.cp(msmt.CORPSE_pi, 
-            amplitude = msmt.params_lt2['CORPSE_pi_amp'],
             phase = DD_pi_phase))
         CORPSE_elt.append(pulse.cp(msmt.T, 
             length = CORPSE_pi_wait_length ))
