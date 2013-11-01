@@ -9,7 +9,7 @@ from lib import config
 
 class laser_reject0r(Instrument):
     
-    def __init__(self, name, positioner, adwin, red_laser):
+    def __init__(self, name, positioner, adwin, red_laser=None):
         Instrument.__init__(self, name)
 
         self.add_function('optimize')
@@ -194,7 +194,7 @@ class laser_reject0r(Instrument):
                             min(data['counts'])))
 
                     if self.get_plot_degrees():
-                        print '\tOptimal waveplate position determined at %.0f degrees.'%(optim_pos*self.get_conversion_factor(w))
+                        print '\tOptimal waveplate position determined at %.3f degrees.'%(optim_pos*self.get_conversion_factor(w))
                     else:
                         print '\tOptimal waveplate position determined at %d steps.'%optim_pos
     
@@ -264,7 +264,7 @@ class laser_reject0r(Instrument):
         """
         
         #turn off red
-        self.red.set_power(0)
+        #self.red.set_power(0)
         
         dx = getattr(self,'_'+w+'_stepsize')
         pts = getattr(self,'_'+w+'_noof_points')
@@ -294,14 +294,14 @@ class laser_reject0r(Instrument):
             self.rotator.quick_scan(X, getattr(self,'_'+w+'_channel'))
 
             #turn on red
-            self.red.set_power(red_power)
+            #self.red.set_power(red_power)
             qt.msleep(0.1)
 
             #get counts/ voltage
             y[idx] = self.adwin.get_countrates()[self._zpl_counter-1]
             
             #turn off red
-            self.red.set_power(0)
+            #self.red.set_power(0)
 
             #add to plot
             if self.get_plot_degrees():
@@ -450,9 +450,9 @@ class laser_reject0r(Instrument):
         self.first_time_run('quarter')
 
         #test if initial point is a valid starting point for optimization!
-        self.red.set_power(self.get_opt_red_power())
+        #self.red.set_power(self.get_opt_red_power())
         crate = self.adwin.get_countrates()[self._zpl_counter-1]
-        self.red.set_power(0)
+        #self.red.set_power(0)
 
         if crate < self._opt_threshold:
             self.optimize(cycles = 5, waveplates = ['half', 'quarter'], 
@@ -468,7 +468,7 @@ class laser_reject0r(Instrument):
         For more randomization choose a higher value for steps.
         """
         
-        self.red.set_power(0)
+        #self.red.set_power(0)
         
         for k in range(steps):
             for idx,waveplate in enumerate(w):
