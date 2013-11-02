@@ -294,7 +294,7 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
                 repetitions = 20)
 
         #A_[ms,mi]
-        #Y:=0 phase, X:=90
+        # rotation axes: Y:=0 phase, X:=90 
 
         ################################################### FF, DD and RO ##################################################################
         #TWO OPTIONS 'ALLES, of NIETS':
@@ -420,7 +420,7 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
         ### JUMPING
         # EV0: first BSM: ms0 = 0, ms-1 = 1 --> espin
         # EV1: second BSM: ms0 = 0, ms-1 = 1 --> Nspin
-        # EV2: EMPTY - -- 1 = decoupling, 0 = FF
+        # EV2: 1 = decoupling, 0 = FF
         # EV3: PLU: psi+ = 0,  psi- = 1
         # int('xxxx',2) --> EV (3210)
 

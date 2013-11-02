@@ -235,7 +235,7 @@ def dd_sweep_LDE_DD_XYX_t_between_pulse(name):
     # sweep params
     m.params_lt2['extra_ts_between_pulses'] = 400e-9 + np.linspace(-2e-6,2e-6,pts)
     
-    m.params_lt2['DD_pi_phases'] = [-90,0,-90]
+    m.params_lt2['DD_pi_phases'] = [90,0,90]
     m.dd_sweep_LDE_spin_echo_time_msmt()
 
     # for the autoanalysis
@@ -259,7 +259,7 @@ def dd_sweep_LDE_DD_XYX_free_evolution_time(name):
     #m.params_lt2['A_SP_amplitude'] = 0. #use LDE element SP. 
     
     # sweep params
-    m.params_lt2['pi2_pulse_phase'] = -90
+    m.params_lt2['pi2_pulse_phase'] = 0
     m.params_lt2['free_evolution_times'] = np.linspace(-1e-6,1e-6,pts) + m.params_lt2['first_C_revival']
 
     m.params_lt2['DD_pi_phases'] = [90,0,90]
