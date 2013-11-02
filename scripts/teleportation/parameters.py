@@ -217,7 +217,7 @@ params['HH_sync_period'] = 400e-9 # in seconds -- important for checking (see me
 									#Question from hannes: is this the separation of the optical pi pulses?
 
 # LDE Sequence in the AWGs
-params_lt2['eom_pulse_duration']        = 2e-9
+params_lt2['eom_pulse_duration']        = 20e-9
 params_lt2['eom_off_duration']          = 100e-9
 params_lt2['eom_off_amplitude']         = -.26  # calibration from 23-08-2013
 params_lt2['eom_pulse_amplitude']       = 1.2

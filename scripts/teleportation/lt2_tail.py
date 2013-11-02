@@ -128,7 +128,8 @@ def tail_lt2(name):
     m.setup()
     m.run()    
     m.save()
+    qt.instruments['AWG'].set_runmode('CONT')
     # m.finish()
 
 if __name__ == '__main__':
-    tail_lt2('lt2_tail_testing')
+    tail_lt2('lt2_tailS')
