@@ -10,7 +10,6 @@ import measurement.lib.measurement2.measurement as m2
 from measurement.lib.measurement2.adwin_ssro import ssro
 
 SAMPLE_CFG = qt.cfgman['protocols']['current']
-print SAMPLE_CFG
 
 def ssrocalibration(name):
     m = ssro.AdwinSSRO('SSROCalibration_'+name)   
@@ -23,7 +22,7 @@ def ssrocalibration(name):
     m.params['SSRO_repetitions'] = 5000
 
     m.params['A_CR_amplitude'] = 15e-9 #5e-9
-    m.params['E_CR_amplitude'] = 7e-9 #5e-9
+    m.params['E_CR_amplitude'] = 4e-9 #5e-9
 
     m.params['SSRO_duration'] = 50
     m.params['CR_preselect'] = 2000

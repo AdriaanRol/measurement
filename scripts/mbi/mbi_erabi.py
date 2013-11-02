@@ -17,8 +17,8 @@ def run(name):
     m.params['MW_pulse_delays'] = np.ones(pts) * 2000e-9
 
     # MW pulses
-    m.params['MW_pulse_durations'] = np.linspace(0,1600e-9,pts) + 10e-9
-    m.params['MW_pulse_amps'] = np.ones(pts) * 0.08
+    m.params['MW_pulse_durations'] = np.linspace(0,500e-9,pts) + 10e-9
+    m.params['MW_pulse_amps'] = np.ones(pts) * 0.8
     m.params['MW_pulse_mod_frqs'] = np.ones(pts) * \
         m.params['AWG_MBI_MW_pulse_mod_frq']
 
@@ -29,5 +29,5 @@ def run(name):
     funcs.finish(m, debug=False)
 
 if __name__ == '__main__':
-    run('hans4_finding_pi2pi_frq')
+    run('hans1_finding_fast_rabi_frequency')
 

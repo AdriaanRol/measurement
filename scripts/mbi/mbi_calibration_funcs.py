@@ -174,4 +174,5 @@ def run_calibrations(stage):
 
 
 if __name__ == '__main__':    
+    # cal_slow_pi(SAMPLE_CFG)
     cal_pi2pi_pi(SAMPLE_CFG, 5)
