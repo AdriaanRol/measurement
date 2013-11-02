@@ -132,12 +132,13 @@ def sweep_amplitude(name):
     
     funcs.finish(m, debug=False)
 
-def lt1_hans4_calibrate_msm1_pi(name='hans4_msm1_pi'):
+def lt1_hans1_calibrate_msm1_pi(name='hans1_msm1_pi'):
     m = CORPSEPiCalibration(name)
     funcs.prepare(m)
 
     pts = 11
-    CORPSE_frq = 8e6
+    CORPSE_frq = 6.5e6
+    m.params['CORPSE_rabi_frequency'] = CORPSE_frq
     m.params['CORPSE_pi_amp'] = m.params['msm1_CORPSE_pi_amp']
     m.params['CORPSE_pi_60_duration'] = 1./CORPSE_frq/6.
     m.params['CORPSE_pi_m300_duration'] = 5./CORPSE_frq/6.
@@ -148,7 +149,7 @@ def lt1_hans4_calibrate_msm1_pi(name='hans4_msm1_pi'):
     m.params['repetitions'] = 1000
 
     # sweep params
-    m.params['CORPSE_pi_sweep_amps'] = np.linspace(0.65, 0.9, pts)
+    m.params['CORPSE_pi_sweep_amps'] = np.linspace(0.7, 0.9, pts)
     m.params['multiplicity'] = 5
     m.params['delay_reps'] = 15
 
@@ -189,5 +190,5 @@ def lt1_hans4_calibrate_msm1_pi2(name='hans4_msm1_pi'):
 
 if __name__ == '__main__':
     #sweep_amplitude('sil4_test')
-    lt1_hans4_calibrate_msm1_pi()
-    lt1_hans4_calibrate_msm1_pi2()
+    lt1_hans1_calibrate_msm1_pi()
+    # lt1_hans4_calibrate_msm1_pi2()

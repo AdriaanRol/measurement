@@ -18,20 +18,9 @@ def darkesr(name):
    
     m.params.from_dict(qt.cfgman.get('samples/'+SAMPLE))
     m.params.from_dict(qt.cfgman['protocols']['AdwinSSRO'])
-
-    print m.params['repump_amplitude']
-
     m.params.from_dict(qt.cfgman['protocols'][SAMPLE_CFG]['AdwinSSRO'])
-
-    print m.params['repump_amplitude']
-
     m.params.from_dict(qt.cfgman['protocols'][SAMPLE_CFG]['AdwinSSRO-integrated'])
-
-    print m.params['repump_amplitude']
-
     m.params.from_dict(qt.cfgman['protocols']['AdwinSSRO+espin'])   
-
-    print m.params['repump_amplitude']
 
     m.params['mw_frq'] = 2.8e9
     m.params['mw_power'] = 20
