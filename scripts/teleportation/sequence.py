@@ -147,6 +147,14 @@ def pulse_defs_lt1(msmt):
         amplitude = msmt.params_lt1['pi2pi_mIm1_amp'],
         length = msmt.params_lt1['pi2pi_mIm1_duration'])
 
+    msmt.pi2pi_0 = pulselib.MW_IQmod_pulse('pi2pi pulse mI=0',
+        I_channel = 'MW_Imod',
+        Q_channel = 'MW_Qmod',
+        PM_channel = 'MW_pulsemod',
+        PM_risetime = msmt.params_lt1['MW_pulse_mod_risetime'],
+        frequency = msmt.params_lt1['pi2pi_mI0_mod_frq'],
+        amplitude = msmt.params_lt1['pi2pi_mI0_amp'],
+        length = msmt.params_lt1['pi2pi_mI0_duration'])
 
     # rf pulses
     msmt.TN = pulse.SquarePulse(channel='RF',

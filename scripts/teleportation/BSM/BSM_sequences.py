@@ -105,6 +105,7 @@ class BSMMsmt(pulsar_msmt.MBI):
             *N_RO_elements, **kw):
 
         append_sync = kw.pop('append_sync', True)
+        N_RO_repetitions = kw.pop('N_RO_repetitions', 1)
 
         # the sequence
         seq = pulsar.Sequence('{}_{} sequence'.format(self.mprefix, 
@@ -142,10 +143,11 @@ class BSMMsmt(pulsar_msmt.MBI):
                 seq.append(name = 'sync-{}'.format(i), 
                     wfname = self.adwin_lt1_trigger_element.name)
 
-            for j,e in enumerate(N_RO_elements):
-                seq.append(name = 'N_RO-{}-{}'.format(i,j),
-                    wfname = e.name,
-                    trigger_wait = (j==0 and append_sync))
+            for k in range(N_RO_repetitions):
+                for j,e in enumerate(N_RO_elements):
+                    seq.append(name = 'N_RO-{}-{}-{}'.format(i,k,j),
+                        wfname = e.name,
+                        trigger_wait = (j==0 and append_sync))
 
         return seq
 
@@ -292,26 +294,42 @@ class NRabiMsmt(NReadoutMsmt):
 
 class ENReadoutMsmt(BSMMsmt):
     mprefix = 'BSM_ENReadout'
+    repetitive_readout = False
 
     def autoconfig(self):
-        self.params['nr_of_ROsequences'] = 2
+        
+        self.params['nr_of_ROsequences'] = 1
+
+        if self.repetitive_readout:
+            self.params['nr_of_ROsequences'] += self.params['N_RO_repetitions']
+        else:
+            self.params['nr_of_ROsequences'] += 1
 
         BSMMsmt.autoconfig(self)
         
-        self.params['A_SP_durations'] = [
-            self.params_lt1['repump_after_MBI_duration'],
-            self.params_lt1['repump_after_E_RO_duration'] ]
-        self.params['A_SP_amplitudes'] = [
-            self.params_lt1['repump_after_MBI_amplitude'],
-            self.params_lt1['repump_after_E_RO_amplitude'] ]
-        self.params['E_RO_durations'] = [
-            self.params_lt1['SSRO_duration'],
-            self.params_lt1['SSRO_duration'] ]
-        self.params['E_RO_amplitudes'] = [
-            self.params_lt1['E_RO_amplitude'],
-            self.params_lt1['E_RO_amplitude'] ]
-        self.params['send_AWG_start'] = [1, 1]
-        self.params['sequence_wait_time'] = [0, 0]
+        self.params['A_SP_durations'] = [ self.params_lt1['repump_after_MBI_duration'] ]
+        for i in range(self.params['nr_of_ROsequences']-1):
+            self.params['A_SP_durations'].append(self.params_lt1['repump_after_E_RO_duration'])
+
+        self.params['A_SP_amplitudes'] = [ self.params_lt1['repump_after_MBI_amplitude'] ]
+        for i in range(self.params['nr_of_ROsequences']-1):
+            self.params['A_SP_amplitudes'].append(self.params_lt1['repump_after_E_RO_amplitude'])
+
+        self.params['E_RO_durations'] = [ self.params_lt1['SSRO_duration'] ]
+        for i in range(self.params['nr_of_ROsequences']-1):
+            self.params['E_RO_durations'].append(self.params_lt1['SSRO_duration'])
+
+        self.params['E_RO_amplitudes'] = [ self.params_lt1['E_RO_amplitude'] ]
+        for i in range(self.params['nr_of_ROsequences']-1):
+            self.params['E_RO_amplitudes'].append(self.params_lt1['E_RO_amplitude'])
+        
+        self.params['send_AWG_start'] = [ 1 ]
+        for i in range(self.params['nr_of_ROsequences']-1):
+            self.params['send_AWG_start'].append(1)
+
+        self.params['sequence_wait_time'] = [0]
+        for i in range(self.params['nr_of_ROsequences']-1):
+            self.params['sequence_wait_time'].append(0)
 
     def generate_sequence(self, upload=True):
         # load all the other pulsar resources
@@ -558,6 +576,52 @@ class TheRealBSM(ENReadoutMsmt):
 
         self.seq = self._add_MBI_and_sweep_elements_to_sequence(
             sweep_elements, self.N_RO_CNOT_elt, self.adwin_lt1_trigger_element)
+
+    
+    def _BS_element(self, name, bs, **kw):
+        
+        ### make the element
+        BS_elt = element.Element('BS-{}'.format(name), 
+            pulsar = qt.pulsar,
+            global_time = True)
+        BS_elt.append(self.TIQ)
+        BS_elt.append(self.shelving_pulse)
+        BS_elt.append(pulse.cp(self.TIQ, length = 200e-9))
+       
+        N_rot_name = BS_elt.append(pulse.cp(self.N_pi2))
+        BS_elt.append(self.TIQ)
+        
+        if bs == 'phi':
+            CNOT = pulse.cp(self.pi2pi_0)            
+        elif bs == 'psi':
+            CNOT = pulse.cp(self.pi2pi_m1)
+        CNOT_name = BS_elt.append(CNOT)
+
+        return BS_elt
+
+    def test_BSM_contrast(self, bs='psi'):
+        sweep_elements = []
+        self.flattened_elements = []
+        self.seq = pulsar.Sequence('{}_{}-Sequence'.format(self.mprefix, 
+            self.name))
+
+        bs_elt = self._BS_element(bs, bs)
+        self.flattened_elements.append(bs_elt)
+
+        for i in range(self.params['pts']):
+            CNOT, UNROT_H = self.BSM_elements('{}'.format(i), 
+                time_offset = bs_elt.length(),
+                H_phase = self.params_lt1['H_phases'][i], 
+                evolution_time = self.params_lt1['H_evolution_time'])
+
+            self.flattened_elements.append(CNOT)
+            self.flattened_elements.append(UNROT_H)
+            
+            sweep_elements.append([bs_elt, CNOT, UNROT_H])
+
+        self.seq = self._add_MBI_and_sweep_elements_to_sequence(
+            sweep_elements, self.N_RO_CNOT_elt, self.adwin_lt1_trigger_element,
+            N_RO_repetitions = 1 if not self.repetitive_readout else self.params_lt1['N_RO_repetitions'])
 
     ### tools
 
