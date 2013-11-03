@@ -71,7 +71,7 @@ print 'updating msmt params for {}'.format(cfg['samples']['current'])
 
 branch='samples/hans-sil1/'
 
-f_msm1_cntr = 2.828069e9
+f_msm1_cntr = 2.828053e9
 N_frq = 7.13456e6
 N_HF_frq = 2.19290e6
 cfg.set(branch+'ms-1_cntr_frq', f_msm1_cntr)
