@@ -135,8 +135,8 @@ params_lt1['AWG_MBI_MW_pulse_mod_frq'] = finit_lt1
 params_lt1['N_ref_frq'] = N_frq_lt1
 params_lt1['e_ref_frq'] = finit_lt1
 params_lt1['pi2_evolution_time'] = 52.436241e-6
-params_lt1['H_evolution_time'] = 35.068e-6
-params_lt1['H_phase'] = 109.24 # was -72,  was 61, 28
+params_lt1['H_evolution_time'] = 35.075029e-6
+params_lt1['H_phase'] = 103.94 # was -72,  was 61, 28
 params_lt1['echo_time_after_LDE'] = -462e-9
 
 params_lt1['buffer_time_for_CNOT'] = 240e-9
@@ -146,17 +146,17 @@ params_lt1['buffer_time_for_CNOT'] = 240e-9
 
 ## pulses
 params_lt1['fast_pi_mod_frq'] = finit_lt1
-params_lt1['fast_pi_amp'] = 0.818
+params_lt1['fast_pi_amp'] = 0.823
 params_lt1['fast_pi_duration'] = 80e-9
 
 # fast pi/2 pulse
 params_lt1['fast_pi2_mod_frq'] = finit_lt1
-params_lt1['fast_pi2_amp'] = 0.818
+params_lt1['fast_pi2_amp'] = 0.823
 params_lt1['fast_pi2_duration'] = 40e-9
 
 # slow pi  pulse
 params_lt1['selective_pi_mod_frq'] = finit_lt1
-params_lt1['selective_pi_amp'] =  0.0181
+params_lt1['selective_pi_amp'] =  0.0166
 params_lt1['selective_pi_duration'] = 2500e-9
 
 CORPSE_frq_lt1 = 5e6
@@ -164,7 +164,7 @@ params_lt1['CORPSE_pi_mod_frq'] = finit_lt1 + N_HF_frq_lt1/2.
 params_lt1['CORPSE_pi_60_duration'] = 1./CORPSE_frq_lt1/6.
 params_lt1['CORPSE_pi_m300_duration'] = 5./CORPSE_frq_lt1/6.
 params_lt1['CORPSE_pi_420_duration'] = 7./CORPSE_frq_lt1/6.
-params_lt1['CORPSE_pi_amp'] = 0.518
+params_lt1['CORPSE_pi_amp'] = 0.520
 params_lt1['CORPSE_pi_phase_shift'] = 90.0
 params_lt1['CORPSE_pi_center_shift'] = 0.e-9
 
@@ -173,10 +173,10 @@ params_lt1['pi2pi_mIm1_amp'] = 0.108
 params_lt1['pi2pi_mIm1_duration'] = 396e-9
 
 params_lt1['pi2pi_mI0_mod_frq'] = finit_lt1 + N_HF_frq_lt1
-params_lt1['pi2pi_mI0_amp'] = 0.106
+params_lt1['pi2pi_mI0_amp'] = 0.107
 params_lt1['pi2pi_mI0_duration'] = 396e-9
 
-params_lt1['N_pi_duration'] = 48.55e-6
+params_lt1['N_pi_duration'] = 48.215e-6
 params_lt1['N_pi_amp'] = .55
 
 params_lt1['N_pi2_duration'] = params_lt1['N_pi_duration']/2.
