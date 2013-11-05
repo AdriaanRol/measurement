@@ -290,11 +290,11 @@ class MBI(PulsarMeasurement):
                         self.params['repump_amplitude'])
                 
         self.adwin_process_params['repump_off_voltage'] = \
-                self.params['repump_off_voltage']
+                self.repump_aom.get_pri_V_off()
         self.adwin_process_params['A_off_voltage'] = \
-                self.params['A_off_voltage']
+                self.A_aom.get_pri_V_off()
         self.adwin_process_params['Ex_off_voltage'] = \
-                self.params['Ex_off_voltage']        
+                self.E_aom.get_pri_V_off()  
         
         qt.msleep(1)
         self.adwin.load_MBI()

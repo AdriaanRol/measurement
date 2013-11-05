@@ -153,6 +153,12 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
         self.params_lt1['repump_N_randomize_voltage'] = \
             self.repump_aom_lt1.power_to_voltage(
                     self.params_lt1['repump_N_randomize_amplitude'])
+
+        self.params_lt1['E_off_voltage'] = self.E_aom_lt1.get_pri_V_off()
+        self.params_lt1['A_off_voltage'] = self.A_aom_lt1.get_pri_V_off()
+        self.params_lt1['repump_off_voltage'] = self.repump_aom_lt1.get_pri_V_off()
+
+        
                
         # LT2 laser configuration
 
@@ -190,6 +196,10 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
         self.params_lt2['A_RO_voltage'] = \
                 self.A_aom_lt2.power_to_voltage(
                         self.params_lt2['A_RO_amplitude'])
+
+        self.params_lt2['Ey_off_voltage'] = self.E_aom_lt2.get_pri_V_off()
+        self.params_lt2['A_off_voltage'] =  self.A_aom_lt2.get_pri_V_off()
+        self.params_lt2['repump_off_voltage'] = self.repump_aom_lt2.get_pri_V_off()
                        
         self.params_lt2['repump_voltage'] = \
                 self.repump_aom_lt2.power_to_voltage(

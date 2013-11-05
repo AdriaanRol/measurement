@@ -11,7 +11,7 @@
 
 
 from instrument import Instrument
-from numpy import *
+import numpy as np
 from analysis.lib.fitting import fit, common
 import os,sys,time
 import qt
@@ -75,6 +75,12 @@ class AOM(Instrument):
                            flags=Instrument.FLAG_GETSET,
                            units='V',
                            minval=-10.0,maxval=0)
+
+        self.add_parameter('pri_V_off',
+                           type=types.FloatType,
+                           flags=Instrument.FLAG_GETSET,
+                           units='V',
+                           minval=-1.,maxval=1.)
         
         self.add_parameter('sec_controller', 
                            type = types.StringType, 
@@ -114,6 +120,12 @@ class AOM(Instrument):
                            units='V',
                            minval=-10.0,maxval=0)
 
+        self.add_parameter('sec_V_off',
+                           type=types.FloatType,
+                           flags=Instrument.FLAG_GETSET,
+                           units='V',
+                           minval=-1.,maxval=1.)
+
         self.add_parameter('switchable',
                            type=types.BooleanType,
                            flags=Instrument.FLAG_GETSET)
@@ -128,6 +140,8 @@ class AOM(Instrument):
         self._ins_awg=qt.instruments[use_awg]
         self._ins_pm=qt.instruments[use_pm]
 
+        self._calib_off_voltage = False
+
         # set defaults
         self._wavelength = 637e-9
         self._pri_controller =  "ADWIN"
@@ -137,7 +151,8 @@ class AOM(Instrument):
         self._pri_cal_xc =      0.588
         self._pri_cal_k =       6.855
         self._pri_V_max =       8.0
-        self._pri_V_min =       0
+        self._pri_V_min =       0.
+        self._pri_V_off =       0.
         self._switchable =      False
         self._switch_DO =       16
         self._sec_controller =  "AWG"
@@ -146,8 +161,8 @@ class AOM(Instrument):
         self._sec_cal_xc =      0.588
         self._sec_cal_k =       6.855
         self._sec_V_max =       1.0
-        self._sec_V_min =       0
-        self._V_zero_power =    0.
+        self._sec_V_min =       0.
+        self._sec_V_off =       0.
         self.get_all()
        
         # override from config       
@@ -191,8 +206,9 @@ class AOM(Instrument):
         channel = self.get_channel()
         V_max = self.get_V_max()
         V_min = self.get_V_min()
+        V_off = self.get_V_off()
         
-        if not(V_min <= U <= V_max):
+        if not(V_min <= U <= V_max) and not(self._calib_off_voltage) and not(U == V_off):
             logging.warning(self.get_name() + ' Error: extreme voltage of this channel exceeded: ')
             print 'U is not %.2f =< %.2f =< %.2f' % (V_min, U, V_max)
             return
@@ -248,12 +264,56 @@ class AOM(Instrument):
             logging.warning(self.get_name() + ' Error: unknown AOM controller %s'%controller)
         return
 
-    def calibrate(self, steps): # calibration values in uW
-        rng = arange(0,steps)
-        x = zeros(steps,dtype = float)
-        y = zeros(steps,dtype = float)
+    def calibrate_V_off(self, steps, calrange=(-0.1,0.1)): # calibration values in uW
+
+
+        if np.max(np.abs(calrange)) > np.max(np.abs((self.get_V_max(), self.get_V_min()))):
+            logging.warning(self.get_name() + ' Error: extreme voltage of this channel exceeded: ')
+            print 'bad calibration range', calrange
+            return
+
+        x = np.linspace(calrange[0], calrange[1], steps)
+        y = np.zeros(steps,dtype = float)
+
+        self._calib_off_voltage = True
+        for i,xi in enumerate(x):
+            self.apply_voltage(xi)
+            time.sleep(0.5)
+            y[i] = self._ins_pm.get_power()
+            print 'measured power at %.2f V: %.4f uW' % \
+                    (xi, y[i]*1e6)
+        self._calib_off_voltage = False
+
+        dat = qt.Data(name= 'aom_off_calibration_'+self._name+'_'+\
+        self._cur_controller)
+        dat.add_coordinate('Voltage [V]')
+        dat.add_value('Power [W]')
+        dat.create_file()
+        plt = qt.Plot2D(dat, 'rO', name='aom calibration', coorddim=0, valdim=1, 
+                clear=True)
+        plt.add_data(dat, coorddim=0, valdim=1)
+        dat.add_data_point(x,y)
+        dat.close_file()
+        plt.save_png(dat.get_filepath()+'png')
+
+
+        self.set_V_off(x[np.argmin(y)])
+
+        self.save_cfg()
+
+        print 'V off voltage found %.3f.' %self.get_V_off()
+        print (self._name+' calibration finished')
+
         
-        self.apply_voltage(0)
+
+
+
+    def calibrate(self, steps): # calibration values in uW
+        rng = np.arange(0,steps)
+        x = np.zeros(steps,dtype = float)
+        y = np.zeros(steps,dtype = float)
+        
+        self.set_power(0)
         self._ins_pm.set_wavelength(self._wavelength)
         time.sleep(2)
         bg = self._ins_pm.get_power()
@@ -274,14 +334,14 @@ class AOM(Instrument):
             y[a] = self._ins_pm.get_power() - bg
             
             print 'measured power at %.2f V: %.4f uW' % \
-                    (a*(V_max-V_min)/float(steps-1)+V_min, y[a]*1e6)
+                    (x[a], y[a]*1e6)
         
         #x= x*(V_max-V_min)/float(steps-1)+V_min 
-        a, xc, k = copysign(max(y), V_max + V_min), copysign(.1, V_max + V_min), copysign(10., V_max + V_min)
+        a, xc, k = np.copysign(np.max(y), V_max + V_min), np.copysign(.1, V_max + V_min), np.copysign(5., V_max + V_min)
         fitres = fit.fit1d(x,y, common.fit_AOM_powerdependence, 
                 a, xc, k, do_print=True, ret=True)
      
-        fd = zeros(len(x))        
+        fd = np.zeros(len(x))        
         if type(fitres) != type(False):
             p1 = fitres['params_dict']
             self.set_cal_a(p1['a'])
@@ -324,11 +384,11 @@ class AOM(Instrument):
             logging.warning(self.get_name() + ' Error: controller', controller, 'not registered.')
             
         if p <= 0:
-            voltage = 0
+            voltage = self.get_V_off()
         else:
-            voltage = xc-log(log(a/float(p)))/k
+            voltage = xc-np.log(np.log(a/float(p)))/k
 
-        if isnan(voltage):
+        if np.isnan(voltage):
             logging.warning(self.get_name() + ' Error: power out of calibration range')
         
         return voltage
@@ -338,10 +398,10 @@ class AOM(Instrument):
         xc = self.get_cal_xc()
         k = self.get_cal_k()
 
-        #if u <= 0:
-        #    power = 0
-        #else:
-        power=a/(exp(exp(k*(-float(u)+xc))))
+        if u == self.get_V_off():
+            power = 0.
+        else:
+            power=a/(np.exp(np.exp(k*(-float(u)+xc))))
         return power
 
     def set_power(self,p): # power in Watt
@@ -351,21 +411,21 @@ class AOM(Instrument):
         return self.voltage_to_power(self.get_voltage())
 
     def turn_on(self):
-        if abs(self.get_V_min())>self.get_V_max():
+        if np.abs(self.get_V_min())>self.get_V_max():
             v=self.get_V_min()
         else:
             v=self.get_V_max()
         self.apply_voltage(v)
 
     def turn_off(self):
-        self.apply_voltage(0)
+        self.set_power(0)
 
     def do_set_cur_controller(self, val):
         # print val
         
-        if self.get_voltage() != 0:
-             print 'To change controller, please set output voltage to 0 V first.'
-             print 'Current output:', self.get_voltage() , 'V'
+        if self.get_power() > 0.:
+             print 'To change controller, please set output power to 0 first.'
+             print 'Current output:', self.get_power() , 'W, at', self.get_voltage(), 'V'
              print 'Controller not changed.'
              return
 
@@ -523,6 +583,18 @@ class AOM(Instrument):
         else:
             return self.do_get_sec_V_min()
 
+    def set_V_off(self, val):
+        if self._cur_controller == self._pri_controller:
+            self.do_set_pri_V_off(val)
+        else:
+            self.do_set_sec_V_off(val)
+
+    def get_V_off(self):
+        if self._cur_controller == self._pri_controller:
+            return self.do_get_pri_V_off()
+        else:
+            return self.do_get_sec_V_off()
+
     def do_set_pri_V_max(self, val):
         self._pri_V_max = val
         # self.save_cfg()
@@ -539,17 +611,27 @@ class AOM(Instrument):
 
     def do_set_pri_V_min(self, val):
         self._pri_V_min = val
-        # self.save_cfg()
 
     def do_set_sec_V_min(self, val):
         self._sec_V_min = val
-        # self.save_cfg()
+
+    def do_set_pri_V_off(self, val):
+        self._pri_V_off = val
+
+    def do_set_sec_V_off(self, val):
+        self._sec_V_off = val
 
     def do_get_pri_V_min(self):
         return self._pri_V_min
 
     def do_get_sec_V_min(self):
         return self._sec_V_min
+
+    def do_get_pri_V_off(self):
+        return self._pri_V_off
+
+    def do_get_sec_V_off(self):
+        return self._sec_V_off
 
     def set_channel(self, val):
         if self._cur_controller == self._pri_controller:
