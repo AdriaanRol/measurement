@@ -223,7 +223,7 @@ class optimize1d_counts(CyclopeanInstrument):
 	    
         dimname=self._dimension
         self._opt_pos = getattr(self._mos, 'get_'+self._dimension)()
-    
+        self._opt_pos_prev = getattr(self._mos, 'get_'+self._dimension)()
         l = self._scan_length
         self._x0, self._x1 = self._opt_pos - l/2, self._opt_pos + l/2
         self._linescan.set_dimensions([self._dimension])
@@ -290,6 +290,7 @@ class optimize1d_counts(CyclopeanInstrument):
                     self._opt_pos = self._fit_result[0]
                     ret = True
                     print '(%s) optimize succeeded!' % self.get_name()
+
                 
                 else:
                     self.set_data('fit', zeros(len(p)))
@@ -306,5 +307,9 @@ class optimize1d_counts(CyclopeanInstrument):
         else:
             self._mos.set(self._dimension, value=p[cr.tolist().index(max(cr))])
             print'Optimum outside scan range: Position is set to local maximum'
+
+        print "Position changed %d nm" % \
+                        (self._opt_pos*1E3-self._opt_pos_prev*1E3)
+
         return ret
 
