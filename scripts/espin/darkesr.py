@@ -24,7 +24,7 @@ def darkesr(name):
 
     m.params['mw_frq'] = 2.8e9
     m.params['mw_power'] = 20
-    m.params['repetitions'] = 1000
+    m.params['repetitions'] = 500
 
     m.params['ssbmod_frq_start'] = 28.28e6 - 4e6
     m.params['ssbmod_frq_stop'] = 28.28e6 + 4e6

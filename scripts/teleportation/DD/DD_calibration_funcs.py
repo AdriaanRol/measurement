@@ -282,6 +282,9 @@ def run_calibrations(stage):
     if stage==0.25:
         print 'Cal SSRO'
         cal_ssro_teleportation(name, A_SP_duration = 250)
+    if stage==0.5:
+        print "execute darkesr:  execfile(r'd:/measuring/measurement/scripts/espin/darkesr.py')"
+       
     if stage == 1:
         print 'Cal CORPSE pi'
         cal_CORPSE_pi(name,multiplicity = 11)
@@ -300,6 +303,7 @@ if __name__ == '__main__':
     #execfile('d:/measuring/measurement/scripts/lt2_scripts/setup/msmt_params.py')
     #run_calibrations(0)
     #run_calibrations(0.25)
+    #run_calibrations(0.5)
     #run_calibrations(1)
     #run_calibrations(1.5)
     #run_calibrations(2)
