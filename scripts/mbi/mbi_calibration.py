@@ -9,9 +9,9 @@ SAMPLE = qt.cfgman['samples']['current']
 SAMPLE_CFG = qt.cfgman['protocols']['current']
 
 # TODO should go into calibration file if this works
-MIM1_AMP = 0.006578
-MI0_AMP = 0.006590
-MIP1_AMP = 0.006548
+MIM1_AMP = 0.005324
+MI0_AMP = 0.005151
+MIP1_AMP = 0.005080
 
 # In principle the msmt is just a Rabi msmt - but I want a different prefix :)
 class MBICalibration(pulsar_mbi_espin.ElectronRabi):
@@ -41,18 +41,18 @@ def run(name):
 
     pts = 4
     m.params['pts'] = pts
-    m.params['reps_per_ROsequence'] = 1000
+    m.params['reps_per_ROsequence'] = 10000
     
     # MBI
     m.params['SP_E_duration'] = 100
     m.params['Ex_SP_amplitude'] = 15e-9
     # m.params['AWG_MBI_MW_pulse_amp'] = 0 # set to zero for testing (then the populations of all N-states should be the same )
     # m.params['MBI_threshold'] = 0
-    m.params['max_MBI_attempts'] = 1
+    m.params['max_MBI_attempts'] = 100
 
-    m.params['N_randomize_duration'] = 1
-    m.params['Ex_N_randomize_amplitude'] = 0e-9
-    m.params['A_N_randomize_amplitude'] = 0e-9
+    m.params['N_randomize_duration'] = 50
+    m.params['Ex_N_randomize_amplitude'] = 10e-9
+    m.params['A_N_randomize_amplitude'] = 10e-9
     m.params['repump_N_randomize_amplitude'] = 0
 
 
@@ -60,7 +60,7 @@ def run(name):
     m.params['MW_pulse_multiplicities'] = np.ones(pts).astype(int)
     m.params['MW_pulse_delays'] = np.ones(pts) * 2000e-9
 
-    m.params['MW_pulse_durations'] = np.ones(pts) * 6e-6 # the four readout pulse durations
+    m.params['MW_pulse_durations'] = np.ones(pts) * 8.3e-6 # the four readout pulse durations
     m.params['MW_pulse_amps'] = np.array([MIM1_AMP, MI0_AMP, MIP1_AMP, 0.]) # calibrated powers for equal-length pi-pulses
 
     # Assume for now that we're initializing into m_I = -1 (no other nuclear spins)
@@ -77,4 +77,4 @@ def run(name):
     funcs.finish(m, debug=False)
 
 if __name__ == '__main__':
-    run(SAMPLE + '_' + 'testing')
+    run(SAMPLE)

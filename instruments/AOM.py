@@ -337,7 +337,7 @@ class AOM(Instrument):
                     (x[a], y[a]*1e6)
         
         #x= x*(V_max-V_min)/float(steps-1)+V_min 
-        a, xc, k = np.copysign(np.max(y), V_max + V_min), np.copysign(.5, V_max + V_min), np.copysign(5., V_max + V_min)
+        a, xc, k = np.copysign(np.max(y), V_max + V_min), np.copysign(.1, V_max + V_min), np.copysign(5., V_max + V_min)
         fitres = fit.fit1d(x,y, common.fit_AOM_powerdependence, 
                 a, xc, k, do_print=True, ret=True)
      

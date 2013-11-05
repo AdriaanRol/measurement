@@ -55,12 +55,14 @@ class PulsarMeasurement(ssro.IntegratedSSRO):
     def generate_sequence(self):
         pass
 
+    def stop_sequence(self):
+        self.awg.stop()
+
     def finish(self,**kw):
         ssro.IntegratedSSRO.finish(self,**kw)
         
         self.awg.stop()
-        self.awg.set_runmode('CONT')
-        
+        self.awg.set_runmode('CONT')        
 
         self.mwsrc.set_status('off')
         self.mwsrc.set_iq('off')

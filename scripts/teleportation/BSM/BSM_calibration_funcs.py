@@ -21,11 +21,6 @@ from measurement.scripts.teleportation.BSM import BSM_funcs as funcs
 reload(funcs)
 
 
-
-
-
-
-
 #############SSRO
 
 def cal_ssro_teleportation(name):
@@ -199,6 +194,36 @@ def cal_pi2pi_pi(name, mult=1):
 
     funcs.finish(m, debug=False, upload=UPLOAD)
 
+def cal_pi2pi_pi_mI0(name, mult=1):
+    m = pulsar_mbi_espin.ElectronRabiSplitMultElements(
+        'cal_pi2pi_pi_mI0_'+name+'_M=%d' % mult)
+    m.params.from_dict(qt.cfgman['protocols']['AdwinSSRO+MBI']) 
+    funcs.prepare(m)
+    
+    # measurement settings
+    pts = 11
+    m.params['pts'] = pts
+    m.params['reps_per_ROsequence'] = 1000
+    m.params['MW_pulse_multiplicities'] = np.ones(pts).astype(int) * mult
+    m.params['MW_pulse_delays'] = np.ones(pts) * 15e-6
+    
+    # MBI is in mI = 0 here
+    # some msmts use mod, others ssbmod (haven't found the mistake yet.) set both.
+    m.params['AWG_MBI_MW_pulse_mod_frq'] = m.params['pi2pi_mI0_mod_frq']
+    m.params['AWG_MBI_MW_pulse_ssbmod_frq'] = m.params['pi2pi_mI0_mod_frq']
+
+    # hard pi pulses
+    m.params['MW_pulse_durations'] = np.ones(pts) * 396e-9
+    m.params['MW_pulse_amps'] = np.linspace(0.095,0.12,pts)
+    m.params['MW_pulse_mod_frqs'] = np.ones(pts) * \
+        m.params['AWG_MBI_MW_pulse_mod_frq']
+        
+    # for the autoanalysis    
+    m.params['sweep_name'] = 'MW pulse amplitude (V)'
+    m.params['sweep_pts'] = m.params['MW_pulse_amps']
+
+    funcs.finish(m, debug=False, upload=UPLOAD)
+
 ##########
 ### BSM sequences based calibrations
 ###########
@@ -283,8 +308,6 @@ def bsm_calibrate_interpulsedelay(name):
     m.params_lt1['sweep_pts'] = m.params_lt1['interpulse_delays'] * 1e6
 
     BSM_sequences.finish(m, debug=False, upload=UPLOAD)
-
-
 
 def bsm_calibrate_CORPSE_pi_phase_shift_small_range(name):
     m = BSM_sequences.TheRealBSM('CalibrateCORPSEPiPhase_small_range'+name)
@@ -408,7 +431,48 @@ def bsm_test_BSM_with_LDE_superposition_in_sweep_H_ev_time(name):
 
     m.test_BSM_with_LDE_element_superposition_in()
     
-    BSM_sequences.finish(m, debug=False, upload=UPLOAD)    
+    BSM_sequences.finish(m, debug=False, upload=UPLOAD)
+
+### Calibration stage 9
+def bsm_test_psi_contrast(name):
+    m = BSM_sequences.TheRealBSM('TestBSM_PsiContrast_'+name)   
+    BSM_sequences.prepare(m)
+
+    m.repetitive_readout = True
+    m.params_lt1['N_RO_repetitions'] = 2
+
+    pts = 17
+    m.params['pts'] = pts
+    m.params['reps_per_ROsequence'] = 1000
+
+    m.params_lt1['H_phases'] = np.linspace(0,360,pts)
+
+    m.params_lt1['sweep_name'] = 'H phase'
+    m.params_lt1['sweep_pts'] = m.params_lt1['H_phases']
+
+    m.test_BSM_contrast(bs='psi')
+
+    BSM_sequences.finish(m, debug=False, upload=UPLOAD)
+
+def bsm_test_phi_contrast(name):
+    m = BSM_sequences.TheRealBSM('TestBSM_PhiContrast_'+name)
+    BSM_sequences.prepare(m)
+
+    m.repetitive_readout = True
+    m.params_lt1['N_RO_repetitions'] = 2
+
+    pts = 17
+    m.params['pts'] = pts
+    m.params['reps_per_ROsequence'] = 1000
+
+    m.params_lt1['H_phases'] = np.linspace(0,360,pts)
+
+    m.params_lt1['sweep_name'] = 'H phase'
+    m.params_lt1['sweep_pts'] = m.params_lt1['H_phases']
+
+    m.test_BSM_contrast(bs='phi')
+
+    BSM_sequences.finish(m, debug=False, upload=UPLOAD)
 
 
 ### master function
@@ -423,10 +487,10 @@ def run_calibrations(stage):
     if stage == 2:
         #cal_fast_rabi(name)
         cal_fast_pi(name, mult=11)
-        #cal_fast_pi2(name)
+        # cal_fast_pi2(name)
         cal_CORPSE_pi(name, mult=11)
         cal_pi2pi_pi(name, mult=5)
-        #cal_pi2pi_pi_mI0(name, mult=5)
+        cal_pi2pi_pi_mI0(name, mult=5)
     
     if stage == 3:
         #run_nmr_frq_scan(name) #for eg first time sil use
@@ -450,6 +514,10 @@ def run_calibrations(stage):
     if stage == 8:
         bsm_test_BSM_with_LDE_superposition_in_sweep_H_ev_time(name)
 
+    if stage == 9:
+        bsm_test_psi_contrast(name)
+        bsm_test_phi_contrast(name)
+
 SIL_NAME = 'hans-sil1'
 SETUP = 'lt1'
 name = SIL_NAME
@@ -457,16 +525,17 @@ UPLOAD=True
 
 if __name__ == '__main__':
     #execfile('d:/measuring/measurement/scripts/'+SETUP+'_scripts/setup/msmt_params.py')
-    GreenAOM_lt1.set_power(0)
-    #run_calibrations(0)
-    #run_calibrations(1)
-    #run_calibrations(2)
-    #run_calibrations(3)
+    # GreenAOM_lt1.set_power(0)
+    # run_calibrations(0)
+    # run_calibrations(1)
+    # run_calibrations(2)
+    # run_calibrations(3)
     #run_calibrations(4)
     #run_calibrations(5)
     #run_calibrations(6)
     #run_calibrations(7)
-    run_calibrations(8)
+    #run_calibrations(8)
+    run_calibrations(9)
 
     """
 
@@ -493,5 +562,8 @@ if __name__ == '__main__':
             --> H_phase in parameters.py
     stage 8: Hadamard evolution time, compensating for phi shift (11)
             --> H_evolution_time in parameters.py
+    stage 9: test contrast of the BSM, incl N-RepRO;
+            --> nothing, that's just a check
+
     # note: analyze all stages (except 0.x) with BSM_calibrations.py (imported as bsmcal)
     """

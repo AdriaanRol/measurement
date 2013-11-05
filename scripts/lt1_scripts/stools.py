@@ -60,7 +60,8 @@ def set_lt1_remote():
         'linescan_counts',
         'master_of_space',
         'counters',
-        'adwin']:
+        'adwin',
+        'AWG']:
 
         try:
             qt.instruments.remove(i)
@@ -69,6 +70,7 @@ def set_lt1_remote():
 
 def set_lt1_standalone():
     global adwin
+    global AWG
     global counters
     global master_of_space
     global optimiz0r
@@ -76,6 +78,10 @@ def set_lt1_standalone():
     global Velocity1AOM
     global Velocity2AOM
     global ivvi
+
+    AWG = qt.instruments.create('AWG', 'Tektronix_AWG5014', 
+        address='TCPIP0::192.168.0.22::inst0::INSTR', 
+        reset=False, numpoints=1e3)
 
     adwin = qt.instruments.create('adwin', 'adwin_lt1', 
             physical_adwin='physical_adwin')
