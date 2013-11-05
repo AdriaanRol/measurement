@@ -83,6 +83,10 @@ class LT2Tail(pulsar_msmt.PulsarMeasurement):
         if not awg_ready: 
             raise Exception('AWG not ready')
 
+        def finish(self):
+                self.awg_lt2.stop()
+                self.awg_lt2.set_runmode('CONT')
+
 
 LT2Tail.adwin_dict = adwins_cfg.config
 LT2Tail.green_aom_lt2 = qt.instruments['GreenAOM']
@@ -128,8 +132,7 @@ def tail_lt2(name):
     m.setup()
     m.run()    
     m.save()
-    qt.instruments['AWG'].set_runmode('CONT')
-    # m.finish()
+    m.finish()
 
 if __name__ == '__main__':
     tail_lt2('lt2_tailS')
