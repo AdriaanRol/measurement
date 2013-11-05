@@ -423,7 +423,7 @@ class AOM(Instrument):
     def do_set_cur_controller(self, val):
         # print val
         
-        if self.get_power() > 0.:
+        if self.get_power() > 1e-10:
              print 'To change controller, please set output power to 0 first.'
              print 'Current output:', self.get_power() , 'W, at', self.get_voltage(), 'V'
              print 'Controller not changed.'

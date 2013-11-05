@@ -9,7 +9,7 @@ def set_simple_counting(adwins=['adwin', 'adwin_lt1']):
 
 def turn_off_lasers(names):
     for l in names:
-        qt.instruments[l].apply_voltage(0)
+        qt.instruments[l].turn_off()
 
 def turn_off_all_lt1_lasers():
     set_simple_counting(['adwin_lt1'])
@@ -30,14 +30,14 @@ def recalibrate_laser(name, servo, adwin, awg=False):
 
     qt.msleep(0.1)
     print 'Calibrate', name
-    qt.instruments[name].apply_voltage(0)
+    qt.instruments[name].turn_off()
     if awg: qt.instruments[name].set_cur_controller('AWG')
     qt.instruments[name].calibrate(31)
-    qt.instruments[name].apply_voltage(0)
+    qt.instruments[name].turn_off()
     if awg: qt.instruments[name].set_cur_controller('ADWIN')
     qt.msleep(1)
 
-    qt.instruments[name].apply_voltage(0)
+    qt.instruments[name].turn_off()
     qt.instruments[servo].move_out()
     qt.msleep(1)
 
@@ -73,7 +73,7 @@ def check_power(name, setpoint, adwin, powermeter, servo,move_out=True):
 
     print name, 'setpoint:', setpoint, 'value:', qt.instruments[powermeter].get_power()-bg
 
-    qt.instruments[name].apply_voltage(0)
+    qt.instruments[name].turn_off()
     if move_out:
         qt.instruments[servo].move_out()
     qt.msleep(1)
