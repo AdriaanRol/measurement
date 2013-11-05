@@ -146,11 +146,11 @@ def lt1_hans1_calibrate_msm1_pi(name='hans1_msm1_pi'):
     m.params['CORPSE_pi_mod_frq'] = m.params['ms-1_cntr_frq'] - m.params['mw_frq']
 
     m.params['pts'] = pts
-    m.params['repetitions'] = 1000
+    m.params['repetitions'] = 5000
 
     # sweep params
     m.params['CORPSE_pi_sweep_amps'] = np.linspace(0.7, 0.9, pts)
-    m.params['multiplicity'] = 5
+    m.params['multiplicity'] = 11
     m.params['delay_reps'] = 15
 
     # for the autoanalysis
@@ -160,35 +160,34 @@ def lt1_hans1_calibrate_msm1_pi(name='hans1_msm1_pi'):
     
     funcs.finish(m, debug=False)
 
-def lt1_hans4_calibrate_msm1_pi2(name='hans4_msm1_pi'):
-    m = CORPSEPi2Calibration(name)
-    funcs.prepare(m)
+# def lt1_hans4_calibrate_msm1_pi2(name='hans4_msm1_pi'):
+#     m = CORPSEPi2Calibration(name)
+#     funcs.prepare(m)
 
-    pts = 11
-    CORPSE_frq = 8e6
-    m.params['CORPSE_pi2_amp'] = m.params['msm1_CORPSE_pi2_amp']
-    m.params['CORPSE_pi2_24p3_duration'] = 24.3/CORPSE_frq/360.
-    m.params['CORPSE_pi2_m318p6_duration'] = 318.6/CORPSE_frq/360.
-    m.params['CORPSE_pi2_384p3_duration'] = 384.3/CORPSE_frq/360.
-    m.params['CORPSE_pi2_mod_frq'] = m.params['ms-1_cntr_frq'] - m.params['mw_frq']
+#     pts = 11
+#     CORPSE_frq = 8e6
+#     m.params['CORPSE_pi2_amp'] = m.params['msm1_CORPSE_pi2_amp']
+#     m.params['CORPSE_pi2_24p3_duration'] = 24.3/CORPSE_frq/360.
+#     m.params['CORPSE_pi2_m318p6_duration'] = 318.6/CORPSE_frq/360.
+#     m.params['CORPSE_pi2_384p3_duration'] = 384.3/CORPSE_frq/360.
+#     m.params['CORPSE_pi2_mod_frq'] = m.params['ms-1_cntr_frq'] - m.params['mw_frq']
 
-    m.params['pts'] = pts
-    m.params['repetitions'] = 1000
+#     m.params['pts'] = pts
+#     m.params['repetitions'] = 1000
 
-    # sweep params
-    m.params['CORPSE_pi2_sweep_amps'] = np.linspace(0.65, 0.9, pts)
-    m.params['multiplicity'] = 1
-    m.params['delay_reps'] = 15
-    m.params['delay_element_length']=10e-9
+#     # sweep params
+#     m.params['CORPSE_pi2_sweep_amps'] = np.linspace(0.65, 0.9, pts)
+#     m.params['multiplicity'] = 1
+#     m.params['delay_reps'] = 15
+#     m.params['delay_element_length']=10e-9
 
-    # for the autoanalysis
-    m.params['sweep_name'] = 'CORPSE amplitude (V)'
-    m.params['sweep_pts'] = m.params['CORPSE_pi2_sweep_amps']
-    m.params['wait_for_AWG_done'] = 1
+#     # for the autoanalysis
+#     m.params['sweep_name'] = 'CORPSE amplitude (V)'
+#     m.params['sweep_pts'] = m.params['CORPSE_pi2_sweep_amps']
+#     m.params['wait_for_AWG_done'] = 1
     
-    funcs.finish(m, debug=False)
+#     funcs.finish(m, debug=False)
 
 if __name__ == '__main__':
     #sweep_amplitude('sil4_test')
     lt1_hans1_calibrate_msm1_pi()
-    # lt1_hans4_calibrate_msm1_pi2()

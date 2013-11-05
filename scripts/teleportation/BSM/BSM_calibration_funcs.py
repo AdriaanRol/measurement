@@ -533,9 +533,9 @@ if __name__ == '__main__':
     #run_calibrations(4)
     #run_calibrations(5)
     #run_calibrations(6)
-    #run_calibrations(7)
-    #run_calibrations(8)
-    run_calibrations(9)
+    # run_calibrations(7)
+    run_calibrations(8)
+    # run_calibrations(9)
 
     """
 

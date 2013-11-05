@@ -47,16 +47,10 @@ def ssrocalibration(name):
     m.params['Ex_SP_amplitude'] = 10e-9 #10e-9
 
 
-
     m.run()
     m.save('ms1')
     m.finish()
 
 if __name__ == '__main__':
     ssrocalibration(SAMPLE_CFG)
-
-
- 
-    
-
 
