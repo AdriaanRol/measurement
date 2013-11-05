@@ -29,23 +29,14 @@ params_lt1['AWG_lt1_event_do_channel'] = 14
 params_lt1['AWG_lt2_RO1_bit_channel'] = 0
 params_lt1['AWG_lt2_RO2_bit_channel'] = 1
 params_lt1['AWG_lt2_do_DD_bit_channel'] = 2
-params_lt1['AWG_lt2_strobe_channel'] = 9   
-params_lt1['repump_off_voltage'] = 0.0         
-params_lt1['E_off_voltage'] = 0.0# 5.5 for mw vs optical timing checking
-params_lt1['A_off_voltage'] = 0.0
+params_lt1['AWG_lt2_strobe_channel'] = 9      
 
 params_lt2['counter_channel'] = 1
 params_lt2['Adwin_lt1_do_channel'] = 2
 params_lt2['Adwin_lt1_di_channel'] = 17
 params_lt2['AWG_lt2_di_channel'] = 16
-params_lt2['repump_off_voltage'] = 0.05
-params_lt2['Ey_off_voltage'] = 0.0
-params_lt2['A_off_voltage'] = -0.00
+
 params_lt2['freq_AOM_DAC_channel'] = 4
-
-
-
-
 
 
 #################################################################################################################
@@ -217,7 +208,7 @@ params['HH_sync_period'] = 400e-9 # in seconds -- important for checking (see me
 									#Question from hannes: is this the separation of the optical pi pulses?
 
 # LDE Sequence in the AWGs
-params_lt2['eom_pulse_duration']        = 20e-9
+params_lt2['eom_pulse_duration']        = 2e-9
 params_lt2['eom_off_duration']          = 100e-9
 params_lt2['eom_off_amplitude']         = -.26  # calibration from 23-08-2013
 params_lt2['eom_pulse_amplitude']       = 1.2

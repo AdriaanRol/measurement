@@ -35,8 +35,12 @@ qt.pulsar.define_channel(id='ch3_marker2', name='adwin_sync', type='marker',
 # light
 qt.pulsar.define_channel(id='ch2_marker2', name='Velocity1AOM', type='marker', 
     high=0.4, low=0, offset=0., delay=700e-9, active=True)
+qt.pulsar.set_channel_opt('Velocity1AOM','high', qt.instruments['Velocity1AOM'].get_sec_V_max())
+qt.pulsar.set_channel_opt('Velocity1AOM','low', qt.instruments['Velocity1AOM'].get_sec_V_off())
 qt.pulsar.define_channel(id='ch1_marker2', name='YellowAOM', type='marker', 
     high=0.4, low=0, offset=0., delay=750e-9, active=True)
+qt.pulsar.set_channel_opt('YellowAOM','high', qt.instruments['YellowAOM'].get_sec_V_max())
+qt.pulsar.set_channel_opt('YellowAOM','low', qt.instruments['YellowAOM'].get_sec_V_off())
 
 #qt.pulsar.define_channel(id='ch2', name='Velocity1AOM', type='analog', 
 #    high=0.4, low=0, offset=0., delay=700e-9, active=True)
