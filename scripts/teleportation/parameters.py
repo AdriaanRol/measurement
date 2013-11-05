@@ -306,8 +306,6 @@ if CALIBRATION:
     params_lt1['Ex_CR_amplitude'] = params_lt1['E_CR_amplitude']
     params_lt1['A_CR_amplitude'] = params_lt1['A_CR_amplitude']
     params_lt1['Ex_SP_amplitude'] = params_lt1['E_SP_amplitude'] # to pump to ms+- 1 before MBI slow pulse
-    params_lt1['A_off_voltage'] = params_lt1['A_off_voltage']
-    params_lt1['Ex_off_voltage'] = params_lt1['E_off_voltage']
     params_lt1['SP_E_duration'] = params_lt1['E_SP_duration']
 
     params_lt1['cycle_duration'] = 300
@@ -345,4 +343,3 @@ if CALIBRATION:
     params_lt2['Ex_CR_amplitude'] = params_lt2['Ey_CR_amplitude']
     params_lt2['Ex_SP_amplitude'] = params_lt2['Ey_SP_amplitude']
     params_lt2['Ex_RO_amplitude'] = params_lt2['Ey_RO_amplitude']
-    params_lt2['Ex_off_voltage'] = params_lt2['Ey_off_voltage']

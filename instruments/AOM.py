@@ -398,10 +398,10 @@ class AOM(Instrument):
         xc = self.get_cal_xc()
         k = self.get_cal_k()
 
-        #if u <= 0:
-        #    power = 0
-        #else:
-        power=a/(np.exp(np.exp(k*(-float(u)+xc))))
+        if u == self.get_V_off():
+            power = 0.
+        else:
+            power=a/(np.exp(np.exp(k*(-float(u)+xc))))
         return power
 
     def set_power(self,p): # power in Watt
@@ -423,9 +423,9 @@ class AOM(Instrument):
     def do_set_cur_controller(self, val):
         # print val
         
-        if self.get_voltage() != 0:
-             print 'To change controller, please set output voltage to 0 V first.'
-             print 'Current output:', self.get_voltage() , 'V'
+        if self.get_power() > 0.:
+             print 'To change controller, please set output power to 0 first.'
+             print 'Current output:', self.get_power() , 'W, at', self.get_voltage(), 'V'
              print 'Controller not changed.'
              return
 
