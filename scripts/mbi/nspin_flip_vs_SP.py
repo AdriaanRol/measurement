@@ -93,16 +93,16 @@ def nspinflips(name):
     m = NSpinflips(name)
     funcs.prepare(m)
     
-    SP_power = 15e-9
+    SP_power = 20e-9
     m.params['AWG_SP_amplitude'] = qt.instruments['Velocity1AOM'].power_to_voltage(
         SP_power, controller='sec')
-    m.params['AWG_SP_duration'] = 8e-6
+    m.params['AWG_SP_duration'] = 10e-6
 
-    pts = 16
-    rep_factor = 300
+    pts = 15
+    rep_factor = 200
     m.params['pts'] = pts
     m.params['AWG_sequence_repetitions'] = np.arange(pts) * rep_factor
-    m.params['reps_per_ROsequence'] = 500
+    m.params['reps_per_ROsequence'] = 1000
 
     # for testing
     # m.params['msm1_CORPSE_pi_amp'] = 0.

@@ -71,7 +71,7 @@ print 'updating msmt params for {}'.format(cfg['samples']['current'])
 
 branch='samples/hans-sil1/'
 
-f_msm1_cntr = 2.828053e9
+f_msm1_cntr = 2.828057e9
 N_frq = 7.13456e6
 N_HF_frq = 2.19290e6
 cfg.set(branch+'ms-1_cntr_frq', f_msm1_cntr)
@@ -222,7 +222,7 @@ cfg.set(branch+        'AWG_wait_for_adwin_MBI_duration',           15e-6)
 branch='protocols/hans-sil1-default/pulses/'
 
 cfg.set(branch+        'selective_pi_duration',     2500e-9)
-cfg.set(branch+        'selective_pi_amp',          0.0167)
+cfg.set(branch+        'selective_pi_amp',          0.0166)
 cfg.set(branch+        'selective_pi_mod_frq',      finit)
 cfg.set(branch+        'AWG_MBI_MW_pulse_mod_frq',  
     finit)
@@ -238,12 +238,12 @@ cfg.set(branch+        'fast_pi_amp',              0.816)
 cfg.set(branch+        'fast_pi_mod_frq',          finit)
 
 cfg.set(branch+        'fast_pi2_duration',         40e-9)
-cfg.set(branch+        'fast_pi2_amp',              0.849)
+cfg.set(branch+        'fast_pi2_amp',              0.816)
 cfg.set(branch+        'fast_pi2_mod_frq',          finit)
 
 ### CNOTs
 cfg.set(branch+        'pi2pi_mIm1_duration',        396e-9)
-cfg.set(branch+        'pi2pi_mIm1_amp',             0.11009737)
+cfg.set(branch+        'pi2pi_mIm1_amp',             0.109166)
 cfg.set(branch+        'pi2pi_mIm1_mod_frq',         finit)
 
 ### CORPSE used in the BSM
@@ -267,7 +267,7 @@ cfg.set(branch+        'msm1_CORPSE_pi_60_duration',     1./CORPSE_frq/6.)
 cfg.set(branch+        'msm1_CORPSE_pi_m300_duration',   5./CORPSE_frq/6.)
 cfg.set(branch+        'msm1_CORPSE_pi_420_duration',    7./CORPSE_frq/6.)
 cfg.set(branch+        'msm1_CORPSE_pi_mod_frq',         f_msm1_cntr - mw0)
-cfg.set(branch+        'msm1_CORPSE_pi_amp',             0.790539)
+cfg.set(branch+        'msm1_CORPSE_pi_amp',             0.797641)
 
 # cfg.set(branch+        'msm1_CORPSE_pi2_24p3_duration',     24.3/CORPSE_frq/360.)
 # cfg.set(branch+        'msm1_CORPSE_pi2_m318p6_duration',   318.6/CORPSE_frq/360.)
