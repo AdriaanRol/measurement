@@ -880,11 +880,11 @@ class TeleportationSlave:
 YELLOW_lt2 = False              # whether to use yellow on lt2
 YELLOW_lt1 = True               # whether to use yellow on lt1
 HH = True                  # if False no HH data acquisition from within qtlab.
-DO_POLARIZE_N = True       # if False, don't initialize N on lt1
+DO_POLARIZE_N = False       # if False, don't initialize N on lt1
 DO_SEQUENCES = True         # if False, we won't use the AWG at all
 DO_LDE_SEQUENCE = True      # if False, no LDE sequence (both setups) will be done
-LDE_DO_MW_LT1 = True         # if True, there will be MW in the LDE seq. If false, the MW source status is set to off
-LDE_DO_MW_LT2 = True         # if True, there will be MW in the LDE seq. If false, the MW source status is set to off
+LDE_DO_MW_LT1 = False         # if True, there will be MW in the LDE seq. If false, the MW source status is set to off
+LDE_DO_MW_LT2 = False         # if True, there will be MW in the LDE seq. If false, the MW source status is set to off
 MAX_HHDATA_LEN = int(100e6)
 DO_OPT_RABI_AMP_SWEEP = False # if true, we sweep the rabi parameters instead of doing LDE; essentially this only affects the sequence we make
 HH_MIN_SYNC_TIME = 0 # 9 us
@@ -894,6 +894,9 @@ DO_BSM = True
 DO_DD = True
 
 DO_READOUT = True ##don't change this!
+
+if DO_POLARIZE_N and not(LDE_DO_MW_LT1):
+    raise Exception('You cannot do MBI without MW, you moron.')
        
 ### configure the hardware (statics)
 TeleportationMaster.adwins = {
@@ -959,7 +962,7 @@ def start_msmt(m):
 def finish_msmnt():
     qt.instruments['AWG'].stop()
     qt.instruments['AWG_lt1'].stop()
-    qt.instruments['AWG_lt1'].set_ch2_offset(0)
+    qt.msleep(1)
     qt.instruments['AWG'].set_runmode('CONT')
     qt.instruments['AWG_lt1'].set_runmode('CONT')
 
@@ -968,11 +971,11 @@ def finish_msmnt():
 def default_msmt(name):
     ### first start the slave
     ### TODO: make more like master if at some point more dynamic settings are needed
-
-    if qt.instruments['HH_400'].OpenDevice():
-        print 'HH opened'
-    else:
-        raise Exception('HH not opened, please close HH software, you moron.')
+    if HH:
+        if qt.instruments['HH_400'].OpenDevice():
+            print 'HH opened'
+        else:
+            raise Exception('HH not opened, please close HH software, you moron.')
 
 
     if DO_SEQUENCES:
@@ -1002,6 +1005,7 @@ def program_lt2_sequence_only(name):
     qt.instruments['AWG'].set_runmode('CONT')
 
 if __name__ == '__main__':
-    default_msmt('LT2_SPCORR')
+    #name = raw_input('Name?')
+    default_msmt('CHeck FF Hardcoded')
     #program_lt2_sequence_only('test_DD')
                                                                                                                                                                                                                                                                                           

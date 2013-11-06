@@ -693,7 +693,8 @@ EVENT:
           
           if (timer = RO_stop) then
             dac(e_aom_channel, 3277*E_off_voltage+32768) ' turn off Ex laser
-            if (cnt_read(counter) > 0) then
+            counts = cnt_read(counter)
+            if (counts > 0) then
               DIGOUT(AWG_lt2_RO1_bit_channel, 0)
             else
               inc(data_24[tele_event_id+1])

@@ -526,7 +526,7 @@ UPLOAD=True
 if __name__ == '__main__':
     #execfile('d:/measuring/measurement/scripts/'+SETUP+'_scripts/setup/msmt_params.py')
     # GreenAOM_lt1.set_power(0)
-    # run_calibrations(0)
+    #run_calibrations(0)
     # run_calibrations(1)
     # run_calibrations(2)
     # run_calibrations(3)
@@ -535,7 +535,7 @@ if __name__ == '__main__':
     #run_calibrations(6)
     # run_calibrations(7)
     run_calibrations(8)
-    # run_calibrations(9)
+    #run_calibrations(9)
 
     """
 

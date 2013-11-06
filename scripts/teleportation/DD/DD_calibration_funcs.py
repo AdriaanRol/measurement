@@ -52,7 +52,7 @@ def cal_ssro_teleportation(name, A_SP_duration = 250):
 ##### Pulse calibration
 ##### Calibration stage 1
 def cal_CORPSE_pi(name, multiplicity = 5):
-    m = CORPSEPiCalibration(name+'M=11')
+    m = CORPSEPiCalibration(name+'M={}'.format(multiplicity))
     funcs.prepare(m)
 
     pts = 11
@@ -61,9 +61,10 @@ def cal_CORPSE_pi(name, multiplicity = 5):
     m.params['wait_for_AWG_done'] = 1
 
     # sweep params
-    m.params['CORPSE_pi_sweep_amps'] = np.linspace(0.37, 0.44, pts)
+    m.params['CORPSE_mod_frq'] = m.params['CORPSE_pi_mod_frq']
+    m.params['CORPSE_pi_sweep_amps'] = np.linspace(0.34, 0.44, pts)
     m.params['multiplicity'] = multiplicity
-    name = name + 'M={}'.format(m.params['multiplicity'])
+    name + 'M={}'.format(m.params['multiplicity'])
     m.params['delay_reps'] = 15
 
     # for the autoanalysis
@@ -72,30 +73,30 @@ def cal_CORPSE_pi(name, multiplicity = 5):
 
     funcs.finish(m, upload = UPLOAD, debug = False)
 
-# def cal_CORPSE_pi2(name):
-#     m = CORPSECalibration(name+'M=1')
-#     funcs.prepare(m)
+def cal_CORPSE_pi2(name):
+    m = CORPSECalibration(name+'M=1')
+    funcs.prepare(m)
 
-#     pts = 11
-#     m.params['pts'] = pts
-#     m.params['repetitions'] = 1000
-#     m.params['wait_for_AWG_done'] = 1
+    pts = 11
+    m.params['pts'] = pts
+    m.params['repetitions'] = 1000
+    m.params['wait_for_AWG_done'] = 1
 
-#     m.params['CORPSE_mod_frq'] = m.params['CORPSE_pi2_mod_frq']
+    # sweep params
+    m.params['CORPSE_mod_frq'] = m.params['CORPSE_pi_mod_frq']
+    m.params['CORPSE_sweep_amps'] = np.linspace(0.4, 0.6, pts)
+    m.params['CORPSE_effective_rotation_angles'] = np.ones(pts) * 90
+    
+    m.params['multiplicity'] = 1
+    
+    name + 'M={}'.format(m.params['multiplicity'])
+    m.params['delay_element_length'] = 1e-6
 
+    # for the autoanalysis
+    m.params['sweep_name'] = 'CORPSE pi/2 amplitude (V)'
+    m.params['sweep_pts'] = m.params['CORPSE_sweep_amps']  
 
-#     # sweep params
-#     m.params['CORPSE_sweep_amps'] = np.linspace(0.42, 0.50, pts)#
-#     m.params['effective_rotation_angles'] = np.ones(pts) * 90
-#     m.params['multiplicity'] = 1
-#     name = name + 'M={}'.format(m.params['multiplicity'])
-#     m.params['delay_element_length'] = 1e-6
-
-#     # for the autoanalysis
-#     m.params['sweep_name'] = 'CORPSE pi/2 amplitude (V)'
-#     m.params['sweep_pts'] = m.params['CORPSE_sweep_amps']  
-
-#     funcs.finish(m, upload = True, debug = False)
+    funcs.finish(m, upload = True, debug = False)
 
 def cal_CORPSE_rotation_angle(name):
     m = CORPSECalibration(name+'M=1')
@@ -108,12 +109,14 @@ def cal_CORPSE_rotation_angle(name):
 
     # fixed params
     m.params['CORPSE_mod_frq'] = m.params['CORPSE_pi_mod_frq']
-    m.params['CORPSE_sweep_amps'] = np.ones(pts) * m.params['CORPSE_amp']#
+    m.params['CORPSE_sweep_amps'] = np.ones(pts) * m.params['CORPSE_amp']
     
     # sweep params
     m.params['CORPSE_effective_rotation_angles'] = np.linspace(0,3*360,pts)
+    
     m.params['multiplicity'] = 1
-    name = name + 'M={}'.format(m.params['multiplicity'])
+    
+    name + 'M={}'.format(m.params['multiplicity'])
     m.params['delay_element_length'] = 1e-6
 
     # for the autoanalysis
@@ -198,10 +201,11 @@ def dd_sweep_LDE_spin_echo_time(name):
     #free evolutiona time is half the total evolution time!!! from centre to centre of pulses
     m.params_lt2['free_evolution_times'] = np.ones(pts) * m.params_lt2['first_C_revival']
     m.params_lt2['extra_ts_between_pulses'] = np.ones(pts) * 0 
+
    # m.params_lt2['A_SP_amplitude'] = 0. #use LDE element SP. 
     
     # sweep params
-    m.params_lt2['dd_spin_echo_times'] = np.linspace(-250e-9, -100e-9, pts)
+    m.params_lt2['dd_spin_echo_times'] = np.linspace(-150e-9, 0e-9, pts)
     
     m.params_lt2['DD_pi_phases'] = [0]
     m.dd_sweep_LDE_spin_echo_time_msmt()
@@ -287,10 +291,11 @@ def run_calibrations(stage):
        
     if stage == 1:
         print 'Cal CORPSE pi'
-        cal_CORPSE_pi(name,multiplicity = 11)
+        cal_CORPSE_pi(name, multiplicity=5)
     if stage == 1.5:
         print 'CORPSE vs effective angle'       
         cal_CORPSE_rotation_angle(name)
+        # cal_CORPSE_pi2(name)
     if stage == 2:
         dd_calibrate_C13_revival(name)
     if stage == 3:

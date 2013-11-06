@@ -55,7 +55,7 @@ params_lt1['wait_before_send_BSM_done'] = 40  # this makes sure that the BSM res
 params_lt1['E_SP_duration'] = 100
 params_lt1['MBI_duration'] = 4 #put back to 4 with gate
 params_lt1['MBI_threshold'] = 1#
-params_lt1['max_MBI_attempts'] = 100 #100? 1?
+params_lt1['max_MBI_attempts'] = 1 #100? 1?
 params_lt1['N_randomize_duration'] = 50 # This could still be optimized, 50 is a guess
 params_lt1['E_N_randomize_amplitude'] = 15e-9 # 10 nW is a guess, not optimized
 params_lt1['A_N_randomize_amplitude'] = 20e-9 # 10 nW is a guess, not optimized
@@ -91,12 +91,12 @@ params_lt1['N_RO_repetitions'] = 2 # THIS IS COMPILED INTO THE ADWIN CODE!
 #LT2 RO CR SP
 #################################################################################################################
 
-params_lt2['SSRO_lt2_duration'] = 30
+params_lt2['SSRO_lt2_duration'] = 20
 
 params_lt2['Ey_CR_amplitude'] = 5e-9#6e-9             
 params_lt2['A_CR_amplitude'] = 15e-9#16e-9              
 params_lt2['Ey_SP_amplitude'] = 0e-9              
-params_lt2['A_SP_amplitude'] = 40e-9             
+params_lt2['A_SP_amplitude'] = 30e-9             
 params_lt2['Ey_RO_amplitude'] = 7e-9
 params_lt2['A_RO_amplitude'] = 0
 params_lt2['repump_amplitude'] = 200e-6 
@@ -195,7 +195,8 @@ params_lt2['mw_power'] = 20
 params_lt2['MW_pulse_mod_risetime'] = 10e-9
 
 params_lt2['CORPSE_rabi_frequency'] = 8.15e6
-params_lt2['CORPSE_amp'] = 0.400
+params_lt2['CORPSE_amp'] = 0.377
+params_lt2['CORPSE_pi2_amp'] = 0.422
 
 params_lt2['CORPSE_pi_mod_frq'] = f0_lt2
 params_lt2['CORPSE_pi2_mod_frq'] = f0_lt2
@@ -203,9 +204,9 @@ params_lt2['CORPSE_pi2_mod_frq'] = f0_lt2
 params_lt2['pi2_pulse_phase'] = 0 #Y
 params_lt2['DD_pi_phases'] = [90,0,90] ## THIS DEFINES THE XYX SEQUENCE
 params_lt2['CORPSE_pi2_wait_length']= 1300e-9
-params_lt2['first_C_revival'] = 106.427e-6/2. #C revival after CORPSE_pi2_wait_length 
-params_lt2['dd_extra_t_between_pi_pulses'] = 566e-9
-params_lt2['dd_spin_echo_time'] = -141e-9 
+params_lt2['first_C_revival'] = 106.027e-6/2. #C revival after CORPSE_pi2_wait_length 
+params_lt2['dd_extra_t_between_pi_pulses'] = 454e-9
+params_lt2['dd_spin_echo_time'] = -89e-9 
 
 ### LDE sequence settings
 params['HH_sync_period'] = 400e-9 # in seconds -- important for checking (see measurement_loop())
@@ -254,11 +255,11 @@ params['LDE_SP_duration_yellow']      = 3e-6
 params['wait_after_sp']               = 500e-9 #this should be large enough, so that the MW puls fits
 params['LDE_element_length']          = 8e-6 # 9e-6 for TPQI with 5 pulses
 
-params['source_state_basis'] = 'Y'  # 'Z', '-Z', 'X', '-X', 'Y', '-Y' 
-params['ro_basis'] = 'Z'            # 'Z', ending up in ms=0, or '-Z' ending up in ms=-1 (maybe)
+params['source_state_basis'] = 'X'  # 'Z', '-Z', 'X', '-X', 'Y', '-Y' 
+params['ro_basis'] = 'Z'             # 'Z', ending up in ms=0, or '-Z' ending up in ms=-1 (maybe)
 
 ### default process settings
-params['LDE_attempts_before_CR'] = 100 # 1000 for tpqi seems ok
+params['LDE_attempts_before_CR'] = 500 # 1000 for tpqi seems ok
 
 params_lt1['max_CR_starts'] = -1
 params_lt1['teleportation_repetitions'] = -1
@@ -270,7 +271,7 @@ params_lt2['teleportation_repetitions'] = -1
 ########
 ## parameters (for now) only used in calibration scripts
 ########
-CALIBRATION = True
+CALIBRATION = False  #  only for checking.
 
 if CALIBRATION:
 

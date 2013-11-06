@@ -38,15 +38,13 @@ def pulse_defs_lt2(msmt):
         PM_channel = 'MW_pulsemod',
         PM_risetime = msmt.params_lt2['MW_pulse_mod_risetime'],
         frequency = msmt.params_lt2['CORPSE_pi2_mod_frq'],
-        amplitude = msmt.params_lt2['CORPSE_amp'],
+        amplitude = msmt.params_lt2['CORPSE_pi2_amp'],
         rabi_frequency = msmt.params_lt2['CORPSE_rabi_frequency'],
         eff_rotation_angle = 90)
 
     ### synchronizing, etc
     msmt.adwin_lt2_trigger_pulse = pulse.SquarePulse(channel = 'adwin_sync',
         length = 5e-6, amplitude = 2) #only used for calibrations!!
-
-
 
     ### LDE attempt
     msmt.eom_aom_pulse = pulselib.EOMAOMPulse('Eom Aom Pulse', 
@@ -480,10 +478,10 @@ def _lt1_N_init_element(msmt, name, basis = 'Y', **kw):
         N_pulse = pulse.cp(msmt.TN) # waiting time only -> change as little as possible
     elif basis == 'Y':
         N_pulse = pulse.cp(msmt.N_pi2, 
-            phase = 0) #pulse along x onto y (starting in -z)
+            phase = 90) #pulse along x onto y (starting in -z)
     elif basis == 'X':
         N_pulse = pulse.cp(msmt.N_pi2, 
-            phase = 90) #pulse along -y onto x (starting in -z)
+            phase = 180) #pulse along -y onto x (starting in -z)
     elif basis == 'Z':
         N_pulse = pulse.cp(msmt.N_pi) #pulse onto z (starting in -z)
     else :
@@ -633,8 +631,8 @@ def _lt2_LDE_element(msmt, **kw):
            )
     
     #4 MW pi/2
-    if msmt.params_lt2['MW_during_LDE'] == 1:
-        e.add( pulse.cp(msmt.CORPSE_pi2, 
+    if msmt.params_lt2['MW_during_LDE'] == 1 :
+        e.add(pulse.cp(msmt.CORPSE_pi2, 
             phase = pi2_pulse_phase), 
             start = -msmt.params_lt2['MW_opt_puls1_separation'],
             refpulse = 'opt pi 1', 
