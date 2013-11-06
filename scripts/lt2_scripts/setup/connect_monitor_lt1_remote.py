@@ -12,7 +12,7 @@ else:
 
 if objsh.start_glibtcp_client('192.168.0.20',port=12002, nretry=3, timeout=5):
     remote_ins_server_lt1=objsh.helper.find_object('qtlab_lt1:instrument_server')
-    ivvi = qt.instruments.create('ivvi_lt1', 'Remote_Instrument',
+    ivvi_lt1 = qt.instruments.create('ivvi_lt1', 'Remote_Instrument',
             remote_name='ivvi', inssrv=remote_ins_server_lt1)
 else:
     logging.warning('Failed to start remote instruments for ivvi lt1') 

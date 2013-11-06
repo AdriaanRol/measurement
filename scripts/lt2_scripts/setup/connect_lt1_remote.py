@@ -67,28 +67,28 @@ setup_controller_lt1 = qt.instruments.create('setup_controller_lt1',
     use = { 'master_of_space_lt1' : 'mos'} )
 
 
-#pos_maxjog_cfg_lt1 = { 1 : {'positive' : 1.000,
-#                            'negative' : 0.940},
-#                       2 : {'positive' : 1.000,
-#                            'negative' : 0.900},
-#                     }
-#
-##normalized to ~ 481 steps/degree
-#pos_maxpr_cfg_lt1  = { 1 : {'positive' : 1.000,
-#                            'negative' : 0.981},
-#                       2 : {'positive' : 1.000,
-#                            'negative' : 1.130},
-#                      }
-#
-##values provided here are in deg/step
-#pos_step_deg_cfg_lt1 = { 1 : 10/5000.,
-#                      2 : 10/5000.}
-#
-#positioner_lt1 = qt.instruments.create('positioner_lt1', 'NewportAgilisUC2_v2', 
-#        address = 'COM6', maxjog_cfg=pos_maxjog_cfg_lt1, maxpr_cfg=pos_maxpr_cfg_lt1,
-#        step_deg_cfg=pos_step_deg_cfg_lt1 )
-#rejecter_lt1 = qt.instruments.create('rejecter_lt1', 'laser_reject0r', positioner=positioner_lt1, 
-#        adwin=adwin_lt1, red_laser= MatisseAOM_lt1)
+pos_maxjog_cfg_lt1 = { 1 : {'positive' : 1.000,
+                            'negative' : 0.940},
+                       2 : {'positive' : 1.000,
+                            'negative' : 0.900},
+                     }
+
+#normalized to ~ 481 steps/degree
+pos_maxpr_cfg_lt1  = { 1 : {'positive' : 1.000,
+                            'negative' : 0.981},
+                       2 : {'positive' : 1.000,
+                            'negative' : 1.130},
+                      }
+
+#values provided here are in deg/step
+pos_step_deg_cfg_lt1 = { 1 : 10/5000.,
+                      2 : 10/5000.}
+
+positioner_lt1 = qt.instruments.create('positioner_lt1', 'NewportAgilisUC2_v2', 
+        address = 'COM6', maxjog_cfg=pos_maxjog_cfg_lt1, maxpr_cfg=pos_maxpr_cfg_lt1,
+        step_deg_cfg=pos_step_deg_cfg_lt1 )
+rejecter_lt1 = qt.instruments.create('rejecter_lt1', 'laser_reject0r', positioner=positioner_lt1, 
+        adwin=adwin_lt1, red_laser= MatisseAOM_lt1)
 
 #### make a remote pulsar and configure it
 from measurement.lib.pulsar import pulse, pulselib, element, pulsar
@@ -125,13 +125,13 @@ qt.pulsar_remote.define_channel(id='ch3_marker2', name='adwin_sync', type='marke
 # all other delays are then relative to that.
 qt.pulsar_remote.define_channel(id='ch1_marker2', name='YellowAOM', type='marker', 
      high=0.4, low=0, offset=0., delay=750e-9, active=True)
-qt.pulsar.set_channel_opt('YellowAOM', 'high', qt.instruments['YellowAOM_lt1'].get_sec_V_max())
-qt.pulsar.set_channel_opt('YellowAOM', 'low',  qt.instruments['YellowAOM_lt1'].get_sec_V_off())
+qt.pulsar_remote.set_channel_opt('YellowAOM', 'high', qt.instruments['YellowAOM_lt1'].get_sec_V_max())
+qt.pulsar_remote.set_channel_opt('YellowAOM', 'low',  qt.instruments['YellowAOM_lt1'].get_sec_V_off())
 
 qt.pulsar_remote.define_channel(id='ch2_marker2', name='Velocity1AOM', type='marker', 
     high=0.4, low=0, offset=0., delay=700e-9, active=True)
-qt.pulsar.set_channel_opt('Velocity1AOM', 'high', qt.instruments['NewfocusAOM_lt1'].get_sec_V_max())
-qt.pulsar.set_channel_opt('Velocity1AOM', 'low',  qt.instruments['NewfocusAOM_lt1'].get_sec_V_off())
+qt.pulsar_remote.set_channel_opt('Velocity1AOM', 'high', qt.instruments['NewfocusAOM_lt1'].get_sec_V_max())
+qt.pulsar_remote.set_channel_opt('Velocity1AOM', 'low',  qt.instruments['NewfocusAOM_lt1'].get_sec_V_off())
 
 # Trigger AWG LT2
 qt.pulsar_remote.define_channel(id='ch3_marker1', name='AWG_LT2_trigger', type='marker', 

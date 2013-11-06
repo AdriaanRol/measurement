@@ -171,7 +171,7 @@ cfg.set(branch+        'repump_after_MBI_amp',                     15e-9)
 ### sil 10 ###
 branch='samples/sil10/'
 
-f_msm1_cntr = 2.82881e9 
+f_msm1_cntr = 2.8288e9 
 f_msp1_cntr = 2.925884e9 #not calibrated
 N_frq = 7.13429e6 #not calibrated
 N_HF_frq = 2.16042e6 
@@ -198,7 +198,7 @@ cfg.set(branch+'SP_filter_duration', 0)
 cfg.set(branch+'SSRO_duration', 50)
 cfg.set(branch+'SSRO_repetitions', 5000)
 cfg.set(branch+'SSRO_stop_after_first_photon', 0)
-cfg.set(branch+'mw_frq',2.8e9)
+cfg.set(branch+'mw_frq',2.8e9-100e6)
 cfg.set(branch+'mw_power',20)
 cfg.set(branch+'MW_pulse_mod_risetime',10e-9)
 

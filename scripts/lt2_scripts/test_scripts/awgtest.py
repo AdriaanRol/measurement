@@ -1,5 +1,5 @@
-from measurement.config import awgchannels_lt2 as awgcfg
-from measurement.AWG_HW_sequencer_v2 import Sequence
+from measurement.lib.config import awgchannels_lt2 as awgcfg
+from measurement.lib.AWG_HW_sequencer_v2 import Sequence
 
 seq = Sequence('argh')
 reload(awgcfg)
@@ -18,13 +18,13 @@ awgcfg.configure_sequence(seq,'mw')
 #seq.add_channel('trigger','ch3m2', high=1.0)
 #seq.add_channel('pm','ch1m1', high=2.0, cable_delay=27)
 
-trigger = 'MW_pulsemod_lt1'
+trigger = 'adwin_sync'
 chan_mw_pm = 'MW_pulsemod'
-chan_mwI = 'MW_Imod'
-chan_mwQ = 'MW_Qmod'
+chan_mwI = 'MW_Qmod'
+chan_mwQ = 'MW_Imod'
 
 MW_pulse_mod_risetime = 10#10#6 = correct for LT2, 2 =  correct for LT1
-MW_Imod_duration = 250 
+MW_Imod_duration = 40 
 
 elt = 'test'
 seq.add_element(elt, goto_target = elt)
@@ -45,12 +45,20 @@ seq.add_element(elt, goto_target = elt)
 
 seq.add_pulse(name='trigger', channel = trigger, element=elt, 
         start = 0, duration = 50 )
+seq.add_pulse(name='trigger_empty', channel = trigger, element=elt, 
+        start = 0, duration = 1000, amplitude = 0 )
 seq.add_pulse(name='wait', channel = chan_mwI, element=elt, 
         start=0, duration = 500, amplitude = 0)
-seq.add_pulse(name='MW_Imod', channel = chan_mwI,element = elt, duration = MW_Imod_duration, 
-        start_reference='wait',link_start_to = 'end', amplitude = 1)
+
+seq.add_pulse(name='MW_Imod_base', channel = chan_mwI,element = elt, duration = MW_Imod_duration*2, 
+        start_reference='wait',link_start_to = 'end', amplitude = 0.5)
+seq.add_pulse(name='MW_Imod', channel = chan_mwI, element = elt, duration = MW_Imod_duration, 
+        start_reference='MW_Imod_base', link_start_to = 'start', amplitude = 0.5, start=MW_Imod_duration/2)
+
 seq.add_pulse(name='wait2', channel = chan_mwI, element=elt, 
         start_reference='MW_Imod',link_start_to='end', duration = 500-MW_Imod_duration-23, amplitude = 0)
+
+
 seq.add_pulse(name = 'MW_Pmod', channel = chan_mw_pm, element = elt,
             start=-MW_pulse_mod_risetime, duration=2*MW_pulse_mod_risetime, 
             start_reference = 'MW_Imod', link_start_to = 'start', duration_reference = 'MW_Imod', link_duration_to = 'duration')

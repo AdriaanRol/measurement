@@ -325,7 +325,7 @@ class AOM(Instrument):
         V_max = self.get_V_max()
         V_min = self.get_V_min()
         
-        if V_max + V_min < 0: rng=flipud(rng)
+        if V_max + V_min < 0: rng=np.flipud(rng)
         
         for a in rng:
             x[a] = a*(V_max-V_min)/float(steps-1)+V_min
