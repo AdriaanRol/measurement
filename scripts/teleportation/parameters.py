@@ -55,7 +55,7 @@ params_lt1['wait_before_send_BSM_done'] = 40  # this makes sure that the BSM res
 params_lt1['E_SP_duration'] = 100
 params_lt1['MBI_duration'] = 4 #put back to 4 with gate
 params_lt1['MBI_threshold'] = 1#
-params_lt1['max_MBI_attempts'] = 1 #100? 1?
+params_lt1['max_MBI_attempts'] = 100
 params_lt1['N_randomize_duration'] = 50 # This could still be optimized, 50 is a guess
 params_lt1['E_N_randomize_amplitude'] = 15e-9 # 10 nW is a guess, not optimized
 params_lt1['A_N_randomize_amplitude'] = 20e-9 # 10 nW is a guess, not optimized
@@ -255,7 +255,7 @@ params['LDE_SP_duration_yellow']      = 3e-6
 params['wait_after_sp']               = 500e-9 #this should be large enough, so that the MW puls fits
 params['LDE_element_length']          = 8e-6 # 9e-6 for TPQI with 5 pulses
 
-params['source_state_basis'] = 'X'  # 'Z', '-Z', 'X', '-X', 'Y', '-Y' 
+params['source_state_basis'] = '-Z'  # 'Z', '-Z', 'X', '-X', 'Y', '-Y' 
 params['ro_basis'] = 'Z'             # 'Z', ending up in ms=0, or '-Z' ending up in ms=-1 (maybe)
 
 ### default process settings

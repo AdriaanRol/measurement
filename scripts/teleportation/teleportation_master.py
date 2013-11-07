@@ -326,31 +326,34 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
             pi2minx_el = tseq._lt2_final_pi2(self, name = 'FF_-x',  time_offset = RO_time_offset, CORPSE_pi2_phase = -90)
               
 
-            if  self.params['source_state_basis'] == 'Z' and self.params['ro_basis'] == 'Z': 
+            if  (self.params['source_state_basis'] == 'Z' and self.params['ro_basis'] == 'Z') or \
+                    (self.params['source_state_basis'] == '-Z' and self.params['ro_basis'] == '-Z'): 
                 
                 A00_psimin_RO_el  = id_el
                 A01_psimin_RO_el  = piY_el
                 A10_psimin_RO_el  = id_el
                 A11_psimin_RO_el  = piY_el
                 
-                A00_psiplus_RO_el = piY_el
-                A01_psiplus_RO_el = id_el
-                A10_psiplus_RO_el = piY_el
-                A11_psiplus_RO_el = id_el
+                A00_psiplus_RO_el = id_el
+                A01_psiplus_RO_el = piY_el
+                A10_psiplus_RO_el = id_el
+                A11_psiplus_RO_el = piY_el
 
-            elif self.params['source_state_basis'] == 'Z' and self.params['ro_basis'] == '-Z': 
+            elif (self.params['source_state_basis'] == 'Z' and self.params['ro_basis'] == '-Z') or \
+                    (self.params['source_state_basis'] == '-Z' and self.params['ro_basis'] == 'Z'): 
                 
                 A00_psimin_RO_el  = piY_el
                 A01_psimin_RO_el  = id_el
                 A10_psimin_RO_el  = piY_el
                 A11_psimin_RO_el  = id_el
                 
-                A00_psiplus_RO_el = id_el
-                A01_psiplus_RO_el = piY_el
-                A10_psiplus_RO_el = id_el
-                A11_psiplus_RO_el = piY_el
+                A00_psiplus_RO_el = piY_el
+                A01_psiplus_RO_el = id_el
+                A10_psiplus_RO_el = piY_el
+                A11_psiplus_RO_el = id_el
 
-            elif  self.params['source_state_basis'] == 'X' and self.params['ro_basis'] == 'Z': 
+            elif (self.params['source_state_basis'] == 'X' and self.params['ro_basis'] == 'Z') or \
+                    (self.params['source_state_basis'] == '-X' and self.params['ro_basis'] == '-Z'): 
                 
                 A00_psimin_RO_el  = pi2miny_el
                 A01_psimin_RO_el  = pi2y_el
@@ -362,7 +365,8 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
                 A10_psiplus_RO_el = pi2miny_el
                 A11_psiplus_RO_el = pi2y_el
 
-            elif  self.params['source_state_basis'] == 'X' and self.params['ro_basis'] == '-Z': 
+            elif  (self.params['source_state_basis'] == 'X' and self.params['ro_basis'] == '-Z') or \
+                    (self.params['source_state_basis'] == '-X' and self.params['ro_basis'] == 'Z'): 
                 
                 A00_psimin_RO_el  = pi2y_el
                 A01_psimin_RO_el  = pi2miny_el
@@ -374,7 +378,8 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
                 A10_psiplus_RO_el = pi2y_el
                 A11_psiplus_RO_el = pi2miny_el
 
-            elif  self.params['source_state_basis'] == 'Y' and self.params['ro_basis'] == 'Z': 
+            elif (self.params['source_state_basis'] == 'Y' and self.params['ro_basis'] == 'Z') or \
+                    (self.params['source_state_basis'] == '-Y' and self.params['ro_basis'] == '-Z'): 
                 
                 A00_psimin_RO_el  = pi2x_el
                 A01_psimin_RO_el  = pi2x_el
@@ -386,7 +391,8 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
                 A10_psiplus_RO_el = pi2x_el
                 A11_psiplus_RO_el = pi2x_el
 
-            elif  self.params['source_state_basis'] == 'Y' and self.params['ro_basis'] == '-Z': 
+            elif (self.params['source_state_basis'] == 'Y' and self.params['ro_basis'] == '-Z') or \
+                    (self.params['source_state_basis'] == '-Y' and self.params['ro_basis'] == 'Z'): 
 
                 A00_psimin_RO_el  = pi2minx_el
                 A01_psimin_RO_el  = pi2minx_el
@@ -877,14 +883,15 @@ class TeleportationSlave:
 
 
 ### CONSTANTS AND FLAGS
+TELEPORT = True
 YELLOW_lt2 = False              # whether to use yellow on lt2
 YELLOW_lt1 = True               # whether to use yellow on lt1
 HH = True                  # if False no HH data acquisition from within qtlab.
-DO_POLARIZE_N = False       # if False, don't initialize N on lt1
+DO_POLARIZE_N = True       # if False, don't initialize N on lt1
 DO_SEQUENCES = True         # if False, we won't use the AWG at all
 DO_LDE_SEQUENCE = True      # if False, no LDE sequence (both setups) will be done
-LDE_DO_MW_LT1 = False         # if True, there will be MW in the LDE seq. If false, the MW source status is set to off
-LDE_DO_MW_LT2 = False         # if True, there will be MW in the LDE seq. If false, the MW source status is set to off
+LDE_DO_MW_LT1 = True         # if True, there will be MW in the LDE seq. If false, the MW source status is set to off
+LDE_DO_MW_LT2 = True         # if True, there will be MW in the LDE seq. If false, the MW source status is set to off
 MAX_HHDATA_LEN = int(100e6)
 DO_OPT_RABI_AMP_SWEEP = False # if true, we sweep the rabi parameters instead of doing LDE; essentially this only affects the sequence we make
 HH_MIN_SYNC_TIME = 0 # 9 us
@@ -1006,6 +1013,6 @@ def program_lt2_sequence_only(name):
 
 if __name__ == '__main__':
     #name = raw_input('Name?')
-    default_msmt('CHeck FF Hardcoded')
+    default_msmt('Teleportation_first_attempt_4_-Z_+Z')
     #program_lt2_sequence_only('test_DD')
                                                                                                                                                                                                                                                                                           
