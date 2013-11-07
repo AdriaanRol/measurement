@@ -59,7 +59,85 @@ class CORPSEPiCalibration(pulsar_msmt.PulsarMeasurement):
             qt.pulsar.upload(sync_elt, wait_1us, *elts)
         qt.pulsar.program_sequence(seq)
 
-# class CORPSEPi2Calibration
+# class CORPSEPiCalibration
+
+class CORPSEPi2Calibration(pulsar_msmt.PulsarMeasurement):
+    """
+    Do a pi/2 pulse, followed by a pi-pulse; sweep the time between them.
+    """
+    mprefix = 'CORPSEPi2Calibration'
+
+    def generate_sequence(self, upload=True):
+        # electron manipulation pulses
+        T = pulse.SquarePulse(channel='MW_pulsemod',
+            length = 100e-9, amplitude = 0)
+        TIQ = pulse.SquarePulse(channel='MW_Imod',
+            length = 10e-9, amplitude = 0)
+
+        CORPSE_pi = pulselib.IQ_CORPSE_pulse('CORPSE pi-pulse',
+            I_channel = 'MW_Imod', 
+            Q_channel = 'MW_Qmod',    
+            PM_channel = 'MW_pulsemod',
+            PM_risetime = self.params['MW_pulse_mod_risetime'],
+            frequency = self.params['CORPSE_mod_frq'],
+            rabi_frequency = self.params['CORPSE_rabi_frequency'],
+            amplitude = self.params['CORPSE_amp'],
+            eff_rotation_angle = 180)
+
+        CORPSE_pi2 = pulselib.IQ_CORPSE_pulse('CORPSE pi-pulse',
+            I_channel = 'MW_Imod', 
+            Q_channel = 'MW_Qmod',    
+            PM_channel = 'MW_pulsemod',
+            PM_risetime = self.params['MW_pulse_mod_risetime'],
+            frequency = self.params['CORPSE_mod_frq'],
+            rabi_frequency = self.params['CORPSE_rabi_frequency'],
+            amplitude = self.params['CORPSE_amp'],
+            eff_rotation_angle = 90)
+
+        wait_1us = element.Element('1us_delay', pulsar=qt.pulsar)
+        wait_1us.append(pulse.cp(T, length=1e-6))
+
+        sync_elt = element.Element('adwin_sync', pulsar=qt.pulsar)
+        adwin_sync = pulse.SquarePulse(channel='adwin_sync',
+            length = 10e-6, amplitude = 2)
+        sync_elt.append(adwin_sync)
+
+        elts = []
+        seq = pulsar.Sequence('CORPSE Pi2 Calibration')
+
+        for i in range(self.params['pts_awg']):
+            e = element.Element('CORPSE_Pi2-{}'.format(i), 
+                pulsar = qt.pulsar,
+                global_time=True)
+            e.append(T)
+            e.append(pulse.cp(CORPSE_pi2, amplitude = self.params['CORPSE_pi2_sweep_amps'][i]))
+            e.append(pulse.cp(TIQ, length=200e-9))
+            e.append(pulse.cp(CORPSE_pi))
+            e.append(T)
+            elts.append(e)
+            seq.append(name='CORPSE_Pi2-{}'.format(i),
+                wfname = e.name,
+                trigger_wait=True)
+            seq.append(name='synca-{}'.format(i),
+                wfname = sync_elt.name)
+            
+            e = element.Element('CORPSE_Pi2_Pi-{}'.format(i), 
+                pulsar = qt.pulsar,
+                global_time=True)
+            e.append(T)
+            e.append(pulse.cp(CORPSE_pi2, amplitude = self.params['CORPSE_pi2_sweep_amps'][i]))
+            e.append(pulse.cp(TIQ, length=200e-9))
+            e.append(T)
+            elts.append(e)
+            seq.append(name='CORPSE_Pi2_Pi-{}'.format(i),
+                wfname = e.name,
+                trigger_wait=True)
+            seq.append(name='syncb-{}'.format(i),
+                wfname = sync_elt.name)
+
+        if upload:
+            qt.pulsar.upload(sync_elt, wait_1us, *elts)
+        qt.pulsar.program_sequence(seq)
 
 class CORPSECalibration(pulsar_msmt.PulsarMeasurement):
     """
@@ -111,7 +189,7 @@ class CORPSECalibration(pulsar_msmt.PulsarMeasurement):
             qt.pulsar.upload(sync_elt, *elts)
         qt.pulsar.program_sequence(seq)
 
-# class CORPSEPi2Calibration
+# class CORPSECalibration
 
 def sweep_amplitude(name):
     m = CORPSEPiCalibration(name)

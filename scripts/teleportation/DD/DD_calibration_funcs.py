@@ -10,6 +10,7 @@ from measurement.lib.measurement2.adwin_ssro import pulsar as pulsar_msmt
 import measurement.scripts.espin.calibrate_CORPSE as CORPSE_calibration
 reload(CORPSE_calibration)
 from measurement.scripts.espin.calibrate_CORPSE import CORPSEPiCalibration
+from measurement.scripts.espin.calibrate_CORPSE import CORPSEPi2Calibration
 from measurement.scripts.espin.calibrate_CORPSE import CORPSECalibration
 
 from measurement.scripts.teleportation.DD import dd_measurements as dd_msmt
@@ -46,8 +47,6 @@ def cal_ssro_teleportation(name, A_SP_duration = 250):
     m.save('ms1')
     m.finish()
 
-
-
 ###############
 ##### Pulse calibration
 ##### Calibration stage 1
@@ -74,57 +73,32 @@ def cal_CORPSE_pi(name, multiplicity = 5):
     funcs.finish(m, upload = UPLOAD, debug = False)
 
 def cal_CORPSE_pi2(name):
-    m = CORPSECalibration(name+'M=1')
+    """
+    Do a pi/2 with and without a pi pulse afterward, sweeping the amplitude of the pi/2.
+    """
+
+    m = CORPSE_tests.CORPSE_Pi2_Pi_sweep_p2_amp(name)
     funcs.prepare(m)
 
-    pts = 11
-    m.params['pts'] = pts
-    m.params['repetitions'] = 1000
+    pts = 21    
+    m.params['pts_awg'] = pts
+
+    # we do actually two msmts for every sweep point, that's why the awg gets only half of the 
+    # pts;
+    m.params['pts'] = 2*pts  
+    
+    m.params['repetitions'] = 5000
     m.params['wait_for_AWG_done'] = 1
 
-    # sweep params
     m.params['CORPSE_mod_frq'] = m.params['CORPSE_pi_mod_frq']
-    m.params['CORPSE_sweep_amps'] = np.linspace(0.4, 0.6, pts)
-    m.params['CORPSE_effective_rotation_angles'] = np.ones(pts) * 90
-    
-    m.params['multiplicity'] = 1
-    
-    name + 'M={}'.format(m.params['multiplicity'])
-    m.params['delay_element_length'] = 1e-6
+    sweep_axis = 0.42+linspace(-0.06,0.06,pts)
+    m.params['CORPSE_pi2_sweep_amps'] = sweep_axis
 
     # for the autoanalysis
-    m.params['sweep_name'] = 'CORPSE pi/2 amplitude (V)'
-    m.params['sweep_pts'] = m.params['CORPSE_sweep_amps']  
+    m.params['sweep_name'] = 'MW pi/2 amp (V)'
+    m.params['sweep_pts'] = np.sort(np.append(sweep_axis,sweep_axis))
 
-    funcs.finish(m, upload = True, debug = False)
-
-def cal_CORPSE_rotation_angle(name):
-    m = CORPSECalibration(name+'M=1')
-    funcs.prepare(m)
-
-    pts = 41
-    m.params['pts'] = pts
-    m.params['repetitions'] = 1000
-    m.params['wait_for_AWG_done'] = 1
-
-    # fixed params
-    m.params['CORPSE_mod_frq'] = m.params['CORPSE_pi_mod_frq']
-    m.params['CORPSE_sweep_amps'] = np.ones(pts) * m.params['CORPSE_amp']
-    
-    # sweep params
-    m.params['CORPSE_effective_rotation_angles'] = np.linspace(0,3*360,pts)
-    
-    m.params['multiplicity'] = 1
-    
-    name + 'M={}'.format(m.params['multiplicity'])
-    m.params['delay_element_length'] = 1e-6
-
-    # for the autoanalysis
-    m.params['sweep_name'] = 'CORPSE effective rotation angle'
-    m.params['sweep_pts'] = m.params['CORPSE_effective_rotation_angles']  
-
-    funcs.finish(m, upload = UPLOAD, debug = False)
-
+    funcs.finish(m, upload=UPLOAD, debug=DEBUG)
 
 def dd_calibrate_C13_revival(name):
     m = dd_msmt.DynamicalDecoupling('calibrate_first_revival')
@@ -293,9 +267,8 @@ def run_calibrations(stage):
         print 'Cal CORPSE pi'
         cal_CORPSE_pi(name, multiplicity=5)
     if stage == 1.5:
-        print 'CORPSE vs effective angle'       
-        cal_CORPSE_rotation_angle(name)
-        # cal_CORPSE_pi2(name)
+        print 'Cal CORPSE pi/2'
+        cal_CORPSE_pi2(name)
     if stage == 2:
         dd_calibrate_C13_revival(name)
     if stage == 3:
@@ -324,22 +297,14 @@ if __name__ == '__main__':
             --> f_msm1_cntr_lt2 in parameters.py AND msmt_params.py
     stage 1: pulses: CORPSE pi 
             --> CORPSE_amp in parameters.py]
-    stage 1.5: pulses: CORPSE vs angle. If (f-f0)/f0 < 0.005 -> happy. (f0 = 1/360) 
-            --> CORPSE_amp in parameters.py
+    stage 1.5: pulses: CORPSE pi/2
+            --> CORPSE_pi2_amp in parameters.py (something like that :))
     stage 2: C13 revival time
             --> first_C_revival in parameters.py
     stage 3: LDE - DD spin echo time
             --> dd_spin_echo_time in parameters.py
     stage 4: time between pi pulses
-            --> dd_extra_t_between_pi_pulses in paramters.py
+            --> dd_extra_t_between_pi_pulses in parameters.py
     # note: analyze all stages with LT2_calibrations.py (imported as lt2cal)
     """
-    
-    
-    
-    
-    
-    
-    
-    
     
