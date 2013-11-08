@@ -54,7 +54,7 @@ params_lt1['wait_before_send_BSM_done'] = 40  # this makes sure that the BSM res
 ### MBI on LT1
 params_lt1['E_SP_duration'] = 100
 params_lt1['MBI_duration'] = 4 #put back to 4 with gate
-params_lt1['MBI_threshold'] = 1#
+params_lt1['MBI_threshold'] = 1 # 
 params_lt1['max_MBI_attempts'] = 100
 params_lt1['N_randomize_duration'] = 50 # This could still be optimized, 50 is a guess
 params_lt1['E_N_randomize_amplitude'] = 15e-9 # 10 nW is a guess, not optimized
@@ -64,9 +64,9 @@ params_lt1['repump_N_randomize_amplitude'] = 0
  
 ### SSRO, CR, SP Laser powers
 params_lt1['E_CR_amplitude'] = 4e-9
-params_lt1['A_CR_amplitude'] = 15e-9               
+params_lt1['A_CR_amplitude'] = 10e-9               
 params_lt1['E_SP_amplitude'] = 10e-9 #was 10e-9              
-params_lt1['E_RO_amplitude'] = 4e-9  
+params_lt1['E_RO_amplitude'] = 6e-9  
 params_lt1['A_RO_amplitude'] = 0
 params_lt1['A_SP_amplitude'] = 20e-9
 params_lt1['repump_amplitude'] = 50e-9 # 50e-9 for yellow 200e-6 for green
@@ -93,10 +93,10 @@ params_lt1['N_RO_repetitions'] = 2 # THIS IS COMPILED INTO THE ADWIN CODE!
 
 params_lt2['SSRO_lt2_duration'] = 20
 
-params_lt2['Ey_CR_amplitude'] = 5e-9#6e-9             
-params_lt2['A_CR_amplitude'] = 15e-9#16e-9              
+params_lt2['Ey_CR_amplitude'] = 4e-9#6e-9             
+params_lt2['A_CR_amplitude'] = 10e-9#16e-9              
 params_lt2['Ey_SP_amplitude'] = 0e-9              
-params_lt2['A_SP_amplitude'] = 30e-9             
+params_lt2['A_SP_amplitude'] = 20e-9             
 params_lt2['Ey_RO_amplitude'] = 7e-9
 params_lt2['A_RO_amplitude'] = 0
 params_lt2['repump_amplitude'] = 200e-6 
@@ -134,10 +134,10 @@ params_lt1['AWG_MBI_MW_pulse_mod_frq'] = finit_lt1
 # for the BSM:
 params_lt1['N_ref_frq'] = N_frq_lt1
 params_lt1['e_ref_frq'] = finit_lt1
-params_lt1['pi2_evolution_time'] = 52.436241e-6
-params_lt1['H_evolution_time'] = 35.075029e-6
-params_lt1['H_phase'] = 103.94 # was -72,  was 61, 28
-params_lt1['echo_time_after_LDE'] = -462e-9
+params_lt1['pi2_evolution_time'] = 52.439e-6
+params_lt1['H_evolution_time'] = 35.0515e-6
+params_lt1['H_phase'] = 205.68 #was 103.94 -72,  was 61, 28
+params_lt1['echo_time_after_LDE'] = -575e-9
 
 params_lt1['buffer_time_for_CNOT'] = 240e-9
 # this time is removed at the previous element before the pi2pi CNOT element, 
@@ -146,13 +146,13 @@ params_lt1['buffer_time_for_CNOT'] = 240e-9
 
 ## pulses
 params_lt1['fast_pi_mod_frq'] = finit_lt1
-params_lt1['fast_pi_amp'] = 0.823
+params_lt1['fast_pi_amp'] = 0.831
 params_lt1['fast_pi_duration'] = 80e-9
 
 # fast pi/2 pulse
 params_lt1['fast_pi2_mod_frq'] = finit_lt1
-params_lt1['fast_pi2_amp'] = 0.823
-params_lt1['fast_pi2_duration'] = 40e-9
+params_lt1['fast_pi2_amp'] = 0.808
+params_lt1['fast_pi2_duration'] = 42e-9
 
 # slow pi  pulse
 params_lt1['selective_pi_mod_frq'] = finit_lt1
@@ -164,8 +164,8 @@ params_lt1['CORPSE_pi_mod_frq'] = finit_lt1 + N_HF_frq_lt1/2.
 params_lt1['CORPSE_pi_60_duration'] = 1./CORPSE_frq_lt1/6.
 params_lt1['CORPSE_pi_m300_duration'] = 5./CORPSE_frq_lt1/6.
 params_lt1['CORPSE_pi_420_duration'] = 7./CORPSE_frq_lt1/6.
-params_lt1['CORPSE_pi_amp'] = 0.520
-params_lt1['CORPSE_pi_phase_shift'] = 90.0
+params_lt1['CORPSE_pi_amp'] = 0.517
+params_lt1['CORPSE_pi_phase_shift'] = 86.9
 params_lt1['CORPSE_pi_center_shift'] = 0.e-9
 
 params_lt1['pi2pi_mIm1_mod_frq'] = finit_lt1
@@ -176,7 +176,7 @@ params_lt1['pi2pi_mI0_mod_frq'] = finit_lt1 + N_HF_frq_lt1
 params_lt1['pi2pi_mI0_amp'] = 0.107
 params_lt1['pi2pi_mI0_duration'] = 396e-9
 
-params_lt1['N_pi_duration'] = 48.215e-6
+params_lt1['N_pi_duration'] = 48.115e-6
 params_lt1['N_pi_amp'] = .55
 
 params_lt1['N_pi2_duration'] = params_lt1['N_pi_duration']/2.
@@ -195,8 +195,8 @@ params_lt2['mw_power'] = 20
 params_lt2['MW_pulse_mod_risetime'] = 10e-9
 
 params_lt2['CORPSE_rabi_frequency'] = 8.15e6
-params_lt2['CORPSE_amp'] = 0.377
-params_lt2['CORPSE_pi2_amp'] = 0.422
+params_lt2['CORPSE_amp'] = 0.385
+params_lt2['CORPSE_pi2_amp'] = 0.423
 
 params_lt2['CORPSE_pi_mod_frq'] = f0_lt2
 params_lt2['CORPSE_pi2_mod_frq'] = f0_lt2
@@ -205,8 +205,8 @@ params_lt2['pi2_pulse_phase'] = 0 #Y
 params_lt2['DD_pi_phases'] = [90,0,90] ## THIS DEFINES THE XYX SEQUENCE
 params_lt2['CORPSE_pi2_wait_length']= 1300e-9
 params_lt2['first_C_revival'] = 106.027e-6/2. #C revival after CORPSE_pi2_wait_length 
-params_lt2['dd_extra_t_between_pi_pulses'] = 454e-9
-params_lt2['dd_spin_echo_time'] = -89e-9 
+params_lt2['dd_extra_t_between_pi_pulses'] = 371e-9
+params_lt2['dd_spin_echo_time'] = -82e-9 
 
 ### LDE sequence settings
 params['HH_sync_period'] = 400e-9 # in seconds -- important for checking (see measurement_loop())
@@ -271,7 +271,7 @@ params_lt2['teleportation_repetitions'] = -1
 ########
 ## parameters (for now) only used in calibration scripts
 ########
-CALIBRATION = False  #  only for checking.
+CALIBRATION = True  #  only for checking.
 
 if CALIBRATION:
 
@@ -344,3 +344,5 @@ if CALIBRATION:
     params_lt2['Ex_CR_amplitude'] = params_lt2['Ey_CR_amplitude']
     params_lt2['Ex_SP_amplitude'] = params_lt2['Ey_SP_amplitude']
     params_lt2['Ex_RO_amplitude'] = params_lt2['Ey_RO_amplitude']
+
+    params_lt1['Ex_RO_amplitude'] = params_lt1['E_RO_amplitude']

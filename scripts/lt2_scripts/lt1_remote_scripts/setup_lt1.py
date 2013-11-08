@@ -1,5 +1,8 @@
 qt.instruments.reload('adwin_lt1')
 
+###
+print 'reload all modules'
+execfile(os.path.join(qt.config['startdir'], 'lt2_scripts/setup/reload_all.py'))
 
 ####
 print 'reload all measurement parameters and calibrations for lt1...'

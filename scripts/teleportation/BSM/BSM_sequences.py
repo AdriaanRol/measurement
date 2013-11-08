@@ -248,10 +248,6 @@ class NReadoutMsmt(ElectronReadoutMsmt):
         # load all the other pulsar resources
         self.sweep_elements = self.get_sweep_elements()
         
-        N_RO_CNOT_elt = element.Element('N-RO CNOT', pulsar=qt.pulsar)
-        N_RO_CNOT_elt.append(pulse.cp(self.T, length=500e-9))
-        N_RO_CNOT_elt.append(self.pi2pi_m1)
-
         # create the sequence
         seq = self._add_MBI_and_sweep_elements_to_sequence(
             self.sweep_elements, self.N_RO_CNOT_elt, self.adwin_lt1_trigger_element,
@@ -263,7 +259,7 @@ class NReadoutMsmt(ElectronReadoutMsmt):
 
         # program AWG
         if upload:
-            qt.pulsar.upload(self.mbi_elt, self.adwin_lt1_trigger_element, N_RO_CNOT_elt,
+            qt.pulsar.upload(self.mbi_elt, self.adwin_lt1_trigger_element, self.N_RO_CNOT_elt,
                 *flattened_sweep_elements)
         
         qt.pulsar.program_sequence(seq)

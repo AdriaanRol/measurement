@@ -77,7 +77,7 @@ def cal_CORPSE_pi2(name):
     Do a pi/2 with and without a pi pulse afterward, sweeping the amplitude of the pi/2.
     """
 
-    m = CORPSE_tests.CORPSE_Pi2_Pi_sweep_p2_amp(name)
+    m = CORPSEPi2Calibration(name)
     funcs.prepare(m)
 
     pts = 21    
@@ -265,7 +265,7 @@ def run_calibrations(stage):
        
     if stage == 1:
         print 'Cal CORPSE pi'
-        cal_CORPSE_pi(name, multiplicity=5)
+        cal_CORPSE_pi(name, multiplicity=11)
     if stage == 1.5:
         print 'Cal CORPSE pi/2'
         cal_CORPSE_pi2(name)
@@ -277,6 +277,7 @@ def run_calibrations(stage):
         dd_sweep_LDE_DD_XYX_t_between_pulse(name)
 
 UPLOAD = True
+DEBUG = False
 if __name__ == '__main__':
     #execfile('d:/measuring/measurement/scripts/lt2_scripts/setup/msmt_params.py')
     #run_calibrations(0)

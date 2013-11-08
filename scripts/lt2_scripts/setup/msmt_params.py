@@ -183,15 +183,15 @@ cfg.set(branch+'N_HF_frq', N_HF_frq)
 
 
 branch='protocols/sil10-default/AdwinSSRO/'
-cfg.set(branch+'A_CR_amplitude', 5e-9)
+cfg.set(branch+'A_CR_amplitude', 10e-9)
 cfg.set(branch+'A_RO_amplitude' , 0)
 cfg.set(branch+'A_SP_amplitude', 20e-9)
 cfg.set(branch+'CR_duration' , 50)
 cfg.set(branch+'CR_preselect', 15)
 cfg.set(branch+'CR_probe', 2)
 cfg.set(branch+'CR_repump', 1000)
-cfg.set(branch+'Ex_CR_amplitude', 7e-9)
-cfg.set(branch+'Ex_RO_amplitude', 10e-9)
+cfg.set(branch+'Ex_CR_amplitude', 4e-9)
+cfg.set(branch+'Ex_RO_amplitude', 7e-9)
 cfg.set(branch+'Ex_SP_amplitude', 0e-9)
 cfg.set(branch+'SP_duration', 50)
 cfg.set(branch+'SP_filter_duration', 0)

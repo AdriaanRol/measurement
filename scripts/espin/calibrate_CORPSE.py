@@ -106,7 +106,7 @@ class CORPSEPi2Calibration(pulsar_msmt.PulsarMeasurement):
         seq = pulsar.Sequence('CORPSE Pi2 Calibration')
 
         for i in range(self.params['pts_awg']):
-            e = element.Element('CORPSE_Pi2-{}'.format(i), 
+            e = element.Element('CORPSE_Pi2_Pi-{}'.format(i), 
                 pulsar = qt.pulsar,
                 global_time=True)
             e.append(T)
@@ -115,13 +115,13 @@ class CORPSEPi2Calibration(pulsar_msmt.PulsarMeasurement):
             e.append(pulse.cp(CORPSE_pi))
             e.append(T)
             elts.append(e)
-            seq.append(name='CORPSE_Pi2-{}'.format(i),
+            seq.append(name='CORPSE_Pi2_Pi-{}'.format(i),
                 wfname = e.name,
                 trigger_wait=True)
             seq.append(name='synca-{}'.format(i),
                 wfname = sync_elt.name)
             
-            e = element.Element('CORPSE_Pi2_Pi-{}'.format(i), 
+            e = element.Element('CORPSE_Pi2-{}'.format(i), 
                 pulsar = qt.pulsar,
                 global_time=True)
             e.append(T)
@@ -129,7 +129,7 @@ class CORPSEPi2Calibration(pulsar_msmt.PulsarMeasurement):
             e.append(pulse.cp(TIQ, length=200e-9))
             e.append(T)
             elts.append(e)
-            seq.append(name='CORPSE_Pi2_Pi-{}'.format(i),
+            seq.append(name='CORPSE_Pi2-{}'.format(i),
                 wfname = e.name,
                 trigger_wait=True)
             seq.append(name='syncb-{}'.format(i),

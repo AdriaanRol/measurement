@@ -665,7 +665,6 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
                         self.h5data.flush()
         
         self.adwins['adwin_lt1']['ins'].set_teleportation_var(kill_by_CR=1)
-        self.adwins['adwin_lt2']['ins'].set_teleportation_var(kill_by_CR=1)
         qt.msleep(2)
 
         self.stop_adwin_processes()

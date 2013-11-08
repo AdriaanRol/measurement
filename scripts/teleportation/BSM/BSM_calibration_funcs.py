@@ -7,12 +7,13 @@ import qt
 from measurement.lib.measurement2.adwin_ssro import pulsar_mbi_espin
 
 from measurement.scripts.mbi import mbi_calibration_funcs as mbi_cal
+from measurement.scripts.mbi import pi2_calibration
+reload(pi2_calibration)
 
 from measurement.lib.measurement2.adwin_ssro import ssro
 
 from measurement.scripts.mbi import CORPSE_calibration
 reload(CORPSE_calibration)
-from measurement.scripts.mbi.CORPSE_calibration import CORPSEPiCalibration
 
 from measurement.scripts.teleportation.BSM import BSM_sequences as BSM_sequences
 reload(BSM_sequences)
@@ -124,33 +125,31 @@ def cal_fast_pi(name, mult=1):
 
     funcs.finish(m, debug=False, upload=UPLOAD)
 
-def cal_fast_pi2(name,  mult=1):
-    m = pulsar_mbi_espin.ElectronRabi(
-        'cal_fast_pi_over_2_'+name+'_M=%d' % mult)
+def cal_fast_pi2(name):
+    m = pi2_calibration.Pi2Calibration(
+        'cal_fast_pi_over_2_'+name)
     m.params.from_dict(qt.cfgman['protocols']['AdwinSSRO+MBI']) 
     funcs.prepare(m)    
     
     # measurement settings
     pts = 11
-    m.params['reps_per_ROsequence'] = 2000
-    m.params['pts'] = pts
-    m.params['MW_pulse_multiplicities'] = np.ones(pts).astype(int)
-    m.params['MW_pulse_delays'] = np.ones(pts) * 100e-9
-    
+    m.params['reps_per_ROsequence'] = 3000
+    m.params['pts_awg'] = pts
+    m.params['pts'] = 2*pts
+
+
+    sweep_axis = np.linspace(0.7, 0.9, pts)
     # pulses
-    m.params['MW_pulse_durations'] = np.ones(pts) * m.params['fast_pi2_duration']
-    m.params['MW_pulse_amps'] = np.linspace(0.7, 0.9, pts)
-    m.params['MW_pulse_mod_frqs'] = np.ones(pts) * \
-        m.params['AWG_MBI_MW_pulse_mod_frq']
+    m.params['pi2_sweep_amps'] = sweep_axis
 
     # for the autoanalysis
     m.params['sweep_name'] = 'MW pulse amplitude (V)'
-    m.params['sweep_pts'] = m.params['MW_pulse_amps']
+    m.params['sweep_pts'] = np.sort(np.append(sweep_axis,sweep_axis))
     
     funcs.finish(m, debug=False, upload=UPLOAD)
 
 def cal_CORPSE_pi(name , mult=1):
-    m = CORPSEPiCalibration(name+'_M=%d' % mult)
+    m = CORPSE_calibration.CORPSEPiCalibration(name+'_M=%d' % mult)
     m.params.from_dict(qt.cfgman['protocols']['AdwinSSRO+MBI']) 
     funcs.prepare(m)
 
@@ -487,10 +486,12 @@ def run_calibrations(stage):
     if stage == 2:
         #cal_fast_rabi(name)
         cal_fast_pi(name, mult=11)
-        # cal_fast_pi2(name)
         cal_CORPSE_pi(name, mult=11)
         cal_pi2pi_pi(name, mult=5)
         cal_pi2pi_pi_mI0(name, mult=5)
+
+    if stage == 2.5:
+        cal_fast_pi2(name)
     
     if stage == 3:
         #run_nmr_frq_scan(name) #for eg first time sil use
@@ -525,15 +526,16 @@ UPLOAD=True
 
 if __name__ == '__main__':
     #execfile('d:/measuring/measurement/scripts/'+SETUP+'_scripts/setup/msmt_params.py')
-    # GreenAOM_lt1.set_power(0)
+    GreenAOM_lt1.set_power(0)
     #run_calibrations(0)
-    # run_calibrations(1)
-    # run_calibrations(2)
-    # run_calibrations(3)
+    #run_calibrations(1)
+    #run_calibrations(2)
+    #run_calibrations(2.5)
+    #run_calibrations(3)
     #run_calibrations(4)
     #run_calibrations(5)
     #run_calibrations(6)
-    # run_calibrations(7)
+    #run_calibrations(7)
     run_calibrations(8)
     #run_calibrations(9)
 
