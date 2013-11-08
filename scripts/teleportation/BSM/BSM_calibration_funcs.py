@@ -14,6 +14,10 @@ from measurement.scripts.mbi import CORPSE_calibration
 reload(CORPSE_calibration)
 from measurement.scripts.mbi.CORPSE_calibration import CORPSEPiCalibration
 
+from measurements.scripts.mbi import mbi_fidelity
+reload(mbi_fidelity)
+from measurements.scripts.mbi.mbi_fidelity import MBIFidelity
+
 from measurement.scripts.teleportation.BSM import BSM_sequences as BSM_sequences
 reload(BSM_sequences)
 
@@ -45,8 +49,6 @@ def cal_ssro_teleportation(name):
     m.save('ms1')
     m.finish()
 
-
-
 ###########
 ### Calibration for MBI
 ### Calibration stage 1
@@ -71,6 +73,80 @@ def cal_slow_pi(name):
     m.params['sweep_name'] = 'MW pulse amp (V)'
     m.params['sweep_pts'] = m.params['MW_pulse_amps']
     
+    funcs.finish(m, debug=False, upload=UPLOAD)
+
+###########
+### Calibration of the MBI fidelity readout pulses
+### Calibration stage 1.5
+def calibrate_MBI_fidelity_RO_pulses(name):
+    m = pulsar_msmt.ElectronRabi('MBI_fidelity_RO_pulses_'+name)
+    
+    m.params.from_dict(qt.cfgman['protocols']['AdwinSSRO'])
+    m.params.from_dict(qt.cfgman['protocols']['AdwinSSRO+espin'])
+    funcs.prepare(m)
+
+    m.params['pts'] = 21
+    pts = m.params['pts']
+    m.params['repetitions'] = 5000
+
+    m.params['MBI_calibration_RO_pulse_duration'] = 8.3e-6
+    m.params['MBI_calibration_RO_pulse_amplitude_sweep_vals'] = np.linspace(0.002,0.007,pts)
+    m.params['MBI_calibration_RO_pulse_mod_frqs'] = \
+        m.params['ms-1_cntr_frq'] - m.params['mw_frq'] + \
+        np.array([-1,0,+1]) * m.params['N_HF_frq']
+
+    m.params['MW_pulse_durations'] =  np.ones(pts) * m.params['MBI_calibration_RO_pulse_duration']  
+    m.params['MW_pulse_amplitudes'] = m.params['MBI_calibration_RO_pulse_amplitude_sweep_vals']
+
+    m.params['sweep_name'] = 'Pulse amplitudes (V)'
+    m.params['sweep_pts'] = m.params['MW_pulse_amplitudes']
+    m.params['sequence_wait_time'] = \
+            int(np.ceil(np.max(m.params['MW_pulse_durations'])*1e6)+10)
+
+    for i,f in enumerate(m.params['MBI_calibration_RO_pulse_mod_frqs']):
+        m.params['MW_pulse_frequency'] = f
+        m.autoconfig()
+        m.generate_sequence(upload=True)
+        m.run()
+        m.save('line-{}'.format(i))
+        m.stop_sequence()
+        qt.msleep(1)
+
+    m.finish()
+
+###########
+### Calibration of the MBI fidelity
+### Calibration stage 1.75
+def calibrate_MBI_fidelity(name):
+    m = MBIFidelity(name)
+    funcs.prepare(m)
+
+    pts = 4
+    m.params['pts'] = pts
+    m.params['reps_per_ROsequence'] = 40000    
+
+    # MW pulses
+    m.params['max_MBI_attempts'] = 100
+    m.params['MW_pulse_multiplicities'] = np.ones(pts).astype(int)
+    m.params['MW_pulse_delays'] = np.ones(pts) * 2000e-9
+
+    MIM1_AMP = 0.005254
+    MI0_AMP = 0.005185
+    MIP1_AMP = 0.005038
+    m.params['MW_pulse_durations'] = np.ones(pts) * 8.3e-6 # the four readout pulse durations
+    m.params['MW_pulse_amps'] = np.array([MIM1_AMP, MI0_AMP, MIP1_AMP, 0.]) # calibrated powers for equal-length pi-pulses
+
+    # Assume for now that we're initializing into m_I = -1 (no other nuclear spins)
+    f_m1 = m.params['AWG_MBI_MW_pulse_mod_frq']
+    f_HF = m.params['N_HF_frq']
+
+    m.params['MW_pulse_mod_frqs'] = f_m1 + np.array([0,1,2,5]) * f_HF
+
+    # for the autoanalysis
+    m.params['sweep_name'] = 'Readout transitions'
+    m.params['sweep_pts'] = m.params['MW_pulse_mod_frqs']
+    m.params['sweep_pt_names'] = ['$m_I = -1$', '$m_I = 0$', '$m_I = +1$', 'None']
+
     funcs.finish(m, debug=False, upload=UPLOAD)
 
 ###########
@@ -528,6 +604,8 @@ if __name__ == '__main__':
     # GreenAOM_lt1.set_power(0)
     #run_calibrations(0)
     # run_calibrations(1)
+    # run_calibrations(1.5)
+    # run_calibrations(1.75)
     # run_calibrations(2)
     # run_calibrations(3)
     #run_calibrations(4)
@@ -548,6 +626,10 @@ if __name__ == '__main__':
             --> f_msm1_cntr_lt1  in parameters.py AND msmt_params.py
     stage 1: MBI: slow pulse 
             --> selective_pi_amp in parameters.py AND msmt_params.py
+    stage 1.5: MBI: slow RO pulses for fidelity calibration
+            --> three amplitudes in the function for stage 1.75
+    stage 1.75: MBI: fidelity
+            --> nothing, this is for statistics during the msmts and correction later
     stage 2: pulses: fast pi pulse, fast pi/2 pulse, CORPSE, pi-2pi pulse on mI=-1 
             --> fast_pi_amp, fast_pi2_amp, CORPSE_pi_amp, pi2pi_mIm1_amp in parameters.py
     stage 3: N RF pulse durations
