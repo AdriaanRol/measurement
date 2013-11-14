@@ -32,17 +32,17 @@ class lt2_ssro_optimizer(multiple_optimizer):
         self._ins_adwin=qt.instruments['adwin']
         self._ins_adwin_lt1=qt.instruments['adwin_lt1']
         self._ins_physical_adwin=qt.instruments['physical_adwin']
-        self._ins_ivvi=qt.instruments['ivvi']
+        self._ins_ivvi=qt.instruments['ivvi_lt1']
 
         ##values
         self._get_value_f={
                 't'             :    time.time,
-                'cr_checks'     :    lambda: self._ins_adwin.get_teleportation_var('get_noof_cr_checks'),
-                'probe_cts'     :    lambda: self._ins_adwin.get_teleportation_var('total_CR_counts'),
-                'repumps'       :    lambda: self._ins_adwin.get_teleportation_var('get_cr_below_threshold_events'),
+                'cr_checks'     :    lambda: self._ins_adwin_lt1.get_teleportation_var('noof_cr_checks'),
+                'probe_cts'     :    lambda: self._ins_adwin_lt1.get_teleportation_var('total_CR_counts'),
+                'repumps'       :    lambda: self._ins_adwin_lt1.get_teleportation_var('cr_below_threshold_events'),
                 'starts'        :    lambda: self._ins_adwin_lt1.get_teleportation_var('noof_starts'),
-                'noof_repumps'  :    lambda: self._ins_adwin.get_teleportation_var('noof_repumps'),
-                'repump_counts' :    lambda: self._ins_adwin.get_teleportation_var('repump_counts'),
+                'noof_repumps'  :    lambda: self._ins_adwin_lt1.get_teleportation_var('noof_repumps'),
+                'repump_counts' :    lambda: self._ins_adwin_lt1.get_teleportation_var('repump_counts'),
                 }  
         self._values={}
         for key in self._get_value_f.keys():
@@ -70,7 +70,7 @@ class lt2_ssro_optimizer(multiple_optimizer):
                           plot_name=self.plot_name)
         #self.create_stepper_buttons(pid)
         """
-        self._optimize_yellow=optimize_yellow
+        self._optimize_yellow=optimize_yellow and False
         if self._optimize_yellow:
             pid='pidyellow'
             pid_ins_y=qt.instruments[pid]

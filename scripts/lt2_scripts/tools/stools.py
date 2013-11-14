@@ -69,7 +69,7 @@ def check_power(name, setpoint, adwin, powermeter, servo,move_out=True):
     if bg>5e-9:
         print 'Background:', bg
     qt.instruments[name].set_power(setpoint)
-    qt.msleep(1)
+    qt.msleep(2)
 
     print name, 'setpoint:', setpoint, 'value:', qt.instruments[powermeter].get_power()-bg
 
@@ -118,7 +118,7 @@ def check_fast_path_power(powermeter, servo, awg='AWG', chan='ch4_marker1',
     qt.instruments[servo].move_in()
     qt.msleep(1)
     apply_awg_voltage(awg, chan, voltage)
-    qt.msleep(0.1)
+    qt.msleep(8)
 
     pwr = qt.instruments[powermeter].get_power()
     print 'Fast path power; {}: {:.3f} uW'.format(powermeter, pwr * 1e6)
@@ -151,7 +151,10 @@ def set_lt1_optimization_powers():
 
 
 
-
+def set_GreenAOM_power_lt1(power):
+    qt.instruments['ivvi_lt1'].set_dacs_zero()
+    if -1.<qt.instruments['ivvi_lt1'].get_dac2()<1.:
+        qt.instruments['GreenAOM_lt1'].set_power(power)
 
 
 

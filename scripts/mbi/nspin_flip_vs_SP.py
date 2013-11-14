@@ -94,7 +94,7 @@ def nspinflips(name):
     funcs.prepare(m)
     
     SP_power = 20e-9
-    m.params['AWG_SP_amplitude'] = qt.instruments['Velocity1AOM'].power_to_voltage(
+    m.params['AWG_SP_amplitude'] = qt.instruments['NewfocusAOM_lt1'].power_to_voltage(
         SP_power, controller='sec')
     m.params['AWG_SP_duration'] = 10e-6
 
@@ -105,8 +105,10 @@ def nspinflips(name):
     m.params['reps_per_ROsequence'] = 1000
 
     # for testing
-    # m.params['msm1_CORPSE_pi_amp'] = 0.
-    # m.params['pi2pi_mIm1_amp'] = 0.
+    m.params['msm1_CORPSE_pi_amp'] = 0.796974
+    m.params['pi2pi_mIm1_mod_frq'] = 2.828067e9 - 2.8e9 - 2.19290e6
+    m.params['pi2pi_mIm1_amp'] = 0.108
+    m.params['pi2pi_mIm1_duration'] = 396e-9
 
     # for the autoanalysis
     m.params['sweep_name'] = 'SP cycles'

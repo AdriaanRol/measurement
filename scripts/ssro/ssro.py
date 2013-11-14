@@ -79,26 +79,23 @@ def RO_optimal_power(name, yellow=False):
 
     m.finish()
 
-def RO_saturation_power(name, yellow=False):
+def RO_saturation_power(name):
     m = ssro.AdwinSSRO('RO_saturation_power_'+name)
     
     m.params.from_dict(qt.cfgman['protocols']['AdwinSSRO'])
     m.params.from_dict(qt.cfgman['protocols'][SAMPLE_CFG]['AdwinSSRO']) 
     
-    m.params['SSRO_repetitions'] = 5000
-    m.params['pts'] = 12
+    m.params['SSRO_repetitions'] = 2000
+    m.params['pts'] = 15
     pts = m.params['pts']
-    step = 2e-9
-
-    #repump settings
-    _set_repump_settings(m,yellow) 
+    step = 1e-9
 
     m.params['CR_preselect'] = 1000
     m.params['CR_probe'] = 10
     m.params['A_SP_amplitude'] =  10e-9
     m.params['Ex_SP_amplitude'] = 0.
     m.params['Ex_RO_amplitudes'] = np.arange(pts) * step + step
-    m.params['SSRO_duration'] = 100
+    m.params['SSRO_duration'] = 50
 
     for i,p in enumerate(m.params['Ex_RO_amplitudes']):
         if (msvcrt.kbhit() and (msvcrt.getch() == 'c')): break
@@ -221,7 +218,6 @@ def threshold_calibration(name, yellow=False):
             
     m.finish()
 
-
 def max_probe_time_calibration(name, yellow=False):
     m = ssro.AdwinSSRO('cal_max_probe_time_th_40_1'+name)
     
@@ -266,7 +262,6 @@ def max_probe_time_calibration(name, yellow=False):
     
     m.finish()
 
-
 # def SP_RO_saturation_power(name, yellow=False):
 #     m = ssro.AdwinSSRO('RO_saturation_power_'+name)
     
@@ -287,23 +282,9 @@ def max_probe_time_calibration(name, yellow=False):
 #         m.save('P_%dnW' % (p*1e9))
         
 #     m.finish()
-    
-def _set_repump_settings(m,yellow):
-    if yellow:
-        qt.instruments['GreenAOM'].set_power(0)
-        ssro.AdwinSSRO.repump_aom = qt.instruments['YellowAOM']
-        m.params['repump_duration']=m.params['yellow_repump_duration']
-        m.params['repump_amplitude']=m.params['yellow_repump_amplitude']
-        m.params['CR_repump']=2
-        m.params['repump_after_repetitions']=100
-    else:
-        #qt.instruments['YellowAOM_lt1'].set_power(0)
-        ssro.AdwinSSRO.repump_aom = qt.instruments['GreenAOM']
-        m.params['repump_duration']=m.params['green_repump_duration']
-        m.params['repump_amplitude']=m.params['green_repump_amplitude']
 
 if __name__ == '__main__':
-    RO_saturation_power('sil10_Ey_saturation', yellow=False)
+    RO_saturation_power('sil1_Ey_saturation')
     #SP_saturation_power('hans-sil4_SP_saturation', yellow=False)
     #threshold_calibration('hans-sil4_probe', yellow=False)
     #max_probe_time_calibration('hans-sil4', yellow=False)

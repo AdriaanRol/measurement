@@ -10,6 +10,8 @@ import measurement.lib.measurement2.measurement as m2
 from measurement.lib.measurement2.adwin_ssro import ssro
 from measurement.lib.measurement2.adwin_ssro import pulsar as pulsar_msmt
 
+from measurement.lib.measurement2.adwin_ssro import pulsar_mbi_espin
+
 import mbi_funcs 
 reload(mbi_funcs)
 

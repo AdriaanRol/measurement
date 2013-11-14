@@ -102,7 +102,8 @@ class simple_optimizer(Instrument):
             print 'variance: ', variance
             maxy=np.max(y)
             self.set_last_max(maxy)
-            if maxy>1.1*value_before:
+            print 'before', value_before,'after:', maxy
+            if maxy>value_before:
                 print self.get_name(),'setting new control (old,new,delta): {:.2f},{:.2f},{:.2f}'.format(self._get_control_f(),maxx,self._get_control_f()-maxx)
                 self._set_control_f(maxx)
             
