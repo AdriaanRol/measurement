@@ -4,6 +4,7 @@ import numpy as np
 from measurement.lib.measurement2.adwin_ssro import ssro
 from measurement.lib.measurement2.adwin_ssro import pulsar as pulsar_msmt
 from measurement.scripts.teleportation import parameters as tparams
+reload(tparams)
 
 def prepare(m):
 

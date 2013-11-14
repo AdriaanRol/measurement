@@ -15,9 +15,9 @@ from measurement.lib.measurement2.adwin_ssro import ssro
 from measurement.scripts.mbi import CORPSE_calibration
 reload(CORPSE_calibration)
 
-from measurements.scripts.mbi import mbi_fidelity
+from measurement.scripts.mbi import mbi_fidelity
 reload(mbi_fidelity)
-from measurements.scripts.mbi.mbi_fidelity import MBIFidelity
+from measurement.scripts.mbi.mbi_fidelity import MBIFidelity
 
 from measurement.scripts.teleportation.BSM import BSM_sequences as BSM_sequences
 reload(BSM_sequences)
@@ -120,20 +120,27 @@ def calibrate_MBI_fidelity_RO_pulses(name):
 ### Calibration stage 1.75
 def calibrate_MBI_fidelity(name):
     m = MBIFidelity(name)
+    m.params.from_dict(qt.cfgman['protocols']['AdwinSSRO'])
+    m.params.from_dict(qt.cfgman['protocols']['AdwinSSRO+MBI'])
     funcs.prepare(m)
 
     pts = 4
     m.params['pts'] = pts
-    m.params['reps_per_ROsequence'] = 40000    
+    m.params['reps_per_ROsequence'] = 10000    
 
     # MW pulses
     m.params['max_MBI_attempts'] = 100
+    m.params['N_randomize_duration'] = 50 # This could still be optimized, 50 is a guess
+    m.params['Ex_N_randomize_amplitude'] = 15e-9 # 10 nW is a guess, not optimized
+    m.params['A_N_randomize_amplitude'] = 20e-9 # 10 nW is a guess, not optimized
+    m.params['repump_N_randomize_amplitude'] = 0
+    
     m.params['MW_pulse_multiplicities'] = np.ones(pts).astype(int)
     m.params['MW_pulse_delays'] = np.ones(pts) * 2000e-9
 
-    MIM1_AMP = 0.005254
-    MI0_AMP = 0.005185
-    MIP1_AMP = 0.005038
+    MIM1_AMP = 0.005182
+    MI0_AMP = 0.005015
+    MIP1_AMP = 0.005009
     m.params['MW_pulse_durations'] = np.ones(pts) * 8.3e-6 # the four readout pulse durations
     m.params['MW_pulse_amps'] = np.array([MIM1_AMP, MI0_AMP, MIP1_AMP, 0.]) # calibrated powers for equal-length pi-pulses
 
@@ -214,7 +221,7 @@ def cal_fast_pi2(name):
     m.params['pts'] = 2*pts
 
 
-    sweep_axis = np.linspace(0.7, 0.9, pts)
+    sweep_axis = np.linspace(0.65, 0.9, pts)
     # pulses
     m.params['pi2_sweep_amps'] = sweep_axis
 
@@ -458,7 +465,7 @@ def bsm_test_BSM_with_LDE_superposition_in_calibrate_echo_time(name):
     m.params_lt1['sweep_name'] = 'echo times after LDE'
     m.params_lt1['sweep_pts'] = m.params_lt1['echo_times_after_LDE'] /1e-9
 
-    m.test_BSM_with_LDE_element_calibrate_echo_time()
+    m.test_BSM_with_LDE_element_calibrate_echo_time(basis='-Z')
     
     BSM_sequences.finish(m, debug=False, upload=UPLOAD)    
 
@@ -558,6 +565,12 @@ def run_calibrations(stage):
 
     if stage == 1:        
         cal_slow_pi(name)
+
+    if stage == 1.5:        
+        calibrate_MBI_fidelity_RO_pulses(name)
+
+    if stage == 1.75:        
+        calibrate_MBI_fidelity(name)
     
     if stage == 2:
         #cal_fast_rabi(name)
@@ -602,19 +615,18 @@ UPLOAD=True
 
 if __name__ == '__main__':
     #execfile('d:/measuring/measurement/scripts/'+SETUP+'_scripts/setup/msmt_params.py')
-    GreenAOM_lt1.set_power(0)
     #run_calibrations(0)
     #run_calibrations(1)
     # run_calibrations(1.5)
-    # run_calibrations(1.75)
+    #run_calibrations(1.75)
     #run_calibrations(2)
-    #run_calibrations(2.5)
-    #run_calibrations(3)
+    run_calibrations(2.5)
+    # run_calibrations(3)
     #run_calibrations(4)
     #run_calibrations(5)
     #run_calibrations(6)
-    #run_calibrations(7)
-    run_calibrations(8)
+    # run_calibrations(7)
+    # run_calibrations(8)
     #run_calibrations(9)
 
     """
@@ -642,9 +654,9 @@ if __name__ == '__main__':
             --> pi2_evolution_time in parameters.py
     stage 6: LDE - BSM echo time
             --> echo_time_after_LDE in parameters.py
-    stage 7: Hadamard phase, compensating for psi shift (10)
+    stage 7: Hadamard phase, compensating for psi shift
             --> H_phase in parameters.py
-    stage 8: Hadamard evolution time, compensating for phi shift (11)
+    stage 8: Hadamard evolution time, compensating for phi shift
             --> H_evolution_time in parameters.py
     stage 9: test contrast of the BSM, incl N-RepRO;
             --> nothing, that's just a check

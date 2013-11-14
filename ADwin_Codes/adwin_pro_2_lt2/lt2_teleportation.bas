@@ -237,7 +237,8 @@ EVENT:
   CR_repump                    = PAR_69
   
   if (par_50 > 0) then
-    current_CR_threshold = 10000
+    CR_preselect                 = 1000
+    CR_probe                     = 1000
   endif  
   
   par_62 = current_cr_threshold

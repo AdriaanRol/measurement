@@ -3,6 +3,8 @@ import numpy as np
 
 from measurement.lib.measurement2.adwin_ssro import ssro, pulsar_mbi_espin
 from measurement.scripts.teleportation import parameters as tparams
+reload(tparams)
+tparams.CALIBRATION = True
 
 def prepare(m):
 

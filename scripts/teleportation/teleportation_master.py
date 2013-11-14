@@ -22,7 +22,9 @@ reload(pulsar)
 from HH import T2_tools
 
 import parameters as tparams
+tparams.CALIBRATION=False
 reload(tparams)
+
 
 import sequence as tseq
 reload(tseq)
@@ -404,7 +406,7 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
                 A10_psiplus_RO_el = pi2minx_el
                 A11_psiplus_RO_el = pi2minx_el
             else:
-                raise Exception('source_state_basis/ro_basis not recognized. ')
+                raise Exception('source_state_basis/ro_basis not recognized.')
 
             
             self.lt2_seq.append(name = 'A00_psi-', 
@@ -597,6 +599,7 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
         self.start_keystroke_monitor('abort')
 
         print misc.start_msg
+        print time.strftime('%H:%M')
         while running:
 
 
@@ -665,6 +668,7 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
                         self.h5data.flush()
         
         self.adwins['adwin_lt1']['ins'].set_teleportation_var(kill_by_CR=1)
+        self.adwins['adwin_lt2']['ins'].set_teleportation_var(kill_by_CR=1)
         qt.msleep(2)
 
         self.stop_adwin_processes()
@@ -995,7 +999,10 @@ def default_msmt(name):
 
     m.params_lt1['max_CR_starts'] = 1000
     m.params_lt1['teleportation_repetitions'] = -1
-    m.params['measurement_time'] = 30*60 # seconds -- will actually stop 10 sec earlier.
+    m.params['measurement_time'] = 40*60 # seconds -- will actually stop 10 sec earlier.
+
+    qt.instruments['ZPLServo'].move_out()
+    qt.instruments['ZPLServo_lt1'].move_out()
 
     start_msmt(m)
     finish_msmnt()
@@ -1012,6 +1019,7 @@ def program_lt2_sequence_only(name):
 
 if __name__ == '__main__':
     #name = raw_input('Name?')
-    default_msmt('Teleportation_first_attempt_4_-Z_+Z')
+    default_msmt('Teleportation_second_attempt_6+Z_+Z')
     #program_lt2_sequence_only('test_DD')
-                                                                                                                                                                                                                                                                                          
+
+

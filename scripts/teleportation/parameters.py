@@ -45,7 +45,7 @@ params_lt2['freq_AOM_DAC_channel'] = 4
 ### RO settings
 params_lt1['A_SP_duration'] = 10 # 10 used after MBI and after the first RO of the BSM
 params_lt1['wait_before_SSRO2'] = 3
-params_lt1['SSRO_duration'] = 12 #15 DO NOT PUT LOWER THAN 10 us or adept adwin trigger length
+params_lt1['SSRO_duration'] = 10 #15 DO NOT PUT LOWER THAN 10 us or adept adwin trigger length
 params_lt1['wait_before_send_BSM_done'] = 40  # this makes sure that the BSM result strobe arives during the last decoupling element. 
                                               # if the total duration of the BSM (incl 3 * params_lt1['SSRO_duration'] ) is changed 
                                               # by more than 20 us, this number has to be readjusted.
@@ -66,7 +66,7 @@ params_lt1['repump_N_randomize_amplitude'] = 0
 params_lt1['E_CR_amplitude'] = 4e-9
 params_lt1['A_CR_amplitude'] = 10e-9               
 params_lt1['E_SP_amplitude'] = 10e-9 #was 10e-9              
-params_lt1['E_RO_amplitude'] = 6e-9  
+params_lt1['E_RO_amplitude'] = 4e-9  
 params_lt1['A_RO_amplitude'] = 0
 params_lt1['A_SP_amplitude'] = 20e-9
 params_lt1['repump_amplitude'] = 50e-9 # 50e-9 for yellow 200e-6 for green
@@ -91,12 +91,12 @@ params_lt1['N_RO_repetitions'] = 2 # THIS IS COMPILED INTO THE ADWIN CODE!
 #LT2 RO CR SP
 #################################################################################################################
 
-params_lt2['SSRO_lt2_duration'] = 20
+params_lt2['SSRO_lt2_duration'] = 23
 
-params_lt2['Ey_CR_amplitude'] = 4e-9#6e-9             
-params_lt2['A_CR_amplitude'] = 10e-9#16e-9              
+params_lt2['Ey_CR_amplitude'] = 6e-9#6e-9             
+params_lt2['A_CR_amplitude'] = 15e-9#16e-9              
 params_lt2['Ey_SP_amplitude'] = 0e-9              
-params_lt2['A_SP_amplitude'] = 20e-9             
+params_lt2['A_SP_amplitude'] = 23e-9             
 params_lt2['Ey_RO_amplitude'] = 7e-9
 params_lt2['A_RO_amplitude'] = 0
 params_lt2['repump_amplitude'] = 200e-6 
@@ -115,7 +115,7 @@ params_lt2['CR_probe_max_time'] = 500000 # in us # TODO is that still valid?
 ### pulses and MW stuff LT1
 #####################
 ## general
-f_msm1_cntr_lt1 = 2.828053e9
+f_msm1_cntr_lt1 = 2.828095e9
 N_frq_lt1 = 7.13456e6
 N_HF_frq_lt1 = 2.19290e6
 mw0_lt1= 2.8e9
@@ -135,8 +135,8 @@ params_lt1['AWG_MBI_MW_pulse_mod_frq'] = finit_lt1
 params_lt1['N_ref_frq'] = N_frq_lt1
 params_lt1['e_ref_frq'] = finit_lt1
 params_lt1['pi2_evolution_time'] = 52.439e-6
-params_lt1['H_evolution_time'] = 35.0515e-6
-params_lt1['H_phase'] = 205.68 #was 103.94 -72,  was 61, 28
+params_lt1['H_evolution_time'] = 35.0508e-6
+params_lt1['H_phase'] = 204.2 # 203.52 #205.68 #was 103.94 -72,  was 61, 28
 params_lt1['echo_time_after_LDE'] = -575e-9
 
 params_lt1['buffer_time_for_CNOT'] = 240e-9
@@ -146,17 +146,17 @@ params_lt1['buffer_time_for_CNOT'] = 240e-9
 
 ## pulses
 params_lt1['fast_pi_mod_frq'] = finit_lt1
-params_lt1['fast_pi_amp'] = 0.831
+params_lt1['fast_pi_amp'] = 0.785
 params_lt1['fast_pi_duration'] = 80e-9
 
 # fast pi/2 pulse
 params_lt1['fast_pi2_mod_frq'] = finit_lt1
-params_lt1['fast_pi2_amp'] = 0.808
+params_lt1['fast_pi2_amp'] = 0.796250#0.805
 params_lt1['fast_pi2_duration'] = 42e-9
 
 # slow pi  pulse
 params_lt1['selective_pi_mod_frq'] = finit_lt1
-params_lt1['selective_pi_amp'] =  0.0166
+params_lt1['selective_pi_amp'] =  0.0163
 params_lt1['selective_pi_duration'] = 2500e-9
 
 CORPSE_frq_lt1 = 5e6
@@ -164,19 +164,19 @@ params_lt1['CORPSE_pi_mod_frq'] = finit_lt1 + N_HF_frq_lt1/2.
 params_lt1['CORPSE_pi_60_duration'] = 1./CORPSE_frq_lt1/6.
 params_lt1['CORPSE_pi_m300_duration'] = 5./CORPSE_frq_lt1/6.
 params_lt1['CORPSE_pi_420_duration'] = 7./CORPSE_frq_lt1/6.
-params_lt1['CORPSE_pi_amp'] = 0.517
+params_lt1['CORPSE_pi_amp'] = 0.500
 params_lt1['CORPSE_pi_phase_shift'] = 86.9
 params_lt1['CORPSE_pi_center_shift'] = 0.e-9
 
 params_lt1['pi2pi_mIm1_mod_frq'] = finit_lt1
-params_lt1['pi2pi_mIm1_amp'] = 0.108
+params_lt1['pi2pi_mIm1_amp'] = 0.105
 params_lt1['pi2pi_mIm1_duration'] = 396e-9
 
 params_lt1['pi2pi_mI0_mod_frq'] = finit_lt1 + N_HF_frq_lt1
-params_lt1['pi2pi_mI0_amp'] = 0.107
+params_lt1['pi2pi_mI0_amp'] = 0.103
 params_lt1['pi2pi_mI0_duration'] = 396e-9
 
-params_lt1['N_pi_duration'] = 48.115e-6
+params_lt1['N_pi_duration'] = 48.007e-6
 params_lt1['N_pi_amp'] = .55
 
 params_lt1['N_pi2_duration'] = params_lt1['N_pi_duration']/2.
@@ -186,7 +186,7 @@ params_lt1['N_pi2_amp'] =.55
 ### pulses and MW stuff LT2
 #####################
 ## general
-f_msm1_cntr_lt2 = 2.8288e9 
+f_msm1_cntr_lt2 = 2.828777e9 
 mw0_lt2 = 2.8e9
 f0_lt2 = f_msm1_cntr_lt2 - mw0_lt2
 params_lt2['ms-1_cntr_frq'] = f_msm1_cntr_lt2
@@ -195,8 +195,8 @@ params_lt2['mw_power'] = 20
 params_lt2['MW_pulse_mod_risetime'] = 10e-9
 
 params_lt2['CORPSE_rabi_frequency'] = 8.15e6
-params_lt2['CORPSE_amp'] = 0.385
-params_lt2['CORPSE_pi2_amp'] = 0.423
+params_lt2['CORPSE_amp'] = 0.3851
+params_lt2['CORPSE_pi2_amp'] = 0.419977
 
 params_lt2['CORPSE_pi_mod_frq'] = f0_lt2
 params_lt2['CORPSE_pi2_mod_frq'] = f0_lt2
@@ -204,9 +204,9 @@ params_lt2['CORPSE_pi2_mod_frq'] = f0_lt2
 params_lt2['pi2_pulse_phase'] = 0 #Y
 params_lt2['DD_pi_phases'] = [90,0,90] ## THIS DEFINES THE XYX SEQUENCE
 params_lt2['CORPSE_pi2_wait_length']= 1300e-9
-params_lt2['first_C_revival'] = 106.027e-6/2. #C revival after CORPSE_pi2_wait_length 
-params_lt2['dd_extra_t_between_pi_pulses'] = 371e-9
-params_lt2['dd_spin_echo_time'] = -82e-9 
+params_lt2['first_C_revival'] = 106.579e-6/2. #C revival after CORPSE_pi2_wait_length 
+params_lt2['dd_extra_t_between_pi_pulses'] = -0.190e-6#0.470e-6
+params_lt2['dd_spin_echo_time'] = -83.5e-9
 
 ### LDE sequence settings
 params['HH_sync_period'] = 400e-9 # in seconds -- important for checking (see measurement_loop())
@@ -255,11 +255,11 @@ params['LDE_SP_duration_yellow']      = 3e-6
 params['wait_after_sp']               = 500e-9 #this should be large enough, so that the MW puls fits
 params['LDE_element_length']          = 8e-6 # 9e-6 for TPQI with 5 pulses
 
-params['source_state_basis'] = '-Z'  # 'Z', '-Z', 'X', '-X', 'Y', '-Y' 
+params['source_state_basis'] = 'Z'  # 'Z', '-Z', 'X', '-X', 'Y', '-Y' 
 params['ro_basis'] = 'Z'             # 'Z', ending up in ms=0, or '-Z' ending up in ms=-1 (maybe)
 
 ### default process settings
-params['LDE_attempts_before_CR'] = 500 # 1000 for tpqi seems ok
+params['LDE_attempts_before_CR'] = 250 # 1000 for tpqi seems ok
 
 params_lt1['max_CR_starts'] = -1
 params_lt1['teleportation_repetitions'] = -1
@@ -271,9 +271,10 @@ params_lt2['teleportation_repetitions'] = -1
 ########
 ## parameters (for now) only used in calibration scripts
 ########
-CALIBRATION = True  #  only for checking.
+CALIBRATION = True
 
-if CALIBRATION:
+if CALIBRATION == True:
+    print 'calibration settings loaded'
 
     ############### lt1
     ####################
@@ -282,7 +283,7 @@ if CALIBRATION:
     params_lt1['AWG_wait_duration_before_shelving_pulse'] = 100e-9
 
     params['nr_of_ROsequences'] = 1 # this is the standard
-    params_lt1['Ex_MBI_amplitude'] = 4e-9
+    params_lt1['Ex_MBI_amplitude'] = params_lt1['E_RO_amplitude']
     #params_lt1['AWG_to_adwin_ttl_trigger_duration'] = 2e-6
 
 
@@ -346,3 +347,6 @@ if CALIBRATION:
     params_lt2['Ex_RO_amplitude'] = params_lt2['Ey_RO_amplitude']
 
     params_lt1['Ex_RO_amplitude'] = params_lt1['E_RO_amplitude']
+else:
+    print 'calibration settings not loaded'
+

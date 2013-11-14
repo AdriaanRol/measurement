@@ -16,7 +16,7 @@ from measurement.scripts.espin.calibrate_CORPSE import CORPSECalibration
 from measurement.scripts.teleportation.DD import dd_measurements as dd_msmt
 reload(dd_msmt)
 
-import DD_funcs as funcs
+from measurement.scripts.teleportation.DD import DD_funcs as funcs
 reload(funcs)
 
 name = 'sil10'
@@ -279,7 +279,7 @@ def run_calibrations(stage):
 UPLOAD = True
 DEBUG = False
 if __name__ == '__main__':
-    #execfile('d:/measuring/measurement/scripts/lt2_scripts/setup/msmt_params.py')
+    #execfile('d:/measuring/measurement/scripts/lt2_scripts/setup/msmt_par-ms.py')
     #run_calibrations(0)
     #run_calibrations(0.25)
     #run_calibrations(0.5)
@@ -288,7 +288,7 @@ if __name__ == '__main__':
     #run_calibrations(2)
     #run_calibrations(3) 
     run_calibrations(4) 
-    #dd_calibrate_T2(name)
+    #dd_calibrate_T2(name) 
     
 
     """

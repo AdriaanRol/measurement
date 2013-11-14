@@ -119,7 +119,7 @@ def tail_lt2(name):
     m.params['pts']=1
     m.params['send_AWG_start'] = 1
     m.params['wait_for_AWG_done'] = 0
-    m.params['repetitions'] = 100000
+    m.params['repetitions'] = 50000
     m.params['sequence_wait_time'] = m.params['LDE_attempts_before_CR']*m.params['LDE_element_length']*1e6 + 20
     m.params['SP_duration'] = 250
 

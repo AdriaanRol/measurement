@@ -476,14 +476,26 @@ def _lt1_N_init_element(msmt, name, basis = 'Y', **kw):
 
     if basis == '-Z':
         N_pulse = pulse.cp(msmt.TN) # waiting time only -> change as little as possible
+    
     elif basis == 'Y':
         N_pulse = pulse.cp(msmt.N_pi2, 
             phase = 90) #pulse along x onto y (starting in -z)
+    
     elif basis == 'X':
         N_pulse = pulse.cp(msmt.N_pi2, 
             phase = 180) #pulse along -y onto x (starting in -z)
+    
     elif basis == 'Z':
         N_pulse = pulse.cp(msmt.N_pi) #pulse onto z (starting in -z)
+    
+    elif basis == '-Y':
+        N_pulse = pulse.cp(msmt.N_pi2, 
+            phase = -90)
+    
+    elif basis == '-X':
+        N_pulse = pulse.cp(msmt.N_pi2, 
+            phase = 0)
+
     else :
         raise Exception('Basis state not recognised')
                             
