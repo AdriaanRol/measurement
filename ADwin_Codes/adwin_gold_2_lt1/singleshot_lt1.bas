@@ -57,25 +57,24 @@ DIM counts, old_counts AS LONG
 
 INIT:
   init_CR()
-  AWG_start_DO_channel         = DATA_20[5]
-  AWG_done_DI_channel          = DATA_20[6]
-  send_AWG_start               = DATA_20[7]
-  wait_for_AWG_done            = DATA_20[8]
+  AWG_start_DO_channel         = DATA_20[1]
+  AWG_done_DI_channel          = DATA_20[2]
+  send_AWG_start               = DATA_20[3]
+  wait_for_AWG_done            = DATA_20[4]
+  SP_duration                  = DATA_20[5]
+  SP_filter_duration           = DATA_20[6]
+  sequence_wait_time           = DATA_20[7]
+  wait_after_pulse_duration    = DATA_20[8]
+  SSRO_repetitions             = DATA_20[9]
+  SSRO_duration                = DATA_20[10]
+  SSRO_stop_after_first_photon = DATA_20[11]
+  cycle_duration               = DATA_20[12] '(in processor clock cycles, 3.333ns)
+  APD_gate_DO_channel          = DATA_20[13]
 
-  SP_duration                  = DATA_20[11]
-  SP_filter_duration           = DATA_20[12]
-  sequence_wait_time           = DATA_20[13]
-  wait_after_pulse_duration    = DATA_20[14]
-  SSRO_repetitions             = DATA_20[16]
-  SSRO_duration                = DATA_20[17]
-  SSRO_stop_after_first_photon = DATA_20[18]
-  cycle_duration               = DATA_20[19] '(in processor clock cycles, 3.333ns)
-  APD_gate_DO_channel          = DATA_20[23]
-
-  E_SP_voltage                 = DATA_21[5]
-  A_SP_voltage                 = DATA_21[6]
-  E_RO_voltage                 = DATA_21[7]
-  A_RO_voltage                 = DATA_21[8]
+  E_SP_voltage                 = DATA_21[1]
+  A_SP_voltage                 = DATA_21[2]
+  E_RO_voltage                 = DATA_21[3]
+  A_RO_voltage                 = DATA_21[4]
   
   FOR i = 1 TO SSRO_repetitions
     DATA_22[i] = 0
@@ -111,7 +110,7 @@ INIT:
   
   'live updated pars
   Par_73 = repetition_counter     ' SSRO repetitions
-  par_79 = 0                      ' SSRO cumulative counts
+  par_74 = 0                      ' SSRO cumulative counts
 
 EVENT:
 
@@ -172,7 +171,7 @@ EVENT:
             DAC(A_laser_DAC_channel, 3277*A_off_voltage+32768) ' turn off A laser
             counts = CNT_READ(counter_channel) - old_counts
             old_counts = counts
-            PAR_79 = PAR_79 + counts
+            PAR_74 = PAR_74 + counts
             i = timer + repetition_counter * SSRO_duration
             DATA_25[i] = counts
             CNT_ENABLE(0)
@@ -199,7 +198,7 @@ EVENT:
               DAC(E_laser_DAC_channel, 3277*E_off_voltage+32768) ' turn off E laser
               DAC(A_laser_DAC_channel, 3277*A_off_voltage+32768) ' turn off A laser
               CNT_ENABLE(0)
-              PAR_79 = PAR_79 + counts
+              PAR_74 = PAR_74 + counts
               
               mode = 0
               timer = -1

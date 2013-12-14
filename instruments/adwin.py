@@ -92,6 +92,8 @@ class adwin(Instrument):
     # process dictionary
     def _make_process_tools(self, proc):
         for p in proc:
+            if 'no_process_tools' in proc[p]:
+                continue
             self._make_load(p, proc[p]['file'], proc[p]['index'])
             self._make_start(p, proc[p]['index'], proc[p])
             self._make_stop(p, proc[p]['index'])
@@ -122,6 +124,7 @@ class adwin(Instrument):
         return True
 
     def _make_start(self, pn, pidx, proc):
+
         funcname = 'start_' + pn
         while hasattr(self, funcname):
             funcname += '_'
@@ -177,6 +180,23 @@ class adwin(Instrument):
                                 % (pidx, pn)
                         return False
                     time.sleep(.001)
+
+            if 'include_cr' in proc:
+                cr_params_long=self.processes['cr_check']['params_long']
+                pls = np.zeros(len(cr_params_long), dtype=int)
+                for i,pl in enumerate(cr_params_long):
+                    pls[i] = kw.pop(pl[0], pl[1])
+                self.physical_adwin.Set_Data_Long(pls, 
+                        self.processes['cr_check']['params_long_index'], 1, 
+                        len(cr_params_long))
+
+                cr_params_float = self.processes['cr_check']['params_float']
+                pfs = np.zeros(len(cr_params_float), dtype=float)
+                for i,pf in enumerate(cr_params_float):
+                    pfs[i] = kw.pop(pf[0], pf[1])
+                self.physical_adwin.Set_Data_Float(pfs, 
+                        self.processes['cr_check']['params_float_index'], 1, 
+                        len(cr_params_float))
 
             if 'params_long' in proc:
                 pls = np.zeros(len(proc['params_long']), dtype=int)

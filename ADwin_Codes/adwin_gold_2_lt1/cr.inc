@@ -37,19 +37,19 @@ SUB init_CR()
   repump_laser_DAC_channel     = DATA_30[2]
   E_laser_DAC_channel          = DATA_30[3]
   A_laser_DAC_channel          = DATA_30[4]
-  repump_duration              = DATA_30[9]
-  CR_duration                  = DATA_30[10]
-  cr_wait_after_pulse_duration    = DATA_20[14]
-  CR_preselect                 = DATA_20[15]
-  CR_probe                     = DATA_20[20]
-  CR_repump                    = DATA_20[21]
+  repump_duration              = DATA_30[5]
+  CR_duration                  = DATA_30[6]
+  cr_wait_after_pulse_duration = DATA_30[7]
+  CR_preselect                 = DATA_30[8]
+  CR_probe                     = DATA_30[9]
+  CR_repump                    = DATA_30[10]
 
   repump_voltage               = DATA_31[1]
   repump_off_voltage           = DATA_31[2]
   E_CR_voltage                 = DATA_31[3]
   A_CR_voltage                 = DATA_31[4]
-  E_off_voltage                = DATA_31[9]
-  A_off_voltage                = DATA_31[10]
+  E_off_voltage                = DATA_31[5]
+  A_off_voltage                = DATA_31[6]
   
   FOR i = 1 TO max_stat
     DATA_26[i] = 0
@@ -68,7 +68,7 @@ SUB init_CR()
   Par_68 = CR_probe
   par_69 = CR_repump
   par_76 = 0                      ' cumulative counts during repumping
-  
+  par_79 = 0                      ' CR below treshold events
 ENDSUB
 
 
