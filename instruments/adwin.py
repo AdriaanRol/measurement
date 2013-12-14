@@ -92,12 +92,11 @@ class adwin(Instrument):
     # process dictionary
     def _make_process_tools(self, proc):
         for p in proc:
-            if 'no_process_tools' in proc[p]:
-                continue
-            self._make_load(p, proc[p]['file'], proc[p]['index'])
-            self._make_start(p, proc[p]['index'], proc[p])
-            self._make_stop(p, proc[p]['index'])
-            self._make_is_running(p, proc[p]['index'])
+            if not('no_process_start' in proc[p]):
+                self._make_load(p, proc[p]['file'], proc[p]['index'])
+                self._make_start(p, proc[p]['index'], proc[p])
+                self._make_stop(p, proc[p]['index'])
+                self._make_is_running(p, proc[p]['index'])
             self._make_get(p, proc[p])
             self._make_set(p, proc[p])
 
