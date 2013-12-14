@@ -20,6 +20,7 @@ class AdwinSSRO(m2.AdwinControlledMeasurement):
     max_SP_bins = 500
     max_SSRO_dim = 1000000
     adwin_process = 'singleshot'
+    adwin_cr_process='cr_check'
     adwin_dict = adwins_cfg.config
     adwin_processes_key = ''
     E_aom = None
@@ -60,6 +61,15 @@ class AdwinSSRO(m2.AdwinControlledMeasurement):
         self.E_aom.set_power(0.)
         self.A_aom.set_power(0.)        
     
+    def _set_adwin_process_variable_from_params(self,key):
+        try:
+                self.adwin_process_params[key] = self.params[key]
+        except:
+            logging.error("Cannot set adwin process variable '%s'" \
+                    % key)
+            raise Exception('Adwin process variable {} has not been set \
+                                in the measurement params dictionary!'.format(key))
+
     def run(self, autoconfig=True, setup=True):
         if autoconfig:
             self.autoconfig()
@@ -69,13 +79,13 @@ class AdwinSSRO(m2.AdwinControlledMeasurement):
             
         for key,_val in self.adwin_dict[self.adwin_processes_key]\
                 [self.adwin_process]['params_long']:              
-            
-            try:
-                self.adwin_process_params[key] = self.params[key]
-            except:
-                logging.error("Cannot set adwin process variable '%s'" \
-                        % key)
-                raise Exception('Adwin process variable {} has not been set in the params dictionary!'.format(key))
+            self._set_adwin_process_variable_from_params(key)
+        
+        if 'include_cr' in self.adwin_dict[self.adwin_processes_key]\
+                [self.adwin_process]:
+            for key,_val in self.adwin_dict[self.adwin_processes_key]\
+                    [self.adwin_cr_process]['params_long']:              
+                self._set_adwin_process_variable_from_params(key)
 
         self.adwin_process_params['Ex_CR_voltage'] = \
                 self.E_aom.power_to_voltage(
