@@ -45,38 +45,6 @@ class AdwinSSRO(m2.AdwinControlledMeasurement):
         #self.params['gate_DAC_channel'] = self.adwin.get_dac_channels()\
         #        ['gate']
 
-    def setup(self):
-        """
-        sets up the hardware such that the msmt can be run
-        (i.e., turn off the lasers, prepare MW src, etc)
-        """
-        
-        self.repump_aom.set_power(0.)
-        self.E_aom.set_power(0.)
-        self.A_aom.set_power(0.)
-        self.repump_aom.set_cur_controller('ADWIN')
-        self.E_aom.set_cur_controller('ADWIN')
-        self.A_aom.set_cur_controller('ADWIN')
-        self.repump_aom.set_power(0.)
-        self.E_aom.set_power(0.)
-        self.A_aom.set_power(0.)        
-    
-    def _set_adwin_process_variable_from_params(self,key):
-        try:
-                self.adwin_process_params[key] = self.params[key]
-        except:
-            logging.error("Cannot set adwin process variable '%s'" \
-                    % key)
-            raise Exception('Adwin process variable {} has not been set \
-                                in the measurement params dictionary!'.format(key))
-
-    def run(self, autoconfig=True, setup=True):
-        if autoconfig:
-            self.autoconfig()
-            
-        if setup:
-            self.setup()
-            
         for key,_val in self.adwin_dict[self.adwin_processes_key]\
                 [self.adwin_process]['params_long']:              
             self._set_adwin_process_variable_from_params(key)
@@ -120,8 +88,40 @@ class AdwinSSRO(m2.AdwinControlledMeasurement):
         self.adwin_process_params['A_off_voltage'] = \
                 self.A_aom.get_pri_V_off()
         self.adwin_process_params['Ex_off_voltage'] = \
-                self.E_aom.get_pri_V_off()          
+                self.E_aom.get_pri_V_off()
+
+    def setup(self):
+        """
+        sets up the hardware such that the msmt can be run
+        (i.e., turn off the lasers, prepare MW src, etc)
+        """
         
+        self.repump_aom.set_power(0.)
+        self.E_aom.set_power(0.)
+        self.A_aom.set_power(0.)
+        self.repump_aom.set_cur_controller('ADWIN')
+        self.E_aom.set_cur_controller('ADWIN')
+        self.A_aom.set_cur_controller('ADWIN')
+        self.repump_aom.set_power(0.)
+        self.E_aom.set_power(0.)
+        self.A_aom.set_power(0.)        
+    
+    def _set_adwin_process_variable_from_params(self,key):
+        try:
+                self.adwin_process_params[key] = self.params[key]
+        except:
+            logging.error("Cannot set adwin process variable '%s'" \
+                    % key)
+            raise Exception('Adwin process variable {} has not been set \
+                                in the measurement params dictionary!'.format(key))
+
+    def run(self, autoconfig=True, setup=True):
+        if autoconfig:
+            self.autoconfig()
+            
+        if setup:
+            self.setup()
+             
         self.start_adwin_process(stop_processes=['counter'])
         qt.msleep(1)
         self.start_keystroke_monitor('abort',timer=False)

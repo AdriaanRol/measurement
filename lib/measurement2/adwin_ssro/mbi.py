@@ -194,55 +194,13 @@ class MBIMeasurement(sequence.SequenceSSRO):
                     self.params['Ex_MBI_amplitude'])
                     
             
-    def run(self):    
-        for i in range(10):
-            self.physical_adwin.Stop_Process(i+1)
-            qt.msleep(0.1)
+    def run(self, autoconfig=True, setup=True):
+        if autoconfig:
+            self.autoconfig()
             
-        for key,_val in self.adwin_dict[self.adwin_processes_key]\
-                [self.adwin_process]['params_long']:
-            try:
-                self.adwin_process_params[key] = self.params[key]
-            except:
-                logging.error("Cannot set adwin process variable '%s'" \
-                        % key)
-                return False
-        
-        self.adwin_process_params['Ex_CR_voltage'] = \
-                self.E_aom.power_to_voltage(
-                        self.params['Ex_CR_amplitude'])
-        
-        self.adwin_process_params['A_CR_voltage'] = \
-                self.A_aom.power_to_voltage(
-                        self.params['A_CR_amplitude'])
-
-        self.adwin_process_params['Ex_SP_voltage'] = \
-                self.E_aom.power_to_voltage(
-                        self.params['Ex_SP_amplitude'])
-
-        self.adwin_process_params['A_SP_voltage'] = \
-                self.A_aom.power_to_voltage(
-                        self.params['A_SP_amplitude'])
-
-        self.adwin_process_params['Ex_RO_voltage'] = \
-                self.E_aom.power_to_voltage(
-                        self.params['Ex_RO_amplitude'])
-
-        self.adwin_process_params['A_RO_voltage'] = \
-                self.A_aom.power_to_voltage(
-                        self.params['A_RO_amplitude'])
-                       
-        self.adwin_process_params['repump_voltage'] = \
-                self.repump_aom.power_to_voltage(
-                        self.params['repump_amplitude'])
-                
-        self.adwin_process_params['repump_off_voltage'] = \
-                self.repump_aom.get_pri_V_off()
-        self.adwin_process_params['A_off_voltage'] = \
-                self.A_aom.get_pri_V_off()
-        self.adwin_process_params['Ex_off_voltage'] = \
-                self.E_aom.get_pri_V_off()      
-        
+        if setup:
+            self.setup()
+                               
         qt.msleep(1)
         self.adwin.load_MBI()
         qt.msleep(1)
@@ -261,7 +219,7 @@ class MBIMeasurement(sequence.SequenceSSRO):
         self.physical_adwin.Set_Data_Long(
                 self.params['sequence_wait_time'], 33, 1, length)
                 
-        self.start_adwin_process(load=False)
+        self.start_adwin_process(stop_processes=['counter'], load=False)
         qt.msleep(1)
         self.start_keystroke_monitor('abort')
         
