@@ -7,7 +7,7 @@ from instrument import Instrument
 import time
 from lib import config
 from adwin import adwin
-from measurement.lib.config import adwin_lt1 as adwinscfg
+from measurement.lib.config import adwins as adwinscfg
 
 class adwin_lt1(adwin):
     def __init__(self, name, physical_adwin='physical_adwin_lt1', **kw):

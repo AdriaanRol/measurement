@@ -8,7 +8,7 @@ import time
 from lib import config
 
 from measurement.instruments.adwin import adwin
-from measurement.lib.config import adwin_lt2 as adwinscfg
+from measurement.lib.config import adwins as adwinscfg
 
 
 class adwin_lt2(adwin):
