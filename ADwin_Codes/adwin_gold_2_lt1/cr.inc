@@ -93,7 +93,6 @@ FUNCTION CR_check(first_cr, repetition_index) As LONG
             CNT_CLEAR(counter_pattern)    'clear counter
             CNT_ENABLE(counter_pattern)    'turn on counter
             DAC(repump_laser_DAC_channel, 3277*repump_voltage+32768) ' turn on green
-            ' DIGOUT(APD_gate_DO_channel,0)'turn off APD
             repumps = repumps + 1
             inc(par_71)
           ELSE
@@ -107,7 +106,6 @@ FUNCTION CR_check(first_cr, repetition_index) As LONG
           IF (cr_timer = repump_duration) THEN
             
             DAC(repump_laser_DAC_channel, 3277*repump_off_voltage+32768) ' turn off green
-            ' DIGOUT(APD_gate_DO_channel,0) 'turn on APD
             cr_counts = CNT_READ(counter_channel)
             CNT_ENABLE(0)
             CNT_CLEAR(counter_pattern)

@@ -180,21 +180,21 @@ class adwin(Instrument):
                         return False
                     time.sleep(.001)
 
-            if 'include_cr' in proc:
-                cr_params_long=self.processes['cr_check']['params_long']
+            if 'include_cr_process' in proc:
+                cr_params_long=self.processes[proc['include_cr_process']]['params_long']
                 pls = np.zeros(len(cr_params_long), dtype=int)
                 for i,pl in enumerate(cr_params_long):
                     pls[i] = kw.pop(pl[0], pl[1])
                 self.physical_adwin.Set_Data_Long(pls, 
-                        self.processes['cr_check']['params_long_index'], 1, 
+                        self.processes[proc['include_cr_process']]['params_long_index'], 1, 
                         len(cr_params_long))
 
-                cr_params_float = self.processes['cr_check']['params_float']
+                cr_params_float = self.processes[proc['include_cr_process']]['params_float']
                 pfs = np.zeros(len(cr_params_float), dtype=float)
                 for i,pf in enumerate(cr_params_float):
                     pfs[i] = kw.pop(pf[0], pf[1])
                 self.physical_adwin.Set_Data_Float(pfs, 
-                        self.processes['cr_check']['params_float_index'], 1, 
+                        self.processes[proc['include_cr_process']]['params_float_index'], 1, 
                         len(cr_params_float))
 
             if 'params_long' in proc:

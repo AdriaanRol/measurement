@@ -20,7 +20,6 @@ class AdwinSSRO(m2.AdwinControlledMeasurement):
     max_SP_bins = 500
     max_SSRO_dim = 1000000
     adwin_process = 'singleshot'
-    adwin_cr_process='cr_check'
     adwin_dict = adwins_cfg.config
     adwin_processes_key = ''
     E_aom = None
@@ -49,10 +48,11 @@ class AdwinSSRO(m2.AdwinControlledMeasurement):
                 [self.adwin_process]['params_long']:              
             self._set_adwin_process_variable_from_params(key)
         
-        if 'include_cr' in self.adwin_dict[self.adwin_processes_key]\
+        if 'include_cr_process' in self.adwin_dict[self.adwin_processes_key]\
                 [self.adwin_process]:
             for key,_val in self.adwin_dict[self.adwin_processes_key]\
-                    [self.adwin_cr_process]['params_long']:              
+                    [self.adwin_dict[self.adwin_processes_key]\
+                [self.adwin_process]['include_cr_process']]['params_long']:              
                 self._set_adwin_process_variable_from_params(key)
 
         self.adwin_process_params['Ex_CR_voltage'] = \
