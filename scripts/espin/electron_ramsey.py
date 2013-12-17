@@ -2,7 +2,7 @@ import qt
 import numpy as np
 from measurement.lib.measurement2.adwin_ssro import pulsar
 
-import espin_funcs as funcs
+from measurement.scripts.espin import espin_funcs as funcs
 reload(funcs)
 
 name = 'sil5_det_0MHz_ph_0MHz'

@@ -1,5 +1,5 @@
 """
-LT2 script for e-spin manipulations using the pulsar sequencer
+Script for e-spin manipulations using the pulsar sequencer
 """
 import numpy as np
 import qt
@@ -25,24 +25,24 @@ def erabi(name):
     m.params['pts'] = 21
     pts = m.params['pts']
     
-    m.params['MW_pulse_durations'] = np.ones(pts) * 61e-9 #np.linspace(5, 105, pts) * 1e-9 # 
+    m.params['MW_pulse_durations'] =  np.ones(pts) * 50e-9 #np.linspace(5, 105, pts) * 1e-9 #
     m.params['repetitions'] = 1000
     
-    m.params['MW_pulse_amplitudes'] = np.linspace(0., 0.7,pts)
-    m.params['mw_frq'] = 2.8e9 # m.params['ms-1_cntr_frq']
+    m.params['MW_pulse_amplitudes'] = np.linspace(0., 0.7,pts)#np.ones(pts) *0.5 #
+    m.params['mw_frq'] = 2.8e9 
     m.params['MW_pulse_frequency'] = m.params['ms-1_cntr_frq'] - m.params['mw_frq']  
     
     # for autoanalysis
-    m.params['sweep_name'] = 'Pulse amps (V)'
+    #m.params['sweep_name'] = 'Pulse duration (ns)' #'Pulse amps (V)'
+    #m.params['sweep_pts'] = m.params['MW_pulse_durations']*1e9
+
+    m.params['sweep_name'] = 'Pulse amplitudes (V)'
     m.params['sweep_pts'] = m.params['MW_pulse_amplitudes']
 
-    # m.params['sweep_name'] = 'Pulse amplitudes (V)'
-    # m.params['sweep_pts'] = m.params['MW_pulse_amplitudes']
-
     m.params['sequence_wait_time'] = \
-            int(np.ceil(np.max(m.params['MW_pulse_durations'])*1e6)+10)
+            int(np.ceil(np.max(m.params['MW_pulse_durations'])*1e6)+10) #Redundant because defined in m.autoconfig? Tim
 
-    m.autoconfig()
+    m.autoconfig() #Redundant because executed in m.run()? Tim
     m.generate_sequence(upload=True)
     m.run()
     m.save()
@@ -50,4 +50,4 @@ def erabi(name):
 
 if __name__ == '__main__':
     # erabi(SAMPLE+'_'+'find_high_rabi_sil1')
-    erabi(SAMPLE+'_'+'find_pi')
+    erabi(SAMPLE+'_'+'amplitude_Rabi')

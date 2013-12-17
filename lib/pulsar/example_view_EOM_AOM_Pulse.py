@@ -13,7 +13,7 @@ e = element.Element('sequence_element', clock=1e9, min_samples=0)
 e.define_channel('EOM_Matisse')
 e.define_channel('EOM_AOM_Matisse')
 
-opt_pulse = pulselib.EOMAOMPulse('Eom Aom Pulse', 
+opt_pulse = pulselib.short_EOMAOMPulse('Eom Aom Pulse', 
         eom_channel = 'EOM_Matisse',
         aom_channel = 'EOM_AOM_Matisse')
 

@@ -86,6 +86,7 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
         self.params_lt1['do_LDE_sequence'] = 1 if DO_LDE_SEQUENCE else 0
         self.params_lt1['use_yellow_lt2'] = YELLOW_lt2
         self.params_lt1['use_yellow_lt1'] = YELLOW_lt1
+        self.params['do_ff'] = DO_FF
 
     
     def update_definitions(self):
@@ -328,8 +329,7 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
             pi2minx_el = tseq._lt2_final_pi2(self, name = 'FF_-x',  time_offset = RO_time_offset, CORPSE_pi2_phase = -90)
               
 
-            if  (self.params['source_state_basis'] == 'Z' and self.params['ro_basis'] == 'Z') or \
-                    (self.params['source_state_basis'] == '-Z' and self.params['ro_basis'] == '-Z'): 
+            if (self.params['tomography_basis'] == 'Z'): 
                 
                 A00_psimin_RO_el  = id_el
                 A01_psimin_RO_el  = piY_el
@@ -341,8 +341,7 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
                 A10_psiplus_RO_el = id_el
                 A11_psiplus_RO_el = piY_el
 
-            elif (self.params['source_state_basis'] == 'Z' and self.params['ro_basis'] == '-Z') or \
-                    (self.params['source_state_basis'] == '-Z' and self.params['ro_basis'] == 'Z'): 
+            elif (self.params['tomography_basis'] == '-Z'): 
                 
                 A00_psimin_RO_el  = piY_el
                 A01_psimin_RO_el  = id_el
@@ -354,8 +353,7 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
                 A10_psiplus_RO_el = piY_el
                 A11_psiplus_RO_el = id_el
 
-            elif (self.params['source_state_basis'] == 'X' and self.params['ro_basis'] == 'Z') or \
-                    (self.params['source_state_basis'] == '-X' and self.params['ro_basis'] == '-Z'): 
+            elif (self.params['tomography_basis'] == 'X'):
                 
                 A00_psimin_RO_el  = pi2miny_el
                 A01_psimin_RO_el  = pi2y_el
@@ -367,8 +365,7 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
                 A10_psiplus_RO_el = pi2miny_el
                 A11_psiplus_RO_el = pi2y_el
 
-            elif  (self.params['source_state_basis'] == 'X' and self.params['ro_basis'] == '-Z') or \
-                    (self.params['source_state_basis'] == '-X' and self.params['ro_basis'] == 'Z'): 
+            elif (self.params['tomography_basis'] == '-X'):
                 
                 A00_psimin_RO_el  = pi2y_el
                 A01_psimin_RO_el  = pi2miny_el
@@ -380,9 +377,8 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
                 A10_psiplus_RO_el = pi2y_el
                 A11_psiplus_RO_el = pi2miny_el
 
-            elif (self.params['source_state_basis'] == 'Y' and self.params['ro_basis'] == 'Z') or \
-                    (self.params['source_state_basis'] == '-Y' and self.params['ro_basis'] == '-Z'): 
-                
+            elif (self.params['tomography_basis'] == 'Y'):
+
                 A00_psimin_RO_el  = pi2x_el
                 A01_psimin_RO_el  = pi2x_el
                 A10_psimin_RO_el  = pi2minx_el
@@ -393,8 +389,7 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
                 A10_psiplus_RO_el = pi2x_el
                 A11_psiplus_RO_el = pi2x_el
 
-            elif (self.params['source_state_basis'] == 'Y' and self.params['ro_basis'] == '-Z') or \
-                    (self.params['source_state_basis'] == '-Y' and self.params['ro_basis'] == 'Z'): 
+            elif (self.params['tomography_basis'] == '-Y'):
 
                 A00_psimin_RO_el  = pi2minx_el
                 A01_psimin_RO_el  = pi2minx_el
@@ -406,9 +401,8 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
                 A10_psiplus_RO_el = pi2minx_el
                 A11_psiplus_RO_el = pi2minx_el
             else:
-                raise Exception('source_state_basis/ro_basis not recognized.')
+                raise Exception('tomography basis not recognized.')
 
-            
             self.lt2_seq.append(name = 'A00_psi-', 
                 wfname = A00_psimin_RO_el.name,
                 goto_target = 'LT2_ready_for_RO')
@@ -444,15 +438,25 @@ class TeleportationMaster(m2.MultipleAdwinsMeasurement):
 
         self.lt2_seq.set_djump(True)
         if DO_DD:
-            # note: A01 etc. gives out nitrogen value first, jump expects electron RO first. 
-            self.lt2_seq.add_djump_address(int('1000',2),'A00_psi-') 
-            self.lt2_seq.add_djump_address(int('1001',2),'A01_psi-')
-            self.lt2_seq.add_djump_address(int('1010',2),'A10_psi-')
-            self.lt2_seq.add_djump_address(int('1011',2),'A11_psi-')
-            self.lt2_seq.add_djump_address(int('0000',2),'A00_psi+')
-            self.lt2_seq.add_djump_address(int('0001',2),'A01_psi+')
-            self.lt2_seq.add_djump_address(int('0010',2),'A10_psi+')
-            self.lt2_seq.add_djump_address(int('0011',2),'A11_psi+')
+            # note: A01 etc. gives out nitrogen value first, jump expects electron RO first.
+            if DO_FF:
+                self.lt2_seq.add_djump_address(int('1000',2),'A00_psi-') 
+                self.lt2_seq.add_djump_address(int('1001',2),'A01_psi-')
+                self.lt2_seq.add_djump_address(int('1010',2),'A10_psi-')
+                self.lt2_seq.add_djump_address(int('1011',2),'A11_psi-')
+                self.lt2_seq.add_djump_address(int('0000',2),'A00_psi+')
+                self.lt2_seq.add_djump_address(int('0001',2),'A01_psi+')
+                self.lt2_seq.add_djump_address(int('0010',2),'A10_psi+')
+                self.lt2_seq.add_djump_address(int('0011',2),'A11_psi+')
+            else:
+                self.lt2_seq.add_djump_address(int('1000',2),'A00_psi-') 
+                self.lt2_seq.add_djump_address(int('1001',2),'A00_psi-')
+                self.lt2_seq.add_djump_address(int('1010',2),'A00_psi-')
+                self.lt2_seq.add_djump_address(int('1011',2),'A00_psi-')
+                self.lt2_seq.add_djump_address(int('0000',2),'A00_psi+')
+                self.lt2_seq.add_djump_address(int('0001',2),'A00_psi+')
+                self.lt2_seq.add_djump_address(int('0010',2),'A00_psi+')
+                self.lt2_seq.add_djump_address(int('0011',2),'A00_psi+')
 
             self.lt2_seq.add_djump_address(int('1100',2),'DD') 
             self.lt2_seq.add_djump_address(int('1101',2),'DD')
@@ -902,6 +906,7 @@ HH_MAX_SYNC_TIME = 3e6 # 10.2 us
 OPT_PI_PULSES = 2
 DO_BSM = True
 DO_DD = True
+DO_FF = False
 
 DO_READOUT = True ##don't change this!
 
@@ -987,7 +992,8 @@ def default_msmt(name):
         else:
             raise Exception('HH not opened, please close HH software, you moron.')
 
-
+    if tparams.CALIBRATION:
+        raise Exception('Params file has calibration settings, you dumb shit')
     if DO_SEQUENCES:
         setup_remote_sequence()
 
@@ -999,7 +1005,7 @@ def default_msmt(name):
 
     m.params_lt1['max_CR_starts'] = 1000
     m.params_lt1['teleportation_repetitions'] = -1
-    m.params['measurement_time'] = 40*60 # seconds -- will actually stop 10 sec earlier.
+    m.params['measurement_time'] = 30*60 # seconds -- will actually stop 10 sec earlier.
 
     qt.instruments['ZPLServo'].move_out()
     qt.instruments['ZPLServo_lt1'].move_out()
@@ -1019,7 +1025,7 @@ def program_lt2_sequence_only(name):
 
 if __name__ == '__main__':
     #name = raw_input('Name?')
-    default_msmt('Teleportation_second_attempt_6+Z_+Z')
+    default_msmt('Teleportation_tomography_1_Y_+Y_no_FF')
     #program_lt2_sequence_only('test_DD')
 
 

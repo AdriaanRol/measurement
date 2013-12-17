@@ -115,7 +115,7 @@ params_lt2['CR_probe_max_time'] = 500000 # in us # TODO is that still valid?
 ### pulses and MW stuff LT1
 #####################
 ## general
-f_msm1_cntr_lt1 = 2.828095e9
+f_msm1_cntr_lt1 = 2.828048e9
 N_frq_lt1 = 7.13456e6
 N_HF_frq_lt1 = 2.19290e6
 mw0_lt1= 2.8e9
@@ -136,7 +136,7 @@ params_lt1['N_ref_frq'] = N_frq_lt1
 params_lt1['e_ref_frq'] = finit_lt1
 params_lt1['pi2_evolution_time'] = 52.439e-6
 params_lt1['H_evolution_time'] = 35.0508e-6
-params_lt1['H_phase'] = 204.2 # 203.52 #205.68 #was 103.94 -72,  was 61, 28
+params_lt1['H_phase'] = 202.5 # 203.52 #205.68 #was 103.94 -72,  was 61, 28
 params_lt1['echo_time_after_LDE'] = -575e-9
 
 params_lt1['buffer_time_for_CNOT'] = 240e-9
@@ -146,12 +146,12 @@ params_lt1['buffer_time_for_CNOT'] = 240e-9
 
 ## pulses
 params_lt1['fast_pi_mod_frq'] = finit_lt1
-params_lt1['fast_pi_amp'] = 0.785
+params_lt1['fast_pi_amp'] = 0.794
 params_lt1['fast_pi_duration'] = 80e-9
 
 # fast pi/2 pulse
 params_lt1['fast_pi2_mod_frq'] = finit_lt1
-params_lt1['fast_pi2_amp'] = 0.796250#0.805
+params_lt1['fast_pi2_amp'] = 0.77867#0.805
 params_lt1['fast_pi2_duration'] = 42e-9
 
 # slow pi  pulse
@@ -164,16 +164,16 @@ params_lt1['CORPSE_pi_mod_frq'] = finit_lt1 + N_HF_frq_lt1/2.
 params_lt1['CORPSE_pi_60_duration'] = 1./CORPSE_frq_lt1/6.
 params_lt1['CORPSE_pi_m300_duration'] = 5./CORPSE_frq_lt1/6.
 params_lt1['CORPSE_pi_420_duration'] = 7./CORPSE_frq_lt1/6.
-params_lt1['CORPSE_pi_amp'] = 0.500
+params_lt1['CORPSE_pi_amp'] = 0.503
 params_lt1['CORPSE_pi_phase_shift'] = 86.9
 params_lt1['CORPSE_pi_center_shift'] = 0.e-9
 
 params_lt1['pi2pi_mIm1_mod_frq'] = finit_lt1
-params_lt1['pi2pi_mIm1_amp'] = 0.105
+params_lt1['pi2pi_mIm1_amp'] = 0.106
 params_lt1['pi2pi_mIm1_duration'] = 396e-9
 
 params_lt1['pi2pi_mI0_mod_frq'] = finit_lt1 + N_HF_frq_lt1
-params_lt1['pi2pi_mI0_amp'] = 0.103
+params_lt1['pi2pi_mI0_amp'] = 0.104
 params_lt1['pi2pi_mI0_duration'] = 396e-9
 
 params_lt1['N_pi_duration'] = 48.007e-6
@@ -186,7 +186,7 @@ params_lt1['N_pi2_amp'] =.55
 ### pulses and MW stuff LT2
 #####################
 ## general
-f_msm1_cntr_lt2 = 2.828777e9 
+f_msm1_cntr_lt2 = 2.828827e9 
 mw0_lt2 = 2.8e9
 f0_lt2 = f_msm1_cntr_lt2 - mw0_lt2
 params_lt2['ms-1_cntr_frq'] = f_msm1_cntr_lt2
@@ -195,8 +195,8 @@ params_lt2['mw_power'] = 20
 params_lt2['MW_pulse_mod_risetime'] = 10e-9
 
 params_lt2['CORPSE_rabi_frequency'] = 8.15e6
-params_lt2['CORPSE_amp'] = 0.3851
-params_lt2['CORPSE_pi2_amp'] = 0.419977
+params_lt2['CORPSE_amp'] = 0.382
+params_lt2['CORPSE_pi2_amp'] = 0.419864
 
 params_lt2['CORPSE_pi_mod_frq'] = f0_lt2
 params_lt2['CORPSE_pi2_mod_frq'] = f0_lt2
@@ -205,7 +205,7 @@ params_lt2['pi2_pulse_phase'] = 0 #Y
 params_lt2['DD_pi_phases'] = [90,0,90] ## THIS DEFINES THE XYX SEQUENCE
 params_lt2['CORPSE_pi2_wait_length']= 1300e-9
 params_lt2['first_C_revival'] = 106.579e-6/2. #C revival after CORPSE_pi2_wait_length 
-params_lt2['dd_extra_t_between_pi_pulses'] = -0.190e-6#0.470e-6
+params_lt2['dd_extra_t_between_pi_pulses'] = -0.111e-6#0.470e-6
 params_lt2['dd_spin_echo_time'] = -83.5e-9
 
 ### LDE sequence settings
@@ -255,8 +255,10 @@ params['LDE_SP_duration_yellow']      = 3e-6
 params['wait_after_sp']               = 500e-9 #this should be large enough, so that the MW puls fits
 params['LDE_element_length']          = 8e-6 # 9e-6 for TPQI with 5 pulses
 
-params['source_state_basis'] = 'Z'  # 'Z', '-Z', 'X', '-X', 'Y', '-Y' 
-params['ro_basis'] = 'Z'             # 'Z', ending up in ms=0, or '-Z' ending up in ms=-1 (maybe)
+##### set source state basis and tomography basis seperately. For 'regular' teleportation: source state = tomography basis. 
+##### For ending up akong -Z, choose oppsite tomography basis. For tomography, choose tomography basis :) 
+params['source_state_basis'] = 'Y'  # 'Z', '-Z', 'X', '-X', 'Y', '-Y' 
+params['tomography_basis'] = 'Y'
 
 ### default process settings
 params['LDE_attempts_before_CR'] = 250 # 1000 for tpqi seems ok
@@ -271,7 +273,7 @@ params_lt2['teleportation_repetitions'] = -1
 ########
 ## parameters (for now) only used in calibration scripts
 ########
-CALIBRATION = True
+CALIBRATION = False
 
 if CALIBRATION == True:
     print 'calibration settings loaded'

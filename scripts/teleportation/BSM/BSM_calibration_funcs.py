@@ -500,7 +500,7 @@ def bsm_test_BSM_with_LDE_superposition_in_sweep_H_ev_time(name):
     
     pts = 17
     m.params['pts'] = pts
-    m.params['reps_per_ROsequence'] = 1000
+    m.params['reps_per_ROsequence'] = 2000
 
     m.params_lt1['repump_after_MBI_amplitude'] = 0. #SP is in LDE element!! :)
     #H evolution time should be more than N pi/2 pulse duration = 28e-6
@@ -617,16 +617,16 @@ if __name__ == '__main__':
     #execfile('d:/measuring/measurement/scripts/'+SETUP+'_scripts/setup/msmt_params.py')
     #run_calibrations(0)
     #run_calibrations(1)
-    # run_calibrations(1.5)
+    #run_calibrations(1.5)
     #run_calibrations(1.75)
     #run_calibrations(2)
-    run_calibrations(2.5)
+    #run_calibrations(2.5)
     # run_calibrations(3)
     #run_calibrations(4)
     #run_calibrations(5)
     #run_calibrations(6)
-    # run_calibrations(7)
-    # run_calibrations(8)
+    #run_calibrations(7)
+    run_calibrations(8)
     #run_calibrations(9)
 
     """
