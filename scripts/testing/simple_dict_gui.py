@@ -1,8 +1,9 @@
-from enthought.traits.api \
+from traits.api \
     import HasTraits, Instance
 
-from enthought.traits.ui.api \
-    import View, VGroup, Item, ValueEditor, TreeEditor
+from traitsui.api \
+    import View, VGroup, Item, ValueEditor, TreeEditor, Handler
+
 
 class DictEditor(HasTraits):
     Object = Instance( object )
@@ -38,6 +39,17 @@ def build_sample_data():
 
 # Test
 if __name__ == '__main__':
-    my_data = qt.cfgman['protocols']['AdwinSSRO']
+    my_data = {
+        'dict1':{
+          'some par':112312,
+          'second par':23.5,
+          'thisrt par':'dfs',
+          },
+        'dict2':{
+          'some par':112312,
+          'second par':23.5,
+          'thisrt par':{'ff':'fff','gg':'ggg'},
+          },
+    }
     b = DictEditor(my_data)
     b.configure_traits()
