@@ -155,7 +155,7 @@ cfg.set(branch+        'repump_after_MBI_amp',                     15e-9)
 ### sil 10 ###
 branch='samples/sil10/'
 
-f_msm1_cntr = 2.8288e9 
+f_msm1_cntr = 2.828855e9 
 f_msp1_cntr = 2.925884e9 #not calibrated
 N_frq = 7.13429e6 #not calibrated
 N_HF_frq = 2.16042e6 
@@ -167,30 +167,46 @@ cfg.set(branch+'N_HF_frq', N_HF_frq)
 
 
 branch='protocols/sil10-default/AdwinSSRO/'
-cfg.set(branch+'A_CR_amplitude', 15e-9)
+cfg.set(branch+'A_CR_amplitude', 40e-9)
 cfg.set(branch+'A_RO_amplitude' , 0)
-cfg.set(branch+'A_SP_amplitude', 20e-9)
-cfg.set(branch+'CR_duration' , 50)
+cfg.set(branch+'A_SP_amplitude', 40e-9)
+cfg.set(branch+'CR_duration' , 250)
 cfg.set(branch+'CR_preselect', 15)
 cfg.set(branch+'CR_probe', 2)
 cfg.set(branch+'CR_repump', 1000)
 cfg.set(branch+'Ex_CR_amplitude', 6e-9)
-cfg.set(branch+'Ex_RO_amplitude', 7e-9)
+cfg.set(branch+'Ex_RO_amplitude', 8e-9)
 cfg.set(branch+'Ex_SP_amplitude', 0e-9)
-cfg.set(branch+'SP_duration', 50)
+cfg.set(branch+'SP_duration', 250)
 cfg.set(branch+'SP_filter_duration', 0)
 cfg.set(branch+'SSRO_duration', 50)
 cfg.set(branch+'SSRO_repetitions', 5000)
 cfg.set(branch+'SSRO_stop_after_first_photon', 0)
-cfg.set(branch+'mw_frq',2.8e9-100e6)
+cfg.set(branch+'mw_frq',2.8e9) #-100e6)
 cfg.set(branch+'mw_power',20)
 cfg.set(branch+'MW_pulse_mod_risetime',10e-9)
 
 branch='protocols/sil10-default/AdwinSSRO-integrated/'
-cfg.set(branch+'SSRO_duration', 30)
+cfg.set(branch+'SSRO_duration', 40)
 
+### sil 10 pulses !!!NOT CALIBRATED
 
+branch='protocols/sil10-default/pulses/'
 
+f0 = cfg['samples']['sil10']['ms-1_cntr_frq'] - cfg['protocols']['sil10-default']['AdwinSSRO']['mw_frq']
+cfg.set(branch+'MW_modulation_frequency', f0)
+cfg.set(branch+'Pi_pulse_duration', 50e-9)
+cfg.set(branch+'Pi_pulse_amp',  0.49)
+
+'''
+cfg.set('protocols/sil15-default/pulses/4MHz_pi2_duration',  tof + 45e-9)
+cfg.set('protoMW_pulse_frequencycols/sil15-default/pulses/4MHz_pi2_amp',  0.698)
+cfg.set('protocols/sil15-default/pulses/4MHz_pi2_mod_frq',  finit)
+
+cfg.set('protocols/sil15-default/pulses/hard_pi_duration',  80e-9)
+cfg.set('protocols/sil15-default/pulses/hard_pi_amp',  0.809)
+cfg.set('protocols/sil15-default/pulses/hard_pi_frq',  f0)
+'''
 #### sil9 ###
 #### sil9, AdwinSSRO ###
 #

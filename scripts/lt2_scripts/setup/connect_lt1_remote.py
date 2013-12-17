@@ -55,7 +55,7 @@ else:
 
 GreenAOM_lt1 = 'use stools with the gate!'
 qt.instruments.create('GreenAOM_lt1', 'AOM', 
-        use_adwin='adwin_lt1', use_pm = powermeter_lt1.get_name())         
+        use_adwin='adwin_lt1', use_pm = powermeter_lt1.get_name(), use_awg='AWG_lt1')         
 NewfocusAOM_lt1 = qt.instruments.create('NewfocusAOM_lt1', 'AOM', 
         use_adwin='adwin_lt1', use_pm = powermeter_lt1.get_name(), use_awg='AWG_lt1')         
 MatisseAOM_lt1 = qt.instruments.create('MatisseAOM_lt1', 'AOM', 
