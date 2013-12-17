@@ -74,6 +74,9 @@ def data_from_time(timestamp):
     elif len(timestamp) == 14:
         daystamp = timestamp[:8]
         tstamp = timestamp[8:]
+    elif len(timestamp) == 15: 
+        daystamp = timestamp[:8]
+        tstamp = timestamp[9:]
     else:
         logging.warning("Cannot interpret timestamp '%s'" % timestamp)
         return None
