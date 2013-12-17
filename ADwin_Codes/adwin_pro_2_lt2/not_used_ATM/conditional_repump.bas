@@ -21,7 +21,7 @@
 ' PAR_72: sequence probe events
 
 #INCLUDE ADwinPro_All.inc
-#INCLUDE configuration.inc
+#INCLUDE .\configuration.inc
 
 DIM counter AS LONG               ' select internal ADwin counter 1 - 4 for conditional readout
 DIM AOM_channel AS LONG           ' DAC channel for green laser AOM

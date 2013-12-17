@@ -15,7 +15,7 @@
 ' set is either 0 or 1
 
 #INCLUDE ADwinPro_All.inc
-#INCLUDE configuration.inc
+#INCLUDE .\configuration.inc
 #Include Math.inc
 
 DIM strobe as Long

@@ -23,7 +23,7 @@
 '
 '
 #INCLUDE ADwinPro_All.inc
-#INCLUDE configuration.inc
+#INCLUDE .\configuration.inc
 
 DIM v_start AS FLOAT
 DIM v_stop AS FLOAT

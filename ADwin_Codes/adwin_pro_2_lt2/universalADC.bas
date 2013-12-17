@@ -11,7 +11,7 @@
 ' Info_Last_Save                 = TUD276629  TUD276629\localadmin
 '<Header End>
 #INCLUDE ADwinPro_All.inc
-#INCLUDE configuration.inc
+#INCLUDE .\configuration.inc
 
 EVENT:
   FPAR_63 = (P2_ADC(ADC_MODULE,PAR_63)-32768.0)/65536.0*20.0

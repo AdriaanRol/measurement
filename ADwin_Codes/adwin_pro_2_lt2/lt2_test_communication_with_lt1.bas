@@ -14,7 +14,7 @@
 ' this is the LT2 side.
 
 #INCLUDE ADwinPro_All.inc
-#INCLUDE configuration.inc
+#INCLUDE .\configuration.inc
 #Include Math.inc
 
 DIM ADwin_switched_to_high AS LONG

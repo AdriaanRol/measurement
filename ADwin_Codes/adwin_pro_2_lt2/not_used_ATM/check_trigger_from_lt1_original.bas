@@ -11,7 +11,7 @@
 ' Info_Last_Save                 = TUD276629  TUD276629\localadmin
 '<Header End>
 #INCLUDE ADwinPro_All.inc
-#INCLUDE configuration.inc
+#INCLUDE .\configuration.inc
 
 #DEFINE trigger_dio_in_bit 256      'par_32 later maybe as a variable
 #DEFINE trigger_dio_out 16          'par_33 later maybe as a variable

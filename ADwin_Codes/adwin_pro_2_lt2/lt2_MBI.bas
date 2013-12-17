@@ -66,7 +66,7 @@
 ' Data_26[...]               statistics : how often we entered each mode
 
 #INCLUDE ADwinPro_All.inc
-#INCLUDE configuration.inc
+#INCLUDE .\configuration.inc
 #Include Math.inc
 
 #DEFINE max_SP_bins       500

@@ -17,7 +17,7 @@
 ' FPAR_65: sweep rate (in V/s)
 
 #INCLUDE ADwinPro_All.inc
-#INCLUDE configuration.inc
+#INCLUDE .\configuration.inc
 
 DIM DAC_NR AS INTEGER
 DIM U_START AS FLOAT

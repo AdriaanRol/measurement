@@ -85,7 +85,7 @@
 ' Data_26[max_statistics]              statistics
 
 #INCLUDE ADwinPro_All.inc
-#INCLUDE configuration.inc
+#INCLUDE .\configuration.inc
 #Include Math.inc
 
 #DEFINE max_repetitions   20000

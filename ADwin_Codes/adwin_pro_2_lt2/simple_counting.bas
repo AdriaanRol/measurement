@@ -24,7 +24,7 @@
 ' - DATA_45[1--4] : counts of the most recent count interval (int time)
 
 #INCLUDE ADwinPro_All.inc
-#INCLUDE configuration.inc
+#INCLUDE .\configuration.inc
 
 DIM int_time AS LONG        ' in ms
 DIM avg_steps AS LONG       ' multiples of int_time

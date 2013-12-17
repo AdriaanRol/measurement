@@ -23,7 +23,7 @@
 ' mode  4:  SSRO OK, waiting
 
 #INCLUDE ADwinPro_All.inc
-#INCLUDE configuration.inc
+#INCLUDE .\configuration.inc
 ' #Include Math.inc
 
 #DEFINE max_repetitions   20000

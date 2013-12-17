@@ -14,7 +14,7 @@
 ' involved DACs, their start voltage, their end voltage and the number of steps
 ' (including start and stop)
 #INCLUDE ADwinPro_All.inc
-#INCLUDE configuration.inc
+#INCLUDE .\configuration.inc
 
 ' scan settings
 DIM NoOfDACs, i, CurrentStep, NoOfSteps AS INTEGER

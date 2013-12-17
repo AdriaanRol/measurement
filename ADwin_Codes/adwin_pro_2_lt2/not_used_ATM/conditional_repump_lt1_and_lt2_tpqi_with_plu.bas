@@ -17,7 +17,7 @@
 ' conditional on the count rate, either the AWG sequence is started or the repump pulse is repeated
 
 #INCLUDE ADwinPro_All.inc
-#INCLUDE configuration.inc
+#INCLUDE .\configuration.inc
 
 #DEFINE max_hist_cts 100                ' dimension of photon counts histogram for CR
 DIM DATA_7[max_hist_cts] as long       ' histogram of counts during 1st CR after interference sequence

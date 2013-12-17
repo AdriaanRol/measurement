@@ -11,7 +11,7 @@
 ' Info_Last_Save                 = TUD276629  TUD276629\localadmin
 '<Header End>
 #INCLUDE ADwinPro_All.inc
-#INCLUDE configuration.inc
+#INCLUDE .\configuration.inc
 
 EVENT:
   PAR_65 = P2_DIGIN_EDGE(DIO_MODULE, PAR_66)

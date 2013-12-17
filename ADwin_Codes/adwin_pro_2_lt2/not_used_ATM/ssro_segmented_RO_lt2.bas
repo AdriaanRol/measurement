@@ -70,7 +70,7 @@
 '   3   CR_failed
 
 #INCLUDE ADwinPro_All.inc
-#INCLUDE configuration.inc
+#INCLUDE .\configuration.inc
 
 #DEFINE max_repetitions 20000
 #DEFINE max_SP_bins       500

@@ -11,7 +11,7 @@
 ' Info_Last_Save                 = TUD276629  TUD276629\localadmin
 '<Header End>
 #Include ADwinPro_All.Inc
-#INCLUDE configuration.inc
+#INCLUDE .\configuration.inc
 
 #define ctr_nr 01b                     ' use counter 1 from counter module
 #define floating_sum_cycles 100         ' how much readout pulses should be summed

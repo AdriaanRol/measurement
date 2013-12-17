@@ -102,7 +102,7 @@
 ' DATA_25 (int) : Gate phase at time of SSRO
 
 #INCLUDE ADwinPro_All.inc
-#INCLUDE configuration.inc
+#INCLUDE .\configuration.inc
 
 ' parameters
 DIM DATA_20[20] AS LONG               ' integer parameters
