@@ -8,7 +8,7 @@
 ' mode  1:  E/A pulse, photon counting  ->  CR check
 '           fail: -> mode 0
 
-#DEFINE max_repetitions 20000
+#DEFINE max_repetitions 500000
 #DEFINE max_stat           10
 
 'init
@@ -71,7 +71,6 @@ SUB init_CR()
   par_69 = CR_repump
   par_76 = 0                      ' cumulative counts during repumping
   par_79 = 0                      ' CR below treshold events
-  par_80 = -1
 ENDSUB
 
 
@@ -86,7 +85,7 @@ FUNCTION CR_check(first_cr, repetition_index) As LONG
   IF (cr_wait_after_pulse > 0) THEN
     DEC(cr_wait_after_pulse)
   ELSE
-    par_80 = cr_timer
+
     SELECTCASE cr_mode 
       CASE 0    ' green repump
               

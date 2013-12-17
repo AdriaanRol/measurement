@@ -93,6 +93,7 @@ INIT:
   
   repetition_counter  = 0
   first               = 0
+  wait_after_pulse    = 0
     
   DAC(repump_laser_DAC_channel, 3277*repump_off_voltage+32768) ' turn off green
   DAC(E_laser_DAC_channel, 3277*E_off_voltage+32768) ' turn off E laser

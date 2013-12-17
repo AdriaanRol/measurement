@@ -223,7 +223,6 @@ config['adwin_lt1_processes'] = {
                     ['SSRO_duration'               ,  50],
                     ['SSRO_stop_after_first_photon',   0],
                     ['cycle_duration'              , 300],
-                    ['APD_DO_channel'              ,  3],
                     ],
                 'params_long_index'  : 20,
                 'params_float' : [
@@ -238,6 +237,92 @@ config['adwin_lt1_processes'] = {
                     'RO_data' : 25,
                     },                    
                 },
+
+        'integrated_ssro' : {
+                'index' : 9,
+                'file' : 'integrated_ssro_lt1.TB9',
+                'include_cr_process' : 'cr_check', #This process includes the CR check lib
+                'params_long' : [           # keep order!!!!!!!!!!!!!
+                    ['AWG_start_DO_channel'        ,  16],
+                    ['AWG_done_DI_channel'         ,   8],
+                    ['send_AWG_start'              ,   0],
+                    ['wait_for_AWG_done'           ,   0],
+                    ['sequence_wait_time'          ,   0],
+                    ['wait_after_pulse_duration'   ,   1],
+                    ['SSRO_repetitions'            ,1000],
+                    ['SSRO_duration'               ,  50],
+                    ['SSRO_stop_after_first_photon',   0],
+                    ['cycle_duration'              , 300],
+                    ['sweep_length'                ,   1],
+                    ],
+                'params_long_index'  : 20,
+                'params_long_length' : 25,
+                'params_float' : [
+                    ['Ex_SP_voltage'        , 0.8],
+                    ['A_SP_voltage'         , 0.8],
+                    ['Ex_RO_voltage'        , 0.8],
+                    ['A_RO_voltage'         , 0.8],
+                    ],
+                'params_float_index'  : 21,
+                'params_float_length' : 10,
+                'par' : {
+                    'completed_reps' : 73,
+                    },
+                'data_long' : {
+                    'SP_hist' : 24,
+                    'RO_data' : 25,
+                    }, 
+                },
+
+        'MBI' : {
+                'info' : """
+                    Conditional repumping, and resonant readout at the end.
+                    Has one MBI step and can read out multiple times (e.g., on different lines).
+                    """,
+                'index' : 9,
+                'file' : 'lt1_MBI.TB9',
+                'params_long' : [           # keep order!!!!!!!!!!!!!
+                    ['AWG_start_DO_channel'        ,   0],
+                    ['AWG_done_DI_channel'         ,   9],
+                    ['SP_E_duration'               , 100],
+                    ['wait_after_pulse_duration'   ,   1],
+                    ['repetitions'                 ,1000],
+                    ['sweep_length'                ,  10],
+                    ['cycle_duration'              , 300],
+                    ['AWG_event_jump_DO_channel'   ,   6],
+                    ['MBI_duration'                ,   1],
+                    ['max_MBI_attempts'            ,   1],
+                    ['MBI_threshold'               ,   0],
+                    ['nr_of_ROsequences'           ,   1],
+                    ['wait_after_RO_pulse_duration',   3],
+                    ['N_randomize_duration'        ,  50],
+                    ],
+                'params_long_index'  : 20,
+                'params_long_length' : 100,
+                'params_float' : [
+                    ['Ex_SP_voltage'                , 0.8],
+                    ['Ex_MBI_voltage'               , 0.8],
+                    ['Ex_N_randomize_voltage'       , 0.0],
+                    ['A_N_randomize_voltage'        , 0.0],
+                    ['repump_N_randomize_voltage'   , 0.0],
+                    ],
+                'params_float_index'  : 21,
+                'params_float_length' : 100,
+                'par' : {
+                    'completed_reps' : 73,
+                    'MBI failed ' : 74,
+                    'current mode': 77,
+                    'MBI startY': 78,
+                    'ROseq_cntr', 80,
+
+                    },
+                'data_long' : {
+                    'MBI_attempts' : 24,
+                    'MBI_cycles' : 25,
+                    'ssro_results' : 27,
+                    'MBI_time' : 28,
+                    },
+                },        
 
         # continuous resonant counting (== only the CR of SSRO)
         'continuous_CR' : {
@@ -346,131 +431,7 @@ config['adwin_lt1_processes'] = {
                     },
                 },
         
-        'integrated_ssro' : {
-                'index' : 9,
-                'file' : 'integrated_ssro_lt1.TB9',
-                'params_long' : [           # keep order!!!!!!!!!!!!!
-                    ['counter_channel'             ,   1],
-                    ['repump_laser_DAC_channel'     ,  4],
-                    ['Ex_laser_DAC_channel'        ,   6],
-                    ['A_laser_DAC_channel'         ,   7],
-                    ['AWG_start_DO_channel'        ,  16],
-                    ['AWG_done_DI_channel'         ,   8],
-                    ['send_AWG_start'              ,   0],
-                    ['wait_for_AWG_done'           ,   0],
-                    ['repump_duration'             ,   5],
-                    ['CR_duration'                 ,  50],
-                    ['SP_duration'                 , 100],
-                    ['sweep_length'                ,   1],
-                    ['sequence_wait_time'          ,   0],
-                    ['wait_after_pulse_duration'   ,   1],
-                    ['CR_preselect'                ,  10],
-                    ['SSRO_repetitions'            ,1000],
-                    ['SSRO_duration'               ,  50],
-                    ['SSRO_stop_after_first_photon',   0],
-                    ['cycle_duration'              , 300],
-                    ['CR_probe'                    ,  10],
-                    ['CR_repump'                   ,1000]
-                    ],
-                'params_long_index'  : 20,
-                'params_long_length' : 25,
-                'params_float' : [
-                    ['repump_voltage'       , 0.8],
-                    ['repump_off_voltage'   , 0.0],
-                    ['Ex_CR_voltage'        , 0.8],
-                    ['A_CR_voltage'         , 0.8],
-                    ['Ex_SP_voltage'        , 0.8],
-                    ['A_SP_voltage'         , 0.8],
-                    ['Ex_RO_voltage'        , 0.8],
-                    ['A_RO_voltage'         , 0.8],
-                    ['Ex_off_voltage'       , 0.0],
-                    ['A_off_voltage'        , 0.0]
-                    ],
-                'params_float_index'  : 21,
-                'params_float_length' : 10,
-                'par' : {
-                    'completed_reps' : 73,
-                    'total_CR_counts' : 70,
-                    'CR_events_below_threshold' : 71,
-                    'CR_events' : 72,                    
-                    # 'CR_threshold' : 75,
-                    # 'last_CR_counts' : 26,
-                    },
-                'data_long' : {
-                    'CR_before' : 22,  # not used in the integrated ssro
-                    'CR_after' : 23,
-                    'SP_hist' : 24,
-                    'RO_data' : 25,
-                    'statistics' : 26,
-                    }, 
-                },
-
-        'MBI' : {
-                'info' : """
-                    Conditional repumping, and resonant readout at the end.
-                    Has one MBI step and can read out multiple times (e.g., on different lines).
-                    """,
-                'index' : 9,
-                'file' : 'lt1_MBI.TB9',
-                'params_long' : [           # keep order!!!!!!!!!!!!!
-                    ['counter_channel'             ,   1],
-                    ['repump_laser_DAC_channel'    ,   4],
-                    ['Ex_laser_DAC_channel'        ,   6],
-                    ['A_laser_DAC_channel'         ,   7],
-                    ['AWG_start_DO_channel'        ,   0],
-                    ['AWG_done_DI_channel'         ,   9],
-                    ['repump_duration'             ,   5],
-                    ['CR_duration'                 ,  50],
-                    ['SP_E_duration'               , 100],
-                    ['wait_after_pulse_duration'   ,   1],
-                    ['CR_preselect'                ,  10],
-                    ['repetitions'                 ,1000],
-                    ['sweep_length'                ,  10],
-                    ['cycle_duration'              , 300],
-                    ['CR_probe'                    ,  10],
-                    ['AWG_event_jump_DO_channel'   ,   6],
-                    ['MBI_duration'                ,   1],
-                    ['max_MBI_attempts'            ,   1],
-                    ['MBI_threshold'               ,   0],
-                    ['nr_of_ROsequences'           ,   1],
-                    ['wait_after_RO_pulse_duration',   3],
-                    ['CR_repump'                   ,   0],
-                    ['repump_after_repetitions'    ,   1],
-                    ['N_randomize_duration'        ,  50],
-                    ],
-                'params_long_index'  : 20,
-                'params_long_length' : 30,
-                'params_float' : [
-                    ['repump_voltage'               , 0.8],
-                    ['repump_off_voltage'           , 0.0],
-                    ['Ex_CR_voltage'                , 0.8],
-                    ['A_CR_voltage'                 , 0.8],
-                    ['Ex_SP_voltage'                , 0.8],
-                    ['Ex_MBI_voltage'               , 0.8],
-                    ['Ex_off_voltage'               , 0.0],
-                    ['A_off_voltage'                , 0.0],
-                    ['Ex_N_randomize_voltage'       , 0.0],
-                    ['A_N_randomize_voltage'        , 0.0],
-                    ['repump_N_randomize_voltage'   , 0.0],
-                    ],
-                'params_float_index'  : 21,
-                'params_float_length' : 15,
-                'par' : {
-                    'CR_preselect' : 75,
-                    'CR_probe' : 68,
-                    'completed_reps' : 73,
-
-                    },
-                'data_long' : {
-                    'CR_before' : 22,
-                    'CR_after' : 23,
-                    'MBI_attempts' : 24,
-                    'MBI_cycles' : 25,
-                    'statistics' : 26,
-                    'ssro_results' : 27,
-                    'MBI_time' : 35,
-                    },
-                },        
+        
         
         'set_gate_voltage': {
 

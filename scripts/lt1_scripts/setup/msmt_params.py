@@ -120,7 +120,6 @@ cfg.set(branch+        'yellow_CR_repump',              1)
 cfg.set(branch+        'green_repump_after_repetitions',1)
 cfg.set(branch+        'green_CR_repump',               1000)
 cfg.set(branch+        'CR_probe_max_time',             1000000)
-cfg.set(branch+        'APD_DO_channel',                3)
 
 cfg.set(branch+        'SP_filter_duration',        0)
 cfg.set(branch+        'SSRO_duration',             50)
