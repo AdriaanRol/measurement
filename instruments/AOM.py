@@ -190,10 +190,8 @@ class AOM(Instrument):
             if type(val) == unicode:
                 val = str(val)
             
-            try:
-                self.set(p, value=val)
-            except:
-                pass
+            self.set(p, value=val)
+
 
     def save_cfg(self):
         parlist = self.get_parameters()
@@ -423,11 +421,15 @@ class AOM(Instrument):
     def do_set_cur_controller(self, val):
         # print val
         
-        if self.get_power() > 1e-10:
-             print 'To change controller, please set output power to 0 first.'
-             print 'Current output:', self.get_power() , 'W, at', self.get_voltage(), 'V'
-             print 'Controller not changed.'
-             return
+        try:
+            if self.get_power() > 1e-10:
+                logging.warning('Changing '+self.get_name()+ ' controller, but output is not 0:')
+                logging.warning('Current '+self.get_name()+ ' output:'+ str(self.get_voltage())+ 'V')
+                #print 'Controller not changed.'
+                #return
+        except:
+                pass
+                #logging.warning('Error getting power of '+self.get_name())
 
         if (val != self._pri_controller) & (val != self._sec_controller):
             logging.warning(self.get_name() + ' Error: controller %s not registered, using %s instead'%(val, 

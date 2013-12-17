@@ -1,4 +1,538 @@
 config = {}
+config['adwin_lt1_dacs'] = {
+        'atto_x' : 1,
+        'atto_y' : 2,
+        'atto_z' : 8,
+        'green_aom': 4,
+        'gate' : 5, #not yet connected
+        'velocity1_aom' : 6,
+        'velocity2_aom' : 7,
+        'yellow_aom' : 3, 
+        }
+
+config['adwin_lt1_dios'] = {
+        'awg_event' : 6,
+        'awg_trigger' : 0,
+        'awg_ch3m2' : 9,
+        'lt1_zpl_wp' : 4,
+        }
+
+config['adwin_lt1_processes'] = {
+        
+        'init_data' :  {
+            'index' : 5, 
+            'file' : 'init_data.TB5',
+            },
+
+
+        'linescan' : {
+            
+            'index' : 2, 
+            'file' : 'lt1_linescan.TB2',
+            'par' : {
+                'set_cnt_dacs' : 1,
+                'set_steps' : 2,
+                'set_px_action' : 3,
+                'get_px_clock' : 4, 
+                },
+            'fpar' : {
+                'set_px_time' : 1,
+                'supplemental_data_input' : 2,
+                'simple_counting' : 3,  # 1 for simple, 0 for resonant counting
+                },
+            'data_long' : {
+                'set_dac_numbers' : 200,
+                'get_counts' : [11,12,13],
+                },
+            'data_float' : {
+                'set_start_voltages' : 199,
+                'set_stop_voltages' : 198,
+                'get_supplemental_data' : 15,
+                },
+            },
+        
+        'counter' : {
+
+            'doc' : '',
+            'info' : {
+                'counters' : 4,
+                },
+            'index' : 1, 
+            'file' : 'lt1_simple_counting.TB1',
+            'par' : {
+                'set_integration_time' : 23,
+                'set_avg_periods' : 24,
+                'set_single_run' : 25,
+                'get_countrates' : [41, 42, 43, 44],
+                },
+            'data_long' : {
+                'get_last_counts' : 45,
+                },
+            },
+
+        'resonant_counting' : {
+
+             'doc' : '',
+             'index' : 1,
+             'file' : 'lt1_resonant_counting.TB1',
+             'par' : {
+                 'set_aom_dac' : 63,
+                 'set_aom_duration' : 73,
+                 'set_probe_duration' : 74,
+                 },
+             'fpar' : {
+                 'set_aom_voltage' : 64,
+                 'floating_average': 11, #floating average time (ms)
+                 },
+             'data_float' : {
+                 'get_counts' : [41,42,43,44],
+                 },
+             },
+
+        'alternating_resonant_counting' : {
+            'doc' : '',
+            'index' : 1,
+            'file' : 'lt1_alternating_resonant_counting.tb1',
+            'par' : {
+                'set_repump_aom_dac' : 30,
+                'set_pump_aom_dac' : 31,
+                'set_probe_aom_dac' : 32,
+                'set_repump_duration' : 33,
+                'set_pump_duration' : 34,
+                'set_probe_duration' : 35,
+                'set_pp_cycles' : 36,
+                'set_floating_average' : 11,
+                'set_single_shot' : 37,
+                'set_prepump' : 38,
+                'set_prepump_duration' : 39,
+                },
+            'fpar' : {
+                'set_repump_aom_voltage' : 30,
+                'set_pump_aom_voltage' : 31,
+                'set_probe_aom_voltage' : 32,
+                },
+            },
+        
+        'set_dac' :  {
+            'index' : 3, 
+            'file' : 'lt1_set_dac.TB3',
+            'par' : {
+                'dac_no' : 20,
+                },
+            'fpar' : {
+                'dac_voltage' : 20,
+                },
+            },
+        
+        'set_dio' :  {
+            'index' : 4, 
+            'file' : 'lt1_set_ttl_outputs.TB4',
+            'par' : {
+                'dio_no' : 61,
+                'dio_val' : 62,
+                },
+            },
+
+        'trigger_dio' : {
+            'index' : 4,
+            'file' : 'lt1_dio_trigger.tb4',
+            'par' : {
+                'dio_no' : 61,
+                'startval' : 62, # where to start - 0 or 1
+                'waittime' : 63, # length of the trigger pulse in units of 10 ns
+            },
+        },
+
+        'gate_modulation' : {
+            'index' : 7,
+            'file' : 'gate_modulation.TB7',
+            'par' : {
+                'gate_dac' : 12,
+                'modulation_period' : 13,
+                'modulation_on' : 14,
+                },
+            'fpar': { 
+                'gate_voltage' : 12,
+                },
+            },
+        
+        # ADwin CR check. This process can not run stand-alone and should be included in another adwin script/process
+        'cr_check' : {
+            'no_process_start': 'prevent automatic generation of start functions for this process',
+            'index' : 999,
+            'file' : 'cr.inc',
+            'par' : {
+                    'CR_preselect'  : 75,
+                    'CR_probe'      : 68,
+                    'total_CR_counts': 70,
+                    'noof_repumps'   : 71,
+                    'noof_cr_checks' : 72,
+                    'cr_below_threshold_events' : 79,
+                    'repump_counts' : 76, 
+                    },
+            'params_long' : [           # keep order!!!!!!!!!!!!!
+                    ['counter_channel'             ,   1],
+                    ['repump_laser_DAC_channel'    ,   7],
+                    ['Ex_laser_DAC_channel'        ,   6],
+                    ['A_laser_DAC_channel'         ,   8],
+                    ['repump_duration'             ,   5],
+                    ['CR_duration'                 ,  50],
+                    ['cr_wait_after_pulse_duration',   1],
+                    ['CR_preselect'                ,  10],
+                    ['CR_probe'                    ,  10],
+                    ['CR_repump'                   ,  10],
+                    ],
+                'params_long_index'  : 30,
+                'params_float' : [
+                    ['repump_voltage'       , 0.8],
+                    ['repump_off_voltage'   , 0.07],
+                    ['Ex_CR_voltage'        , 0.8],
+                    ['A_CR_voltage'         , 0.8],
+                    ['Ex_off_voltage'       , 0.0],
+                    ['A_off_voltage'        , -0.08]
+                    ],
+                'params_float_index'  : 31,
+                'data_long' : {
+                    'CR_before' : 22,
+                    'CR_after' : 23,
+                    'statistics' : 26,
+                    },     
+                },
+
+        # ADwin single-shot readout
+        'singleshot' : {
+                'index' : 9,
+                'file' : 'singleshot_lt1.tb9',
+                'include_cr_process' : 'cr_check', #This process includes the CR check lib
+                'par' : {
+                    'completed_reps' : 73,
+                    'ssro_counts' : 74,
+                    },
+                'fpar' : {
+                    },
+                'params_long' : [
+                    ['AWG_start_DO_channel'        ,  16],
+                    ['AWG_done_DI_channel'         ,   8],
+                    ['send_AWG_start'              ,   0],
+                    ['wait_for_AWG_done'           ,   0],
+                    ['SP_duration'                 , 100],
+                    ['SP_filter_duration'          ,   0],
+                    ['sequence_wait_time'          ,   0],
+                    ['wait_after_pulse_duration'   ,   1],
+                    ['SSRO_repetitions'            ,1000],
+                    ['SSRO_duration'               ,  50],
+                    ['SSRO_stop_after_first_photon',   0],
+                    ['cycle_duration'              , 300],
+                    ],
+                'params_long_index'  : 20,
+                'params_float' : [
+                    ['Ex_SP_voltage'        , 0.8],
+                    ['A_SP_voltage'         , 0.8],
+                    ['Ex_RO_voltage'        , 0.8],
+                    ['A_RO_voltage'         , 0.8],
+                    ],
+                'params_float_index'  : 21,
+                'data_long' : {
+                    'SP_hist' : 24,
+                    'RO_data' : 25,
+                    },                    
+                },
+
+        'integrated_ssro' : {
+                'index' : 9,
+                'file' : 'integrated_ssro_lt1.TB9',
+                'include_cr_process' : 'cr_check', #This process includes the CR check lib
+                'params_long' : [           # keep order!!!!!!!!!!!!!
+                    ['AWG_start_DO_channel'        ,  16],
+                    ['AWG_done_DI_channel'         ,   8],
+                    ['send_AWG_start'              ,   0],
+                    ['wait_for_AWG_done'           ,   0],
+                    ['sequence_wait_time'          ,   0],
+                    ['wait_after_pulse_duration'   ,   1],
+                    ['SSRO_repetitions'            ,1000],
+                    ['SSRO_duration'               ,  50],
+                    ['SSRO_stop_after_first_photon',   0],
+                    ['cycle_duration'              , 300],
+                    ['sweep_length'                ,   1],
+                    ],
+                'params_long_index'  : 20,
+                'params_long_length' : 25,
+                'params_float' : [
+                    ['Ex_SP_voltage'        , 0.8],
+                    ['A_SP_voltage'         , 0.8],
+                    ['Ex_RO_voltage'        , 0.8],
+                    ['A_RO_voltage'         , 0.8],
+                    ],
+                'params_float_index'  : 21,
+                'params_float_length' : 10,
+                'par' : {
+                    'completed_reps' : 73,
+                    },
+                'data_long' : {
+                    'SP_hist' : 24,
+                    'RO_data' : 25,
+                    }, 
+                },
+
+        'MBI' : {
+                'info' : """
+                    Conditional repumping, and resonant readout at the end.
+                    Has one MBI step and can read out multiple times (e.g., on different lines).
+                    """,
+                'index' : 9,
+                'file' : 'lt1_MBI.TB9',
+                'params_long' : [           # keep order!!!!!!!!!!!!!
+                    ['AWG_start_DO_channel'        ,   0],
+                    ['AWG_done_DI_channel'         ,   9],
+                    ['SP_E_duration'               , 100],
+                    ['wait_after_pulse_duration'   ,   1],
+                    ['repetitions'                 ,1000],
+                    ['sweep_length'                ,  10],
+                    ['cycle_duration'              , 300],
+                    ['AWG_event_jump_DO_channel'   ,   6],
+                    ['MBI_duration'                ,   1],
+                    ['max_MBI_attempts'            ,   1],
+                    ['MBI_threshold'               ,   0],
+                    ['nr_of_ROsequences'           ,   1],
+                    ['wait_after_RO_pulse_duration',   3],
+                    ['N_randomize_duration'        ,  50],
+                    ],
+                'params_long_index'  : 20,
+                'params_long_length' : 100,
+                'params_float' : [
+                    ['Ex_SP_voltage'                , 0.8],
+                    ['Ex_MBI_voltage'               , 0.8],
+                    ['Ex_N_randomize_voltage'       , 0.0],
+                    ['A_N_randomize_voltage'        , 0.0],
+                    ['repump_N_randomize_voltage'   , 0.0],
+                    ],
+                'params_float_index'  : 21,
+                'params_float_length' : 100,
+                'par' : {
+                    'completed_reps' : 73,
+                    'MBI failed ' : 74,
+                    'current mode': 77,
+                    'MBI startY': 78,
+                    'ROseq_cntr', 80,
+
+                    },
+                'data_long' : {
+                    'MBI_attempts' : 24,
+                    'MBI_cycles' : 25,
+                    'ssro_results' : 27,
+                    'MBI_time' : 28,
+                    },
+                },        
+
+        # continuous resonant counting (== only the CR of SSRO)
+        'continuous_CR' : {
+                'index' : 9,
+                'file' : 'lt1_continuous_CR.TB9',
+                'par' : {
+                    'total_CR_counts' : 70,
+                    'total_repump_counts' : 76,
+                    'CR_preselect' : 75,
+                    'CR_probe' : 68,
+                    'CR_repump' : 69,
+                    'CR_checks' : 71,
+                    'CR_below_threshold_events' : 72, 
+                    },
+                'fpar' : {
+                    },
+                'params_long' : [
+                    ['counter_channel'             ,   1],
+                    ['repump_laser_DAC_channel'    ,   4],
+                    ['Ex_laser_DAC_channel'        ,   6],
+                    ['A_laser_DAC_channel'         ,   7],
+                    ['repump_duration'             ,   5],
+                    ['CR_duration'                 ,  50],
+                    ['CR_preselect'                ,  10],
+                    ['cycle_duration'              , 300],
+                    ['CR_probe'                    ,  10],
+                    ['repump_after_repetitions'    ,  1],
+                    ['CR_repump'                   ,  0],
+                    ],
+                'params_long_index'  : 20,
+                'params_long_length' : 25,
+                'params_float' : [
+                    ['repump_voltage'       , 0.8],
+                    ['repump_off_voltage'   , 0.0],
+                    ['Ex_CR_voltage'        , 0.8],
+                    ['A_CR_voltage'         , 0.8],
+                    ['Ex_SP_voltage'        , 0.8],
+                    ['A_SP_voltage'         , 0.8],
+                    ['Ex_RO_voltage'        , 0.8],
+                    ['A_RO_voltage'         , 0.8],
+                    ['Ex_off_voltage'       , 0.0],
+                    ['A_off_voltage'        , 0.0],
+                    ],
+                'params_float_index'  : 21,
+                'params_float_length' : 10,                
+                },
+
+        'singleshot_altern_CR' : {
+                'index' : 9,
+                'file' : 'singleshot_lt1_altern_cr.tb9', 
+                'par' : {
+                    'completed_reps' : 73,
+                    'total_CR_counts' : 70,
+                    'CR_threshold' : 25,
+                    'last_CR_counts' : 26,
+                    },
+                'fpar' : {
+                    'gate_voltage' : 26,
+                    },
+                'params_long' : [
+                    ['counter_channel'             ,   1],
+                    ['repump_laser_DAC_channel'     ,  4],
+                    ['Ex_laser_DAC_channel'        ,   6],
+                    ['A_laser_DAC_channel'         ,   7],
+                    ['AWG_start_DO_channel'        ,  16],
+                    ['AWG_done_DI_channel'         ,   8],
+                    ['send_AWG_start'              ,   0],
+                    ['wait_for_AWG_done'           ,   0],
+                    ['repump_duration'             ,   5],
+                    ['CR_pump_duration'            ,  50],
+                    ['SP_duration'                 , 100],
+                    ['SP_filter_duration'          ,   0],
+                    ['sequence_wait_time'          ,   0],
+                    ['wait_after_pulse_duration'   ,   1],
+                    ['CR_preselect'                ,  10],
+                    ['SSRO_repetitions'            ,1000],
+                    ['SSRO_duration'               ,  50],
+                    ['SSRO_stop_after_first_photon',   0],
+                    ['cycle_duration'              , 300],
+                    ['CR_probe'                    ,  10],
+                    ['CR_probe_duration'           ,  50],
+                    ['CR_pp_cycles'                ,   5],
+                    ['CR_prepump_duration'         , 100],
+                    ],
+                'params_long_index'  : 20,
+                'params_long_length' : 25,
+                'params_float' : [
+                    ['repump_voltage' , 0.8],
+                    ['repump_off_voltage'    , 0.0],
+                    ['Ex_CR_voltage'        , 0.8],
+                    ['A_CR_voltage'         , 0.8],
+                    ['Ex_SP_voltage'        , 0.8],
+                    ['A_SP_voltage'         , 0.8],
+                    ['Ex_RO_voltage'        , 0.8],
+                    ['A_RO_voltage'         , 0.8],
+                    ['yellow_repump_voltage', 0.8],
+                    ],
+                'params_float_index'  : 21,
+                'params_float_length' : 10,
+                'data_long' : {
+                    'CR_before' : 22,
+                    'CR_after' : 23,
+                    'SP_hist' : 24,
+                    'RO_data' : 25,
+                    'statistics' : 26,
+                    },
+                },
+        
+        
+        
+        'set_gate_voltage': {
+
+                'index' : 8,
+                'file' : 'lt1_set_gate_voltage.TB8',
+                'par' : {
+                    'gate_dac' : 50,
+                    },
+                'fpar' : {
+                    'current_voltage' : 50,
+                    'target_voltage' : 51,
+                    },
+                },
+
+        'teleportation' : {
+
+                'info' : """
+                    Teleportation master control. LT1 is local, LT2 is remote.
+                    """,
+                'index' : 9,
+                'file' : 'lt1_teleportation_control.TB9',
+                'params_long' : [           #Keep order!!!
+                    ['counter_channel'              ,       1],
+                    ['repump_laser_DAC_channel'     ,       3],
+                    ['E_laser_DAC_channel'          ,       6],
+                    ['A_laser_DAC_channel'          ,       7],
+                    ['CR_duration'                  ,      50],
+                    ['CR_threshold_preselect'       ,      30],
+                    ['CR_threshold_probe'           ,      10],
+                    ['repump_duration'              ,     100],
+                    ['E_SP_duration'                ,      50],
+                    ['SSRO_duration'                ,      20],
+                    ['ADwin_lt2_trigger_do_channel' ,       2],
+                    ['ADWin_lt2_di_channel'         ,       1],
+                    ['AWG_lt1_trigger_do_channel'   ,       1],
+                    ['AWG_lt1_di_channel'           ,       3],
+                    ['PLU_arm_do_channel'           ,      10],
+                    ['PLU_di_channel'               ,       2],
+                    ['MBI_duration'                 ,       4],
+                    ['CR_repump'                    ,    1000],
+                    ['AWG_lt1_event_do_channel'     ,       3],
+                    ['AWG_lt2_RO1_bit_channel'      ,       1],
+                    ['AWG_lt2_RO2_bit_channel'      ,       0],
+                    ['AWG_lt2_do_DD_bit_channel'    ,       2],
+                    ['AWG_lt2_strobe_channel'       ,       9],
+                    ['A_SP_duration'                ,       5],
+                    ['do_sequences'                 ,       1],
+                    ['CR_probe_max_time'            , 1000000],
+                    ['MBI_threshold'                ,       1],
+                    ['max_MBI_attempts'             ,       1],
+                    ['N_randomize_duration'         ,      50],
+                    ['wait_before_send_BSM_done'    ,      30],
+                    ],
+                'params_long_index'    : 20,
+                'params_long_length'   : 40,
+                'params_float' : [          
+                    ['repump_voltage'               ,   0.0],
+                    ['repump_off_voltage'           ,     0],
+                    ['E_CR_voltage'                 ,   0.0],
+                    ['A_CR_voltage'                 ,   0.0],
+                    ['E_SP_voltage'                 ,   0.0],
+                    ['A_SP_voltage'                 ,   0.0],
+                    ['E_RO_voltage'                 ,   0.0],
+                    ['A_RO_voltage'                 ,   0.0],       
+                    ['E_off_voltage'                ,   0.0],
+                    ['A_off_voltage'                ,   0.0],
+                    ['E_N_randomize_voltage',           0.0],
+                    ['A_N_randomize_voltage',           0.0],
+                    ['repump_N_randomize_voltage',      0.0], 
+                    ],
+                'params_float_index'    : 21,
+                'params_float_length'   : 10,
+                'par' : {
+                    'CR_preselect'  : 75,
+                    'CR_probe'      : 68,
+                    'completed_reps' : 77,
+                    'total_CR_counts': 70,
+                    'noof_repumps'   : 71,
+                    'noof_cr_checks' : 72,
+                    'cr_below_threshold_events' : 79,
+                    'repump_counts' : 76, 
+                    'noof_starts' : 78,
+                    'kill_by_CR' : 50,
+                    },
+                'data_long' : {
+                    'CR_hist_time_out' : 7,
+                    'CR_hist_all' : 8,
+                    'repump_hist_time_out' : 9,
+                    'repump_hist_all' : 10,
+                    'CR_after' : 23,
+                    'statistics' : 28,
+                    'SSRO1_results' : 24,
+                    'SSRO2_results' : 26,
+                    # 'PLU_Bell_states' : 25, we took that out for now (oct 7, 2013)
+                    'CR_before' : 27,
+                    'CR_probe_timer': 29,
+                    'CR_probe_timer_all': 30,
+                    'CR_timer_lt2': 31,
+                    },
+                },        
+        }
 
 config['adwin_lt2_dacs'] = {
         'atto_x' : 1,
@@ -123,7 +657,7 @@ config['adwin_lt2_processes'] = {
                 'index' : 6,
                 'file' : 'universalDAC.tb6', 
                 },
-        
+
         # ADwin single-shot readout
         'singleshot' : {
                 'index' : 9,
@@ -864,557 +1398,4 @@ config['adwin_lt2_processes'] = {
                 'fpar': {}
                 },
         
-        }
-
-config['adwin_lt1_dacs'] = {
-        'atto_x' : 1,
-        'atto_y' : 2,
-        'atto_z' : 8,
-        'green_aom': 4,
-        'gate' : 5, #not yet connected
-        'velocity1_aom' : 6,
-        'velocity2_aom' : 7,
-        'yellow_aom' : 3, 
-        }
-
-config['adwin_lt1_dios'] = {
-        'awg_event' : 6,
-        'awg_trigger' : 0,
-        'awg_ch3m2' : 9,
-        'lt1_zpl_wp' : 4,
-        }
-
-config['adwin_lt1_processes'] = {
-        
-        'init_data' :  {
-            'index' : 5, 
-            'file' : 'init_data.TB5',
-            },
-
-
-        'linescan' : {
-            
-            'index' : 2, 
-            'file' : 'lt1_linescan.TB2',
-            'par' : {
-                'set_cnt_dacs' : 1,
-                'set_steps' : 2,
-                'set_px_action' : 3,
-                'get_px_clock' : 4, 
-                },
-            'fpar' : {
-                'set_px_time' : 1,
-                'supplemental_data_input' : 2,
-                'simple_counting' : 3,  # 1 for simple, 0 for resonant counting
-                },
-            'data_long' : {
-                'set_dac_numbers' : 200,
-                'get_counts' : [11,12,13],
-                },
-            'data_float' : {
-                'set_start_voltages' : 199,
-                'set_stop_voltages' : 198,
-                'get_supplemental_data' : 15,
-                },
-            },
-        
-        'counter' : {
-
-            'doc' : '',
-            'info' : {
-                'counters' : 4,
-                },
-            'index' : 1, 
-            'file' : 'lt1_simple_counting.TB1',
-            'par' : {
-                'set_integration_time' : 23,
-                'set_avg_periods' : 24,
-                'set_single_run' : 25,
-                'get_countrates' : [41, 42, 43, 44],
-                },
-            'data_long' : {
-                'get_last_counts' : 45,
-                },
-            },
-
-        'resonant_counting' : {
-
-             'doc' : '',
-             'index' : 1,
-             'file' : 'lt1_resonant_counting.TB1',
-             'par' : {
-                 'set_aom_dac' : 63,
-                 'set_aom_duration' : 73,
-                 'set_probe_duration' : 74,
-                 },
-             'fpar' : {
-                 'set_aom_voltage' : 64,
-                 'floating_average': 11, #floating average time (ms)
-                 },
-             'data_float' : {
-                 'get_counts' : [41,42,43,44],
-                 },
-             },
-
-        'alternating_resonant_counting' : {
-            'doc' : '',
-            'index' : 1,
-            'file' : 'lt1_alternating_resonant_counting.tb1',
-            'par' : {
-                'set_repump_aom_dac' : 30,
-                'set_pump_aom_dac' : 31,
-                'set_probe_aom_dac' : 32,
-                'set_repump_duration' : 33,
-                'set_pump_duration' : 34,
-                'set_probe_duration' : 35,
-                'set_pp_cycles' : 36,
-                'set_floating_average' : 11,
-                'set_single_shot' : 37,
-                'set_prepump' : 38,
-                'set_prepump_duration' : 39,
-                },
-            'fpar' : {
-                'set_repump_aom_voltage' : 30,
-                'set_pump_aom_voltage' : 31,
-                'set_probe_aom_voltage' : 32,
-                },
-            },
-        
-        'set_dac' :  {
-            'index' : 3, 
-            'file' : 'lt1_set_dac.TB3',
-            'par' : {
-                'dac_no' : 20,
-                },
-            'fpar' : {
-                'dac_voltage' : 20,
-                },
-            },
-        
-        'set_dio' :  {
-            'index' : 4, 
-            'file' : 'lt1_set_ttl_outputs.TB4',
-            'par' : {
-                'dio_no' : 61,
-                'dio_val' : 62,
-                },
-            },
-
-        'trigger_dio' : {
-            'index' : 4,
-            'file' : 'lt1_dio_trigger.tb4',
-            'par' : {
-                'dio_no' : 61,
-                'startval' : 62, # where to start - 0 or 1
-                'waittime' : 63, # length of the trigger pulse in units of 10 ns
-            },
-        },
-
-        'gate_modulation' : {
-            'index' : 7,
-            'file' : 'gate_modulation.TB7',
-            'par' : {
-                'gate_dac' : 12,
-                'modulation_period' : 13,
-                'modulation_on' : 14,
-                },
-            'fpar': { 
-                'gate_voltage' : 12,
-                },
-            },
-        
-        # ADwin single-shot readout
-        'singleshot' : {
-                'index' : 9,
-                'file' : 'singleshot_lt1.tb9',
-                'par' : {
-                    'completed_reps' : 73,
-                    'total_CR_counts' : 70,
-                    'CR_threshold' : 25,
-                    'last_CR_counts' : 26,
-                    },
-                'fpar' : {
-                    },
-                'params_long' : [
-                    ['counter_channel'             ,   1],
-                    ['repump_laser_DAC_channel'    ,   4],
-                    ['Ex_laser_DAC_channel'        ,   6],
-                    ['A_laser_DAC_channel'         ,   7],
-                    ['AWG_start_DO_channel'        ,  16],
-                    ['AWG_done_DI_channel'         ,   8],
-                    ['send_AWG_start'              ,   0],
-                    ['wait_for_AWG_done'           ,   0],
-                    ['repump_duration'             ,   5],
-                    ['CR_duration'                 ,  50],
-                    ['SP_duration'                 , 100],
-                    ['SP_filter_duration'          ,   0],
-                    ['sequence_wait_time'          ,   0],
-                    ['wait_after_pulse_duration'   ,   1],
-                    ['CR_preselect'                ,  10],
-                    ['SSRO_repetitions'            ,1000],
-                    ['SSRO_duration'               ,  50],
-                    ['SSRO_stop_after_first_photon',   0],
-                    ['cycle_duration'              , 300],
-                    ['CR_probe'                    ,  10],
-                    ['CR_repump'                   ,  0],
-                    ['CR_probe_max_time'           ,  1000000],
-                    ['APD_DO_channel'              ,  3],
-                    ],
-                'params_long_index'  : 20,
-                'params_long_length' : 300,
-                'params_float' : [
-                    ['repump_voltage'       , 0.8],
-                    ['repump_off_voltage'   , 0.0],
-                    ['Ex_CR_voltage'        , 0.8],
-                    ['A_CR_voltage'         , 0.8],
-                    ['Ex_SP_voltage'        , 0.8],
-                    ['A_SP_voltage'         , 0.8],
-                    ['Ex_RO_voltage'        , 0.8],
-                    ['A_RO_voltage'         , 0.8],
-                    ['Ex_off_voltage'       , 0.0],
-                    ['A_off_voltage'        , 0.0],
-                    ],
-                'params_float_index'  : 21,
-                'params_float_length' : 300,
-                'data_long' : {
-                    'CR_before' : 22,
-                    'CR_after' : 23,
-                    'SP_hist' : 24,
-                    'RO_data' : 25,
-                    'statistics' : 26,
-                    },                    
-                },
-
-        # continuous resonant counting (== only the CR of SSRO)
-        'continuous_CR' : {
-                'index' : 9,
-                'file' : 'lt1_continuous_CR.TB9',
-                'par' : {
-                    'total_CR_counts' : 70,
-                    'total_repump_counts' : 76,
-                    'CR_preselect' : 75,
-                    'CR_probe' : 68,
-                    'CR_repump' : 69,
-                    'CR_checks' : 71,
-                    'CR_below_threshold_events' : 72, 
-                    },
-                'fpar' : {
-                    },
-                'params_long' : [
-                    ['counter_channel'             ,   1],
-                    ['repump_laser_DAC_channel'    ,   4],
-                    ['Ex_laser_DAC_channel'        ,   6],
-                    ['A_laser_DAC_channel'         ,   7],
-                    ['repump_duration'             ,   5],
-                    ['CR_duration'                 ,  50],
-                    ['CR_preselect'                ,  10],
-                    ['cycle_duration'              , 300],
-                    ['CR_probe'                    ,  10],
-                    ['repump_after_repetitions'    ,  1],
-                    ['CR_repump'                   ,  0],
-                    ],
-                'params_long_index'  : 20,
-                'params_long_length' : 25,
-                'params_float' : [
-                    ['repump_voltage'       , 0.8],
-                    ['repump_off_voltage'   , 0.0],
-                    ['Ex_CR_voltage'        , 0.8],
-                    ['A_CR_voltage'         , 0.8],
-                    ['Ex_SP_voltage'        , 0.8],
-                    ['A_SP_voltage'         , 0.8],
-                    ['Ex_RO_voltage'        , 0.8],
-                    ['A_RO_voltage'         , 0.8],
-                    ['Ex_off_voltage'       , 0.0],
-                    ['A_off_voltage'        , 0.0],
-                    ],
-                'params_float_index'  : 21,
-                'params_float_length' : 10,                
-                },
-
-        'singleshot_altern_CR' : {
-                'index' : 9,
-                'file' : 'singleshot_lt1_altern_cr.tb9', 
-                'par' : {
-                    'completed_reps' : 73,
-                    'total_CR_counts' : 70,
-                    'CR_threshold' : 25,
-                    'last_CR_counts' : 26,
-                    },
-                'fpar' : {
-                    'gate_voltage' : 26,
-                    },
-                'params_long' : [
-                    ['counter_channel'             ,   1],
-                    ['repump_laser_DAC_channel'     ,  4],
-                    ['Ex_laser_DAC_channel'        ,   6],
-                    ['A_laser_DAC_channel'         ,   7],
-                    ['AWG_start_DO_channel'        ,  16],
-                    ['AWG_done_DI_channel'         ,   8],
-                    ['send_AWG_start'              ,   0],
-                    ['wait_for_AWG_done'           ,   0],
-                    ['repump_duration'             ,   5],
-                    ['CR_pump_duration'            ,  50],
-                    ['SP_duration'                 , 100],
-                    ['SP_filter_duration'          ,   0],
-                    ['sequence_wait_time'          ,   0],
-                    ['wait_after_pulse_duration'   ,   1],
-                    ['CR_preselect'                ,  10],
-                    ['SSRO_repetitions'            ,1000],
-                    ['SSRO_duration'               ,  50],
-                    ['SSRO_stop_after_first_photon',   0],
-                    ['cycle_duration'              , 300],
-                    ['CR_probe'                    ,  10],
-                    ['CR_probe_duration'           ,  50],
-                    ['CR_pp_cycles'                ,   5],
-                    ['CR_prepump_duration'         , 100],
-                    ],
-                'params_long_index'  : 20,
-                'params_long_length' : 25,
-                'params_float' : [
-                    ['repump_voltage' , 0.8],
-                    ['repump_off_voltage'    , 0.0],
-                    ['Ex_CR_voltage'        , 0.8],
-                    ['A_CR_voltage'         , 0.8],
-                    ['Ex_SP_voltage'        , 0.8],
-                    ['A_SP_voltage'         , 0.8],
-                    ['Ex_RO_voltage'        , 0.8],
-                    ['A_RO_voltage'         , 0.8],
-                    ['yellow_repump_voltage', 0.8],
-                    ],
-                'params_float_index'  : 21,
-                'params_float_length' : 10,
-                'data_long' : {
-                    'CR_before' : 22,
-                    'CR_after' : 23,
-                    'SP_hist' : 24,
-                    'RO_data' : 25,
-                    'statistics' : 26,
-                    },
-                },
-        
-        'integrated_ssro' : {
-                'index' : 9,
-                'file' : 'integrated_ssro_lt1.TB9',
-                'params_long' : [           # keep order!!!!!!!!!!!!!
-                    ['counter_channel'             ,   1],
-                    ['repump_laser_DAC_channel'     ,  4],
-                    ['Ex_laser_DAC_channel'        ,   6],
-                    ['A_laser_DAC_channel'         ,   7],
-                    ['AWG_start_DO_channel'        ,  16],
-                    ['AWG_done_DI_channel'         ,   8],
-                    ['send_AWG_start'              ,   0],
-                    ['wait_for_AWG_done'           ,   0],
-                    ['repump_duration'             ,   5],
-                    ['CR_duration'                 ,  50],
-                    ['SP_duration'                 , 100],
-                    ['sweep_length'                ,   1],
-                    ['sequence_wait_time'          ,   0],
-                    ['wait_after_pulse_duration'   ,   1],
-                    ['CR_preselect'                ,  10],
-                    ['SSRO_repetitions'            ,1000],
-                    ['SSRO_duration'               ,  50],
-                    ['SSRO_stop_after_first_photon',   0],
-                    ['cycle_duration'              , 300],
-                    ['CR_probe'                    ,  10],
-                    ['CR_repump'                   ,1000]
-                    ],
-                'params_long_index'  : 20,
-                'params_long_length' : 25,
-                'params_float' : [
-                    ['repump_voltage'       , 0.8],
-                    ['repump_off_voltage'   , 0.0],
-                    ['Ex_CR_voltage'        , 0.8],
-                    ['A_CR_voltage'         , 0.8],
-                    ['Ex_SP_voltage'        , 0.8],
-                    ['A_SP_voltage'         , 0.8],
-                    ['Ex_RO_voltage'        , 0.8],
-                    ['A_RO_voltage'         , 0.8],
-                    ['Ex_off_voltage'       , 0.0],
-                    ['A_off_voltage'        , 0.0]
-                    ],
-                'params_float_index'  : 21,
-                'params_float_length' : 10,
-                'par' : {
-                    'completed_reps' : 73,
-                    'total_CR_counts' : 70,
-                    'CR_events_below_threshold' : 71,
-                    'CR_events' : 72,                    
-                    # 'CR_threshold' : 75,
-                    # 'last_CR_counts' : 26,
-                    },
-				'data_long' : {
-                    'CR_before' : 22,  # not used in the integrated ssro
-                    'CR_after' : 23,
-                    'SP_hist' : 24,
-                    'RO_data' : 25,
-                    'statistics' : 26,
-                    }, 
-                },
-
-        'MBI' : {
-                'info' : """
-                    Conditional repumping, and resonant readout at the end.
-                    Has one MBI step and can read out multiple times (e.g., on different lines).
-                    """,
-                'index' : 9,
-                'file' : 'lt1_MBI.TB9',
-                'params_long' : [           # keep order!!!!!!!!!!!!!
-                    ['counter_channel'             ,   1],
-                    ['repump_laser_DAC_channel'    ,   4],
-                    ['Ex_laser_DAC_channel'        ,   6],
-                    ['A_laser_DAC_channel'         ,   7],
-                    ['AWG_start_DO_channel'        ,   0],
-                    ['AWG_done_DI_channel'         ,   9],
-                    ['repump_duration'             ,   5],
-                    ['CR_duration'                 ,  50],
-                    ['SP_E_duration'               , 100],
-                    ['wait_after_pulse_duration'   ,   1],
-                    ['CR_preselect'                ,  10],
-                    ['repetitions'                 ,1000],
-                    ['sweep_length'                ,  10],
-                    ['cycle_duration'              , 300],
-                    ['CR_probe'                    ,  10],
-                    ['AWG_event_jump_DO_channel'   ,   6],
-                    ['MBI_duration'                ,   1],
-                    ['max_MBI_attempts'            ,   1],
-                    ['MBI_threshold'               ,   0],
-                    ['nr_of_ROsequences'           ,   1],
-                    ['wait_after_RO_pulse_duration',   3],
-                    ['CR_repump'                   ,   0],
-                    ['repump_after_repetitions'    ,   1],
-                    ['N_randomize_duration'        ,  50],
-                    ],
-                'params_long_index'  : 20,
-                'params_long_length' : 30,
-                'params_float' : [
-                    ['repump_voltage'               , 0.8],
-                    ['repump_off_voltage'           , 0.0],
-                    ['Ex_CR_voltage'                , 0.8],
-                    ['A_CR_voltage'                 , 0.8],
-                    ['Ex_SP_voltage'                , 0.8],
-                    ['Ex_MBI_voltage'               , 0.8],
-                    ['Ex_off_voltage'               , 0.0],
-                    ['A_off_voltage'                , 0.0],
-                    ['Ex_N_randomize_voltage'       , 0.0],
-                    ['A_N_randomize_voltage'        , 0.0],
-                    ['repump_N_randomize_voltage'   , 0.0],
-                    ],
-                'params_float_index'  : 21,
-                'params_float_length' : 15,
-                'par' : {
-                    'CR_preselect' : 75,
-                    'CR_probe' : 68,
-                    'completed_reps' : 73,
-
-                    },
-                'data_long' : {
-                    'CR_before' : 22,
-                    'CR_after' : 23,
-                    'MBI_attempts' : 24,
-                    'MBI_cycles' : 25,
-                    'statistics' : 26,
-                    'ssro_results' : 27,
-                    'MBI_time' : 35,
-                    },
-                },        
-        
-        'set_gate_voltage': {
-
-                'index' : 8,
-                'file' : 'lt1_set_gate_voltage.TB8',
-                'par' : {
-                    'gate_dac' : 50,
-                    },
-                'fpar' : {
-                    'current_voltage' : 50,
-                    'target_voltage' : 51,
-                    },
-                },
-
-        'teleportation' : {
-
-                'info' : """
-                    Teleportation master control. LT1 is local, LT2 is remote.
-                    """,
-                'index' : 9,
-                'file' : 'lt1_teleportation_control.TB9',
-                'params_long' : [           #Keep order!!!
-                    ['counter_channel'              ,       1],
-                    ['repump_laser_DAC_channel'     ,       3],
-                    ['E_laser_DAC_channel'          ,       6],
-                    ['A_laser_DAC_channel'          ,       7],
-                    ['CR_duration'                  ,      50],
-                    ['CR_threshold_preselect'       ,      30],
-                    ['CR_threshold_probe'           ,      10],
-                    ['repump_duration'              ,     100],
-                    ['E_SP_duration'                ,      50],
-                    ['SSRO_duration'                ,      20],
-                    ['ADwin_lt2_trigger_do_channel' ,       2],
-                    ['ADWin_lt2_di_channel'         ,       1],
-                    ['AWG_lt1_trigger_do_channel'   ,       1],
-                    ['AWG_lt1_di_channel'           ,       3],
-                    ['PLU_arm_do_channel'           ,      10],
-                    ['PLU_di_channel'               ,       2],
-                    ['MBI_duration'                 ,       4],
-                    ['CR_repump'                    ,    1000],
-                    ['AWG_lt1_event_do_channel'     ,       3],
-                    ['AWG_lt2_RO1_bit_channel'      ,       1],
-                    ['AWG_lt2_RO2_bit_channel'      ,       0],
-                    ['AWG_lt2_do_DD_bit_channel'    ,       2],
-                    ['AWG_lt2_strobe_channel'       ,       9],
-                    ['A_SP_duration'                ,       5],
-                    ['do_sequences'                 ,       1],
-                    ['CR_probe_max_time'            , 1000000],
-                    ['MBI_threshold'                ,       1],
-                    ['max_MBI_attempts'             ,       1],
-                    ['N_randomize_duration'         ,      50],
-                    ['wait_before_send_BSM_done'    ,      30],
-                    ],
-                'params_long_index'    : 20,
-                'params_long_length'   : 40,
-                'params_float' : [          
-                    ['repump_voltage'               ,   0.0],
-                    ['repump_off_voltage'           ,     0],
-                    ['E_CR_voltage'                 ,   0.0],
-                    ['A_CR_voltage'                 ,   0.0],
-                    ['E_SP_voltage'                 ,   0.0],
-                    ['A_SP_voltage'                 ,   0.0],
-                    ['E_RO_voltage'                 ,   0.0],
-                    ['A_RO_voltage'                 ,   0.0],       
-                    ['E_off_voltage'                ,   0.0],
-                    ['A_off_voltage'                ,   0.0],
-                    ['E_N_randomize_voltage',           0.0],
-                    ['A_N_randomize_voltage',           0.0],
-                    ['repump_N_randomize_voltage',      0.0], 
-                    ],
-                'params_float_index'    : 21,
-                'params_float_length'   : 10,
-                'par' : {
-                    'CR_preselect'  : 75,
-                    'CR_probe'      : 68,
-                    'completed_reps' : 77,
-                    'total_CR_counts': 70,
-                    'noof_repumps'   : 71,
-                    'noof_cr_checks' : 72,
-                    'cr_below_threshold_events' : 79,
-                    'repump_counts' : 76, 
-                    'noof_starts' : 78,
-                    'kill_by_CR' : 50,
-                    },
-                'data_long' : {
-                    'CR_hist_time_out' : 7,
-                    'CR_hist_all' : 8,
-                    'repump_hist_time_out' : 9,
-                    'repump_hist_all' : 10,
-                    'CR_after' : 23,
-                    'statistics' : 28,
-                    'SSRO1_results' : 24,
-                    'SSRO2_results' : 26,
-                    # 'PLU_Bell_states' : 25, we took that out for now (oct 7, 2013)
-                    'CR_before' : 27,
-                    'CR_probe_timer': 29,
-                    'CR_probe_timer_all': 30,
-                    'CR_timer_lt2': 31,
-                    },
-                },        
         }

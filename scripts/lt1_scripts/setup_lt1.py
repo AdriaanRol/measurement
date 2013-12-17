@@ -9,11 +9,17 @@ execfile("setup/reload_all.py")
 print 'reload all measurement parameters and calibrations...'
 execfile("setup/msmt_params.py")
 
+qt.current_setup='lt1'
+
+qt.get_setup_instrument = lambda x: qt.instruments[x] \
+    if qt.config['instance_name'][-3:] == qt.current_setup \
+    else qt.instruments[x+'_'+qt.current_setup]
+
 ####
 print 'configure the setup-specific hardware...'
 ssro.AdwinSSRO.adwin_processes_key = 'adwin_lt1_processes'
-ssro.AdwinSSRO.E_aom = qt.instruments['Velocity2AOM'] 
-ssro.AdwinSSRO.A_aom = qt.instruments['Velocity1AOM'] 
+ssro.AdwinSSRO.E_aom = qt.instruments['MatisseAOM'] 
+ssro.AdwinSSRO.A_aom = qt.instruments['NewfocusAOM'] 
 ssro.AdwinSSRO.green_aom = qt.instruments['GreenAOM']
 ssro.AdwinSSRO.yellow_aom = qt.instruments['YellowAOM']
 ssro.AdwinSSRO.adwin = qt.instruments['adwin']

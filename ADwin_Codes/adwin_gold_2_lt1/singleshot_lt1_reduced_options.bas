@@ -8,7 +8,7 @@
 ' ADbasic_Version                = 5.0.8
 ' Optimize                       = Yes
 ' Optimize_Level                 = 1
-' Info_Last_Save                 = TUD277246  TUD277246\localadmin
+' Info_Last_Save                 = TUD200823  TUD200823\localadmin
 '<Header End>
 ' this program implements single-shot readout fully controlled by ADwin Gold II
 '
@@ -36,10 +36,6 @@ DIM DATA_21[100] AS FLOAT
 DIM DATA_24[max_SP_bins] AS LONG AT EM_LOCAL      ' SP counts
 DIM DATA_25[max_SSRO_dim] AS LONG  ' SSRO counts spin readout
 
-DIM AWG_start_DO_channel, AWG_done_DI_channel, APD_gate_DO_channel AS LONG
-DIM send_AWG_start, wait_for_AWG_done AS LONG
-DIM sequence_wait_time AS LONG
-
 DIM SP_duration, SP_filter_duration AS LONG
 DIM SSRO_repetitions, SSRO_duration, SSRO_stop_after_first_photon AS LONG
 DIM cycle_duration AS LONG
@@ -47,29 +43,21 @@ DIM wait_after_pulse, wait_after_pulse_duration AS LONG
 
 DIM E_SP_voltage, A_SP_voltage, E_RO_voltage, A_RO_voltage AS FLOAT
 
-DIM timer, aux_timer, mode, i AS LONG
+DIM timer, mode, i AS LONG
 DIM AWG_done AS LONG
 DIM first AS LONG
 
 DIM repetition_counter AS LONG
-DIM AWG_done_DI_pattern AS LONG
 DIM counts, old_counts AS LONG
 
 INIT:
   init_CR()
-  AWG_start_DO_channel         = DATA_20[1]
-  AWG_done_DI_channel          = DATA_20[2]
-  send_AWG_start               = DATA_20[3]
-  wait_for_AWG_done            = DATA_20[4]
-  SP_duration                  = DATA_20[5]
-  SP_filter_duration           = DATA_20[6]
-  sequence_wait_time           = DATA_20[7]
-  wait_after_pulse_duration    = DATA_20[8]
-  SSRO_repetitions             = DATA_20[9]
-  SSRO_duration                = DATA_20[10]
-  SSRO_stop_after_first_photon = DATA_20[11]
-  cycle_duration               = DATA_20[12] '(in processor clock cycles, 3.333ns)
-  APD_gate_DO_channel          = DATA_20[13]
+  SP_duration                  = DATA_20[1]
+  wait_after_pulse_duration    = DATA_20[2]
+  SSRO_repetitions             = DATA_20[3]
+  SSRO_duration                = DATA_20[4]
+  SSRO_stop_after_first_photon = DATA_20[5]
+  cycle_duration               = DATA_20[6] '(in processor clock cycles, 3.333ns)
 
   E_SP_voltage                 = DATA_21[1]
   A_SP_voltage                 = DATA_21[2]
@@ -88,12 +76,9 @@ INIT:
   FOR i = 1 TO SSRO_repetitions*SSRO_duration
     DATA_25[i] = 0
   NEXT i
-    
-  AWG_done_DI_pattern = 2 ^ AWG_done_DI_channel
-  
+      
   repetition_counter  = 0
   first               = 0
-  wait_after_pulse    = 0
     
   DAC(repump_laser_DAC_channel, 3277*repump_off_voltage+32768) ' turn off green
   DAC(E_laser_DAC_channel, 3277*E_off_voltage+32768) ' turn off E laser
@@ -103,7 +88,6 @@ INIT:
   CNT_MODE(counter_channel,00001000b) 'configure counter
 
   CONF_DIO(13)      'configure DIO 08:15 as input, all other ports as output
-  DIGOUT(AWG_start_DO_channel,0)
 
   mode = 0
   timer = 0
@@ -129,100 +113,32 @@ EVENT:
           first = 0
         ENDIF
         
-      CASE 2    ' Ex or A laser spin pumping
+      CASE 2    ' E or A laser spin pumping
         IF (timer = 0) THEN
-          'DAC( repump_laser_DAC_channel, 3277*repump_voltage+32768) ' turn on Ex laser XXXXXX
-          DAC(E_laser_DAC_channel, 3277*E_SP_voltage+32768) ' turn on Ex laser
+          DAC(E_laser_DAC_channel, 3277*E_SP_voltage+32768) ' turn on E laser
           DAC(A_laser_DAC_channel, 3277*A_SP_voltage+32768)   ' turn on A laser
-          CNT_CLEAR(  counter_pattern)    'clear counter
-          CNT_ENABLE( counter_pattern)    'turn on counter
+          
+          CNT_CLEAR(counter_pattern)    'clear counter
+          CNT_ENABLE(counter_pattern)    'turn on counter
           old_counts = 0
+        
         ELSE 
-          counts = CNT_READ( counter_channel)
+          counts = CNT_READ(counter_channel)
           DATA_24[timer] = DATA_24[timer] + counts - old_counts
-
           old_counts = counts
+          
           IF (timer = SP_duration) THEN
-            CNT_ENABLE( 0)
-            IF (SP_filter_duration = 0) THEN
-              DAC(repump_laser_DAC_channel, 3277*0+32768) ' turn off Ex laser XXXXXX
-              DAC(E_laser_DAC_channel, 3277*E_off_voltage+32768) ' turn off Ex laser
-              DAC(A_laser_DAC_channel, 3277*A_off_voltage+32768) ' turn off A laser
-              IF ((send_AWG_start > 0) or (sequence_wait_time > 0)) THEN
-                mode = 4
-              ELSE
-                mode = 5
-              ENDIF
-              wait_after_pulse = wait_after_pulse_duration
-            ELSE
-              mode = 3
-              wait_after_pulse = 0
-            ENDIF
-            timer = -1
-          ENDIF
-        ENDIF
-      CASE 3    ' SP filter (postselection)
-        IF (timer = 0) THEN
-          CNT_CLEAR(  counter_pattern)    'clear counter
-          CNT_ENABLE( counter_pattern)    'turn on counter
-        ELSE 
-          IF (timer = SP_filter_duration) THEN
-            DAC(E_laser_DAC_channel, 3277*E_off_voltage+32768) ' turn off Ex laser
+            DAC(E_laser_DAC_channel, 3277*E_off_voltage+32768) ' turn off E laser
             DAC(A_laser_DAC_channel, 3277*A_off_voltage+32768) ' turn off A laser
-            counts = CNT_READ( counter_channel)
-            CNT_ENABLE( 0)
-            IF (counts > 0) THEN
-              mode = 1
-            ELSE
-              IF ((send_AWG_start > 0) or (sequence_wait_time > 0)) THEN
-                mode = 4
-              ELSE
-                mode = 5
-              ENDIF
-            ENDIF
-            timer = -1
+            
+            CNT_ENABLE(0)
+            CNT_CLEAR(counter_pattern)         
+            
+            mode = 5
             wait_after_pulse = wait_after_pulse_duration
+            timer = -1
           ENDIF
-        ENDIF
-      CASE 4    '  wait for AWG sequence or for fixed duration
-        IF (timer = 0) THEN
-          IF (send_AWG_start > 0) THEN
-            DIGOUT(AWG_start_DO_channel,1)  ' AWG trigger
-            CPU_SLEEP(9)               ' need >= 20ns pulse width; adwin needs >= 9 as arg, which is 9*10ns
-            DIGOUT(AWG_start_DO_channel,0)
-          ENDIF
-          aux_timer = 0
-          AWG_done = 0
-        ELSE 
-          IF (wait_for_AWG_done > 0) THEN 
-            IF (AWG_done = 0) THEN
-              IF (DIGIN(AWG_done_DI_pattern) > 0) THEN
-                AWG_done = 1
-                IF (sequence_wait_time > 0) THEN
-                  aux_timer = timer
-                ELSE
-                  mode = 5
-                  timer = -1
-                  wait_after_pulse = 0
-                ENDIF
-              ENDIF
-            ELSE
-              IF (timer - aux_timer >= sequence_wait_time) THEN
-                mode = 5
-                timer = -1
-                wait_after_pulse = 0
-              ENDIF
-            ENDIF
-          ELSE
-            IF (timer >= sequence_wait_time) THEN
-              mode = 5
-              timer = -1
-              wait_after_pulse = 0
-              'ELSE
-              'CPU_SLEEP(9)
-            ENDIF
-          ENDIF
-        ENDIF
+        ENDIF   
     
       CASE 5    ' spin readout
         
