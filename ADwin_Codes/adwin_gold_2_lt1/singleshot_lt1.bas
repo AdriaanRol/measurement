@@ -36,7 +36,7 @@ DIM DATA_21[100] AS FLOAT
 DIM DATA_24[max_SP_bins] AS LONG AT EM_LOCAL      ' SP counts
 DIM DATA_25[max_SSRO_dim] AS LONG  ' SSRO counts spin readout
 
-DIM AWG_start_DO_channel, AWG_done_DI_channel, APD_gate_DO_channel AS LONG
+DIM AWG_start_DO_channel, AWG_done_DI_channel AS LONG
 DIM send_AWG_start, wait_for_AWG_done AS LONG
 DIM sequence_wait_time AS LONG
 
@@ -69,7 +69,6 @@ INIT:
   SSRO_duration                = DATA_20[10]
   SSRO_stop_after_first_photon = DATA_20[11]
   cycle_duration               = DATA_20[12] '(in processor clock cycles, 3.333ns)
-  APD_gate_DO_channel          = DATA_20[13]
 
   E_SP_voltage                 = DATA_21[1]
   A_SP_voltage                 = DATA_21[2]
