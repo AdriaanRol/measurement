@@ -47,7 +47,7 @@ class LT2Tail(pulsar_msmt.PulsarMeasurement):
         self.lt2_seq = pulsar.Sequence('TeleportationLT2')
 
         dummy_element = tseq._lt2_dummy_element(self)
-        LDE_element = tseq._lt2_LDE_element(self)
+        LDE_element = tseq._lt2_LDE_element(self,use_short_eom_pulse=self.params['use_short_eom_pulse'])
         finished_element = tseq._lt2_sequence_finished_element(self)
 
         self.lt2_seq.append(name = 'LDE_LT2',
@@ -113,20 +113,34 @@ def tail_lt2(name):
     m.params['Ex_CR_amplitude']= m.params['Ey_CR_amplitude']
     m.params['Ex_SP_amplitude']= m.params['Ey_SP_amplitude']
     m.params['Ex_RO_amplitude']=m.params['Ey_RO_amplitude']
+
+
+    #EOM pulse ----------------------------------
+    m.params['use_short_eom_pulse']=False
+    qt.pulsar.set_channel_opt('EOM_trigger', 'delay', 147e-9)
+    qt.pulsar.set_channel_opt('EOM_trigger', 'high', 2.)#2.0
+    m.params_lt2['eom_pulse_duration']        = 2e-9
+    m.params_lt2['eom_off_duration']          = 100e-9
+    m.params_lt2['eom_off_amplitude']         = -.28    *2# calibration from 23-08-2013
+    m.params_lt2['eom_pulse_amplitude']       = -.28     *2
+    m.params_lt2['eom_overshoot_duration1']   = 10e-9
+    m.params_lt2['eom_overshoot1']            = 0#-0.03   *2
+    m.params_lt2['eom_overshoot_duration2']   = 4e-9
+    m.params_lt2['eom_overshoot2']            = 0#-0.03   *2
+    m.params_lt2['aom_risetime']              = 42e-9
+    m.params_lt2['eom_aom_on']                = True
+
     tseq.pulse_defs_lt2(m)
-
-
     m.params['pts']=1
     m.params['send_AWG_start'] = 1
     m.params['wait_for_AWG_done'] = 0
-    m.params['repetitions'] = 50000
+    m.params['repetitions'] = 500000
     m.params['sequence_wait_time'] = m.params['LDE_attempts_before_CR']*m.params['LDE_element_length']*1e6 + 20
     m.params['SP_duration'] = 250
 
     m.params['opt_pi_pulses'] = 2
     m.params_lt2['MW_during_LDE'] = 0
 
-    print  m.params['sequence_wait_time'] 
     m.autoconfig()
     m.generate_sequence()
     m.setup()

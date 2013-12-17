@@ -87,7 +87,7 @@ def cal_CORPSE_pi2(name):
     # pts;
     m.params['pts'] = 2*pts  
     
-    m.params['repetitions'] = 5000
+    m.params['repetitions'] = 2000
     m.params['wait_for_AWG_done'] = 1
 
     m.params['CORPSE_mod_frq'] = m.params['CORPSE_pi_mod_frq']
@@ -281,13 +281,13 @@ DEBUG = False
 if __name__ == '__main__':
     #execfile('d:/measuring/measurement/scripts/lt2_scripts/setup/msmt_par-ms.py')
     #run_calibrations(0)
-    #run_calibrations(0.25)
+    run_calibrations(0.25)
     #run_calibrations(0.5)
     #run_calibrations(1)
     #run_calibrations(1.5)
     #run_calibrations(2)
     #run_calibrations(3) 
-    run_calibrations(4) 
+    #run_calibrations(4) 
     #dd_calibrate_T2(name) 
     
 

@@ -59,8 +59,21 @@ def pulse_defs_lt2(msmt):
         eom_overshoot_duration2 = msmt.params_lt2['eom_overshoot_duration2'],
         eom_overshoot2 = msmt.params_lt2['eom_overshoot2'],
         aom_risetime = msmt.params_lt2['aom_risetime'])
+    
+    msmt.short_eom_aom_pulse = pulselib.short_EOMAOMPulse('Eom Aom Pulse', 
+        eom_channel = 'EOM_Matisse',
+        aom_channel = 'EOM_AOM_Matisse',
+        eom_off_duration = msmt.params_lt2['eom_off_duration'],
+        eom_off_amplitude = msmt.params_lt2['eom_off_amplitude'],
+        eom_off_2_amplitude  = 2.65, #msmt.params_lt2['eom_off_2_amplitude'],
+        eom_overshoot_duration1 = msmt.params_lt2['eom_overshoot_duration1'],
+        eom_overshoot1 = 0.0, #msmt.params_lt2['eom_overshoot1'],
+        eom_overshoot_duration2 = msmt.params_lt2['eom_overshoot_duration2'],
+        eom_overshoot2 = 0.0, #msmt.params_lt2['eom_overshoot2'],
+        aom_risetime = msmt.params_lt2['aom_risetime'])    
 
     msmt.HH_sync = pulse.SquarePulse(channel = 'HH_sync', length = 50e-9, amplitude = 1.0)
+    msmt.eom_trigger = pulse.SquarePulse(channel = 'EOM_trigger', length = 100e-9, amplitude = 1.0)
     msmt.SP_pulse = pulse.SquarePulse(channel = 'AOM_Newfocus', amplitude = 1.0)
     # msmt.yellow_pulse = pulse.SquarePulse(channel = 'AOM_Yellow', amplitude = 1.0)
     msmt.plu_gate = pulse.SquarePulse(channel = 'plu_sync', amplitude = 1.0, 
@@ -599,6 +612,13 @@ def _lt2_LDE_element(msmt, **kw):
     # variable parameters
     name = kw.pop('name', 'LDE_LT2')
     pi2_pulse_phase = kw.pop('pi2_pulse_phase', 0)
+    if kw.pop('use_short_eom_pulse',False):
+        eom_pulse=pulse.cp(msmt.short_eom_aom_pulse,
+            aom_on=msmt.params_lt2['eom_aom_on'])
+    else:
+        eom_pulse=pulse.cp(msmt.eom_aom_pulse,
+            eom_pulse_amplitude = msmt.params_lt2['eom_pulse_amplitude'],
+            aom_on=msmt.params_lt2['eom_aom_on'])
 
     ###
     e = element.Element(name, 
@@ -633,15 +653,16 @@ def _lt2_LDE_element(msmt, **kw):
         start = msmt.params_lt2['opt_pulse_separation'] if i > 0 else msmt.params['wait_after_sp']
         refpoint = 'start' if i > 0 else 'end'
 
-        e.add(pulse.cp(msmt.eom_aom_pulse,
-            eom_pulse_amplitude = msmt.params_lt2['eom_pulse_amplitude'],
-            aom_on=msmt.params_lt2['eom_aom_on']),
+        e.add(eom_pulse,        
             name = name, 
             start = start,
             refpulse = refpulse,
-            refpoint = refpoint,
-           )
-    
+            refpoint = refpoint,)
+        e.add(msmt.eom_trigger,
+            name = name+'_trigger', 
+            start = start,
+            refpulse = refpulse,
+            refpoint = refpoint,)
     #4 MW pi/2
     if msmt.params_lt2['MW_during_LDE'] == 1 :
         e.add(pulse.cp(msmt.CORPSE_pi2, 
