@@ -166,22 +166,22 @@ class ScanLT1(LaserFrequencyScan):
     def __init__(self, name='LT1'):
         LaserFrequencyScan.__init__(self, name)
         
-        self.adwin = qt.instruments['adwin_lt1']
-        self.physical_adwin=qt.instruments['physical_adwin']
-        self.mw = qt.instruments['SMB100_lt1']
-        self.labjack= qt.instruments['labjack']
+        self.adwin = qt.get_setup_instrument('adwin')
+        self.physical_adwin=qt.get_setup_instrument('physical_adwin_lt2')
+        self.mw = qt.get_setup_instrument('SMB100')
+        self.labjack= qt.get_setup_instrument('labjack')
 
         red_labjack_dac_nr = 6
         self.set_red_laser_voltage = lambda x: self.labjack.__dict__['set_bipolar_dac'+str(red_labjack_dac_nr)](x)
         self.get_red_laser_voltage = lambda : self.labjack.__dict__['get_bipolar_dac'+str(red_labjack_dac_nr)]()
-        self.set_red_power = qt.instruments['NewfocusAOM_lt1'].set_power
+        self.set_red_power = qt.get_setup_instrument('NewfocusAOM').set_power
 
         yellow_labjack_dac_nr = 0
         self.set_yellow_laser_voltage = lambda x: self.labjack.__dict__['set_bipolar_dac'+str(yellow_labjack_dac_nr)](x)
         self.get_yellow_laser_voltage = lambda : self.labjack.__dict__['get_bipolar_dac'+str(yellow_labjack_dac_nr)]()
-        self.set_yellow_power = qt.instruments['YellowAOM_lt1'].set_power
+        self.set_yellow_power = qt.get_setup_instrument('YellowAOM').set_power
 
-        self.set_repump_power = qt.instruments['GreenAOM_lt1'].set_power
+        self.set_repump_power = qt.get_setup_instrument('GreenAOM').set_power
 
         self.get_frequency = lambda x : self.physical_adwin.Get_FPar(x+40)
         self.get_counts = self.adwin.measure_counts
@@ -196,7 +196,7 @@ class ScanLT1(LaserFrequencyScan):
         self.max_v = 9.
         self.min_v = -9.
 
-        self.set_gate_voltage = lambda x: qt.instruments['ivvi_lt1'].set_dac2(x)
+        self.set_gate_voltage = lambda x: qt.get_setup_instrument('ivvi').set_dac2(x)
 
     def yellow_scan(self, start_f, stop_f, power=0.5e-9, **kw):
         voltage_step = kw.pop('voltage_step', 0.01)
@@ -230,7 +230,7 @@ class ScanLT1(LaserFrequencyScan):
         
         self.single_line_scan(start_f, stop_f, voltage_step, integration_time_ms, power, **kw)\
 
-    def red_inonization_scan(self, start_f, stop_f, power=15e-9, **kw):
+    def red_inonization_scan(self, start_f, stop_f, power=7e-9, **kw):
         voltage_step = kw.pop('voltage_step', 0.04)
         integration_time_ms = kw.pop('integration_time_ms', 20)
         _save=kw.pop('save', False)        
@@ -391,13 +391,13 @@ class ScanLT1(LaserFrequencyScan):
 def single_red_scan():
     m = ScanLT1()
 
-    m.mw.set_power(-5)
+    m.mw.set_power(-7)
     m.mw.set_frequency(2.8265e9)
     m.mw.set_iq('off')
     m.mw.set_pulm('off')
     m.mw.set_status('on')
-
-    m.yellow_red(20, 30, 0.02, 0.2e-9, 35, 65, 0.02, 20, 0.7e-9)
+    #m.red_scan(65, 90, voltage_step=0.01, integration_time_ms=20, power = 3e-9)
+    m.yellow_red(55, 70, 0.02, 2e-9, 74, 92, 0.02, 20, 3e-9)
     # m.oldschool_red_scan(55, 75, 0.01, 20, 0.5e-9)
 
     m.mw.set_status('off')
@@ -405,7 +405,7 @@ def single_red_scan():
 def green_yellow_during_scan():
     m = ScanLT1()
 
-    m.mw.set_power(-5)
+    m.mw.set_power(-9)
     m.mw.set_frequency(2.8265e9)
     m.mw.set_iq('off')
     m.mw.set_pulm('off')
@@ -423,7 +423,7 @@ def repeated_red_scans(**kw):
     gate_range=kw.pop('gate_range', None)
     pts = kw.pop('pts', 100)
 
-    m.mw.set_power(-5)
+    m.mw.set_power(-9)
     m.mw.set_frequency(2.8265e9)
     m.mw.set_iq('off')
     m.mw.set_pulm('off')
@@ -499,7 +499,7 @@ def repeated_red_scans(**kw):
             if gate_scan: 
                 m.set_gate_voltage(gate_x[i])
                 ix=gate_x[i]*45.
-            m.yellow_red(-2, 18,0.02, 0.3e-9, 40, 60, 0.02, 20, 1e-9, 
+            m.yellow_red(55, 70, 0.02, 2e-9, 74, 92, 0.02, 20, 3e-9, 
                 red_data = red_data, 
                 yellow_data = yellow_data,
                 data_args=[ix, time.time()-t0])
@@ -519,23 +519,23 @@ def repeated_red_scans(**kw):
     return ret
 
 def gate_scan_with_c_optimize():
-    if repeated_red_scans(gate_scan=True, gate_range=(0,1500),pts=16):
-        qt.instruments['GreenAOM_lt1'].set_power(20e-6)
-        qt.instruments['c_optimiz0r_lt1'].optimize(xyz_range=[.2,.2,.5], cnt=1, int_time=50, max_cycles=20)
-        qt.instruments['c_optimiz0r_lt1'].optimize(xyz_range=[.2,.2,.5], cnt=1, int_time=50, max_cycles=20)
-        qt.instruments['c_optimiz0r_lt1'].optimize(xyz_range=[.02,.02,.05], cnt=1, int_time=50, max_cycles=20)
-        qt.instruments['c_optimiz0r_lt1'].optimize(xyz_range=[.02,.02,.05], cnt=1, int_time=50, max_cycles=20)
-        qt.instruments['optimiz0r_lt1'].optimize(cnt=1, dims=['x','y'], cycles=3, int_time=50)
-        qt.instruments['GreenAOM_lt1'].set_power(0e-6)
-        repeated_red_scans(gate_scan=True, gate_range=(0,-1100),pts=12)
+    if repeated_red_scans(gate_scan=True, gate_range=(0,1000),pts=16):
+        qt.get_setup_instrument('GreenAOM').set_power(20e-6)
+        qt.get_setup_instrument('c_optimiz0r').optimize(xyz_range=[.2,.2,.5], cnt=1, int_time=50, max_cycles=20)
+        qt.get_setup_instrument('c_optimiz0r').optimize(xyz_range=[.2,.2,.5], cnt=1, int_time=50, max_cycles=20)
+        qt.get_setup_instrument('c_optimiz0r').optimize(xyz_range=[.05,.1,.2], cnt=1, int_time=50, max_cycles=20)
+        qt.get_setup_instrument('c_optimiz0r').optimize(xyz_range=[.02,.02,.05], cnt=1, int_time=50, max_cycles=20)
+        qt.get_setup_instrument('optimiz0r').optimize(cnt=1, dims=['x','y'], cycles=3, int_time=50)
+        qt.get_setup_instrument('GreenAOM').set_power(0e-6)
+        repeated_red_scans(gate_scan=True, gate_range=(0,-1000),pts=12)
 
 if __name__ == '__main__':
-    qt.instruments['GreenAOM_lt1'].set_power(0e-6)
+    qt.get_setup_instrument('GreenAOM').set_power(0.e-6)
     #single_red_scan()
     #green_yellow_during_scan()
     #yellow_ionization_scan(13,20)
     # repeated_red_scans()
     # repeated_red_scans(spectral_diffusion=True)
-    repeated_red_scans(gate_scan=True, gate_range=(0,1500),pts=16)
+    repeated_red_scans(gate_scan=True, gate_range=(0,-1100),pts=12)
     #gate_scan_with_c_optimize()
 

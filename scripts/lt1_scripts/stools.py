@@ -10,8 +10,8 @@ ADWIN = 'adwin'
 PM = 'powermeter'
 PMSERVO = 'PMServo'
 GREENAOM = 'GreenAOM'
-RED1AOM = 'Velocity1AOM'
-RED2AOM = 'Velocity2AOM'
+RED1AOM = 'NewfocusAOM'
+RED2AOM = 'MatisseAOM'
 YELLOWAOM = 'YellowAOM'
 
 ALLAOMS = [GREENAOM, RED2AOM, RED1AOM, YELLOWAOM]
@@ -51,8 +51,8 @@ def set_lt1_remote():
     for i in ['labjack', 
         'setup_controller',
         'YellowAOM',
-        'Velocity2AOM',
-        'Velocity1AOM',
+        'MatisseAOM',
+        'NewfocusAOM',
         'GreenAOM',
         'optimiz0r',
         'opt1d_counts',
@@ -75,8 +75,8 @@ def set_lt1_standalone():
     global master_of_space
     global optimiz0r
     global GreenAOM
-    global Velocity1AOM
-    global Velocity2AOM
+    global NewfocusAOM
+    global MatisseAOM
     global ivvi
 
     AWG = qt.instruments.create('AWG', 'Tektronix_AWG5014', 
@@ -109,9 +109,9 @@ def set_lt1_standalone():
   
     GreenAOM = qt.instruments.create('GreenAOM', 'AOM', 
             use_adwin='adwin', use_pm= 'powermeter')
-    Velocity1AOM = qt.instruments.create('Velocity1AOM', 'AOM', 
+    NewfocusAOM = qt.instruments.create('NewfocusAOM', 'AOM', 
             use_adwin='adwin', use_pm = 'powermeter')         
-    Velocity2AOM = qt.instruments.create('Velocity2AOM', 'AOM', 
+    MatisseAOM = qt.instruments.create('MatisseAOM', 'AOM', 
             use_adwin='adwin', use_pm = 'powermeter')
     YellowAOM = qt.instruments.create('YellowAOM', 'AOM', 
             use_adwin='adwin', use_pm ='powermeter')
