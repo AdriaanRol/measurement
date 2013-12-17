@@ -135,6 +135,7 @@ class AdwinSSRO(m2.AdwinControlledMeasurement):
                 break
             
             reps_completed = self.adwin_var('completed_reps')
+            #print self.adwin_var('total_CR_counts')
             CR_counts = self.adwin_var('total_CR_counts') - CR_counts
             
             print('completed %s / %s readout repetitions' % \

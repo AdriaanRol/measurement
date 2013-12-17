@@ -1,6 +1,3 @@
-qt._current_setup_apx = 'lt2'
-qt.current_instruments= lambda x: qt.instruments[str(x)+'_'+qt._current_setup_apx]
-
 ssro.AdwinSSRO.adwin_processes_key = 'adwin_lt2_processes'
 ssro.AdwinSSRO.E_aom = qt.current_instruments('MatisseAOM')
 ssro.AdwinSSRO.A_aom = qt.instruments['NewfocusAOM']

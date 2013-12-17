@@ -60,6 +60,8 @@ SUB init_CR()
   CR_failed           = 0
   repumps             = 0
   cr_wait_after_pulse    = 0
+  cr_mode = 0
+  cr_timer = 0
   
   PAR_70 = 0                      ' cumulative counts from probe intervals
   PAR_71 = 0                      ' number of repumps
@@ -69,6 +71,7 @@ SUB init_CR()
   par_69 = CR_repump
   par_76 = 0                      ' cumulative counts during repumping
   par_79 = 0                      ' CR below treshold events
+  par_80 = -1
 ENDSUB
 
 
@@ -83,7 +86,7 @@ FUNCTION CR_check(first_cr, repetition_index) As LONG
   IF (cr_wait_after_pulse > 0) THEN
     DEC(cr_wait_after_pulse)
   ELSE
-    
+    par_80 = cr_timer
     SELECTCASE cr_mode 
       CASE 0    ' green repump
               
