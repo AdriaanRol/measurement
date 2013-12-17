@@ -1,5 +1,5 @@
 ssro.AdwinSSRO.adwin_processes_key = 'adwin_lt2_processes'
-ssro.AdwinSSRO.E_aom = qt.instruments['MatisseAOM']
+ssro.AdwinSSRO.E_aom = qt.current_instruments('MatisseAOM')
 ssro.AdwinSSRO.A_aom = qt.instruments['NewfocusAOM']
 ssro.AdwinSSRO.green_aom = qt.instruments['GreenAOM']
 ssro.AdwinSSRO.yellow_aom = qt.instruments['YellowAOM']
