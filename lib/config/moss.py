@@ -1,7 +1,7 @@
- config = {}
+config = {}
 
 
- config['mos_lt1'] = {
+config['mos_lt1'] = {
                 'rt_dimensions' : {
                     'x' : {
                         'dac' : 'atto_x',
@@ -28,6 +28,7 @@
                         'origin' : 0.,
                         },
                     },
+
                 'lt_dimensions' : {
                     'x' : {
                         'dac' : 'atto_x',
@@ -57,6 +58,7 @@
                 }
         
 config['mos_lt2'] = {
+
                 'rt_dimensions' : {
                     'x' : {
                         'dac' : 'atto_x',
@@ -84,7 +86,7 @@ config['mos_lt2'] = {
                         },
                     },
          
-                'lt_dimensions'] : {
+                'lt_dimensions' : {
                     'x' : {
                         'dac' : 'atto_x',
                         'micron_per_volt' : 2.8,
@@ -113,7 +115,8 @@ config['mos_lt2'] = {
                 }
 
 config['mos_lt3'] = {
-                'rt_dimensions'  = {
+
+                'rt_dimensions'  : {
                     'x' : {
                         'dac' : 'atto_x',
                         'micron_per_volt' : 1.25,
@@ -138,5 +141,8 @@ config['mos_lt3'] = {
                         'default' : 0.,
                         'origin' : 0.,
                         },
-                    }
+                    },
+                'lt_dimensions'  : {},
+                }
+
          

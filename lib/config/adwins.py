@@ -313,7 +313,7 @@ config['adwin_lt1_processes'] = {
                     'MBI failed ' : 74,
                     'current mode': 77,
                     'MBI startY': 78,
-                    'ROseq_cntr', 80,
+                    'ROseq_cntr': 80,
 
                     },
                 'data_long' : {

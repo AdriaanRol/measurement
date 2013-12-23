@@ -27,9 +27,9 @@ class master_of_space(CyclopeanInstrument):
         self._adwin = qt.instruments[adwin]
 	
        # should not change often, hardcode is fine for now
-        self.rt_dimensions = moscfg[dimension_set]['rt_dimensions']
+        self.rt_dimensions = moscfg.config[dimension_set]['rt_dimensions']
          
-        self.lt_dimensions = moscfg[dimension_set]['lt_dimensions']
+        self.lt_dimensions = moscfg.config[dimension_set]['lt_dimensions']
         
         self.dimensions = self.rt_dimensions
 
