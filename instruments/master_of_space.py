@@ -11,14 +11,13 @@ import gobject
 import numpy as np
 from lib import config
 
+from measurement.lib.config import moss as moscfg
+
 # constants
 LINESCAN_CHECK_INTERVAL = 50 # [ms]
 
-# FIXME origin, markers, not fully consistent and probably not working at the
-# moment! fix that! (origin not taken into account)
-
 class master_of_space(CyclopeanInstrument):
-    def __init__(self, name, adwin):
+    def __init__(self, name, adwin, dimension_set):
         """
         Parameters:
             adwin : string
@@ -27,85 +26,16 @@ class master_of_space(CyclopeanInstrument):
         CyclopeanInstrument.__init__(self, name, tags=['positioner'])
         self._adwin = qt.instruments[adwin]
 	
-        #print 'init'
-        # should not change often, hardcode is fine for now
-        self.rt_dimensions = {
-                'x' : {
-                    'dac' : 'atto_x',
-                    'micron_per_volt' : 9.324,
-                    'max_v' : 4.29,
-                    'min_v' : 0.,
-                    'default' : 0.,
-                    'origin' : 0.,
-                    }, 
-                'y' : {
-                    'dac' : 'atto_y',
-                    'micron_per_volt' : 5.59,
-                    'min_v' : 0.,
-                    'max_v' : 4.29,
-                    'default' : 0.,
-                    'origin' : 0.,
-                    },
-                'z' : {
-                    'dac' : 'atto_z',
-                    'micron_per_volt' : 9.324,
-                    'max_v' : 4.29,
-                    'min_v' : 0.,
-                    'default' : 0.,
-                    'origin' : 0.,
-                    },
-                }
+       # should not change often, hardcode is fine for now
+        self.rt_dimensions = moscfg.config[dimension_set]['rt_dimensions']
          
-        self.lt_dimensions = {
-                'x' : {
-                    'dac' : 'atto_x',
-                    'micron_per_volt' : 2.8,
-                    'max_v' : 10,
-                    'min_v' : 0.,
-                    'default' : 0.,
-                    'origin' : 0.,
-                    }, 
-                'y' : {
-                    'dac' : 'atto_y',
-                    'micron_per_volt' : 1.40,
-                    'min_v' : 0.,
-                    'max_v' : 10,
-                    'default' : 0.,
-                    'origin' : 0.,
-                    },
-                'z' : {
-                    'dac' : 'atto_z',
-                    'micron_per_volt' : 2.8,
-                    'max_v' : 10,
-                    'min_v' : 0.,
-                    'default' : 0.,
-                    'origin' : 0.,
-                    },
-                }
+        self.lt_dimensions = moscfg.config[dimension_set]['lt_dimensions']
         
         self.dimensions = self.rt_dimensions
 
-        # auto generate parameters incl set and get for all dimensions        
-        for d in self.dimensions:
-            dim = self.dimensions[d]
-            
-            # make set and get
-            self._make_get(d)
-            self._make_set(d)
-            
-            # make stepping function
-            self._make_stepfunc(d)
 
-            # register parameter (set and get need to exist already)
-            self.add_parameter(d, 
-                    type=types.FloatType,
-                    flags=Instrument.FLAG_GETSET, 
-                    units='um',
-                    minval=dim['min_v']*dim['micron_per_volt'],
-                    maxval=dim['max_v']*dim['micron_per_volt'], )
-
-            # register the step function
-            self.add_function('step_'+d)
+        # auto generate parameters incl set and get for all dimensions
+        self._make_get_set()
 
         # scan control
         self._linescan_running = False
@@ -143,7 +73,7 @@ class master_of_space(CyclopeanInstrument):
         self.add_function('goto_marker')
         self.add_function('push_position')
         self.add_function('pop_position')
-
+        
         # set up config file
         cfg_fn = os.path.join(qt.config['ins_cfg_path'], name+'.cfg')
         if not os.path.exists(cfg_fn):
@@ -154,7 +84,11 @@ class master_of_space(CyclopeanInstrument):
         self.ins_cfg = config.Config(cfg_fn)     
         self.load_cfg()
         self.save_cfg()
+
+        self._init_positions()
+
         
+    def _init_positions(self):
         # set initial position values (need to know whether LT or RT settings)
         for d in self.dimensions:
             dim = self.dimensions[d]
@@ -162,6 +96,27 @@ class master_of_space(CyclopeanInstrument):
             position = voltage * dim['micron_per_volt']
             setattr(self, '_'+d, position)
 
+    def _make_get_set(self):
+        for d in self.dimensions:
+                dim = self.dimensions[d]
+                
+                # make set and get
+                self._make_get(d)
+                self._make_set(d)
+                
+                # make stepping function
+                self._make_stepfunc(d)
+
+                # register parameter (set and get need to exist already)
+                self.add_parameter(d, 
+                        type=types.FloatType,
+                        flags=Instrument.FLAG_GETSET, 
+                        units='um',
+                        minval=dim['min_v']*dim['micron_per_volt'],
+                        maxval=dim['max_v']*dim['micron_per_volt'], )
+
+                # register the step function
+                self.add_function('step_'+d)
 
     ### config management
     def load_cfg(self):
@@ -176,7 +131,6 @@ class master_of_space(CyclopeanInstrument):
     # Line scan control
     def linescan_start(self, dimensions, starts, stops, steps, px_time, 
             relative=False, value='counts'):
-        #print 'linescan_start'
         
         # for now, user has to wait until scan is finished
         if self.get_linescan_running() or self._adwin.is_linescan_running():
@@ -211,7 +165,7 @@ class master_of_space(CyclopeanInstrument):
                 stops_v.append(self.dimensions[dimname]['max_v'])
                 print "Error in master_of_space.linescan_start: Exceeding max.min voltage"
                 print stops[i] / dim['micron_per_volt']            
-
+        
         self._adwin.linescan(dacs, np.array(starts_v), np.array(stops_v),
                 steps, px_time, value=value, scan_to_start=True)
 
@@ -239,12 +193,11 @@ class master_of_space(CyclopeanInstrument):
             # self._adwin.set_LT(0)
             self.dimensions = self.rt_dimensions
             self._lt_settings = False
-        self.save_cfg()
+        self._init_positions()
 
     # monitor the status of the linescan
     def _linescan_check(self):
-        #print 'linescan_check'
-        
+
         # first update the px clock, call get to make connects easy
         if self._adwin.get_linescan_px_clock() > self._linescan_px_clock:
             self._linescan_px_clock = self._adwin.get_linescan_px_clock()
@@ -388,10 +341,9 @@ class master_of_space(CyclopeanInstrument):
         return U    
 
     #Convenient extra functions
-    def move_to_pos(self, dim_name, val, speed=5000, blocking=False):
+    def move_to_pos(self, dim_name, val, speed=2000, blocking=False):
         # print dim_name, val
-        #print 'move_to_pos'
-
+        
         dim = self.dimensions[dim_name]
         dac_name = dim['dac']
         target_voltage = val/dim['micron_per_volt']
@@ -404,9 +356,9 @@ class master_of_space(CyclopeanInstrument):
         setattr(self, '_'+dim_name, val)
         self.get(dim_name)
 
-    def move_to_xyz_pos(self, dim_names, vals, speed=5000, blocking=False):
+    # FIXME too explicit. make that general.
+    def move_to_xyz_pos(self, dim_names, vals, speed=2000, blocking=False):
         
-        #print 'move_to_xyz_pos'
         target_voltages = []
         for d in ['x','y','z']:
             dim = self.dimensions[d]     
@@ -424,10 +376,8 @@ class master_of_space(CyclopeanInstrument):
             
             target_voltages.append(tv)
         
-        #print '*'
         self._adwin.move_to_xyz_U(target_voltages, speed=speed,
                 blocking=blocking)
-        #print '**'
         
         for i,d in enumerate(dim_names):
             setattr(self, '_'+d, vals[i])

@@ -315,6 +315,7 @@ config['adwin_lt1_processes'] = {
                     'MBI failed' : 74,
                     'current mode': 77,
                     'MBI start': 78,
+                    'MBI start': 78,
                     'ROseq_cntr': 80,
 
                     },
