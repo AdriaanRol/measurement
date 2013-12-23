@@ -25,9 +25,6 @@ def ssrocalibration(name):
     m.params['E_CR_amplitude'] = 6e-9 #5e-9
 
     m.params['SSRO_duration'] = 50
-    m.params['CR_preselect'] = 2000
-    m.params['CR_probe'] = 10
-    m.params['CR_duration'] = 50
 
     # ms = 0 calibration
     m.params['SP_duration'] = 250

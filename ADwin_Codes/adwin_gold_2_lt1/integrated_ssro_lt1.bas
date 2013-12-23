@@ -8,7 +8,7 @@
 ' ADbasic_Version                = 5.0.8
 ' Optimize                       = Yes
 ' Optimize_Level                 = 1
-' Info_Last_Save                 = TUD277246  TUD277246\localadmin
+' Info_Last_Save                 = TUD276629  TUD276629\localadmin
 '<Header End>
 ' this program implements single-shot readout fully controlled by ADwin Gold II
 '
@@ -218,7 +218,7 @@ EVENT:
             sweep_index = 1
           endif
           
-          mode = 1
+          mode = 0
           timer = -1
           wait_after_pulse = wait_after_pulse_duration
           inc(repetition_counter)

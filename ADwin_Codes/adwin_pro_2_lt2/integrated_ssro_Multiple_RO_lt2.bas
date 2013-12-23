@@ -10,7 +10,8 @@
 ' Optimize_Level                 = 1
 ' Info_Last_Save                 = TUD276629  TUD276629\localadmin
 '<Header End>
-' this program implements single-shot readout fully controlled by ADwin Gold II
+' this program implements CR check and N times |SP - AWG sequence - integrated SSRO| (Nmax = 100)
+' controlled by ADwin Pro
 '
 ' protocol:
 ' mode  0:  CR check
@@ -25,22 +26,27 @@
 #INCLUDE .\configuration.inc
 #INCLUDE .\cr_pro.inc
 
-#DEFINE max_SP_bins        500
-#DEFINE max_SSRO_dim     10000
-#DEFINE max_stat            10
+#DEFINE max_SP_bins        500 ' not used ? Machiel 23-12-13
+#DEFINE max_RO_dim     200000
+#DEFINE max_sequences  500
+'#DEFINE max_stat            10
 
 'init
-DIM DATA_20[100] AS LONG
-DIM DATA_21[100] AS FLOAT
+DIM DATA_20[100] AS LONG      ' integer parameters
+DIM DATA_21[100] AS FLOAT     ' float parameters
+DIM DATA_33[max_sequences] AS LONG                ' A SP durations
+DIM DATA_35[max_sequences] AS FLOAT               ' A SP voltages
+
 
 'return
-DIM DATA_24[max_SP_bins] AS LONG AT EM_LOCAL      ' SP counts ' not used anymore? Machiel 23-12-'13
-DIM DATA_25[max_SSRO_dim] AS LONG  ' SSRO counts spin readout
+DIM DATA_24[max_SP_bins] AS LONG AT EM_LOCAL      ' SP counts ' think of how to deal with this (not usefull if SP laser is different for different N) - Machiel 23-12-'13
+DIM DATA_27[max_RO_dim] AS LONG AT DRAM_EXTERN    ' SSRO counts
+
 
 DIM AWG_start_DO_channel, AWG_done_DI_channel, APD_gate_DO_channel AS LONG
 DIM send_AWG_start, wait_for_AWG_done AS LONG
 DIM sequence_wait_time AS LONG
-
+DIM RO_repetitions AS LONG
 DIM SP_duration, SP_filter_duration AS LONG
 DIM SSRO_repetitions, SSRO_duration, SSRO_stop_after_first_photon, sweep_length AS LONG
 DIM cycle_duration AS LONG

@@ -38,3 +38,4 @@ start_msg = """
                           Beam us up, Ronny!
 
 """
+print start_msg

@@ -39,8 +39,10 @@ DIM DATA_45[4] AS LONG
 'DIM DATA_15[8] AS FLOAT 'modulation apms during cr
 'DIM DATA_16[8] AS FLOAT 'modulation offsets during repump
 'DIM DATA_17[8] AS FLOAT 'modulation offsets during cr
-DIM DATA_20[300] AS LONG
-DIM DATA_21[300] AS FLOAT
+DIM DATA_20[100] AS LONG
+DIM DATA_21[100] AS FLOAT
+DIM DATA_30[100] AS LONG
+DIM DATA_31[100] AS FLOAT
 'DIM DATA_22[20000] AS LONG AT EM_LOCAL  ' CR counts before sequence
 'DIM DATA_23[20000] AS LONG AT EM_LOCAL  ' CR counts after sequence
 'DIM DATA_24[500] AS LONG AT EM_LOCAL      ' SP counts

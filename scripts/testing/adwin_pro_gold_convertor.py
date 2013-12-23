@@ -18,8 +18,8 @@ def convert(fn_in,fn_out,conversion=(0,1)):
 			for line in fin:
 				i=i+1
 				if '#INCLUDE ADwinGoldII.inc' in line:
-					line='#INCLUDE ADwinPro_All.inc\n#INCLUDE configuration.inc'
-				if  ('#INCLUDE configuration.inc' in line) and conversion==(1,0)):
+					line='#INCLUDE ADwinPro_All.inc\n#INCLUDE .\configuration.inc\n'
+				if  (('#INCLUDE configuration.inc' in line) and conversion==(1,0)):
 					line=''
 				if 'DIGIN' in line:
 					print 'WARNING: DIGIN found in line',i,'check output'
@@ -32,4 +32,4 @@ if __name__ == '__main__':
 	#conversion (source,target), 0 = gold, 1 = pro 
 	#--> (0,1) = gold to pro
 	#--> (1,0) = pro to gold
-	convert('adwin_ssro_sp_pro.txt','adwin_ssro_sp_gold_conv.txt', conversion=(1,0))
+	convert('integrated_ssro_lt1.bas','integrated_ssro_lt2.bas', conversion=(0,1))
