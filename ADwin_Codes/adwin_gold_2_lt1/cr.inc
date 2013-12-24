@@ -77,9 +77,6 @@ ENDSUB
 
 FUNCTION CR_check(first_cr, repetition_index) As LONG
   
-  CR_preselect                 = PAR_75
-  CR_probe                     = PAR_68
-  CR_repump                    = PAR_69
   CR_check = 0
   
   IF (cr_wait_after_pulse > 0) THEN
@@ -90,7 +87,7 @@ FUNCTION CR_check(first_cr, repetition_index) As LONG
       CASE 0    ' green repump
               
         IF (cr_timer = 0) THEN
-          
+          CR_repump                    = PAR_69
           IF (cr_counts < CR_repump)  THEN  'only repump 
             CNT_CLEAR(counter_pattern)    'clear counter
             CNT_ENABLE(counter_pattern)    'turn on counter
@@ -125,6 +122,8 @@ FUNCTION CR_check(first_cr, repetition_index) As LONG
       CASE 1    ' E/A laser CR check
         
         IF (cr_timer = 0) THEN
+          CR_preselect                 = PAR_75
+          CR_probe                     = PAR_68
           DAC(E_laser_DAC_channel, 3277*E_CR_voltage+32768) ' turn on E laser
           DAC(A_laser_DAC_channel, 3277*A_CR_voltage+32768) ' turn on A laser
           CNT_CLEAR(counter_pattern)    'clear counter

@@ -26,7 +26,7 @@
 
 #INCLUDE ADwinPro_All.inc
 #INCLUDE .\configuration.inc
-#INCLUDE .\cr_pro.inc
+#INCLUDE .\cr.inc
 
 #DEFINE max_SP_bins       500 ' not used anymore? Machiel 23-12-'13
 #DEFINE max_RO_dim     200000

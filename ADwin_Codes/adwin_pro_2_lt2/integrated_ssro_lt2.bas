@@ -23,7 +23,7 @@
 
 #INCLUDE ADwinPro_All.inc
 #INCLUDE .\configuration.inc
-#INCLUDE .\cr_pro.inc
+#INCLUDE .\cr.inc
 
 #DEFINE max_SP_bins        500
 #DEFINE max_SSRO_dim     10000
