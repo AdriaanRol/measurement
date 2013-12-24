@@ -4,7 +4,7 @@ adwin_lt1 = qt.instruments.create('adwin_lt1', 'adwin_lt1')
 counters_lt1 = qt.instruments.create('counters_lt1', 'counters_via_adwin',
         adwin='adwin_lt1')
 master_of_space_lt1 = qt.instruments.create('master_of_space_lt1', 
-        'master_of_space_lt1', adwin='adwin_lt1')
+        'master_of_space', adwin='adwin_lt1', dimension_set='mos_lt1')
 linescan_counts_lt1 = qt.instruments.create('linescan_counts_lt1', 
         'linescan_counts', adwin='adwin_lt1', mos='master_of_space_lt1',
         counters='counters_lt1')

@@ -32,4 +32,6 @@ if __name__ == '__main__':
 	#conversion (source,target), 0 = gold, 1 = pro 
 	#--> (0,1) = gold to pro
 	#--> (1,0) = pro to gold
-	convert('integrated_ssro_lt1.bas','integrated_ssro_lt2.bas', conversion=(0,1))
+	convert(r'D:\measuring\measurement\ADwin_Codes\adwin_gold_2_lt1\cr_mod_two.inc',
+			r'D:\measuring\measurement\ADwin_Codes\adwin_pro_2_lt2\cr_mod_two.inc', 
+			conversion=(0,1))
