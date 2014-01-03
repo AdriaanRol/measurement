@@ -1,6 +1,7 @@
 '<ADbasic Header, Headerversion 001.001>
+' Foldings                       = 170
 '<Header End>
-' this program implements CR check fully controlled by ADwin Gold II
+' this program implements CR check fully controlled by ADwin Pro II
 '
 ' protocol:
 ' mode  0:  green pulse, 
@@ -8,18 +9,18 @@
 ' mode  1:  E/A pulse, photon counting  ->  CR check
 '           fail: -> mode 0
 
-#DEFINE max_repetitions 500000
-#DEFINE max_stat           10
 
+#DEFINE max_stat           10
+#DEFINE max_repetitions 500000
 'init
 DIM DATA_30[100] AS LONG               ' CR integer parameters
 DIM DATA_31[100] AS FLOAT              ' CR float parameters
 
 'return
+'used in cr.inc
 DIM DATA_22[max_repetitions] AS LONG  ' CR counts before sequence
 DIM DATA_23[max_repetitions] AS LONG ' CR counts after sequence
 DIM DATA_26[max_stat] AS LONG         ' statistics
-
 
 DIM cr_mode, cr_timer AS LONG
 DIM cr_counts AS LONG
@@ -35,7 +36,7 @@ DIM repump_voltage, repump_off_voltage, E_CR_voltage, A_CR_voltage, E_off_voltag
 SUB init_CR()
   counter_channel              = DATA_30[1]
   repump_laser_DAC_channel     = DATA_30[2]
-  E_laser_DAC_channel          = DATA_30[3]
+  E_laser_DAC_channel          = DATA_30[3] ' this is also used in the main script i.e. MBI_lt2 for ssro, more logical to define there? -machiel 30-12-'13
   A_laser_DAC_channel          = DATA_30[4]
   repump_duration              = DATA_30[5]
   CR_duration                  = DATA_30[6]
@@ -51,6 +52,10 @@ SUB init_CR()
   E_off_voltage                = DATA_31[5]
   A_off_voltage                = DATA_31[6]
   
+  FOR i = 1 TO max_repetitions
+    DATA_22[i] = 0
+    DATA_23[i] = 0
+  NEXT i
   FOR i = 1 TO max_stat
     DATA_26[i] = 0
   NEXT i
@@ -76,7 +81,7 @@ ENDSUB
 
 
 FUNCTION CR_check(first_cr, repetition_index) As LONG
-  
+
   CR_check = 0
   
   IF (cr_wait_after_pulse > 0) THEN

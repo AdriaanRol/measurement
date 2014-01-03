@@ -8,7 +8,7 @@
 ' ADbasic_Version                = 5.0.8
 ' Optimize                       = Yes
 ' Optimize_Level                 = 1
-' Info_Last_Save                 = TUD276629  TUD276629\localadmin
+' Info_Last_Save                 = TUD277246  TUD277246\localadmin
 '<Header End>
 ' this program implements CR check and N times |SP - AWG sequence - integrated SSRO |
 ' controlled by ADwin Pro
@@ -21,26 +21,20 @@
 ' mode  4:  optional: trigger for AWG sequence, or static wait time
 ' mode  5:  SSRO -> mode 1, data saved is binary number for each Nth RO step
 
-#INCLUDE ADwinPro_All.inc
-#INCLUDE .\configuration.inc
+#INCLUDE ADwinGoldII.inc
 #INCLUDE .\cr.inc
-#INCLUDE .\SSRO_pro.inc
+#INCLUDE .\SSRO.inc
 
 #DEFINE max_SP_bins        500 
-#DEFINE max_RO_dim         200000
-
 
 'init
 DIM DATA_20[100] AS LONG      ' integer parameters
 DIM DATA_21[100] AS FLOAT     ' float parameters
 
 'return
-'used in cr.inc
-DIM DATA_22[max_RO_dim] AS LONG  ' CR counts before sequence
-DIM DATA_23[max_RO_dim] AS LONG ' CR counts after sequence
 
 DIM DATA_24[max_SP_bins] AS LONG AT EM_LOCAL      ' SP counts 
-DIM DATA_25[max_RO_dim] AS LONG AT DRAM_EXTERN    ' SSRO counts
+DIM DATA_25[max_repetitions] AS LONG AT DRAM_EXTERN    ' SSRO counts
 
 
 DIM AWG_start_DO_channel, AWG_done_DI_channel AS LONG
@@ -96,15 +90,15 @@ INIT:
   first               = 0
   wait_after_pulse    = 0
       
-  P2_DAC(DAC_MODULE,repump_laser_DAC_channel, 3277*repump_off_voltage+32768) ' turn off repump
-  P2_DAC(DAC_MODULE,E_laser_DAC_channel, 3277*E_off_voltage+32768) ' turn off Ex laser
-  P2_DAC(DAC_MODULE,A_laser_DAC_channel, 3277*A_off_voltage+32768) ' turn off Ex laser
+  DAC(repump_laser_DAC_channel, 3277*repump_off_voltage+32768) ' turn off repump
+  DAC(E_laser_DAC_channel, 3277*E_off_voltage+32768) ' turn off Ex laser
+  DAC(A_laser_DAC_channel, 3277*A_off_voltage+32768) ' turn off Ex laser
 
-  P2_CNT_ENABLE(CTR_MODULE,0000b) 'turn off all counters
-  P2_CNT_MODE(CTR_MODULE,counter_channel, 00001000b) 'configure counter
+  CNT_ENABLE(0000b) 'turn off all counters
+  CNT_MODE(counter_channel, 00001000b) 'configure counter
 
-  P2_Digprog(DIO_MODULE,11)
-  P2_DIGOUT(DIO_MODULE,AWG_start_DO_channel,0)
+  CONF_DIO(11)
+  DIGOUT(AWG_start_DO_channel,0)
 
   sweep_length= SSRO_repetitions ' for now, only 1 CR check with N ssro reps, if later we want M times this, sweep length should be changed.
   sweep_index = 1
@@ -134,21 +128,21 @@ EVENT:
 
       CASE 2    ' Ex or A laser spin pumping
         IF (timer = 0) THEN
-          P2_DAC(DAC_MODULE,E_laser_DAC_channel, 3277*E_SP_voltage+32768) ' turn on Ex laser
-          P2_DAC(DAC_MODULE,A_laser_DAC_channel, 3277*A_SP_voltage+32768)   ' turn on A laser
-          P2_CNT_CLEAR(CTR_MODULE, counter_pattern)    'clear counter
-          P2_CNT_ENABLE(CTR_MODULE,counter_pattern)    'turn on counter
+          DAC(E_laser_DAC_channel, 3277*E_SP_voltage+32768) ' turn on Ex laser
+          DAC(A_laser_DAC_channel, 3277*A_SP_voltage+32768)   ' turn on A laser
+          CNT_CLEAR( counter_pattern)    'clear counter
+          CNT_ENABLE(counter_pattern)    'turn on counter
         else
-          P2_CNT_CLEAR(CTR_MODULE, counter_pattern)    'clear counter
-          P2_CNT_ENABLE(CTR_MODULE,counter_pattern)    'turn on counter
-          counts = P2_CNT_READ(CTR_MODULE,counter_channel)
+          CNT_CLEAR( counter_pattern)    'clear counter
+          CNT_ENABLE(counter_pattern)    'turn on counter
+          counts = CNT_READ(counter_channel)
           DATA_24[timer] = DATA_24[timer] + counts
         Endif
 
         IF (timer = SP_duration) THEN
-          P2_CNT_ENABLE(CTR_MODULE,0)
-          P2_DAC(DAC_MODULE,E_laser_DAC_channel, 3277*E_off_voltage+32768) ' turn off Ex laser
-          P2_DAC(DAC_MODULE,A_laser_DAC_channel, 3277*A_off_voltage+32768) ' turn off A laser                
+          CNT_ENABLE(0)
+          DAC(E_laser_DAC_channel, 3277*E_off_voltage+32768) ' turn off Ex laser
+          DAC(A_laser_DAC_channel, 3277*A_off_voltage+32768) ' turn off A laser                
           
           IF ((send_AWG_start > 0) or (sequence_wait_time > 0)) THEN
             mode = 3
@@ -163,9 +157,9 @@ EVENT:
       CASE 3    '  wait for AWG sequence or for fixed duration
         IF (timer = 0) THEN
           IF (send_AWG_start > 0) THEN
-            P2_DIGOUT(DIO_MODULE,AWG_start_DO_channel,1)  ' AWG trigger
+            DIGOUT(AWG_start_DO_channel,1)  ' AWG trigger
             CPU_SLEEP(9)               ' need >= 20ns pulse width; adwin needs >= 9 as arg, which is 9*10ns
-            P2_DIGOUT(DIO_MODULE,AWG_start_DO_channel,0)
+            DIGOUT(AWG_start_DO_channel,0)
           ENDIF
           aux_timer = 0
           AWG_done = 0
@@ -173,7 +167,7 @@ EVENT:
          
         IF (wait_for_AWG_done > 0) THEN 
           IF (AWG_done = 0) THEN
-            IF ((P2_DIGIN_LONG(DIO_MODULE) AND AWG_done_DI_channel) > 0) THEN
+            IF (DIGIN(AWG_done_DI_channel) > 0) THEN
               AWG_done = 1
               IF (sequence_wait_time > 0) THEN
                 aux_timer = timer
