@@ -1,5 +1,5 @@
 '<ADbasic Header, Headerversion 001.001>
-' Process_Number                 = 1
+' Process_Number                 = 9
 ' Initial_Processdelay           = 3000
 ' Eventsource                    = Timer
 ' Control_long_Delays_for_Stop   = No
@@ -113,10 +113,11 @@ INIT:
   processdelay = cycle_duration  
   
   Par_73 = repetition_counter
+  Par_74 = mode
 
 
 EVENT:
-    
+  PAR_74=mode
   IF (wait_after_pulse > 0) THEN
     DEC(wait_after_pulse)
   ELSE
@@ -210,7 +211,7 @@ EVENT:
             sweep_index = 1
           endif
           
-          mode = 0
+          mode = 2 
           timer = -1
           wait_after_pulse = wait_after_pulse_duration
           inc(repetition_counter)
