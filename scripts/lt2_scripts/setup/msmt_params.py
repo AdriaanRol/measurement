@@ -196,7 +196,15 @@ f0 = cfg['samples']['sil10']['ms-1_cntr_frq'] - cfg['protocols']['sil10-default'
 cfg.set(branch+'MW_modulation_frequency', f0)
 cfg.set(branch+'Pi_pulse_duration', 50e-9)
 cfg.set(branch+'Pi_pulse_amp',  0.49)
+cfg.set(branch+'CORPSE_pi2_amp',0.4)
+CORPSE_frq = 8.15e6
+cfg.set(branch+'CORPSE_pi_60_duration', 1./CORPSE_frq/6.)
+cfg.set(branch+'CORPSE_pi_m300_duration', 5./CORPSE_frq/6.)
+cfg.set(branch+'CORPSE_pi_420_duration',  7./CORPSE_frq/6.)
 
+cfg.set(branch+'CORPSE_pi2_24p3_duration', 24.3/CORPSE_frq/360.)
+cfg.set(branch+'CORPSE_pi2_m318p6_duration', 318.6/CORPSE_frq/360.)
+cfg.set(branch+'CORPSE_pi2_384p3_duration',  384.3/CORPSE_frq/360.)
 '''
 cfg.set('protocols/sil15-default/pulses/4MHz_pi2_duration',  tof + 45e-9)
 cfg.set('protoMW_pulse_frequencycols/sil15-default/pulses/4MHz_pi2_amp',  0.698)

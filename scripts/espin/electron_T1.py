@@ -25,12 +25,14 @@ def T1(name):
     m.params.from_dict(qt.cfgman['protocols'][SAMPLE_CFG]['pulses'])
 
     #set evolution time    
-    m.params['wait_times'] =  np.linspace(0,1e6,11) #np.ones(pts) * 50e-9 #np.linspace(5, 105, pts) * 1e-9 #
+    m.params['wait_times'] =  np.linspace(0,1e6,11) #np.ones(pts)
     m.params['repetitions'] = 200
+    
     #set plot variables
     m.params['sweep_name'] = 'Times (ms)'
     m.params['sweep_pts'] = m.params['wait_times']/1e3
-    m.params['pts'] = len(m.params['sweep_pts']) #see if we need this, tim
+    m.params['pts'] = len(m.params['sweep_pts']) #Check if we need this line, Tim
+    
     #set sequence wait time for AWG triggering
     m.params['sequence_wait_time'] = 0
     
@@ -38,21 +40,18 @@ def T1(name):
     m.autoconfig() 
     m.generate_sequence(upload=True)
     
-     #Set SSRO parameters
+    #Set SSRO parameters
     m.params['SP_duration'] = 250
     m.params['Ex_RO_amplitude'] = 8e-9 #10e-9
     
     # ms = 0 start
-        
     print 'start ms0'
-    
     m.params['A_SP_amplitude'] = 40e-9
     m.params['Ex_SP_amplitude'] = 0.
     m.run()
     m.save('ms0')
     
     # ms = 1 calibration
-    
     print 'start ms1'
     m.params['A_SP_amplitude'] = 0.
     m.params['Ex_SP_amplitude'] = 10e-9 #10e-9
@@ -62,5 +61,4 @@ def T1(name):
     m.finish()
     
 if __name__ == '__main__':
-    # erabi(SAMPLE+'_'+'find_high_rabi_sil1')
     T1(SAMPLE+'_'+'')

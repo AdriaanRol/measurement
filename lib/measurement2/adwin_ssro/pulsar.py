@@ -308,7 +308,27 @@ class ElectronT1(PulsarMeasurement):
 
         # program the AWG
         qt.pulsar.program_sequence(seq)
-        
+
+class RepElectronRamseys(ElectronRamsey):
+    mprefix = 'RepElectronRamsey'
+    adwin_process='ssro_multiple_RO'
+
+    def autoconfig(self):
+        PulsarMeasurement.autoconfig(self)
+        print 'ADwin process ', self.adwin_process
+        self.params['sequence_wait_time'] = \
+            int(np.ceil(np.max(self.params['evolution_times'])*1e3)+1)
+    def save(self, name='ssro'):
+        reps = self.adwin_var('completed_reps')
+        self.save_adwin_data(name,
+                [   ('CR_before', reps),
+                    ('CR_after', reps),
+                    ('SP_hist', self.params['SP_duration']),
+                    ('RO_data', reps),
+                    ('statistics', 10),
+                    'completed_reps',
+                    'total_CR_counts'])        
+
 class MBI(PulsarMeasurement):
     mprefix = 'PulsarMBI'
     adwin_process = 'MBI'
