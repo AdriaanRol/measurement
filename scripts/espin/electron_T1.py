@@ -1,5 +1,5 @@
 """
-Script for e-spin T1 using the pulsar sequencer
+Script for e-spin T1 using the pulsar sequencer.
 """
 import numpy as np
 import qt
@@ -23,42 +23,38 @@ def T1(name):
     m.params.from_dict(qt.cfgman['protocols'][SAMPLE_CFG]['AdwinSSRO-integrated'])    
     m.params.from_dict(qt.cfgman['protocols']['AdwinSSRO+espin'])
     m.params.from_dict(qt.cfgman['protocols'][SAMPLE_CFG]['pulses'])
-
-    #set evolution time    
-    m.params['wait_times'] =  np.linspace(0,1e6,11) #np.ones(pts)
+     
+    '''set experimental parameters'''    
+        #T1 experiment
+    m.params['T1_initial_state'] = 'ms=-1'
+    m.params['T1_readout_state'] = 'ms=-1'
+    m.params['wait_times'] =  np.linspace(0,1e6,11) #in us
     m.params['repetitions'] = 200
-    
-    #set plot variables
+        
+        #Spin pumping and readout
+    m.params['SP_duration'] = 250
+    m.params['Ex_RO_amplitude'] = 8e-9 #10e-9
+    m.params['A_SP_amplitude'] = 40e-9
+    m.params['Ex_SP_amplitude'] = 0.
+        
+        #Plot parameters
     m.params['sweep_name'] = 'Times (ms)'
     m.params['sweep_pts'] = m.params['wait_times']/1e3
     m.params['pts'] = len(m.params['sweep_pts']) #Check if we need this line, Tim
     
-    #set sequence wait time for AWG triggering
+        #Set sequence wait time for AWG triggering (After AWG trigger? Tim)
     m.params['sequence_wait_time'] = 0
     
-    #generate sequence
     m.autoconfig() 
+    
+    '''generate sequence'''
     m.generate_sequence(upload=True)
-    
-    #Set SSRO parameters
-    m.params['SP_duration'] = 250
-    m.params['Ex_RO_amplitude'] = 8e-9 #10e-9
-    
-    # ms = 0 start
-    print 'start ms0'
-    m.params['A_SP_amplitude'] = 40e-9
-    m.params['Ex_SP_amplitude'] = 0.
-    m.run()
-    m.save('ms0')
-    
-    # ms = 1 calibration
-    print 'start ms1'
-    m.params['A_SP_amplitude'] = 0.
-    m.params['Ex_SP_amplitude'] = 10e-9 #10e-9
-    m.run()
-    m.save('ms1')
-
-    m.finish()
+   
+    print 'initial_state: ' + m.params['T1_initial_state']
+    print 'readout_state: ' + m.params['T1_readout_state']
+    #m.run()
+    #m.save('ms0')
+    #m.finish()
     
 if __name__ == '__main__':
     T1(SAMPLE+'_'+'')
