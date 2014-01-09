@@ -8,7 +8,7 @@
 ' ADbasic_Version                = 5.0.8
 ' Optimize                       = Yes
 ' Optimize_Level                 = 1
-' Info_Last_Save                 = TUD276629  TUD276629\localadmin
+' Info_Last_Save                 = TUD277246  TUD277246\localadmin
 '<Header End>
 ' MBI with the adwin, with dynamic CR-preparation, dynamic MBI-success/fail
 ' recognition, and SSRO at the end. 
@@ -27,9 +27,7 @@
 #INCLUDE ADwinGoldII.inc
 #INCLUDE .\cr.inc
 
-#DEFINE max_SP_bins       500
-#DEFINE max_RO_dim     200000
-#DEFINE max_sweep_dim  200000
+#DEFINE max_SP_bins       500 ' not used anymore? Machiel 23-12-'13
 #DEFINE max_sequences     100
 #DEFINE max_time        10000
 #DEFINE max_mbi_steps     100
@@ -45,12 +43,10 @@ DIM DATA_37[max_sequences] AS LONG                ' send AWG start
 DIM DATA_38[max_sequences] AS LONG                ' sequence wait times
 
 'return
-DIM DATA_24[max_sweep_dim] AS LONG AT DRAM_EXTERN ' number of MBI attempts needed in the successful cycle
-DIM DATA_25[max_sweep_dim] AS LONG AT DRAM_EXTERN ' number of cycles before success
-DIM DATA_27[max_RO_dim] AS LONG AT DRAM_EXTERN    ' SSRO counts
-DIM DATA_28[max_sweep_dim] AS LONG AT DRAM_EXTERN ' time needed until mbi success (in process cycles)
-
-
+DIM DATA_24[max_repetitions] AS LONG ' number of MBI attempts needed in the successful cycle
+DIM DATA_25[max_repetitions] AS LONG ' number of cycles before success
+DIM DATA_27[max_repetitions] AS LONG ' SSRO counts
+DIM DATA_28[max_repetitions] AS LONG ' time needed until mbi success (in process cycles)
 
 DIM AWG_start_DO_channel, AWG_done_DI_channel, AWG_event_jump_DO_channel AS LONG
 DIM send_AWG_start, wait_for_AWG_done AS LONG
@@ -68,7 +64,7 @@ DIM E_SP_voltage, A_SP_voltage, E_RO_voltage, A_RO_voltage AS FLOAT
 DIM E_MBI_voltage AS FLOAT
 dim E_N_randomize_voltage, A_N_randomize_voltage, repump_N_randomize_voltage AS FLOAT
 
-DIM timer, mode, i, tmp AS LONG
+DIM timer, mode, i AS LONG
 DIM wait_time AS LONG
 DIM repetition_counter AS LONG
 dim seq_cntr as long
@@ -96,7 +92,7 @@ INIT:
   SP_E_duration                = DATA_20[3]
   wait_after_pulse_duration    = DATA_20[4]
   RO_repetitions               = DATA_20[5]
-  sweep_length                 = DATA_20[6]
+  sweep_length                 = DATA_20[6] ' not used? -machiel 23-12-'13
   cycle_duration               = DATA_20[7]
   AWG_event_jump_DO_channel    = DATA_20[8]
   MBI_duration                 = DATA_20[9]
@@ -113,13 +109,10 @@ INIT:
   repump_N_randomize_voltage   = DATA_21[5]
   
   ' initialize the data arrays
-  FOR i = 1 TO max_sweep_dim
+  FOR i = 1 TO max_repetitions
     DATA_24[i] = 0
     DATA_25[i] = 0
     DATA_28[i] = 0
-  next i
-    
-  FOR i = 1 TO max_RO_dim
     DATA_27[i] = 0
   NEXT i
         
@@ -146,7 +139,6 @@ INIT:
   CONF_DIO(11) ' in  is now 16:23   'configure DIO 08:15 as input, all other ports as output
   DIGOUT(AWG_start_DO_channel,0)
   
-  tmp = DIGIN_EDGE(0)
   mode = 0
   timer = 0
   mbi_timer = 0
@@ -362,7 +354,7 @@ EVENT:
           DAC(E_laser_DAC_channel, 3277 * E_RO_voltage + 32768) ' turn on Ex laser
         
         ELSE
-          counts = CNT_READ(counter_channel) 
+          counts = CNT_READ( counter_channel)
           
           IF ((timer = RO_duration) OR counts > 0) THEN
             DAC(E_laser_DAC_channel,3277*E_off_voltage+ 32768) ' turn off Ex laser

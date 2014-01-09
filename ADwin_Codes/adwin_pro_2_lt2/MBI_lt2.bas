@@ -8,7 +8,7 @@
 ' ADbasic_Version                = 5.0.8
 ' Optimize                       = Yes
 ' Optimize_Level                 = 1
-' Info_Last_Save                 = TUD276629  TUD276629\localadmin
+' Info_Last_Save                 = TUD277246  TUD277246\localadmin
 '<Header End>
 ' MBI with the adwin, with dynamic CR-preparation, dynamic MBI-success/fail
 ' recognition, and SSRO at the end. 
@@ -29,7 +29,6 @@
 #INCLUDE .\cr.inc
 
 #DEFINE max_SP_bins       500 ' not used anymore? Machiel 23-12-'13
-#DEFINE max_RO_dim     200000
 #DEFINE max_sequences     100
 #DEFINE max_time        10000
 #DEFINE max_mbi_steps     100
@@ -45,15 +44,10 @@ DIM DATA_37[max_sequences] AS LONG                ' send AWG start
 DIM DATA_38[max_sequences] AS LONG                ' sequence wait times
 
 'return
-'used in cr.inc
-DIM DATA_22[max_RO_dim] AS LONG  ' CR counts before sequence
-DIM DATA_23[max_RO_dim] AS LONG ' CR counts after sequence
-DIM DATA_24[max_RO_dim] AS LONG AT DRAM_EXTERN ' number of MBI attempts needed in the successful cycle
-DIM DATA_25[max_RO_dim] AS LONG AT DRAM_EXTERN ' number of cycles before success
-DIM DATA_27[max_RO_dim] AS LONG AT DRAM_EXTERN    ' SSRO counts
-DIM DATA_28[max_RO_dim] AS LONG AT DRAM_EXTERN ' time needed until mbi success (in process cycles)
-
-
+DIM DATA_24[max_repetitions] AS LONG ' number of MBI attempts needed in the successful cycle
+DIM DATA_25[max_repetitions] AS LONG ' number of cycles before success
+DIM DATA_27[max_repetitions] AS LONG ' SSRO counts
+DIM DATA_28[max_repetitions] AS LONG ' time needed until mbi success (in process cycles)
 
 DIM AWG_start_DO_channel, AWG_done_DI_channel, AWG_event_jump_DO_channel AS LONG
 DIM send_AWG_start, wait_for_AWG_done AS LONG
@@ -116,13 +110,10 @@ INIT:
   repump_N_randomize_voltage   = DATA_21[5]
   
   ' initialize the data arrays
-  FOR i = 1 TO max_RO_dim
+  FOR i = 1 TO max_repetitions
     DATA_24[i] = 0
     DATA_25[i] = 0
     DATA_28[i] = 0
-  next i
-    
-  FOR i = 1 TO max_RO_dim
     DATA_27[i] = 0
   NEXT i
         
