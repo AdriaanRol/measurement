@@ -7,6 +7,9 @@
 # channel configuration, maximum allowed voltages etc. should be immediately set after 
 # loading new Shutter instrument for first time.
 
+### NOTE: this class is work in progress Tim&Adriaan, 140108
+### In particular this instrument does not generally know 
+### what the status of the shutter is.
 
 from instrument import Instrument
 import numpy as np
@@ -52,7 +55,7 @@ class shutter(Instrument):
         self.load_cfg()
         self.save_cfg()
 
-    def get_all(self):
+    def get_all(self): 
         for n in self.get_parameter_names():
             self.get(n)
         
@@ -104,9 +107,9 @@ class shutter(Instrument):
     def openclose(self):
         # applies a pulse to the shutter driver to close when open or open when closed
         self._ins_adwin.start_set_dio(dio_no=self._channel,dio_val=0)
-        qt.msleep(0.005)
+        qt.msleep(0.001)
         self._ins_adwin.start_set_dio(dio_no=self._channel,dio_val=1)
-        qt.msleep(0.005)
+        qt.msleep(0.001)
         self._ins_adwin.start_set_dio(dio_no=self._channel,dio_val=0)
 
         if self._state == 'Open':

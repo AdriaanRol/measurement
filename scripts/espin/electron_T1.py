@@ -26,8 +26,8 @@ def T1(name):
      
     '''set experimental parameters'''    
         #T1 experiment
-    m.params['T1_initial_state'] = 'ms=-1'
-    m.params['T1_readout_state'] = 'ms=-1'
+    m.params['T1_initial_state'] = 'ms=-1' #currently 'ms=0' or 'ms=-1' 
+    m.params['T1_readout_state'] = 'ms=-1' #currently 'ms=0' or 'ms=-1' 
     m.params['wait_times'] =  np.linspace(0,1e6,11) #in us
     m.params['repetitions'] = 200
         
@@ -47,11 +47,13 @@ def T1(name):
     
     m.autoconfig() 
     
+    print 'initial_state: ' + m.params['T1_initial_state']
+    print 'readout_state: ' + m.params['T1_readout_state']
+    
     '''generate sequence'''
     m.generate_sequence(upload=True)
    
-    print 'initial_state: ' + m.params['T1_initial_state']
-    print 'readout_state: ' + m.params['T1_readout_state']
+
     #m.run()
     #m.save('ms0')
     #m.finish()

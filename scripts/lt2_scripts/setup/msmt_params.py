@@ -102,7 +102,7 @@ cfg.set(branch+        'send_AWG_start',               0)
 cfg.set(branch+        'sequence_wait_time',           1)
 cfg.set(branch+        'wait_after_RO_pulse_duration', 3)
 cfg.set(branch+        'wait_after_pulse_duration',    3)
-cfg.set(branch+        'cr_wait_after_pulse_duration',    2)
+cfg.set(branch+        'cr_wait_after_pulse_duration', 2)
 cfg.set(branch+        'wait_for_AWG_done',            0)
 cfg.set(branch+        'green_off_voltage',            0)
 cfg.set(branch+        'Ex_off_voltage',               0.)
@@ -132,7 +132,6 @@ branch='protocols/AdwinSSRO+espin/'
 cfg.set(branch+        'send_AWG_start',                 1)
 cfg.set(branch+        'MW_pulse_mod_risetime',          10e-9)
 
-
 ### General settings for AdwinSSRO+MBI
 branch='protocols/AdwinSSRO+MBI/'
 cfg.set(branch+        'AWG_wait_duration_before_MBI_MW_pulse',    1e-6)
@@ -146,17 +145,15 @@ cfg.set(branch+        'AWG_to_adwin_ttl_trigger_duration',        2e-6)
 cfg.set(branch+        'repump_after_MBI_duration',                100)
 cfg.set(branch+        'repump_after_MBI_amp',                     15e-9)
 
-
-#### sil10 ###
-#### sil10, AdwinSSRO ###
-
-
+##############
 ### sil 10 ###
+##############
+
 branch='samples/sil10/'
 
 f_msm1_cntr = 2.828855e9 
-f_msp1_cntr = 2.925884e9 #not calibrated
-N_frq = 7.13429e6 #not calibrated
+f_msp1_cntr = 2.925884e9    #not calibrated
+N_frq = 7.13429e6           #not calibrated
 N_HF_frq = 2.16042e6 
 
 cfg.set(branch+'ms-1_cntr_frq', f_msm1_cntr)
@@ -164,8 +161,8 @@ cfg.set(branch+'ms+1_cntr_frq', f_msp1_cntr)
 cfg.set(branch+'N_0-1_splitting_ms-1', N_frq)
 cfg.set(branch+'N_HF_frq', N_HF_frq)
 
-
 branch='protocols/sil10-default/AdwinSSRO/'
+
 cfg.set(branch+'A_CR_amplitude', 40e-9)
 cfg.set(branch+'A_RO_amplitude' , 0)
 cfg.set(branch+'A_SP_amplitude', 40e-9)
@@ -188,7 +185,7 @@ cfg.set(branch+'MW_pulse_mod_risetime',10e-9)
 branch='protocols/sil10-default/AdwinSSRO-integrated/'
 cfg.set(branch+'SSRO_duration', 40)
 
-### sil 10 pulses !!!NOT CALIBRATED
+### sil 10 pulses ### !!!NOT CALIBRATED
 
 branch='protocols/sil10-default/pulses/'
 
