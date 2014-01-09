@@ -210,7 +210,7 @@ config['adwin_lt1_processes'] = {
                     ['Ex_off_voltage'           ,   0.0],
                     ['A_off_voltage'            , -0.08],
                     ['cr_mod_control_offset'    ,   0.0],
-                    ['cr_mod_control_amp',] ,
+                    ['cr_mod_control_amp',      ,   0.0],
                     ['pos_mod_control_offset_x' ,   0.0],
                     ['pos_mod_control_offset_y' ,   0.0],
                     ['pos_mod_control_offset_z' ,   0.0],

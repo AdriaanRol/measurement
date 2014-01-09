@@ -18,6 +18,22 @@ def ssrocalibration(name):
     m.params.from_dict(qt.cfgman['protocols'][SAMPLE_CFG]['AdwinSSRO'])    
 
 
+
+    m.params['repump_mod_DAC_channel'] =
+    m.params['cr_mod_DAC_channel']     = 
+    m.params['cr_mod_control_offset']  =  0.0
+    m.params['cr_mod_control_amp']     =  0.1 #V
+    m.params['pos_mod_control_offset_x'] = m.adwin.get_dac_voltage('atto_x')
+    m.params['pos_mod_control_offset_y'] = m.adwin.get_dac_voltage('atto_y')
+    m.params['pos_mod_control_offset_z'] = m.adwin.get_dac_voltage('atto_z')
+    m.params['pos_mod_control_amp'] =  0.03
+    m.params['pos_mod_fb'] = 0.0
+    m.params['pos_mod_min_counts'] = 300.
+
+    m.params['pos_mod_activate'] = 0
+    m.params['repump_mod_activate'] = 0 
+    m.params['cr_mod_activate'] = 0
+
     # parameters
     m.params['SSRO_repetitions'] = 5000
 
