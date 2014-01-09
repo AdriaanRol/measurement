@@ -140,9 +140,9 @@ EVENT:
           P2_CNT_CLEAR(CTR_MODULE, counter_pattern)    'clear counter
           P2_CNT_ENABLE(CTR_MODULE,counter_pattern)    'turn on counter
         else
+          counts = P2_CNT_READ(CTR_MODULE,counter_channel)
           P2_CNT_CLEAR(CTR_MODULE, counter_pattern)    'clear counter
           P2_CNT_ENABLE(CTR_MODULE,counter_pattern)    'turn on counter
-          counts = P2_CNT_READ(CTR_MODULE,counter_channel)
           DATA_24[timer] = DATA_24[timer] + counts
         Endif
 
