@@ -68,7 +68,7 @@ INIT:
   SSRO_duration                = DATA_20[10]
   SSRO_stop_after_first_photon = DATA_20[11]
   cycle_duration               = DATA_20[12] '(in processor clock cycles, 3.333ns)
-  sweep_length                 = DATA_20[14]
+  sweep_length                 = DATA_20[13]
   
   E_SP_voltage                 = DATA_21[1]
   A_SP_voltage                 = DATA_21[2]
@@ -107,7 +107,6 @@ INIT:
   
   Par_73 = repetition_counter
 
-
 EVENT:
     
   IF (wait_after_pulse > 0) THEN
@@ -131,9 +130,10 @@ EVENT:
           CNT_CLEAR( counter_pattern)    'clear counter
           CNT_ENABLE(counter_pattern)    'turn on counter
         else
+          counts = CNT_READ(counter_channel)
           CNT_CLEAR( counter_pattern)    'clear counter
           CNT_ENABLE(counter_pattern)    'turn on counter
-          counts = CNT_READ(counter_channel)
+          
           DATA_24[timer] = DATA_24[timer] + counts
         Endif
 
