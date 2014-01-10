@@ -9,8 +9,8 @@ cfg.add_cfg('protocols')
 cfg.add_cfg('samples')
 cfg.add_cfg('setup')
 
-cfg['samples']['current'] = 'hans-sil1'
-cfg['protocols']['current'] = 'hans-sil1-default'
+cfg['samples']['current'] = 'hans-sil13'
+cfg['protocols']['current'] = 'hans-sil13-default'
 
 print 'updating msmt params for {}'.format(cfg['samples']['current'])
 
@@ -69,9 +69,9 @@ print 'updating msmt params for {}'.format(cfg['samples']['current'])
 # cfg.set(branch+'mI0_mod_frq',  f_msm1_cntr - mw0)
 # cfg.set(branch+'mIp1_mod_frq',  f_msm1_cntr - mw0 + N_HF_frq)
 
-branch='samples/hans-sil1/'
+branch='samples/hans-sil4/'
 
-f_msm1_cntr = 2.828057e9
+f_msm1_cntr = 2.827962e9
 N_frq = 7.13456e6
 N_HF_frq = 2.19290e6
 cfg.set(branch+'ms-1_cntr_frq', f_msm1_cntr)
@@ -171,7 +171,7 @@ cfg.set(branch+        'yellow_N_randomize_amplitude',             0e-9)
 ### HANS/13 --- SSRO
 ##############################################################################
 
-branch='protocols/hans-sil1-default/AdwinSSRO/'  
+branch='protocols/hans-sil13-default/AdwinSSRO/'  
 cfg.set(branch+        'A_CR_amplitude',            10e-9)
 cfg.set(branch+        'A_RO_amplitude',            0.)
 cfg.set(branch+        'A_SP_amplitude',            10e-9)
@@ -179,16 +179,16 @@ cfg.set(branch+        'CR_duration',               50)
 cfg.set(branch+        'CR_preselect',              1000)
 cfg.set(branch+        'CR_probe',                  20)
 cfg.set(branch+        'CR_repump',                 1000)
-cfg.set(branch+        'Ex_CR_amplitude',           4e-9)
-cfg.set(branch+        'Ex_RO_amplitude',           4e-9)
+cfg.set(branch+        'Ex_CR_amplitude',           10e-9)
+cfg.set(branch+        'Ex_RO_amplitude',           5e-9)
 cfg.set(branch+        'Ex_SP_amplitude',           0.)
-cfg.set(branch+        'SP_duration',               250)
+cfg.set(branch+        'SP_duration',               100)
 cfg.set(branch+        'SP_filter_duration',        0)
-cfg.set(branch+        'SSRO_duration',             50)
+cfg.set(branch+        'SSRO_duration',             25)
 cfg.set(branch+        'SSRO_repetitions',          5000)
 cfg.set(branch+        'SSRO_stop_after_first_photon',  0)
 
-cfg.set('protocols/hans-sil1-default/AdwinSSRO-integrated/SSRO_duration', 11)
+cfg.set('protocols/hans-sil1-default/AdwinSSRO-integrated/SSRO_duration', 25)
 
 
 ###############################################################################
@@ -513,29 +513,28 @@ cfg.set(branch+        'SSRO_repetitions',          5000)
 cfg.set(branch+        'SSRO_stop_after_first_photon',  0)
 
 cfg.set('protocols/hans-sil7-default/AdwinSSRO-integrated/SSRO_duration', 50)
-
+"""
 ##############################################################################
 ### HANS/4 --- SSRO
 ##############################################################################
 
 branch='protocols/hans-sil4-default/AdwinSSRO/'  
-cfg.set(branch+        'A_CR_amplitude',            10e-9)
+cfg.set(branch+        'A_CR_amplitude',            5e-9)
 cfg.set(branch+        'A_RO_amplitude',            0.)
-cfg.set(branch+        'A_SP_amplitude',            10e-9)
+cfg.set(branch+        'A_SP_amplitude',            60e-9)
 cfg.set(branch+        'CR_duration',               50)
 cfg.set(branch+        'CR_preselect',              1000)
-cfg.set(branch+        'CR_probe',                  10)
+cfg.set(branch+        'CR_probe',                  20)
 cfg.set(branch+        'CR_repump',                 1000)
-cfg.set(branch+        'Ex_CR_amplitude',           3e-9)
-cfg.set(branch+        'Ex_RO_amplitude',           3e-9)
+cfg.set(branch+        'Ex_CR_amplitude',           5e-9)
+cfg.set(branch+        'Ex_RO_amplitude',           10e-9)
 cfg.set(branch+        'Ex_SP_amplitude',           0.)
-cfg.set(branch+        'SP_duration',               250)
+cfg.set(branch+        'SP_duration',               9)
 cfg.set(branch+        'SP_filter_duration',        0)
-cfg.set(branch+        'SSRO_duration',             50)
+cfg.set(branch+        'SSRO_duration',             10)
 cfg.set(branch+        'SSRO_repetitions',          5000)
 cfg.set(branch+        'SSRO_stop_after_first_photon',  0)
-
-cfg.set('protocols/hans-sil4-default/AdwinSSRO-integrated/SSRO_duration', 15)
+cfg.set('protocols/hans-sil4-default/AdwinSSRO-integrated/SSRO_duration', 10)
 
 cfg.set('protocols/hans-sil4-default/AdwinSSRO+espin/mw_frq', mw0)
 cfg.set('protocols/hans-sil4-default/AdwinSSRO+espin/mw_power', 20)
@@ -601,13 +600,18 @@ cfg.set(branch+        'pi2pi_mIm1_amp',             0.083)
 cfg.set(branch+        'pi2pi_mIm1_mod_frq',         finit)
 
 ### CORPSE used in the BSM
-CORPSE_frq = 5e6
+CORPSE_frq = 7.5e6
 cfg.set(branch+        'CORPSE_pi_60_duration',     1./CORPSE_frq/6.)
 cfg.set(branch+        'CORPSE_pi_m300_duration',   5./CORPSE_frq/6.)
 cfg.set(branch+        'CORPSE_pi_420_duration',    7./CORPSE_frq/6.)
 cfg.set(branch+        'CORPSE_pi_mod_frq',         finit + Nsplit/2.)
 cfg.set(branch+        'CORPSE_pi_amp',             0.363)
-
+cfg.set(branch+        'CORPSE_pi2_24p3_duration',     24.3/CORPSE_frq/360.)
+cfg.set(branch+        'CORPSE_pi2_m318p6_duration',   318.6/CORPSE_frq/360.)
+cfg.set(branch+        'CORPSE_pi2_384p3_duration',    384.3/CORPSE_frq/360.)
+cfg.set(branch+        'CORPSE_pi2_mod_frq',           f_msm1_cntr - mw0)
+cfg.set(branch+        'CORPSE_pi2_amp',               0.55) ###not calibrated
+"""
 # ### TODO
 cfg.set(branch+        'CORPSE_pi_phase_shift',     104.0)
 

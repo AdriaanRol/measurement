@@ -3,11 +3,11 @@ from measurement.scripts.lt1_scripts import stools
 reload(stools)
 
 print 'reload all modules...'
-execfile("setup/reload_all.py")
+execfile("D:/measuring/measurement/scripts/lt1_scripts/setup/reload_all.py")
 
 ####
 print 'reload all measurement parameters and calibrations...'
-execfile("setup/msmt_params.py")
+execfile("D:/measuring/measurement/scripts/lt1_scripts/setup/msmt_params.py")
 
 qt.current_setup='lt1'
 
@@ -55,6 +55,6 @@ pulsar_msmt.MBI.physical_adwin = qt.instruments['physical_adwin']
 ####
 
 print 'configure the pulsar sequencer and update pulses and elements...'
-execfile("setup/sequence.py")
+execfile("D:/measuring/measurement/scripts/lt1_scripts/setup/sequence.py")
 
 

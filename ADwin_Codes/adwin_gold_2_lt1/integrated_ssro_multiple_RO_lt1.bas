@@ -46,6 +46,7 @@ DIM cycle_duration AS LONG
 DIM wait_after_pulse, wait_after_pulse_duration AS LONG
 
 DIM E_SP_voltage, A_SP_voltage, E_RO_voltage, A_RO_voltage AS FLOAT
+DIM init_time,process_time AS FLOAT
 
 DIM timer, aux_timer, mode, i, sweep_index,sweep_length AS LONG
 DIM AWG_done AS LONG
@@ -68,7 +69,7 @@ INIT:
   SSRO_duration                = DATA_20[9] 
   SSRO_stop_after_first_photon = DATA_20[10] ' for dynamical-stop RO, not used atm
   cycle_duration               = DATA_20[11] '(in processor clock cycles, 3.333ns)
-  'sweep_length                 = DATA_20[12]
+  sweep_length                 = DATA_20[12]
   
   E_SP_voltage                 = DATA_21[1]
   A_SP_voltage                 = DATA_21[2]
@@ -108,7 +109,8 @@ INIT:
   
   Par_73 = repetition_counter
   Par_74 = mode
-
+  FPAR_80=0
+  PAR_80=0
 
 EVENT:
   PAR_74=mode
@@ -124,10 +126,12 @@ EVENT:
           mode = 2
           timer = -1
           first = 0
+          
         ENDIF
 
       CASE 2    ' Ex or A laser spin pumping
         IF (timer = 0) THEN
+          init_time=Read_Timer()
           DAC(E_laser_DAC_channel, 3277*E_SP_voltage+32768) ' turn on Ex laser
           DAC(A_laser_DAC_channel, 3277*A_SP_voltage+32768)   ' turn on A laser
           CNT_CLEAR( counter_pattern)    'clear counter
@@ -210,7 +214,16 @@ EVENT:
           wait_after_pulse = wait_after_pulse_duration
           inc(repetition_counter)
           Par_73 = repetition_counter
+          process_time=Read_Timer()
+          IF ((process_time - init_time)>0) THEN
+            
+            FPAR_80=FPAR_80 + (process_time - init_time)/300
+          ENDIF
+          
+                   
           IF (repetition_counter = SSRO_repetitions) THEN
+            PAR_80=FPAR_80
+ 
             END
           ENDIF
           first = 1

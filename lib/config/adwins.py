@@ -162,6 +162,24 @@ config['adwin_lt1_processes'] = {
                     'statistics' : 26,
                     },     
                 },
+# ADwin SSRO. This process can not run stand-alone and should be included in another adwin script/process
+# For now all parameters are passed from the other ADwin script/process, this seems more flexible to me.
+# Not sure if this function is then needed. - Machiel 30-12-'13'
+        'ssro' : {
+            'no_process_start': 'prevent automatic generation of start functions for this process',
+            'index' : 999,
+            'file' : 'SSRO.inc',
+            'par' : {
+                    },
+            'params_long' : [           # keep order!!!!!!!!!!!!!
+                    ],
+                'params_long_index'  : 30,
+                'params_float' : [
+                    ],
+                'params_float_index'  : 31,
+                'data_long' : {
+                    },     
+                },
 
         # ADwin CR check. This process can not run stand-alone and should be included in another adwin script/process
         'cr_check_mod' : {
@@ -298,6 +316,46 @@ config['adwin_lt1_processes'] = {
                     'completed_reps' : 73,
                     },
                 'data_long' : {
+                    'SP_hist' : 24,
+                    'RO_data' : 25,
+                    }, 
+                },
+                # one CR check followed by multiple times SP-AWG seg-SSRO
+        'ssro_multiple_RO' : {
+                'index' : 9,
+                'file' : 'integrated_ssro_multiple_RO_lt1.TB9',
+                'include_cr_process' : 'cr_check', #This process includes the CR check lib
+                'params_long' : [           # keep order!!!!!!!!!!!!!
+                    ['AWG_start_DO_channel'        ,  16],
+                    ['AWG_done_DI_channel'         ,   8],
+                    ['send_AWG_start'              ,   0],
+                    ['wait_for_AWG_done'           ,   0],
+                    ['SP_duration'                 , 100],
+                    ['sequence_wait_time'          ,   0],
+                    ['wait_after_pulse_duration'   ,   1],
+                    ['SSRO_repetitions'            ,1000],
+                    ['SSRO_duration'               ,  50],
+                    ['SSRO_stop_after_first_photon',   0],
+                    ['cycle_duration'              , 300],
+                    ['sweep_length'                ,   1], 
+                    ],
+                'params_long_index'  : 20,
+                'params_long_length' : 25,
+                'params_float' : [
+                    ['Ex_SP_voltage'        , 0.8],
+                    ['A_SP_voltage'         , 0.8],
+                    ['Ex_RO_voltage'        , 0.8],
+                    ['A_RO_voltage'         , 0.8],
+                    ],
+                'params_float_index'  : 21,
+                'params_float_length' : 10,
+                'par' : {
+                    'completed_reps' : 73,
+                    'process_time' : 80,
+                    },
+                'data_long' : {
+                    'CR_before' : 22,
+                    'CR_after' : 23,
                     'SP_hist' : 24,
                     'RO_data' : 25,
                     }, 
@@ -756,7 +814,7 @@ config['adwin_lt2_processes'] = {
                 # one CR check followed by multiple times SP-AWG seg-SSRO
         'ssro_multiple_RO' : {
                 'index' : 9,
-                'file' : 'ssro_Multiple_RO_lt2.TB9',
+                'file' : 'integrated_ssro_multiple_RO_lt2.TB9',
                 'include_cr_process' : 'cr_check', #This process includes the CR check lib
                 'params_long' : [           # keep order!!!!!!!!!!!!!
                     ['AWG_start_DO_channel'        ,  16],
@@ -770,7 +828,7 @@ config['adwin_lt2_processes'] = {
                     ['SSRO_duration'               ,  50],
                     ['SSRO_stop_after_first_photon',   0],
                     ['cycle_duration'              , 300],
-                    #['sweep_length'                ,   1], maybe usefull later
+                    ['sweep_length'                ,   1],
                     ],
                 'params_long_index'  : 20,
                 'params_long_length' : 25,
