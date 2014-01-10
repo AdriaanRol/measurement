@@ -28,7 +28,8 @@ def T1(name):
         #T1 experiment
     m.params['T1_initial_state'] = 'ms=-1' #currently 'ms=0' or 'ms=-1' 
     m.params['T1_readout_state'] = 'ms=-1' #currently 'ms=0' or 'ms=-1' 
-    m.params['wait_times'] =  np.linspace(0,1e6,11) #in us
+    m.params['wait_times'] =  np.linspace(0,1e6,11) #in us, values must be divisible by the repeat element
+    m.params['wait_time_repeat_element'] = 100      #in us, this element is repeated to create the wait times 
     m.params['repetitions'] = 200
         
         #Spin pumping and readout
@@ -49,7 +50,7 @@ def T1(name):
     
     print 'initial_state: ' + m.params['T1_initial_state']
     print 'readout_state: ' + m.params['T1_readout_state']
-    
+
     '''generate sequence'''
     m.generate_sequence(upload=True)
    
