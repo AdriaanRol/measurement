@@ -7,6 +7,7 @@ convlist=[
 		('CNT_CLEAR(','P2_CNT_CLEAR(CTR_MODULE,'),
 		('CNT_READ(','P2_CNT_READ(CTR_MODULE,'),
 		('DIGIN(','(P2_DIGIN_LONG(DIO_MODULE) AND '),
+		('#INCLUDE ADwinGoldII.inc', '#INCLUDE ADwinPro_All.inc')
 	]
 
 
@@ -19,7 +20,7 @@ def convert(fn_in,fn_out,conversion=(0,1)):
 				i=i+1
 				if '#INCLUDE ADwinGoldII.inc' in line:
 					line='#INCLUDE ADwinPro_All.inc\n#INCLUDE .\configuration.inc\n'
-				if  (('#INCLUDE configuration.inc' in line) and conversion==(1,0)):
+				if  (('#INCLUDE .\configuration.inc' in line) and conversion==(1,0)):
 					line=''
 				if 'DIGIN' in line:
 					print 'WARNING: DIGIN found in line',i,'check output'
@@ -32,6 +33,6 @@ if __name__ == '__main__':
 	#conversion (source,target), 0 = gold, 1 = pro 
 	#--> (0,1) = gold to pro
 	#--> (1,0) = pro to gold
-	convert(r'D:\measuring\measurement\ADwin_Codes\adwin_gold_2_lt1\cr_mod_two.inc',
-			r'D:\measuring\measurement\ADwin_Codes\adwin_pro_2_lt2\cr_mod_two.inc', 
-			conversion=(0,1))
+	convert(r'D:\measuring\measurement\ADwin_Codes\adwin_pro_2_lt2\cr.inc',
+			r'D:\measuring\measurement\ADwin_Codes\adwin_gold_2_lt1\cr.inc', 
+			conversion=(1,0))
