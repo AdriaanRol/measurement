@@ -408,8 +408,9 @@ class adwin(Instrument):
                                 proc['data_float'][var], 1, len(kw[var]))
                 else:
                     if 'include_cr_process' in proc:
-                        return getattr(self, 'get_'+proc['include_cr_process']+'_var')(var)
-                    self._log_warning('Parameter %s is not defined, and cannot be set.' % var)
+                        getattr(self, 'set_'+proc['include_cr_process']+'_var')(**kw)
+                    else:
+                        self._log_warning('Parameter %s is not defined, and cannot be set.' % var)
         
         f.__name__ = funcname
         setattr(self, funcname, f)

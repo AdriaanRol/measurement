@@ -38,10 +38,6 @@ sequence.SequenceSSRO.chan_mw_pm = 'MW_pulsemod'
 sequence.SequenceSSRO.awgcfg_module = awgcfg
 sequence.SequenceSSRO.awgcfg_args = ['mw', 'rf', 'adwin']
 
-mbi.MBIMeasurement.chan_RF  = 'RF' 
-mbi.MBIMeasurement.chan_adwin_sync = 'adwin_sync'
-mbi.MBIMeasurement.physical_adwin = qt.instruments['physical_adwin']
-
 pulsar_msmt.PulsarMeasurement.awg = qt.instruments['AWG']
 pulsar_msmt.PulsarMeasurement.mwsrc = qt.instruments['SMB100']
 pulsar_msmt.MBI.physical_adwin = qt.instruments['physical_adwin']

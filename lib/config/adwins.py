@@ -217,7 +217,7 @@ config['adwin_lt1_processes'] = {
                     ['CR_probe'                    ,  10],
                     ['CR_repump'                   ,  10],
                     ['repump_mod_DAC_channel'      ,   7],
-                    ['cr_mod_DAC_channel']         ,   8],
+                    ['cr_mod_DAC_channel'          ,   8],
                     ],
                 'params_long_index'  : 30,
                 'params_float' : [
@@ -227,11 +227,10 @@ config['adwin_lt1_processes'] = {
                     ['A_CR_voltage'             ,   0.8],
                     ['Ex_off_voltage'           ,   0.0],
                     ['A_off_voltage'            , -0.08],
+                    ['repump_mod_control_offset',   0.0],
+                    ['repump_mod_control_amp'   ,   0.0],
                     ['cr_mod_control_offset'    ,   0.0],
-                    ['cr_mod_control_amp',      ,   0.0],
-                    ['pos_mod_control_offset_x' ,   0.0],
-                    ['pos_mod_control_offset_y' ,   0.0],
-                    ['pos_mod_control_offset_z' ,   0.0],
+                    ['cr_mod_control_amp'       ,   0.0],
                     ['pos_mod_control_amp'      ,  0.03],
                     ['pos_mod_fb'               ,   0.1],
                     ['pos_mod_min_counts'       ,  300.]
@@ -241,7 +240,10 @@ config['adwin_lt1_processes'] = {
                     'CR_before' : 22,
                     'CR_after' : 23,
                     'statistics' : 26,
-                    },     
+                    },
+                'data_float' : {
+                    'atto_positions' : 16
+                    }        
                 },
 
         # ADwin single-shot readout
