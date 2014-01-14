@@ -1,7 +1,6 @@
 '<ADbasic Header, Headerversion 001.001>
-' Foldings                       = 170
 '<Header End>
-' this program implements CR check fully controlled by ADwin Pro II
+' this program implements CR check fully controlled by ADwin Gold II
 '
 ' protocol:
 ' mode  0:  green pulse, 
@@ -9,20 +8,25 @@
 ' mode  1:  E/A pulse, photon counting  ->  CR check
 '           fail: -> mode 0
 
-
-#DEFINE max_stat           10
 #DEFINE max_repetitions 500000
+#DEFINE max_stat           10
+#DEFINE max_CR_duration   250
+#DEFINE position_scan_length 100
+
 'init
 DIM DATA_30[100] AS LONG               ' CR integer parameters
 DIM DATA_31[100] AS FLOAT              ' CR float parameters
 
+DIM DATA_18[position_scan_length] AS FLOAT 'repump freq voltage sine
+DIM DATA_19[position_scan_length] AS FLOAT
+
 'return
-'used in cr.inc
 DIM DATA_22[max_repetitions] AS LONG  ' CR counts before sequence
 DIM DATA_23[max_repetitions] AS LONG ' CR counts after sequence
 DIM DATA_26[max_stat] AS LONG         ' statistics
 
-DIM cr_mode, cr_timer, cr_i AS LONG
+
+DIM cr_mode, cr_timer, i_cr AS LONG
 DIM cr_counts AS LONG
 DIM CR_probe, CR_preselect, CR_repump, current_CR_threshold AS LONG
 DIM repumps, CR_failed, total_repump_counts AS LONG
@@ -30,13 +34,15 @@ DIM repump_duration, CR_duration AS LONG
 DIM cr_wait_after_pulse, cr_wait_after_pulse_duration AS LONG
 DIM counter_channel, counter_pattern AS LONG
 DIM E_laser_DAC_channel, A_laser_DAC_channel, repump_laser_DAC_channel AS LONG
+DIM pos_mod_DAC_channel, pos_mod_timer AS LONG
 
 DIM repump_voltage, repump_off_voltage, E_CR_voltage, A_CR_voltage, E_off_voltage, A_off_voltage AS FLOAT
+DIM pos_mod_control_offset, pos_mod_control_amp, pos_mod_control, pos_mod_fb AS FLOAT
 
 SUB init_CR()
   counter_channel              = DATA_30[1]
   repump_laser_DAC_channel     = DATA_30[2]
-  E_laser_DAC_channel          = DATA_30[3] ' this is also used in the main script i.e. MBI_lt2 for ssro, more logical to define there? -machiel 30-12-'13
+  E_laser_DAC_channel          = DATA_30[3]
   A_laser_DAC_channel          = DATA_30[4]
   repump_duration              = DATA_30[5]
   CR_duration                  = DATA_30[6]
@@ -44,6 +50,7 @@ SUB init_CR()
   CR_preselect                 = DATA_30[8]
   CR_probe                     = DATA_30[9]
   CR_repump                    = DATA_30[10]
+  pos_mod_DAC_channel          = 1'DATA_30[11]
 
   repump_voltage               = DATA_31[1]
   repump_off_voltage           = DATA_31[2]
@@ -51,14 +58,21 @@ SUB init_CR()
   A_CR_voltage                 = DATA_31[4]
   E_off_voltage                = DATA_31[5]
   A_off_voltage                = DATA_31[6]
+
+  pos_mod_control_offset        = FPar_75'DATA_31[9]
+  pos_mod_control_amp           = 0.03'DATA_31[10]
+  pos_mod_fb                    = FPar_76
   
-  FOR cr_i = 1 TO max_repetitions
-    DATA_22[i] = 0
-    DATA_23[i] = 0
-  NEXT cr_i
-  FOR cr_i = 1 TO max_stat
+  FOR i = 1 TO max_stat
     DATA_26[i] = 0
-  NEXT cr_i
+  NEXT i
+  
+  'fill data_18 with a sine for repump mod control (calculating sines is slow --> cannot do it during the event cycle)
+  FOR i = 1 TO position_scan_length
+    DATA_18[i] = Sin(-3.14+2*3.14*i/position_scan_length)
+    DATA_19[i] = 0.0
+  NEXT i
+  pos_mod_timer = 0
   
   counter_pattern     = 2 ^ (counter_channel-1)
   total_repump_counts = 0
@@ -76,12 +90,18 @@ SUB init_CR()
   par_69 = CR_repump
   par_76 = 0                      ' cumulative counts during repumping
   par_79 = 0                      ' CR below treshold events
+  
+  FPar_78 = 0.0                   'pos mod error
+
 ENDSUB
 
 
 
 FUNCTION CR_check(first_cr, repetition_index) As LONG
-
+  
+  CR_preselect                 = PAR_75
+  CR_probe                     = PAR_68
+  CR_repump                    = PAR_69
   CR_check = 0
   
   IF (cr_wait_after_pulse > 0) THEN
@@ -92,13 +112,15 @@ FUNCTION CR_check(first_cr, repetition_index) As LONG
       CASE 0    ' green repump
               
         IF (cr_timer = 0) THEN
-          CR_repump                    = PAR_69
           IF (cr_counts < CR_repump)  THEN  'only repump 
-            CNT_CLEAR(counter_pattern)    'clear counter
-            CNT_ENABLE(counter_pattern)    'turn on counter
-            DAC(repump_laser_DAC_channel, 3277*repump_voltage+32768) ' turn on green
+            P2_CNT_CLEAR(CTR_MODULE,counter_pattern)    'clear counter
+            P2_CNT_ENABLE(CTR_MODULE,counter_pattern)    'turn on counter
+            P2_DAC(DAC_MODULE,repump_laser_DAC_channel, 3277*repump_voltage+32768) ' turn on green
             repumps = repumps + 1
             inc(par_71)
+            
+
+  
           ELSE
             cr_mode = 1
             cr_timer = -1
@@ -109,10 +131,10 @@ FUNCTION CR_check(first_cr, repetition_index) As LONG
           
           IF (cr_timer = repump_duration) THEN
             
-            DAC(repump_laser_DAC_channel, 3277*repump_off_voltage+32768) ' turn off green
-            cr_counts = CNT_READ(counter_channel)
-            CNT_ENABLE(0)
-            CNT_CLEAR(counter_pattern)
+            P2_DAC(DAC_MODULE,repump_laser_DAC_channel, 3277*repump_off_voltage+32768) ' turn off green
+            cr_counts = P2_CNT_READ(CTR_MODULE,counter_channel)
+            P2_CNT_ENABLE(CTR_MODULE,0)
+            P2_CNT_CLEAR(CTR_MODULE,counter_pattern)
             
             total_repump_counts = total_repump_counts + cr_counts
             PAR_76 = total_repump_counts
@@ -121,28 +143,33 @@ FUNCTION CR_check(first_cr, repetition_index) As LONG
             cr_timer = -1
             cr_wait_after_pulse = cr_wait_after_pulse_duration
             current_cr_threshold = CR_preselect
+          
+            'pos mod control---------
+            IF (par_80 > 0)  THEN
+              FPar_78 = FPar_78*0.9999+pos_mod_control*(cr_counts)
+              DATA_19[pos_mod_timer] = DATA_19[pos_mod_timer]*0.99 + cr_counts
+            ENDIF
+            '------------------------
           ENDIF
         ENDIF
       
       CASE 1    ' E/A laser CR check
         
         IF (cr_timer = 0) THEN
-          CR_preselect                 = PAR_75
-          CR_probe                     = PAR_68
-          DAC(E_laser_DAC_channel, 3277*E_CR_voltage+32768) ' turn on E laser
-          DAC(A_laser_DAC_channel, 3277*A_CR_voltage+32768) ' turn on A laser
-          CNT_CLEAR(counter_pattern)    'clear counter
-          CNT_ENABLE(counter_pattern)    'turn on counter
+          P2_DAC(DAC_MODULE,E_laser_DAC_channel, 3277*E_CR_voltage+32768) ' turn on E laser
+          P2_DAC(DAC_MODULE,A_laser_DAC_channel, 3277*A_CR_voltage+32768) ' turn on A laser
+          P2_CNT_CLEAR(CTR_MODULE,counter_pattern)    'clear counter
+          P2_CNT_ENABLE(CTR_MODULE,counter_pattern)    'turn on counter
           INC(PAR_72)
         
         ELSE 
           
           IF (cr_timer = CR_duration) THEN
-            DAC(E_laser_DAC_channel, 3277*E_off_voltage+32768) ' turn off E laser
-            DAC(A_laser_DAC_channel, 3277*A_off_voltage+32768) ' turn off A laser
-            cr_counts = CNT_READ(counter_channel)
-            CNT_ENABLE(0)
-            CNT_CLEAR(counter_pattern)
+            P2_DAC(DAC_MODULE,E_laser_DAC_channel, 3277*E_off_voltage+32768) ' turn off E laser
+            P2_DAC(DAC_MODULE,A_laser_DAC_channel, 3277*A_off_voltage+32768) ' turn off A laser
+            cr_counts = P2_CNT_READ(CTR_MODULE,counter_channel)
+            P2_CNT_ENABLE(CTR_MODULE,0)
+            P2_CNT_CLEAR(CTR_MODULE,counter_pattern)
             PAR_70 = PAR_70 + cr_counts
             
             IF (first_cr > 0) THEN ' first CR after SSRO sequence

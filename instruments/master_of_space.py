@@ -73,6 +73,7 @@ class master_of_space(CyclopeanInstrument):
         self.add_function('goto_marker')
         self.add_function('push_position')
         self.add_function('pop_position')
+        self.add_function('init_positions_from_adwin_dacs')
         
         # set up config file
         cfg_fn = os.path.join(qt.config['ins_cfg_path'], name+'.cfg')
@@ -85,10 +86,10 @@ class master_of_space(CyclopeanInstrument):
         self.load_cfg()
         self.save_cfg()
 
-        self._init_positions()
+        self.init_positions_from_adwin_dacs()
 
         
-    def _init_positions(self):
+    def init_positions_from_adwin_dacs(self):
         # set initial position values (need to know whether LT or RT settings)
         for d in self.dimensions:
             dim = self.dimensions[d]
@@ -193,7 +194,7 @@ class master_of_space(CyclopeanInstrument):
             # self._adwin.set_LT(0)
             self.dimensions = self.rt_dimensions
             self._lt_settings = False
-        self._init_positions()
+        self.init_positions_from_adwin_dacs()
 
     # monitor the status of the linescan
     def _linescan_check(self):

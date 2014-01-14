@@ -25,7 +25,6 @@
 #INCLUDE .\cr.inc
 
 #DEFINE max_SP_bins        500
-#DEFINE max_SSRO_dim     10000
 #DEFINE max_stat            10
 
 'init
@@ -33,8 +32,8 @@ DIM DATA_20[100] AS LONG
 DIM DATA_21[100] AS FLOAT
 
 'return
-DIM DATA_24[max_SP_bins] AS LONG AT EM_LOCAL      ' SP counts
-DIM DATA_25[max_SSRO_dim] AS LONG  ' SSRO counts spin readout
+DIM DATA_24[max_SP_bins] AS LONG AT EM_LOCAL      ' SP counts ' not used anymore? Machiel 23-12-'13
+DIM DATA_25[max_repetitions] AS LONG  ' SSRO counts spin readout
 
 DIM AWG_start_DO_channel, AWG_done_DI_channel, APD_gate_DO_channel AS LONG
 DIM send_AWG_start, wait_for_AWG_done AS LONG
@@ -69,17 +68,13 @@ INIT:
   SSRO_duration                = DATA_20[10]
   SSRO_stop_after_first_photon = DATA_20[11]
   cycle_duration               = DATA_20[12] '(in processor clock cycles, 3.333ns)
-  sweep_length                 = DATA_20[14]
+  sweep_length                 = DATA_20[13]
   
   E_SP_voltage                 = DATA_21[1]
   A_SP_voltage                 = DATA_21[2]
   E_RO_voltage                 = DATA_21[3]
   A_RO_voltage                 = DATA_21[4]
- 
-  FOR i = 1 TO SSRO_repetitions
-    DATA_22[i] = 0
-    DATA_23[i] = 0
-  NEXT i
+  par_80 = SSRO_stop_after_first_photon
   
   FOR i = 1 TO max_SP_bins
     DATA_24[i] = 0
@@ -117,8 +112,9 @@ EVENT:
   IF (wait_after_pulse > 0) THEN
     DEC(wait_after_pulse)
   ELSE
+
     SELECTCASE mode
-      
+        
       CASE 0 'CR check
        
         IF ( CR_check(first,repetition_counter) > 0 ) THEN
@@ -134,9 +130,10 @@ EVENT:
           CNT_CLEAR( counter_pattern)    'clear counter
           CNT_ENABLE(counter_pattern)    'turn on counter
         else
+          counts = CNT_READ(counter_channel)
           CNT_CLEAR( counter_pattern)    'clear counter
           CNT_ENABLE(counter_pattern)    'turn on counter
-          counts = CNT_READ(counter_channel)
+          
           DATA_24[timer] = DATA_24[timer] + counts
         Endif
 
@@ -218,7 +215,7 @@ EVENT:
             sweep_index = 1
           endif
           
-          mode = 1
+          mode = 0
           timer = -1
           wait_after_pulse = wait_after_pulse_duration
           inc(repetition_counter)

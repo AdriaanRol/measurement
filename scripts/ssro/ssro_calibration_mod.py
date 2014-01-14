@@ -17,6 +17,24 @@ def ssrocalibration(name):
 
     m.params.from_dict(qt.cfgman['protocols'][SAMPLE_CFG]['AdwinSSRO'])    
 
+
+
+    m.params['repump_mod_DAC_channel'] = 4
+    m.params['cr_mod_DAC_channel']     = ssro.AdwinSSRO.adwin.get_dac_channels()['gate']
+    m.params['cr_mod_control_offset']  =  0.0
+    m.params['cr_mod_control_amp']     =  0.1 #V
+    m.params['repump_mod_control_offset']  =  4.0
+    m.params['repump_mod_control_amp']     =  1.0 #V
+    m.params['atto_positions'] = [m.adwin.get_dac_voltage('atto_x'), m.adwin.get_dac_voltage('atto_y'), m.adwin.get_dac_voltage('atto_z')]
+    m.set_adwin_process_variable_from_params('atto_positions')
+    m.params['pos_mod_control_amp'] =  0.1 #0.03
+    m.params['pos_mod_fb'] = 0.0
+    m.params['pos_mod_min_counts'] = 300.
+
+    m.params['pos_mod_activate'] = 0
+    m.params['repump_mod_activate'] = 0 
+    m.params['cr_mod_activate'] = 0
+
     # parameters
     m.params['SSRO_repetitions'] = 5000
 
@@ -34,6 +52,7 @@ def ssrocalibration(name):
     # m.autoconfig()
     # m.setup()
     
+
     m.run()
     m.save('ms0')
 
@@ -42,10 +61,14 @@ def ssrocalibration(name):
     m.params['A_SP_amplitude'] = 0.
     m.params['Ex_SP_amplitude'] = 10e-9 #10e-9
 
+    m.params['atto_positions_after'] = m.adwin_var(('atto_positions',3))
+    m.adwin.set_dac_voltage(('atto_x',m.params['atto_positions_after'][0]))
+    m.adwin.set_dac_voltage(('atto_y',m.params['atto_positions_after'][1]))
+    m.adwin.set_dac_voltage(('atto_z',m.params['atto_positions_after'][2]))
 
+    #m.run()
+    #m.save('ms1')
 
-    m.run()
-    m.save('ms1')
     m.finish()
 
 if __name__ == '__main__':

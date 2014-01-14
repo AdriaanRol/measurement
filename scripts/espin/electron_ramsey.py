@@ -5,7 +5,7 @@ from measurement.lib.measurement2.adwin_ssro import pulsar
 from measurement.scripts.espin import espin_funcs as funcs
 reload(funcs)
 
-name = 'sil5_det_0MHz_ph_0MHz'
+name = 'sil4_no_time'
 
 def electronramsey(name):
     m = pulsar.ElectronRamsey(name)
@@ -15,7 +15,7 @@ def electronramsey(name):
     m.params['pts'] = pts
     m.params['repetitions'] = 1000
 
-    m.params['evolution_times'] = np.linspace(0,3000e-9,pts)
+    m.params['evolution_times'] = np.linspace(0,450e-9,pts)
 
     # MW pulses
     m.params['detuning']  = 0.0e6

@@ -3,11 +3,11 @@ from measurement.scripts.lt1_scripts import stools
 reload(stools)
 
 print 'reload all modules...'
-execfile("setup/reload_all.py")
+execfile("D:/measuring/measurement/scripts/lt1_scripts/setup/reload_all.py")
 
 ####
 print 'reload all measurement parameters and calibrations...'
-execfile("setup/msmt_params.py")
+execfile("D:/measuring/measurement/scripts/lt1_scripts/setup/msmt_params.py")
 
 qt.current_setup='lt1'
 
@@ -38,10 +38,6 @@ sequence.SequenceSSRO.chan_mw_pm = 'MW_pulsemod'
 sequence.SequenceSSRO.awgcfg_module = awgcfg
 sequence.SequenceSSRO.awgcfg_args = ['mw', 'rf', 'adwin']
 
-mbi.MBIMeasurement.chan_RF  = 'RF' 
-mbi.MBIMeasurement.chan_adwin_sync = 'adwin_sync'
-mbi.MBIMeasurement.physical_adwin = qt.instruments['physical_adwin']
-
 pulsar_msmt.PulsarMeasurement.awg = qt.instruments['AWG']
 pulsar_msmt.PulsarMeasurement.mwsrc = qt.instruments['SMB100']
 pulsar_msmt.MBI.physical_adwin = qt.instruments['physical_adwin']
@@ -55,6 +51,6 @@ pulsar_msmt.MBI.physical_adwin = qt.instruments['physical_adwin']
 ####
 
 print 'configure the pulsar sequencer and update pulses and elements...'
-execfile("setup/sequence.py")
+execfile("D:/measuring/measurement/scripts/lt1_scripts/setup/sequence.py")
 
 
