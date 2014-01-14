@@ -247,7 +247,7 @@ class pid_controller_v4(Instrument):
                         
         if not(self.set_control_parameter(new_control_parameter)):
             if self.set_control_parameter_coarse(self.get_control_parameter_coarse()+ \
-                    numpy.copysign(self.get_control_coarse_step(),new_control_parameter-self._control_parameter)):
+                    numpy.copysign(self._control_coarse_step,new_control_parameter-self._control_parameter)):
                 self.set_control_parameter(0)
             else:
                 return False

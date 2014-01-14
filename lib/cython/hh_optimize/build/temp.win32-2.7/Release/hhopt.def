@@ -1,0 +1,3 @@
+LIBRARY hhopt.pyd
+EXPORTS
+inithhopt
