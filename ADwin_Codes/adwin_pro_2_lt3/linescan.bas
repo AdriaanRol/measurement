@@ -98,9 +98,9 @@ INIT:
   
   IF ((PxAction = 1) OR (PxAction = 2)) THEN
     P2_CNT_ENABLE(CTR_Module,000b)                                        'Stop counter 1, 2 and 3
-    P2_CNT_MODE(CTR_Module,1, 00001000b)                                  '
-    P2_CNT_MODE(CTR_Module,2, 00001000b)
-    P2_CNT_MODE(CTR_Module,3, 00001000b)
+    P2_CNT_MODE(CTR_Module,1, 000010000b)                                  '
+    P2_CNT_MODE(CTR_Module,2, 000010000b)
+    P2_CNT_MODE(CTR_Module,3, 000010000b)
     P2_SE_DIFF(CTR_Module,000b)                                           'All counterinputs single ended (not differential)
     P2_CNT_CLEAR(CTR_Module,111b)                                         'Set all counters to zero
     P2_CNT_ENABLE(CTR_Module,111b)                                        'Start counter 1 and 2 

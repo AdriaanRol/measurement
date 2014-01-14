@@ -15,7 +15,7 @@
 DIM channel, set AS LONG
 
 INIT:
-  P2_Digprog(DIO_MODULE,13)  'configure DIO 08:15 as input, all other ports as output
+  P2_Digprog(DIO_MODULE,11) 'configure DIO 16:23 as input, all other ports as output
   channel=PAR_61    'Number of DIO to set 
   set=PAR_62        'can be 1 or 0
 EVENT:
