@@ -128,17 +128,17 @@ SUB init_CR()
 
   FPar_78 = 0.0                   ' current repump modulation error signal
   FPar_79 = 0.0                   ' current CR modulation error signal
-  par_60 = 0                      ' current position modulation dac
-  FPar_60 = 0.0                   ' current position modulation error signal
+  par_64 = 0                      ' 
+  FPar_64 = 0.0                   ' current position modulation error signal
   
   'control pars
   Par_75 = CR_preselect
   Par_68 = CR_probe
   par_69 = CR_repump
-  par_62 = 0                      ' activate repump modulation
-  par_63 = 0                      ' activate cr gate modulation
-  par_61 = 0                      ' activate position modulation
-  FPar_61 = pos_mod_min_err       ' current position modulation error signal minumum 
+  par_66 = 0                      ' activate repump modulation
+  par_67 = 0                      ' activate cr gate modulation
+  par_65 = 0                      ' activate position modulation
+  FPar_65 = pos_mod_min_err       ' current position modulation error signal minumum 
   'before continueing to the next positioner dac
   
 ENDSUB
@@ -169,7 +169,7 @@ FUNCTION CR_check(first_cr, repetition_index) As LONG
                 INC(pos_mod_DAC_channel)
               ELSE
                 pos_mod_DAC_channel = pos_mod_min_dac
-                PAR_61 = 0 'pos_mod_activated = 0
+                PAR_65 = 0 'pos_mod_activated = 0
               ENDIF
               pos_mod_control_offset = DATA_16[pos_mod_DAC_channel]
             ENDIF
@@ -190,10 +190,10 @@ FUNCTION CR_check(first_cr, repetition_index) As LONG
             DAC(pos_mod_DAC_channel, 3277*(pos_mod_control_offset)+32768)
           ENDIF
         ENDIF
-        pos_mod_activated            = PAR_61
-        pos_mod_min_err              = FPar_61
-        FPar_60                      = pos_mod_err
-        PAR_60                       = pos_mod_DAC_channel 
+        pos_mod_activated            = PAR_65
+        pos_mod_min_err              = FPar_65
+        FPar_64                      = pos_mod_err
+        PAR_64                       = pos_mod_DAC_channel 
         cr_mode = 1
         cr_timer = -1
         
@@ -202,8 +202,8 @@ FUNCTION CR_check(first_cr, repetition_index) As LONG
               
         IF (cr_timer = 0) THEN
           CR_repump                    = PAR_69
-          pos_mod_activated            = PAR_61
-          repump_mod_activated         = PAR_62
+          pos_mod_activated            = PAR_65
+          repump_mod_activated         = PAR_66
           IF (cr_counts < CR_repump)  THEN  'only repump 
             CNT_CLEAR(counter_pattern)    'clear counter
             CNT_ENABLE(counter_pattern)    'turn on counter
@@ -265,7 +265,7 @@ FUNCTION CR_check(first_cr, repetition_index) As LONG
         IF (cr_timer = 0) THEN
           CR_preselect                 = PAR_75
           CR_probe                     = PAR_68
-          cr_mod_activated             = PAR_63
+          cr_mod_activated             = PAR_67
           DAC(E_laser_DAC_channel, 3277*E_CR_voltage+32768) ' turn on E laser
           DAC(A_laser_DAC_channel, 3277*A_CR_voltage+32768) ' turn on A laser
           CNT_CLEAR(counter_pattern)    'clear counter

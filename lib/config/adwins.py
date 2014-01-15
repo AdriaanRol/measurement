@@ -195,14 +195,15 @@ config['adwin_lt1_processes'] = {
                     'noof_cr_checks'            : 72,
                     'cr_below_threshold_events' : 79,
                     'repump_counts'             : 76,
-                    'pos_mod_activate'          : 61,
-                    'repump_mod_activate'       : 62,
-                    'cr_mod_activate'           : 63,
+                    'pos_mod_activate'          : 65,
+                    'repump_mod_activate'       : 66,
+                    'cr_mod_activate'           : 67,
+                    'cur_pos_mod_dac'           : 64,
                     },
                     'fpar' : {
                     'repump_mod_err' : 78,
                     'cr_mod_err'     : 79,
-                    'pos_mod_err'    : 60,
+                    'pos_mod_err'    : 64,
 
                     },
             'params_long' : [           # keep order!!!!!!!!!!!!!
