@@ -1,6 +1,6 @@
 import os, sys, time
 import shutil
-#from measurement.lib.cython.hh_optimize import hhopt
+from measurement.lib.cython.hh_optimize import hhopt
 import numpy as np
 import hhopt
 
@@ -26,37 +26,82 @@ def data_from_file(filepath, do_filter_ofls=True, do_filter_crap=True,
 
     if do_filter_crap:
         data = hhopt.filter_decreasing_syncs(data)
+
+    data = hhopt.filter_counts_on_marker(data, mchan = 1,
+                    delta_syncs = np.array([1,2], dtype = np.uintc))
         
     return data
 
 
-def filter_raw_data(rawdata, do_filter_ofls = True, do_filter_crap = True, 
+def filter_raw_data(rawdata, sync_offset, do_filter_ofls = True, do_filter_crap = True, 
         do_filter_counts_on_mrkr = True, ch0_lastbin = 700, ch1_lastbin = 700,
         marker_chan = 1, dsyncs = np.array([1,2], dtype = np.uintc)):
+    """
+    Filters raw data, coming from the HydraHarp. The filters applied here are common 
+    for an LDE-type experiment, but can be switched on/off individually to meet the 
+    demands of the current experiment. A sync offset must be provided to keep track 
+    off the sync number. To switch the individual filters on and off use:
+
+    do_filter_ofls = (True)/False
+    do_filter_crap = (True)/False 
+    do_filter_counts_on_mrkr = (True)/False , additional options:
+        marker_chan = (1)
+        dsyncs = (np.array([1,2])) (check for clicks that are 1 or 2 syncs separated from a measurement marker)
+
+    To switch on/off time filtering on both channels use the following
+    ch0_lastbin = (700)/None
+    ch1_lastbin  = (700)/None
+    """
     
     if len(rawdata) != 0:
         data = decode(rawdata.astype(np.uintc))
+        sync_nr = data[-1,0]+1
 
-        if do_filter_ofls:
-            data = hhopt.filter_overflows(data.copy())
+        print len(data)
+        # print data
 
-        if ch0_lastbin != None:
-            data = filter_timewindow(data, 0, 0, ch0_lastbin)
+        # TODO: This loop seems weird to me. rewrite that.
+        while len(data) != 0:
+            
+            #apply all the filtering here; we jump out of the while loop if there are no 
+            #events left to filter, or if the filter routine is complete.
+            
+            if do_filter_ofls:
+                data = hhopt.filter_overflows(data.copy(), ofl_offset = sync_offset)
 
-        if ch1_lastbin != None:
-            data = filter_timewindow(data, 1, 0, ch1_lastbin)
+                if len(data) == 0:
+                    break
 
-        if do_filter_crap:
-            data = hhopt.filter_decreasing_syncs(data)
+            if ch0_lastbin != None:
+                data = filter_timewindow(data, 0, 0, ch0_lastbin)
 
-        if do_filter_counts_on_mrkr:
-            data = hhopt.filter_counts_on_marker(data, mchan = np.int(marker_chan),
-                    delta_syncs = dsyncs.astype(np.uintc))
+                if len(data) == 0:
+                    break
+
+            if ch1_lastbin != None:
+                data = filter_timewindow(data, 1, 0, ch1_lastbin)
+
+                if len(data) == 0:
+                    break
+
+            if do_filter_crap:
+                data = hhopt.filter_decreasing_syncs(data)
+
+                if len(data) == 0:
+                    break
+
+            if do_filter_counts_on_mrkr:
+                data = hhopt.filter_counts_on_marker(data, mchan = np.int(marker_chan),
+                        delta_syncs = dsyncs.astype(np.uintc))
+            
+            break
+    
     else:
         data = np.empty((0,4), dtype = np.uintc)
-        print "No data to be filtered!"
+        sync_nr = sync_offset
+        # print "No data to be filtered!"
 
-    return data
+    return data, sync_nr
     
     
 def filter_raw_antibunch_data(rawdata, ch0_lastbin, ch1_lastbin, filter_on_double_clicks = True): 
@@ -74,7 +119,7 @@ def filter_raw_antibunch_data(rawdata, ch0_lastbin, ch1_lastbin, filter_on_doubl
             data = hhopt.filter_decreasing_syncs(data) 
       
         if filter_on_double_clicks and len(data) != 0: 
-            data = hhopt.filter_double_clicks_per_sync(data) 
+            data = hhopt.filter_double_clicks_per_sync(data)
     else:
         data = np.zeros((0,4), dtype = np.uintc)
   
@@ -205,6 +250,10 @@ def filter_early_high_syncs(data):
 
 
 def delete_markers(data, mchan):
+    """
+    Delete markers from the data on marker channel "mchan".
+    Useful for throwing away useless clicks.
+    """
     special = data[:,3] == 1
     mrkr = np.logical_and(special, data[:,2] == mchan)
 
@@ -212,7 +261,7 @@ def delete_markers(data, mchan):
     if len(np.where(filtered)[0]) == 0:
         return np.zeros((0,4), dtype=np.uint)
 
-    return data[filtered]
+    return hhopt.apply_filter_to_2darray(data, filtered.astype(np.uint))
 
 
 def get_events(d, min_times=(0,0), max_times=(1000,1000), 

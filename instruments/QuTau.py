@@ -9,7 +9,7 @@ class QuTau(Instrument):
         Instrument.__init__(self, name)
 
         #Load the DLL
-        dll_dp = r'C:\Program Files (x86)\N-Hands\Daisy@quTau\userlib\lib'
+        dll_dp = r'C:\Program Files\N-Hands\Daisy@quTau\userlib\lib'
         #dll_dp = r'C:\Program Files\qutools\quTAU\userlib\lib'
         dll_name = 'tdcbase.dll'
         dir_before = os.getcwd()

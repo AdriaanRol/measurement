@@ -504,8 +504,8 @@ def get_dt_wrt_sync(cnp.ndarray[cnp.uint8_t, ndim = 1, mode="c"] ch not None,
 
     cdef cnp.ndarray[cnp.uint8_t, ndim = 1, mode="c"] syncs = \
             (ch == sync_chan).astype(np.uint8)
-    cdef cnp.ndarray[cnp.uint8_t, ndim = 1, mode="c"] timings_wrt_sync = \
-            np.empty(len_ts, dtype = np.uint8)
+    cdef cnp.ndarray[cnp.uint_t, ndim = 1, mode="c"] timings_wrt_sync = \
+            np.empty(len_ts, dtype = np.uintc)
 
     #determine the first sync
     if syncs[0] == False:
@@ -532,4 +532,73 @@ def get_dt_wrt_sync(cnp.ndarray[cnp.uint8_t, ndim = 1, mode="c"] ch not None,
 ###############################################################################
 ###############################################################################
 
+@cython.boundscheck(False)
+@cython.wraparound(False)
+def get_dts_qutau(cnp.ndarray[cnp.uint_t, ndim = 2, mode="c"] data not None, 
+        int channelA, int channelB):
+    """
+    Put channelA = -1 to get the time difference with respect to the sync.
+    """
+    cdef unsigned int k
+    cdef unsigned int len_data = data.shape[0]
+    cdef int sync_difference, ch_difference
+
+    cdef extern from "math.h":
+        int abs(int x)
+
+    cdef cnp.ndarray[cnp.uint_t, mode="c"] Bidxs = \
+            (np.where(data[:,2] == channelB)[0]).astype(np.uintc)       
+    
+    if Bidxs.shape[0] == 0:
+        print "No clicks on channel B (%d) were found in the data"%channelB
+    
+    cdef cnp.ndarray[cnp.uint_t, mode="c"] dts = \
+            np.empty(Bidxs.shape[0], dtype = np.uintc)
+    
+    for k in range(Bidxs.shape[0]):
+        dts[k] = data[Bidxs[k],1]              
+    
+    #return if you just want the dts of channel B w.r.t. the sync.
+    if channelA < 0:
+        return dts
+    else:
+        print "Not yet implemented"
+        return 0
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+def throw_away_useless_markers(cnp.ndarray[cnp.uint_t, ndim = 2, mode="c"] data not None,
+        unsigned int mchan):
+    """
+    Only keep markers in the data that are followed by a click 
+    (at the next sync or the sync after that).
+
+    WARNING: SLOW if there are hardly any markers on mchan in the data!
+    FAST if you applied the function filter_counts_on_marker properly and 
+    you use the same marker channel here as you did in that function.
+    """
+
+    cdef unsigned int k, l, click_idx
+    cdef cnp.ndarray[cnp.uint_t, ndim = 1, mode="c"] click_idxs = \
+            (np.where(data[:,3] == 0)[0]).astype(np.uintc)
+    cdef cnp.ndarray[cnp.uint_t, ndim = 1, mode="c"] mask = \
+            np.zeros(data.shape[0], dtype = np.uintc)
+
+    for k in range(click_idxs.shape[0]):
+        click_idx = click_idxs[k]
+
+        #when comes the first marker before the photon?
+        for l in range(click_idx):
+            if data[click_idx-l,3] == 0:
+                mask[click_idx-l] = 1
+            else:
+                #it must be a marker on the right channel though
+                if data[click_idx-l,2] == mchan:
+                    mask[click_idx-l] = 1
+                    break
+                else:
+                    mask[click_idx-l] = 1
+
+    return apply_filter_to_2darray(data, mask)
+    
 
