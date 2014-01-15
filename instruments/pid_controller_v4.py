@@ -5,7 +5,6 @@ import time
 #import threading
 
 import numpy
-from scipy import integrate
 
 import qt
 from instrument import Instrument

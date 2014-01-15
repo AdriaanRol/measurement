@@ -21,17 +21,18 @@ class linescan_counts(linescan):
        
     def _start_running(self):
         linescan._start_running(self)
+        
         # make sure the counter is off, when not in resonant counting mode
         if self._counters.get_is_running():
             self._counter_was_running = True
-            if (self.get_scan_value() != 'resonant') :
+            if (self.get_scan_value() != 'counter_process') :
                 self._counters.set_is_running(False)
 
     def _stop_running(self):
         linescan._stop_running(self)
 
         if self._counter_was_running:
-            if (self.get_scan_value() != 'resonant') :
+            if (self.get_scan_value() != 'counter_process') :
                 self._counters.set_is_running(True)
             self._counter_was_running = False
     
@@ -42,14 +43,18 @@ class linescan_counts(linescan):
                 array(self._adwin.get_linescan_counts(self._steps))
         self._data_update = ('counts', [slice(self._steps)])
         self.get_data_update()
-        self._data['countrates'] = \
-                self._data['counts'] / (1e-3*self._px_time)
+        
+        if (self.get_scan_value() != 'counter_process'):
+            self._data['countrates'] = \
+                    self._data['counts'] / (1e-3*self._px_time)
+        else:
+            self._data['countrates'] = self._data['counts']
 
         self._data_update = ('countrates', [slice(self._steps)])
         self.get_data_update()
 
         if self._counter_was_running:
-            if (self.get_scan_value() != 'resonant') :
+            if (self.get_scan_value() != 'counter_process') :
                 self._counters.set_is_running(True)
             self._counter_was_running = False
 

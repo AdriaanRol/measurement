@@ -40,6 +40,9 @@ class multiple_optimizer(Instrument):
         except ValueError:
             qt.instruments.create(name,'simple_optimizer',**kw)
         self._optimizers.append(name)
+
+    def remove_optimizer(self,name):
+        self._optimizers.remove(name)
         
     def _optimize(self,*arg):
         pass #implement in child class

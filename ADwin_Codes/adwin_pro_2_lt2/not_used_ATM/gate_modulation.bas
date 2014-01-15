@@ -12,7 +12,7 @@
 ' Info_Last_Save                 = TUD276629  TUD276629\localadmin
 '<Header End>
 #INCLUDE ADwinPro_All.inc
-#INCLUDE configuration.inc
+#INCLUDE .\configuration.inc
 DIM gate_channel AS Long           ' DAC channel for gate modulation
 DIM gate_voltage AS Float          ' voltage of the gate modulation
 DIM modulation_period AS Long      ' period of 1/2 modulation in units of ms

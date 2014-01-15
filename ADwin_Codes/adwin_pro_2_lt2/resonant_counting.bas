@@ -15,7 +15,7 @@
 ' PAR_41 - PAR_44 contains a floating average of the count rate at counter 1 - 4 over the FPAR_1 ms
 
 #INCLUDE ADwinPro_All.inc
-#INCLUDE configuration.inc
+#INCLUDE .\configuration.inc
 
 DIM AOM_channel AS LONG           ' DAC channel for green laser AOM
 DIM AOM_voltage AS Float           ' voltage of repump pulse

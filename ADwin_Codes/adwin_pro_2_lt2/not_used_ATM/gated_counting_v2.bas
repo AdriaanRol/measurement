@@ -11,7 +11,7 @@
 ' Info_Last_Save                 = TUD276629  TUD276629\localadmin
 '<Header End>
 #Include ADwinPro_All.Inc
-#INCLUDE configuration.inc
+#INCLUDE .\configuration.inc
 
 #define di_gate 010b                    ' DIO 1
 #define di_counter 100b                 ' DIO 2

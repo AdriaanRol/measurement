@@ -6,6 +6,7 @@ import numpy as np
 from instrument import Instrument
 import time
 from lib import config
+import logging
 
 class adwin(Instrument):
     def __init__(self, name, adwin, processes={}, 
@@ -92,10 +93,11 @@ class adwin(Instrument):
     # process dictionary
     def _make_process_tools(self, proc):
         for p in proc:
-            self._make_load(p, proc[p]['file'], proc[p]['index'])
-            self._make_start(p, proc[p]['index'], proc[p])
-            self._make_stop(p, proc[p]['index'])
-            self._make_is_running(p, proc[p]['index'])
+            if not('no_process_start' in proc[p]):
+                self._make_load(p, proc[p]['file'], proc[p]['index'])
+                self._make_start(p, proc[p]['index'], proc[p])
+                self._make_stop(p, proc[p]['index'])
+                self._make_is_running(p, proc[p]['index'])
             self._make_get(p, proc[p])
             self._make_set(p, proc[p])
 
@@ -121,7 +123,11 @@ class adwin(Instrument):
 
         return True
 
+    def _log_warning(self,message):
+        logging.warning(self.get_name() +': ' + str(message))
+
     def _make_start(self, pn, pidx, proc):
+
         funcname = 'start_' + pn
         while hasattr(self, funcname):
             funcname += '_'
@@ -152,16 +158,16 @@ class adwin(Instrument):
                         try:
                             getattr(self, 'stop_'+p)()
                         except:
-                            print 'cannot stop process %s' % p
+                            self._log_warning('cannot stop process %s' % p)
                     else:
                         'unknown process %s' % p
                 elif type(p) == int:
                     try:
                         self.physical_adwin.Stop_Process(p)
                     except:
-                        print 'cannot stop process %s' % p
+                        self._log_warning('cannot stop process %s' % p)
                 else:
-                    print 'cannot figure out what process %s is' % p
+                    self._log_warning('cannot figure out what process %s is' % p)
 
 
             if self.physical_adwin.Process_Status(pidx):
@@ -173,8 +179,8 @@ class adwin(Instrument):
                 _t0 = time.time()
                 while self.physical_adwin.Process_Status(pidx):
                     if time.time() > _t0+timeout:
-                        print 'Timeout while starting ADwin process %d (%s)' \
-                                % (pidx, pn)
+                        self._log_warning('Timeout while starting ADwin process %d (%s)' \
+                                % (pidx, pn))
                         return False
                     time.sleep(.001)
 
@@ -193,6 +199,23 @@ class adwin(Instrument):
                 self.physical_adwin.Set_Data_Float(pfs, 
                         proc['params_float_index'], 1, 
                         len(proc['params_float']))
+
+            if 'include_cr_process' in proc:
+                cr_params_long=self.processes[proc['include_cr_process']]['params_long']
+                pls = np.zeros(len(cr_params_long), dtype=int)
+                for i,pl in enumerate(cr_params_long):
+                    pls[i] = kw.pop(pl[0], pl[1])
+                self.physical_adwin.Set_Data_Long(pls, 
+                        self.processes[proc['include_cr_process']]['params_long_index'], 1, 
+                        len(cr_params_long))
+
+                cr_params_float = self.processes[proc['include_cr_process']]['params_float']
+                pfs = np.zeros(len(cr_params_float), dtype=float)
+                for i,pf in enumerate(cr_params_float):
+                    pfs[i] = kw.pop(pf[0], pf[1])
+                self.physical_adwin.Set_Data_Float(pfs, 
+                        self.processes[proc['include_cr_process']]['params_float_index'], 1, 
+                        len(cr_params_float))
 
             setfunc = getattr(self, pn+'_setfunc_name')
             getattr(self, setfunc)(**kw)
@@ -218,8 +241,7 @@ class adwin(Instrument):
             """
             if self.physical_adwin.Process_Status(pidx):
                 self.physical_adwin.Stop_Process(pidx)
-            else:
-                print 'Process not running.'
+            
             return True
 
         f.__name__ = funcname
@@ -315,7 +337,9 @@ class adwin(Instrument):
                     return [ (key, self.physical_adwin.Get_FPar(proc['fpar'][key])) \
                             for key in proc['fpar'] ]
                 else:
-                    print 'Unknown variable.'
+                    if 'include_cr_process' in proc:
+                        return getattr(self, 'get_'+proc['include_cr_process']+'_var')(name,*arg,**kw)
+                    self._log_warning('Cannot get var: Unknown variable: ' + name)
                     return False
 
         f.__name__ = funcname
@@ -365,7 +389,7 @@ class adwin(Instrument):
                                 self.physical_adwin.Set_Data_Long(
                                     kw[var][i],j, 1, len(kw[var][i]))
                         else:
-                            print 'Value for parameter %s has wrong length to set multiple adwin data.' % var 
+                            self._log_warning('Value for parameter %s has wrong length to set multiple adwin data.' % var )
 
                     else:
                         self.physical_adwin.Set_Data_Long(kw[var],
@@ -377,13 +401,16 @@ class adwin(Instrument):
                                 self.physical_adwin.Set_Data_Float(
                                     kw[var][i],j, 1, len(kw[var][i]))
                         else:
-                            print 'Value for parameter %s has wrong length to set multiple adwin data.' % var 
+                            self._log_warning('Value for parameter %s has wrong length to set multiple adwin data.' % var )
 
                     else:
                         self.physical_adwin.Set_Data_Float(kw[var],
                                 proc['data_float'][var], 1, len(kw[var]))
                 else:
-                    print 'Parameter %s is not defined.' % var
+                    if 'include_cr_process' in proc:
+                        getattr(self, 'set_'+proc['include_cr_process']+'_var')(**kw)
+                    else:
+                        self._log_warning('Parameter %s is not defined, and cannot be set.' % var)
         
         f.__name__ = funcname
         setattr(self, funcname, f)

@@ -11,7 +11,7 @@ reload(element)
 reload(pulsar)
 
 test_element = element.Element('a test element', pulsar=qt.pulsar)
-# we copied the channel defintion from out global pulsar
+# we copied the channel definition from out global pulsar
 # print 'Channel definitions: '
 # pprint.pprint(test_element._channels)
 # print 

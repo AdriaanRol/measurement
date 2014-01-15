@@ -99,7 +99,7 @@
 ' DATA_24 (int) : PLU Gate results
 
 #INCLUDE ADwinPro_All.inc
-#INCLUDE configuration.inc
+#INCLUDE .\configuration.inc
 
 ' parameters
 DIM DATA_20[18] AS LONG               ' integer parameters

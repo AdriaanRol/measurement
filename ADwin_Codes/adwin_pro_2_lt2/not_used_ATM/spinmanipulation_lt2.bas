@@ -69,7 +69,7 @@
 '   3   CR_failed
 
 #INCLUDE ADwinPro_All.inc
-#INCLUDE configuration.inc
+#INCLUDE .\configuration.inc
 #INCLUDE Math.inc
 
 #DEFINE max_repetitions 10000

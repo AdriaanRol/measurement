@@ -12,4 +12,9 @@ Labview*
 *.zip
 *.png
 CPLD
-config
+./config
+*.def
+*.o
+*.vi
+*.bmp
+*.png

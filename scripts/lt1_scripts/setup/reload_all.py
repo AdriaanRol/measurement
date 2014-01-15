@@ -27,19 +27,14 @@ reload(ssro)
 from measurement.lib.measurement2.adwin_ssro import sequence
 reload(sequence)
 
-from measurement.lib.measurement2.adwin_ssro import mbi
-reload(mbi)
-
-from measurement.lib.measurement2.adwin_ssro import mbi_espin
-reload(mbi_espin)
-
-from measurement.lib.measurement2.adwin_ssro import mbi_nmr
-reload(mbi_nmr)
-
 # pulsar measurements
 from measurement.lib.measurement2.adwin_ssro import pulsar as pulsar_msmt
 reload(pulsar_msmt)
 from measurement.lib.measurement2.adwin_ssro import pulsar_mbi_espin
 reload(pulsar_mbi_espin)
+
+# teleportation measurements
+#from measurement.lib.measurement2.adwin_ssro import teleportation
+#reload(teleportation)
 
 

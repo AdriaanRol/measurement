@@ -41,46 +41,56 @@ class SomePulse(pulse.Pulse):
     # of the element (element determines the best raster)
     # the nominal start time of the pulse within the element is given
     # by self._t0 (set by the element).
-    def wf(self, tvals):
+    def chan_wf(self, chan, tvals):
         ch1vals = self.amp * np.sin(2*pi*self.frq*tvals)
         ch2vals = self.amp/2. * np.cos(2*pi*self.frq*tvals)
-        return {
-            self.ch1 : ch1vals,
-            self.ch2 : ch2vals,
-            }
+        
+        if chan == self.ch1:
+            return ch1vals
+        elif chan == self.ch2:
+            return ch2vals
+        else:
+            raise Exception('unknown channel {}'.format(chan))
 
+# e = element.Element('sequence_element', clock=1e9, min_samples=0)
+# e.define_channel('ch1', delay=0e-9)
+# e.define_channel('ch2', delay=0e-9)
+# e.define_channel('ch3', delay=0e-9)
 
-e = element.Element('sequence_element', clock=5e9, min_samples=0)
-e.define_channel('ch1', delay=1e-9)
-e.define_channel('ch2', delay=10e-9)
-e.define_channel('ch3', delay=15e-9)
+# p1 = pulse.SquarePulse('ch1', 'square')
+# p2 = SomePulse('what a useless pulse')
 
-p1 = pulse.SquarePulse('ch1', 'square')
-p2 = SomePulse('what a useless pulse')
-
-# note here that by calling the pulse with options we can configure 
-# at insertion time.
-# a difference with Lucio's sequencer: the reference time is evaluated
-# at insertion time, i.e. manipulation of pulses inside the element
-# (they are deep copies) can break the reference relation!
-e.add(pulse.cp(p1, amplitude=1, length=10e-8), name='reference')
-e.add(pulse.cp(p1, amplitude=0.5, length=10e-9), t0=10e-9, 
-    refpulse='reference', refpoint='end')
-e.add(pulse.cp(p2, 1e7, 1, 1e-7), t0=10e-9)
+# # note here that by calling the pulse with options we can configure 
+# # at insertion time.
+# # a difference with Lucio's sequencer: the reference time is evaluated
+# # at insertion time, i.e. manipulation of pulses inside the element
+# # (they are deep copies) can break the reference relation!
+# e.add(pulse.cp(p1, amplitude=1, length=10e-8), name='reference')
+# e.add(pulse.cp(p1, amplitude=0.5, length=10e-9), start=10e-9, 
+#     refpulse='reference', refpoint='end')
+# e.add(pulse.cp(p2, 1e7, 1, 1e-7), start=10e-9)
 
 # e.print_overview()
 # view.show_element(e, delay=True) # if delay is false, the channel delay shift
-                         # is omitted in the plots (channels are offset then)
+#                                  # is omitted in the plots (channels are offset then)
 
-e2 = element.Element('sequence_element', clock=1e9, min_samples=0)
-e2.define_channel('ch1', delay=0e-9)
-e2.define_channel('ch2', delay=0e-9)
-e2.define_channel('ch3', delay=0e-9)
+e2 = element.Element('sequence_element', clock=1e9, min_samples=0,
+    global_time=True, time_offset=1.236e-6)
+
+e2.define_channel('ch1', delay=110e-9)
+e2.define_channel('ch2', delay=100e-9)
+e2.define_channel('ch3', delay=120e-9)
 
 e2.append(
-    pulse.cp(p1, amplitude=1, length=10e-8),
+    pulse.cp(p1, amplitude=1, length=100e-9),
     pulse.cp(p1, amplitude=0.5, length=10e-9),
     pulse.cp(p2, 1e7, 1, 1e-7))
 
 e2.print_overview()
+
+print e2.next_pulse_time('ch1'), e2.next_pulse_time('ch2'), \
+    e2.next_pulse_time('ch3')
+print e2.next_pulse_global_time('ch1'), e2.next_pulse_global_time('ch2'), \
+    e2.next_pulse_global_time('ch3')
+
 view.show_element(e2, delay=True)

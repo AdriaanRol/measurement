@@ -6,9 +6,9 @@ import matplotlib.pyplot as plt
 from numpy import *
 
 #measurement parameters
-name = 'SIL9-ZPL'
+name = 'SIL1-PSB'
 steps=20
-max_power=500e-6       #[w]
+max_power=400e-6       #[w]
 counter=2          #number of counter
 bg_x=2            #delta x position of background [um]
 bg_y=0             #delta y position of background [um]

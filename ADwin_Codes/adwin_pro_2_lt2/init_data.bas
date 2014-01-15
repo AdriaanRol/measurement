@@ -5,13 +5,13 @@
 ' Control_long_Delays_for_Stop   = No
 ' Priority                       = High
 ' Version                        = 1
-' ADbasic_Version                = 5.0.6
+' ADbasic_Version                = 5.0.8
 ' Optimize                       = Yes
 ' Optimize_Level                 = 1
 ' Info_Last_Save                 = TUD276629  TUD276629\localadmin
 '<Header End>
 '#INCLUDE ADwinPro_All.inc
-'#INCLUDE configuration.inc
+'#INCLUDE .\configuration.inc
 
 'Linescan:
 DIM DATA_1[8] AS FLOAT
@@ -33,15 +33,18 @@ DIM DATA_7[100] AS LONG
 'DIM DATA_51[10000] AS FLOAT
 
 'Resonant counting, simple counting
-'DIM DATA_41[10000] AS FLOAT
-'DIM DATA_42[10000] AS FLOAT
-'DIM DATA_43[10000] AS FLOAT
-'DIM DATA_44[10000] AS FLOAT
-'DIM DATA_45[4] AS LONG
+DIM DATA_41[10000] AS FLOAT
+DIM DATA_42[10000] AS FLOAT
+DIM DATA_43[10000] AS FLOAT
+DIM DATA_44[10000] AS FLOAT
+DIM DATA_45[4] AS LONG
 
 'Singleshot adwin:
-DIM DATA_20[25] AS LONG
-DIM DATA_21[10] AS FLOAT
+DIM DATA_19[1000] AS FLOAT AT EM_LOCAL 
+DIM DATA_20[100] AS LONG
+DIM DATA_21[100] AS FLOAT
+DIM DATA_30[100] AS LONG
+DIM DATA_31[100] AS FLOAT
 'DIM DATA_22[10000] AS LONG AT EM_LOCAL  
 'DIM DATA_23[10000] AS LONG AT EM_LOCAL  
 'DIM DATA_24[500] AS LONG AT EM_LOCAL      

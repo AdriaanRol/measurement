@@ -26,9 +26,6 @@ class AdwinSSRO(m2.AdwinControlledMeasurement):
     A_aom = None
     repump_aom = None
     adwin = None
-    
-    def __init__(self, name):
-        m2.AdwinControlledMeasurement.__init__(self, name)
         
     def autoconfig(self):
         """
@@ -43,13 +40,70 @@ class AdwinSSRO(m2.AdwinControlledMeasurement):
                 [self.A_aom.get_pri_channel()]
         self.params['repump_laser_DAC_channel'] = self.adwin.get_dac_channels()\
                 [self.repump_aom.get_pri_channel()]        
-        self.params['gate_DAC_channel'] = self.adwin.get_dac_channels()\
-                ['gate']
+        #NOTE: gate is not none for lt2: maybe an except statement here
+        #self.params['gate_DAC_channel'] = self.adwin.get_dac_channels()\
+        #        ['gate']
+
+        self.params['Ex_CR_voltage'] = \
+                self.E_aom.power_to_voltage(
+                        self.params['Ex_CR_amplitude'])
+        
+        self.params['A_CR_voltage'] = \
+                self.A_aom.power_to_voltage(
+                        self.params['A_CR_amplitude'])
+
+        self.params['Ex_SP_voltage'] = \
+                self.E_aom.power_to_voltage(
+                        self.params['Ex_SP_amplitude'])
+
+        self.params['A_SP_voltage'] = \
+                self.A_aom.power_to_voltage(
+                        self.params['A_SP_amplitude'])
+
+        self.params['Ex_RO_voltage'] = \
+                self.E_aom.power_to_voltage(
+                        self.params['Ex_RO_amplitude'])
+
+        self.params['A_RO_voltage'] = \
+                self.A_aom.power_to_voltage(
+                        self.params['A_RO_amplitude'])
+                       
+        self.params['repump_voltage'] = \
+                self.repump_aom.power_to_voltage(
+                        self.params['repump_amplitude'])
+
+        self.params['repump_off_voltage'] = \
+                self.repump_aom.get_pri_V_off()
+        self.params['A_off_voltage'] = \
+                self.A_aom.get_pri_V_off()
+        self.params['Ex_off_voltage'] = \
+                self.E_aom.get_pri_V_off()
+
+        for key,_val in self.adwin_dict[self.adwin_processes_key]\
+                [self.adwin_process]['params_long']:              
+            self.set_adwin_process_variable_from_params(key)
+
+        for key,_val in self.adwin_dict[self.adwin_processes_key]\
+                [self.adwin_process]['params_float']:              
+            self.set_adwin_process_variable_from_params(key)
+
+        if 'include_cr_process' in self.adwin_dict[self.adwin_processes_key]\
+                [self.adwin_process]:
+            for key,_val in self.adwin_dict[self.adwin_processes_key]\
+                    [self.adwin_dict[self.adwin_processes_key]\
+                [self.adwin_process]['include_cr_process']]['params_long']:              
+                self.set_adwin_process_variable_from_params(key)
+            for key,_val in self.adwin_dict[self.adwin_processes_key]\
+                    [self.adwin_dict[self.adwin_processes_key]\
+                [self.adwin_process]['include_cr_process']]['params_float']:              
+                self.set_adwin_process_variable_from_params(key)
+
+        
 
     def setup(self):
         """
         sets up the hardware such that the msmt can be run
-        (i.e., turn of the lasers, prepare MW src, etc)
+        (i.e., turn off the lasers, prepare MW src, etc)
         """
         
         self.repump_aom.set_power(0.)
@@ -62,57 +116,21 @@ class AdwinSSRO(m2.AdwinControlledMeasurement):
         self.E_aom.set_power(0.)
         self.A_aom.set_power(0.)        
     
+    def set_adwin_process_variable_from_params(self,key):
+        try:
+                self.adwin_process_params[key] = self.params[key]
+        except:
+            logging.error("Cannot set adwin process variable '%s'" \
+                    % key)
+            raise Exception('Adwin process variable {} has not been set \
+                                in the measurement params dictionary!'.format(key))
+
     def run(self, autoconfig=True, setup=True):
         if autoconfig:
             self.autoconfig()
             
         if setup:
             self.setup()
-            
-        for key,_val in self.adwin_dict[self.adwin_processes_key]\
-                [self.adwin_process]['params_long']:
-            try:
-                self.adwin_process_params[key] = self.params[key]
-            except:
-                logging.error("Cannot set adwin process variable '%s'" \
-                        % key)
-                return False
-
-        self.adwin_process_params['Ex_CR_voltage'] = \
-                self.E_aom.power_to_voltage(
-                        self.params['Ex_CR_amplitude'])
-        
-        self.adwin_process_params['A_CR_voltage'] = \
-                self.A_aom.power_to_voltage(
-                        self.params['A_CR_amplitude'])
-
-        self.adwin_process_params['Ex_SP_voltage'] = \
-                self.E_aom.power_to_voltage(
-                        self.params['Ex_SP_amplitude'])
-
-        self.adwin_process_params['A_SP_voltage'] = \
-                self.A_aom.power_to_voltage(
-                        self.params['A_SP_amplitude'])
-
-        self.adwin_process_params['Ex_RO_voltage'] = \
-                self.E_aom.power_to_voltage(
-                        self.params['Ex_RO_amplitude'])
-
-        self.adwin_process_params['A_RO_voltage'] = \
-                self.A_aom.power_to_voltage(
-                        self.params['A_RO_amplitude'])
-                       
-        self.adwin_process_params['repump_voltage'] = \
-                self.repump_aom.power_to_voltage(
-                        self.params['repump_amplitude'])
-                
-        self.adwin_process_params['repump_off_voltage'] = \
-                self.params['repump_off_voltage']
-        self.adwin_process_params['A_off_voltage'] = \
-                self.params['A_off_voltage']
-        self.adwin_process_params['Ex_off_voltage'] = \
-                self.params['Ex_off_voltage']
-        
         self.start_adwin_process(stop_processes=['counter'])
         qt.msleep(1)
         self.start_keystroke_monitor('abort',timer=False)
@@ -126,6 +144,7 @@ class AdwinSSRO(m2.AdwinControlledMeasurement):
                 break
             
             reps_completed = self.adwin_var('completed_reps')
+            #print self.adwin_var('total_CR_counts')
             CR_counts = self.adwin_var('total_CR_counts') - CR_counts
             
             print('completed %s / %s readout repetitions' % \
@@ -200,7 +219,9 @@ class IntegratedSSRO(AdwinSSRO):
     def save(self, name='ssro'):
         reps = self.adwin_var('completed_reps')
         self.save_adwin_data(name,
-                [   ('SP_hist', self.params['SP_duration']),
+                [   ('CR_before', reps),
+                    ('CR_after', reps),
+                    ('SP_hist', self.params['SP_duration']),
                     ('RO_data', self.params['pts']),
                     ('statistics', 10),
                     'completed_reps',

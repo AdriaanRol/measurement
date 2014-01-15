@@ -11,7 +11,7 @@
 ' Info_Last_Save                 = TUD276629  TUD276629\localadmin
 '<Header End>
 #Include ADwinPro_All.Inc
-#INCLUDE configuration.inc
+#INCLUDE .\configuration.inc
 
 Dim Data_1[10000] As Long
 Dim i As Long

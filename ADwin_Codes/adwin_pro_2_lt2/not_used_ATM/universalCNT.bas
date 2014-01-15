@@ -23,7 +23,7 @@
 
 
 #INCLUDE ADwinPro_All.inc
-#INCLUDE configuration.inc
+#INCLUDE .\configuration.inc
 DIM int_time AS LONG
 DIM channels  AS LONG
 DIM initialize_ctr AS LONG

@@ -42,7 +42,7 @@ class Tektronix_AWG5014(Instrument):
     3) Add docstrings
 
     CHANGES:
-    26-11-2008 by Gijs: Copied this plugin from the 520 and added support for 2 more channels, added setget marker delay functions and increased max sampling freq to 1.2 	GS/s
+    26-11-2008 by Gijs: Copied this plugin from the 520 and added support for 2 more channels, added setget marker delay functions and increased max sampling freq to 1.2   GS/s
     28-11-2008 ''  '' : Added some functionality to manipulate and manoeuvre through the folders on the AWG 
     '''
 
@@ -91,7 +91,7 @@ class Tektronix_AWG5014(Instrument):
         self.add_parameter('amplitude', type=types.FloatType,
             flags=Instrument.FLAG_GETSET | Instrument.FLAG_GET_AFTER_SET,
             channels=(1, 2, 3 ,4), minval=0, maxval=4.6, units='Volts', channel_prefix='ch%d_')
-	self.add_parameter('offset', type=types.FloatType,
+        self.add_parameter('offset', type=types.FloatType,
             flags=Instrument.FLAG_GETSET | Instrument.FLAG_GET_AFTER_SET,
             channels=(1, 2, 3, 4), minval=-2.25, maxval=2.25, units='Volts', channel_prefix='ch%d_')
         self.add_parameter('marker1_low', type=types.FloatType,
@@ -100,7 +100,7 @@ class Tektronix_AWG5014(Instrument):
         self.add_parameter('marker1_high', type=types.FloatType,
             flags=Instrument.FLAG_GETSET | Instrument.FLAG_GET_AFTER_SET,
             channels=(1, 2, 3, 4), minval=-2.7, maxval=2.7, units='Volts', channel_prefix='ch%d_')
-	self.add_parameter('marker1_delay', type=types.FloatType,
+        self.add_parameter('marker1_delay', type=types.FloatType,
             flags=Instrument.FLAG_GETSET | Instrument.FLAG_GET_AFTER_SET,
             channels=(1, 2, 3, 4), minval=0, maxval=1, units='ns', channel_prefix='ch%d_')
         self.add_parameter('marker2_low', type=types.FloatType,
@@ -109,7 +109,7 @@ class Tektronix_AWG5014(Instrument):
         self.add_parameter('marker2_high', type=types.FloatType,
             flags=Instrument.FLAG_GETSET | Instrument.FLAG_GET_AFTER_SET,
             channels=(1, 2, 3, 4), minval=-2.7, maxval=2.7, units='Volts', channel_prefix='ch%d_')
-	self.add_parameter('marker2_delay', type=types.FloatType,
+        self.add_parameter('marker2_delay', type=types.FloatType,
             flags=Instrument.FLAG_GETSET | Instrument.FLAG_GET_AFTER_SET,
             channels=(1, 2, 3, 4), minval=0, maxval=1, units='ns', channel_prefix='ch%d_')
         self.add_parameter('status', type=types.StringType,
@@ -120,10 +120,33 @@ class Tektronix_AWG5014(Instrument):
         self.add_function('reset')
         self.add_function('get_all')
         self.add_function('clear_waveforms')
+        self.add_function('delete_all_waveforms_from_list')
         self.add_function('set_trigger_mode_on')
         self.add_function('set_trigger_mode_off')
         self.add_function('set_trigger_impedance_1e3')
         self.add_function('set_trigger_impedance_50')
+        self.add_function('import_waveform_file')
+        self.add_function('import_and_load_waveform_file_to_channel')
+        self.add_function('set_filename')
+        self.add_function('get_filenames')
+        self.add_function('send_waveform')
+        self.add_function('resend_waveform')
+        self.add_function('set_sqel_goto_state')
+        self.add_function('set_sqel_waveform')
+        self.add_function('set_sqel_loopcnt')
+        self.add_function('set_sqel_trigger_wait')
+        self.add_function('set_sqel_goto_target_index')
+        self.add_function('set_sqel_loopcnt_to_inf')
+        self.add_function('set_sqel_event_jump_type')
+        self.add_function('set_sqel_event_jump_target_index')
+        self.add_function('start')
+        self.add_function('stop')
+        self.add_function('set_runmode')
+        self.add_function('set_sq_length')
+        self.add_function('get_state')
+        self.add_function('get_runmode')
+        self.add_function('set_event_jump_timing')
+        self.add_function('get_event_jump_timing')
 
         if reset:
             self.reset()
@@ -160,9 +183,7 @@ class Tektronix_AWG5014(Instrument):
         self._visainstrument.write('AWGC:RUN')
 
     def stop(self):
-        self._visainstrument.write('AWGC:STOP')
-
-    
+        self._visainstrument.write('AWGC:STOP')    
 
     def get_folder_contents(self):
         return self._visainstrument.ask('mmem:cat?')
@@ -439,7 +460,7 @@ class Tektronix_AWG5014(Instrument):
     def _do_get_runmode(self):
         self._runmode = self._visainstrument.ask('AWGC:RMOD?')
         return self._runmode
-    def get_runmode(self, runmode='CONT'):
+    def get_runmode(self):
         return self._do_get_runmode()
     
     def set_runmode(self, runmode='CONT'):
@@ -506,6 +527,12 @@ class Tektronix_AWG5014(Instrument):
     def sq_forced_jump(self, jump_index_no):
         self._visainstrument.write('SEQ:JUMP:IMM %s' %jump_index_no)
 
+    def set_event_jump_timing(self, mode):
+        self._visainstrument.write('EVEN:JTIM %s' %(mode))
+
+    def get_event_jump_timing(self):
+        return self._visainstrument.ask('EVEN:JTIM?')
+
 ###################################################################
 
 
@@ -549,7 +576,7 @@ class Tektronix_AWG5014(Instrument):
         self._visainstrument.write('mmem:imp "%s","%s",%s'%(waveform_listname, waveform_filename, type))
     
     def import_and_load_waveform_file_to_channel(self, channel_no ,waveform_listname,waveform_filename,type='wfm'):
-        self._import_and_load_waveform_file_to_channel(channel_no ,waveform_listname,waveform_filename)
+        self._import_and_load_waveform_file_to_channel(channel_no ,waveform_listname,waveform_filename)   
     def _import_and_load_waveform_file_to_channel(self, channel_no ,waveform_listname,waveform_filename,type='wfm'):
         self._visainstrument.write('mmem:imp "%s","%s",%s'%(waveform_listname, waveform_filename, type))
         self._visainstrument.write('sour%s:wav "%s"' %(channel_no,waveform_listname))

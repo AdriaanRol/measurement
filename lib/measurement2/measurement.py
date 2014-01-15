@@ -196,17 +196,19 @@ class Measurement(object):
 
     keystroke_monitor_interval = 1000 # [ms]
 
-    def __init__(self, name):
+    def __init__(self, name, save=True):
         self.name = name
-        self.dataset_idx = 0
         self.params = MeasurementParameters()
-        self.h5data = h5.HDF5Data(name=self.mprefix+'_'+self.name)
-        self.h5datapath = self.h5data.filepath()
-        self.h5base = '/'+self.name+'/'
-        self.h5basegroup = self.h5data.create_group(self.name)
-        self.datafolder = self.h5data.folder()
-        self.keystroke_monitors = {}
         
+        if save:
+            self.dataset_idx = 0
+            self.h5data = h5.HDF5Data(name=self.mprefix+'_'+self.name)
+            self.h5datapath = self.h5data.filepath()
+            self.h5base = '/'+self.name+'/'
+            self.h5basegroup = self.h5data.create_group(self.name)
+            self.datafolder = self.h5data.folder()
+        
+        self.keystroke_monitors = {}
         self.params['measurement_type'] = self.mprefix
 
         # self.h5data.flush()
@@ -215,14 +217,6 @@ class Measurement(object):
         '''
         save stack files, i.e. exectuted scripts, classes and so forth,
         into the subfolder specified by STACK_DIR.
-        the depth specifies how many files are saved:
-        - 1 is only the executing script,
-        - 2 adds the module that it imports that contains the measurement
-          class,
-        - 3 the module that is imported by the module in step 2 (the more
-          basic class), and so forth.
-        the desired value of depth depends therefore on the way the code is
-        organized and how much is supposed to be saved.
         '''
         sdir = os.path.join(self.datafolder, self.STACK_DIR)
         if not os.path.isdir(sdir):
@@ -230,9 +224,11 @@ class Measurement(object):
         
         # pprint.pprint(inspect.stack())
         
-        for i in range(depth):
-            # print inspect.stack()[i][1]
+        stack = inspect.stack()
+        i = 0
+        while stack[i][1][-3:] == '.py':
             shutil.copy(inspect.stack()[i][1], sdir)
+            i+=1
 
     def add_file(self, filepath):
         '''
@@ -355,8 +351,8 @@ class AdwinControlledMeasurement(Measurement):
     mprefix = 'AdwinMeasurement'
     adwin_process = ''
 
-    def __init__(self, name):
-        Measurement.__init__(self, name)
+    def __init__(self, name, save=True):
+        Measurement.__init__(self, name, save=save)
 
         self.adwin_process_params = MeasurementParameters('AdwinParameters')
 
@@ -432,6 +428,75 @@ class AdwinControlledMeasurement(Measurement):
         if adsrc != None:
             shutil.copy(adsrc, sdir)
 
+class MultipleAdwinsMeasurement(Measurement):
+
+    mprefix = 'MultipleAdwinsMeasurement'
+    adwins = {}
+
+    def __init__(self, name, save=True):
+        Measurement.__init__(self, name, save=save)
+
+        self.adwin_process_params = {} 
+        for a in self.adwins:
+            self.adwin_process_params[a] = \
+                MeasurementParameters('{}Parameters'.format(a))
+
+    def start_adwin_process(self, adwin, load=True, stop_processes=[]):
+        proc = getattr(self.adwins[adwin]['ins'], 
+            'start_'+self.adwins[adwin]['process'])
+        proc(load=load, stop_processes=stop_processes,
+                **self.adwin_process_params[adwin].to_dict())
+
+    def stop_adwin_process(self, adwin):
+        func = getattr(self.adwins[adwin]['ins'], 
+            'stop_'+self.adwins[adwin]['process'])
+        return func()
+
+    def save_adwin_data(self, adwin, name, variables):
+        grp = h5.DataGroup("{}_{}".format(adwin, name), self.h5data, 
+                base=self.h5base)
+        
+        for v in variables:
+            name = v if type(v) == str else v[0]
+            data = self.adwin_var(adwin, v)
+            if data != None:
+                grp.add(name,data=data)
+
+        # save all parameters in each group (could change per run!)
+        self.save_params(grp=grp.group)  
+
+        # then save all specific adwin params, overwriting other params
+        # if double
+        adwinparams = self.adwin_process_params[adwin].to_dict()
+        for k in adwinparams:
+            grp.group.attrs[k] = adwinparams[k]
+
+        self.h5data.flush()
+
+    def adwin_process_running(self, adwin):
+        func = getattr(self.adwins[adwin]['ins'], 
+            'is_'+self.adwins[adwin]['process']+'_running')
+        return func()
+
+    def adwin_var(self, adwin, var):
+        v = var
+        getfunc = getattr(self.adwins[adwin]['ins'], 
+            'get_'+self.adwins[adwin]['process']+'_var')
+        
+        if type(v) == str:
+                return getfunc(v)
+        elif type(v) == tuple:
+            if len(v) == 2:
+                return getfunc(v[0], length=v[1])
+            elif len(v) == 3:
+                return getfunc(v[0], start=v[1], length=v[2])
+            else:
+                logging.warning('Cannot interpret variable tuple, ignore: %s' % \
+                        str(v))
+        else:
+            logging.warning('Cannot interpret variable, ignore: %s' % \
+                    str(v))
+        return None
 
 class SequencerMeasurement(Measurement):
     

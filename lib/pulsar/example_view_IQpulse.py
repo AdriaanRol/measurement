@@ -9,7 +9,6 @@ reload(element)
 reload(view)
 reload(pulselib)
 
-
 e = element.Element('sequence_element', clock=1e9, min_samples=0)
 e.define_channel('MW_Imod')
 e.define_channel('MW_Qmod')
@@ -25,4 +24,7 @@ X = pulselib.MW_IQmod_pulse('Weak pi-pulse',
 
 e.add(X)
 e.print_overview()
+print e.next_pulse_time('MW_Imod'), e.next_pulse_time('MW_Qmod'), \
+    e.next_pulse_time('MW_pulsemod')
+
 view.show_element(e)

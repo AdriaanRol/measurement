@@ -113,6 +113,7 @@ class adwin_lt1(adwin):
             'none' : adwin only steps
             'counts+suppl' : counts per pixel, plus adwin will record
                 the value of FPar #2 as supplemental data
+            'counter_process' : counts from the running counter process
             in any case, the pixel clock will be incremented for each step.
         scan_to_start = False : bool
             if True, scan involved dacs to start first 
@@ -163,6 +164,7 @@ class adwin_lt1(adwin):
                 'none' : 0,
                 'counts' : 1,
                 'counts+suppl' : 2,
+                'counter_process' : 3,
                 }
         self.physical_adwin.Set_Par(p['par']['set_px_action'],px_actions[value])
         self.physical_adwin.Start_Process(p['index'])

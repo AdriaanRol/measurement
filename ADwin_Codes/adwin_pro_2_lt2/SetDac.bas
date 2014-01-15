@@ -12,7 +12,7 @@
 '<Header End>
 'DIM ret_val AS INTEGER
 #INCLUDE ADwinPro_All.inc
-#INCLUDE configuration.inc
+#INCLUDE .\configuration.inc
 DIM value, time AS LONG
 
 EVENT:

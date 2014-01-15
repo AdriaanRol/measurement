@@ -34,7 +34,41 @@ config['hydraharp'] = {
            # 'cable_delay' : 0., },
         # }
 
-config['spin'] = {
+config['mw'] = {
+        'MW_pulsemod': {
+            'AWG_channel' : 'ch1m1',
+            'high' : 2.0,
+            'low' : 0.0,
+            'default_voltage':0.0,
+            'cable_delay' : 20,
+            },
+        'MW_Imod' : {
+            'AWG_channel' : 'ch1',
+            'high' : 0.9,
+            'low' : -0.9,
+            'cable_delay': 0,
+            },
+        'MW_Qmod' : {
+            'AWG_channel' : 'ch3',
+            'high' : 0.9,
+            'low' : -0.9,
+            'cable_delay': 0,
+            },
+        'RF' : {
+            'AWG_channel' : 'ch2',
+            'high' : 1.,
+            'low' : -1.,
+            'cable_delay': 0,
+            },
+        'adwin_sync' : {
+            'AWG_channel' : 'ch3m2',
+            'high' : 2.,
+            'low' : 0.,
+            'cable_delay': 0,
+            },
+        }
+        
+config['mw_weak_meas'] = {
         'MW_pulsemod': {
             'AWG_channel' : 'ch1m1',
             'high' : 2.0,
@@ -60,7 +94,7 @@ config['spin'] = {
             'low' : -1.,
             'cable_delay': 242,
             },
-        'ADwin_trigger' : {
+        'adwin_sync' : {
             'AWG_channel' : 'ch1m2',
             'high' : 2.,
             'low' : 0.,
@@ -68,34 +102,34 @@ config['spin'] = {
             },
         }
         
-# config['LDE'] = {
-       # 'EOM_Matisse' : {
-            # 'AWG_channel' : 'ch4',
-            # 'high' : 1.5,
-            # 'low' : -1.5,
-            # 'cable_delay' : 234, 
-            # 'default_voltage' : 0.0,
-            # },
-        # 'EOM_AOM_Matisse' : {
-            # 'AWG_channel' : 'ch4m1',
-            # 'high' : 1.0,
-            # 'low' : 0.01,
-            # 'cable_delay' : 445, 
-            # },
-        # 'AOM_Newfocus' : {
-            # 'AWG_channel' : 'ch2m1',
-            # 'high' : 0.8,
-            # 'low' : 0.0, 
-            # 'cable_delay' : 525, 
-            # },
-        # 'PLU_gate' : {
-            # 'AWG_channel' : 'ch4m2',
-            # 'high' : 2.,
-            # 'low' : 0.,
-            # 'default_voltage' : 0.0,
-            # 'cable_delay' : 133, #87#145
-            # },
-        # }
+config['LDE'] = {
+        'EOM_Matisse' : {
+             'AWG_channel' : 'ch4',
+             'high' : 1.5,
+             'low' : -1.5,
+             'cable_delay' : 234, 
+             'default_voltage' : 0.0,
+             },
+         'EOM_AOM_Matisse' : {
+             'AWG_channel' : 'ch4m1',
+             'high' : 1.0,
+             'low' : 0.01,
+             'cable_delay' : 445, 
+             },
+         'AOM_Newfocus' : {
+             'AWG_channel' : 'ch2m1',
+             'high' : 0.8,
+             'low' : 0.0, 
+             'cable_delay' : 525, 
+             },
+         'PLU_gate' : {
+             'AWG_channel' : 'ch4m2',
+             'high' : 2.,
+             'low' : 0.,
+             'default_voltage' : 0.0,
+             'cable_delay' : 133, #87#145
+             },
+         }
 
 config['yellow'] ={
         'AOM_Yellow' : {
@@ -124,7 +158,7 @@ config['optical_rabi'] = {
             'high' : 0.8,
             'cable_delay' : 525, 
             },        
-        'ADwin_trigger' : {
+        'adwin_sync' : {
             'AWG_channel' : 'ch1m2',
             'high' : 2.,
             'low' : 0.,

@@ -90,6 +90,9 @@ class monitor_cryo(MonitorInstrument):
             self._data.add_value('level He1')
             self._data.add_value('level He2')
             self._data.add_value('temperature_lt2')
+            self._data.add_value('He1 consumption')
+            self._data.add_value('He2 consumption')
+
             if self._monitor_lt1:
                 self._data.add_value('temperature_lt1_A')
                 self._data.add_value('temperature_lt1_B')
@@ -102,13 +105,24 @@ class monitor_cryo(MonitorInstrument):
             self._plt.add(self._data, 'k-', coorddim=0, valdim=3,
                     right=True)
             if self._monitor_lt1:
-                self._plt.add(self._data, 'g-', coorddim=0, valdim=4,
+                self._plt.add(self._data, 'g-', coorddim=0, valdim=6,
                     right=True)
-                self._plt.add(self._data, 'y+', coorddim=0, valdim=5,
+                self._plt.add(self._data, 'y+', coorddim=0, valdim=7,
                     right=True)
             self._plt.set_xlabel('time (hours)')
             self._plt.set_ylabel('filling level (cm)')
             self._plt.set_y2label('T (K)')
+
+            self._plt_rates = qt.Plot2D(self._data, 'ro', name=self._name+'_He_consumption',
+                coorddim=0, valdim=4, clear=True)
+            self._plt_rates.add(self._data, 'bo', coorddim=0, valdim=5)
+            self._plt_rates.set_xlabel('time (hours)')
+            self._plt_rates.set_ylabel('consumption (cm/h)')
+
+            self._rate_update_interval = 1 # hours
+            self._rate_times = []
+            self._rate_levels1 = []
+            self._rate_levels2 = []
         
         elif self._recording and not val:
             self._recording = val
@@ -205,11 +219,28 @@ class monitor_cryo(MonitorInstrument):
 	
         t_num = time.time()	
         t_str = time.asctime()
+        
+        self._rate_times.append((t_num-self._T0)/3600.)
+        self._rate_levels1.append(lev1_flt)
+        self._rate_levels2.append(lev2_flt)
+        i = 0
+        while self._rate_times[i] < (((t_num-self._T0)/3600.) - self._rate_update_interval):
+            self._rate_times = self._rate_times[1:]
+            self._rate_levels1 = self._rate_levels1[1:]
+            self._rate_levels2 = self._rate_levels2[1:]
+
+        if len(self._rate_times) > 1:
+            rate1 = (self._rate_levels1[0] - self._rate_levels1[-1])/(self._rate_times[-1] - self._rate_times[0])
+            rate2 = (self._rate_levels2[0] - self._rate_levels2[-1])/(self._rate_times[-1] - self._rate_times[0])
+        else:
+            rate1 = 0
+            rate2 = 0
+
         print('current time: %s'%t_str)
         print('current cryovac levelmeter reading:')
         print('  LHe1 (upper tank): %s'%(lev1))
         print('  LHe2 (lower tank): %s'%(lev2))
-    
+
         volt = 'n/a'
         keith_meas = self._keithley.ask(':func?')
         if keith_meas == '"VOLT:DC"':
@@ -218,9 +249,12 @@ class monitor_cryo(MonitorInstrument):
             print('current temperature: %.3f'%(self.get_temperature()))
 		
         if self.get_save_data():
-            with open('//tudelft.net/staff-groups/tnw/ns/qt/Diamond/setups/LT2/cryo.txt','a') as f:
-                f.write('%.0f\t%s\t%s\t%s\t%.3f V\n'%(t_num,t_str,lev1,lev2,volt))
-                f.close()
+            try:
+                with open('//tudelft.net/staff-groups/tnw/ns/qt/Diamond/setups/LT2/cryo.txt','a') as f:
+                    f.write('%.0f\t%s\t%s\t%s\t%.3f V\n'%(t_num,t_str,lev1,lev2,volt))
+                    f.close()
+            except Exception:
+                print ' error writing on network disk'
                 
         if self.get_send_email():
             try:
@@ -240,7 +274,7 @@ class monitor_cryo(MonitorInstrument):
                       'This is below minimum values (LHe2 < %.3f'%(self.get_he2_lvl_min()) + ' cm'+ ', LHe1 < %.3f'%(self.get_he1_lvl_min()) +\
                       ', voltage < %.3f'%(self.get_temp_voltage_min()) + 'V ( = 6 K)). \n' + \
                       'Please help me!!!\n xxx LT2'
-            recipients  = ['B.J.Hensen@tudelft.nl', 'h.bernien@tudelft.nl', 'w.pfaff@tudelft.nl', 'M.S.Blok@tudelft.nl', 'julia.cramer@gmail.com','c.bonato@tudelft.nl']
+            recipients  = ['B.J.Hensen@tudelft.nl', 'h.bernien@tudelft.nl', 'w.pfaff@tudelft.nl', 'M.S.Blok@tudelft.nl', 'julia.cramer@gmail.com','c.bonato@tudelft.nl','t.h.taminiau@tudelft.nl']
             #recipients  = 'B.J.Hensen@tudelft.nl'
             print message
             if self.get_send_email():
@@ -276,10 +310,10 @@ class monitor_cryo(MonitorInstrument):
 						print 'Warning email message sent'
 
             if self.get_recording():
-                self._data.add_data_point((t_num-self._T0)/3600., lev1_flt, lev2_flt, self.get_temperature(),temp_A, temp_B)
+                self._data.add_data_point((t_num-self._T0)/3600., lev1_flt, lev2_flt, self.get_temperature(), rate1, rate2, temp_A, temp_B)
         else:
             if self.get_recording():
-                self._data.add_data_point((t_num-self._T0)/3600., lev1_flt, lev2_flt, self.get_temperature())
+                self._data.add_data_point((t_num-self._T0)/3600., lev1_flt, lev2_flt, self.get_temperature(), rate1, rate2)
 
         return True
 

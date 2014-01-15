@@ -11,7 +11,7 @@
 ' Info_Last_Save                 = TUD276629  TUD276629\localadmin
 '<Header End>
 #INCLUDE ADwinPro_All.inc
-#INCLUDE configuration.inc
+#INCLUDE .\configuration.inc
 DIM start, stop, time AS LONG
 DIM index, i AS LONG
 DIM DATA_41[100] AS FLOAT

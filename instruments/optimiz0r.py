@@ -13,17 +13,17 @@ class optimiz0r(Instrument):
             'lt2': {
                 'x' : {
                     'scan_length' : 1.5,
-                    'nr_of_points' : 51,
+                    'nr_of_points' : 31,
 #                    'pixel_time' : 50,
                     },
                 'y' : {
                     'scan_length' : 1.0,
-                    'nr_of_points' : 51,
+                    'nr_of_points' : 31,
 #                    'pixel_time' : 50,
                     },
                 'z' : {
                     'scan_length' : 8.,
-                    'nr_of_points' : 51,
+                    'nr_of_points' : 31,
 #                    'pixel_time' : 50,
                     },
                 'zyx' : ['z','y','x'],
@@ -33,17 +33,17 @@ class optimiz0r(Instrument):
             'lt1' : {
                 'x' : {
                     'scan_length' : 1.,
-                    'nr_of_points' : 99,
+                    'nr_of_points' : 31,#99,
 #                    'pixel_time' : 50,
                     },
                 'y' : {
                     'scan_length' : 1.,
-                    'nr_of_points' : 99,
+                    'nr_of_points' : 31,#99,
 #                    'pixel_time' : 50,
                     },
                 'z' : {
                     'scan_length' : 2.,
-                    'nr_of_points' : 99,
+                    'nr_of_points' : 31,#99,
 #                    'pixel_time' : 50,
                     },
                 'zyx' : ['z','y','x'],
@@ -70,17 +70,13 @@ class optimiz0r(Instrument):
                 dims = self.dimensions[order]
 
             for d in dims:
-                position_before_opt = getattr(self.mos, 'get_'+d)()*1E3
-                ret=ret and self.opt1d_ins.run(dimension=d,counter = cnt, 
+                ret=ret and self.opt1d_ins.run(dimension=d, counter = cnt, 
                         pixel_time=int_time, **self.dimensions[d])
-                position_after_opt = getattr(self.mos, 'get_'+d)()*1E3
-
-                print "Position changed %d nm" % \
-                        (position_after_opt-position_before_opt)
-                
-                if msvcrt.kbhit():
-                    kb_char=msvcrt.getch()
-                    if kb_char == "q" : break
                 qt.msleep(1)
+            if msvcrt.kbhit():
+                kb_char=msvcrt.getch()
+                if kb_char == "q" : break
+                
+        
         return ret
     

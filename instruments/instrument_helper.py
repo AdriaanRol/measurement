@@ -1,3 +1,6 @@
+from lib import config
+import qt
+
 def create_get_set(ins,par_list):
     for par,kw in par_list.items():
         setattr(ins,'_'+par,kw.pop('val',None))
