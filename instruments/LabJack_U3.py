@@ -32,9 +32,9 @@ class LabJack_U3(Instrument):
 
     #####configuration of the LabJack
     DAC_reg = 5000 #for the communication to the "intrinsic" dac
-    sclPins = [4,6] # number of LJTDAC modules that are connected to the labjack are
+    sclPins = [2,4,6] # number of LJTDAC modules that are connected to the labjack are
                     # given by the number of elements and the address by the values
-                    # connected to FIO4, FIO6
+                    # connected to FIO2, FIO4, FIO6
     EEPROM_ADDRESS = 0x50
     DAC_ADDRESS = 0x12
 
@@ -45,17 +45,17 @@ class LabJack_U3(Instrument):
 
         self._LJ = u3.U3()
         
-        self._LJ.writeRegister(50590, 15) #Setting FIO0-3 to analog, and the rest to digital...
-                                          #should be changed if FIO0-3 should be used for sth else
+        self._LJ.configIO(FIOAnalog=int('00000011',2)) #all FIO3-8 set to digital 0-2 analog
+                                          
         self.add_parameter('bipolar_dac',
                 flags=Instrument.FLAG_GETSET,
                 type=types.FloatType,
                 units='V',
                 minval=-10., maxval=10.,
-                channels=(0,1,2,3),
+                channels=(0,1,2,3,4,5),
                 doc='+/-10V dac with 14 bit resolution')
         
-        self.bipolar_dac_values=[0.0,0.0,0.0,0.0]
+        self.bipolar_dac_values=[0.0,0.0,0.0,0.0,0.0,0.0]
 
         self.add_parameter('dac',
              flags=Instrument.FLAG_GETSET,
@@ -68,7 +68,7 @@ class LabJack_U3(Instrument):
         self.add_parameter('analog_in',
                 flags=Instrument.FLAG_GET,
                 type=types.FloatType,
-                channels=(0,1,2,3),
+                channels=(0,1),
                 doc='0-2.4V anolog input with 12 bit resolution')
 
         self.dac_modules = {}
@@ -82,7 +82,7 @@ class LabJack_U3(Instrument):
             _f.write('')
             _f.close()
         
-        self._parlist = ['bipolar_dac0','bipolar_dac1','bipolar_dac2','bipolar_dac3']
+        self._parlist = ['bipolar_dac0','bipolar_dac1','bipolar_dac2','bipolar_dac3','bipolar_dac4','bipolar_dac5']
         self.ins_cfg = config.Config(cfg_fn)
         self.load_cfg()
         self.save_cfg()

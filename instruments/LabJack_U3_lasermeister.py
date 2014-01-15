@@ -46,9 +46,7 @@ class LabJack_U3_lasermeister(Instrument):
         self._LJ = u3.U3()
         
 		
-        self._LJ.configIO(FIOAnalog=0)
-        #self._LJ.writeRegister(50590, 15) #Setting FIO0-3 to analog, and the rest to digital...
-                                          #should be changed if FIO0-3 should be used for sth else
+        self._LJ.configIO(FIOAnalog=int('00000000',2)) #all FIO0-8 set to digital
         self.add_parameter('bipolar_dac',
                 flags=Instrument.FLAG_GETSET,
                 type=types.FloatType,
