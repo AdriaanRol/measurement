@@ -6,7 +6,7 @@ from lib import config
 
 class ServoMotor(Instrument):
 
-    def __init__(self, name, servo_controller='Servo'):
+    def __init__(self, name, servo_controller='Servo', min_pos=500, max_pos=2500):
         Instrument.__init__(self, name)
         self._ins_servo=qt.instruments[servo_controller]
         #print 'servo:', self._ins_servo
@@ -18,7 +18,7 @@ class ServoMotor(Instrument):
         self.add_parameter('position', 
                            type = types.IntType, 
                            flags = Instrument.FLAG_GETSET,
-                           minval=500, maxval=2500)
+                           minval=min_pos, maxval=max_pos)
         
         self.add_parameter('speed',
                            type=types.IntType,
