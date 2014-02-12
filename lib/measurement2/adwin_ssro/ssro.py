@@ -44,51 +44,61 @@ class AdwinSSRO(m2.AdwinControlledMeasurement):
         #self.params['gate_DAC_channel'] = self.adwin.get_dac_channels()\
         #        ['gate']
 
+        self.params['Ex_CR_voltage'] = \
+                self.E_aom.power_to_voltage(
+                        self.params['Ex_CR_amplitude'])
+        
+        self.params['A_CR_voltage'] = \
+                self.A_aom.power_to_voltage(
+                        self.params['A_CR_amplitude'])
+
+        self.params['Ex_SP_voltage'] = \
+                self.E_aom.power_to_voltage(
+                        self.params['Ex_SP_amplitude'])
+
+        self.params['A_SP_voltage'] = \
+                self.A_aom.power_to_voltage(
+                        self.params['A_SP_amplitude'])
+
+        self.params['Ex_RO_voltage'] = \
+                self.E_aom.power_to_voltage(
+                        self.params['Ex_RO_amplitude'])
+
+        self.params['A_RO_voltage'] = \
+                self.A_aom.power_to_voltage(
+                        self.params['A_RO_amplitude'])
+                       
+        self.params['repump_voltage'] = \
+                self.repump_aom.power_to_voltage(
+                        self.params['repump_amplitude'])
+
+        self.params['repump_off_voltage'] = \
+                self.repump_aom.get_pri_V_off()
+        self.params['A_off_voltage'] = \
+                self.A_aom.get_pri_V_off()
+        self.params['Ex_off_voltage'] = \
+                self.E_aom.get_pri_V_off()
+
         for key,_val in self.adwin_dict[self.adwin_processes_key]\
                 [self.adwin_process]['params_long']:              
-            self._set_adwin_process_variable_from_params(key)
-        
+            self.set_adwin_process_variable_from_params(key)
+
+        for key,_val in self.adwin_dict[self.adwin_processes_key]\
+                [self.adwin_process]['params_float']:              
+            self.set_adwin_process_variable_from_params(key)
+
         if 'include_cr_process' in self.adwin_dict[self.adwin_processes_key]\
                 [self.adwin_process]:
             for key,_val in self.adwin_dict[self.adwin_processes_key]\
                     [self.adwin_dict[self.adwin_processes_key]\
                 [self.adwin_process]['include_cr_process']]['params_long']:              
-                self._set_adwin_process_variable_from_params(key)
+                self.set_adwin_process_variable_from_params(key)
+            for key,_val in self.adwin_dict[self.adwin_processes_key]\
+                    [self.adwin_dict[self.adwin_processes_key]\
+                [self.adwin_process]['include_cr_process']]['params_float']:              
+                self.set_adwin_process_variable_from_params(key)
 
-        self.adwin_process_params['Ex_CR_voltage'] = \
-                self.E_aom.power_to_voltage(
-                        self.params['Ex_CR_amplitude'])
         
-        self.adwin_process_params['A_CR_voltage'] = \
-                self.A_aom.power_to_voltage(
-                        self.params['A_CR_amplitude'])
-
-        self.adwin_process_params['Ex_SP_voltage'] = \
-                self.E_aom.power_to_voltage(
-                        self.params['Ex_SP_amplitude'])
-
-        self.adwin_process_params['A_SP_voltage'] = \
-                self.A_aom.power_to_voltage(
-                        self.params['A_SP_amplitude'])
-
-        self.adwin_process_params['Ex_RO_voltage'] = \
-                self.E_aom.power_to_voltage(
-                        self.params['Ex_RO_amplitude'])
-
-        self.adwin_process_params['A_RO_voltage'] = \
-                self.A_aom.power_to_voltage(
-                        self.params['A_RO_amplitude'])
-                       
-        self.adwin_process_params['repump_voltage'] = \
-                self.repump_aom.power_to_voltage(
-                        self.params['repump_amplitude'])
-
-        self.adwin_process_params['repump_off_voltage'] = \
-                self.repump_aom.get_pri_V_off()
-        self.adwin_process_params['A_off_voltage'] = \
-                self.A_aom.get_pri_V_off()
-        self.adwin_process_params['Ex_off_voltage'] = \
-                self.E_aom.get_pri_V_off()
 
     def setup(self):
         """
@@ -106,7 +116,7 @@ class AdwinSSRO(m2.AdwinControlledMeasurement):
         self.E_aom.set_power(0.)
         self.A_aom.set_power(0.)        
     
-    def _set_adwin_process_variable_from_params(self,key):
+    def set_adwin_process_variable_from_params(self,key):
         try:
                 self.adwin_process_params[key] = self.params[key]
         except:

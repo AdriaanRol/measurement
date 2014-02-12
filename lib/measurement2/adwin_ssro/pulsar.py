@@ -73,11 +73,11 @@ class DarkESR(PulsarMeasurement):
     mprefix = 'PulsarDarkESR'
     
     def autoconfig(self):
-        PulsarMeasurement.autoconfig(self)
-        
         self.params['sequence_wait_time'] = \
             int(np.ceil(self.params['pulse_length']*1e6)+15)
-            
+
+        PulsarMeasurement.autoconfig(self)
+        
         self.params['sweep_name'] = 'MW frq (GHz)'
         self.params['sweep_pts'] = (np.linspace(self.params['ssbmod_frq_start'],
             self.params['ssbmod_frq_stop'], self.params['pts']) + \
@@ -127,10 +127,11 @@ class ElectronRabi(PulsarMeasurement):
     mprefix = 'ElectronRabi'
 
     def autoconfig(self):
-        PulsarMeasurement.autoconfig(self)
-        
         self.params['sequence_wait_time'] = \
             int(np.ceil(np.max(self.params['MW_pulse_durations'])*1e6)+10)
+        
+        PulsarMeasurement.autoconfig(self)
+
 
 
     def generate_sequence(self, upload=True):
@@ -178,10 +179,11 @@ class ElectronRamsey(PulsarMeasurement):
     mprefix = 'ElectronRamsey'
     
     def autoconfig(self):
-        PulsarMeasurement.autoconfig(self)
-        
         self.params['sequence_wait_time'] = \
             int(np.ceil(np.max(self.params['evolution_times'])*1e6)+10)
+
+        PulsarMeasurement.autoconfig(self)
+
 
     def generate_sequence(self, upload=True):
 
@@ -241,8 +243,8 @@ class ElectronT1(PulsarMeasurement):
     mprefix = 'ElectronT1'
 
     def autoconfig(self):
-        PulsarMeasurement.autoconfig(self)   
         self.params['wait_for_AWG_done'] = 1
+        PulsarMeasurement.autoconfig(self)   
 
         #Add initial and readout state options (ms=1, ms=0, ms=-1)
         #self.params['T1_initial_state'] = 'ms=0'
@@ -336,10 +338,10 @@ class RepElectronRamseys(ElectronRamsey):
     adwin_process='ssro_multiple_RO'
 
     def autoconfig(self):
-        PulsarMeasurement.autoconfig(self)
-        print 'ADwin process ', self.adwin_process
         self.params['sequence_wait_time'] = \
             int(np.ceil(np.max(self.params['evolution_times'])*1e3)+1)
+        PulsarMeasurement.autoconfig(self)
+
     def save(self, name='ssro'):
         reps = self.adwin_var('completed_reps')
         self.save_adwin_data(name,
@@ -362,15 +364,16 @@ class MBI(PulsarMeasurement):
                 self.params['nr_of_ROsequences'] * \
                 self.params['pts'] * \
                 self.params['reps_per_ROsequence']
-        
+                
+        self.params['Ex_MBI_voltage'] = \
+            self.E_aom.power_to_voltage(
+                    self.params['Ex_MBI_amplitude'])
         # Calling autoconfig from sequence.SequenceSSRO and thus 
         # from ssro.IntegratedSSRO after defining self.params['repetitions'], 
         # since the autoconfig of IntegratedSSRO uses this parameter.  
         PulsarMeasurement.autoconfig(self)
         
-        self.adwin_process_params['Ex_MBI_voltage'] = \
-            self.E_aom.power_to_voltage(
-                    self.params['Ex_MBI_amplitude'])
+
 
     def run(self, autoconfig=True, setup=True):
         if autoconfig:

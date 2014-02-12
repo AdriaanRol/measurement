@@ -28,13 +28,13 @@ import os
 import qt
 from lib import config
 
-class LabJack_U3(Instrument):
+class LabJack_U3_lasermeister(Instrument):
 
     #####configuration of the LabJack
     DAC_reg = 5000 #for the communication to the "intrinsic" dac
-    sclPins = [2,4,6] # number of LJTDAC modules that are connected to the labjack are
+    sclPins = [0,2,4,6] # number of LJTDAC modules that are connected to the labjack are
                     # given by the number of elements and the address by the values
-                    # connected to FIO2, FIO4, FIO6
+                    # connected to FIO0, FIO2, FIO4, FIO6
     EEPROM_ADDRESS = 0x50
     DAC_ADDRESS = 0x12
 
@@ -45,17 +45,17 @@ class LabJack_U3(Instrument):
 
         self._LJ = u3.U3()
         
-        self._LJ.configIO(FIOAnalog=int('00000011',2)) #all FIO3-8 set to digital 0-2 analog
-                                          
+		
+        self._LJ.configIO(FIOAnalog=int('00000000',2)) #all FIO0-8 set to digital
         self.add_parameter('bipolar_dac',
                 flags=Instrument.FLAG_GETSET,
                 type=types.FloatType,
                 units='V',
                 minval=-10., maxval=10.,
-                channels=(0,1,2,3,4,5),
+                channels=(0,1,2,3,4,5,6,7),
                 doc='+/-10V dac with 14 bit resolution')
         
-        self.bipolar_dac_values=[0.0,0.0,0.0,0.0,0.0,0.0]
+        self.bipolar_dac_values=[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]
 
         self.add_parameter('dac',
              flags=Instrument.FLAG_GETSET,
@@ -64,12 +64,6 @@ class LabJack_U3(Instrument):
              minval=0.0,maxval=5.0,
              channels=(0,1),
              doc='0-5V dac with 10 bit resolution') 
-
-        self.add_parameter('analog_in',
-                flags=Instrument.FLAG_GET,
-                type=types.FloatType,
-                channels=(0,1),
-                doc='0-2.4V anolog input with 12 bit resolution')
 
         self.dac_modules = {}
 
@@ -82,7 +76,8 @@ class LabJack_U3(Instrument):
             _f.write('')
             _f.close()
         
-        self._parlist = ['bipolar_dac0','bipolar_dac1','bipolar_dac2','bipolar_dac3','bipolar_dac4','bipolar_dac5']
+        self._parlist = ['bipolar_dac0','bipolar_dac1','bipolar_dac2','bipolar_dac3',
+								'bipolar_dac4','bipolar_dac5','bipolar_dac6','bipolar_dac7']
         self.ins_cfg = config.Config(cfg_fn)
         self.load_cfg()
         self.save_cfg()
@@ -168,6 +163,3 @@ class LabJack_U3(Instrument):
     def do_get_dac(self, channel):
          self._LJ.readRegister(self.DAC_reg+channel*2) 
 
-    def do_get_analog_in(self, channel):
-         voltage  = self._LJ.getAIN(channel)
-         return voltage

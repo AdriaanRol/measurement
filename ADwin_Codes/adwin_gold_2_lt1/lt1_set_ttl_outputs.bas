@@ -8,14 +8,14 @@
 ' ADbasic_Version                = 5.0.8
 ' Optimize                       = Yes
 ' Optimize_Level                 = 1
-' Info_Last_Save                 = TUD276629  TUD276629\localadmin
+' Info_Last_Save                 = TUD277299  TUD277299\localadmin
 '<Header End>
 #INCLUDE ADwinGoldII.inc
 ' #INCLUDE configuration.inc
 DIM channel, set AS LONG
 
 INIT:
-  CONF_DIO(11)   
+  CONF_DIO(11)        'configure DIO 16:23 as input, all other ports as output
   channel=PAR_61
   set=PAR_62
  

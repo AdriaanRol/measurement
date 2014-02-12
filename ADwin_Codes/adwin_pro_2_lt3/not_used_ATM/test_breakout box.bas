@@ -1,6 +1,6 @@
 '<ADbasic Header, Headerversion 001.001>
-' Process_Number                 = 4
-' Initial_Processdelay           = 1000
+' Process_Number                 = 3
+' Initial_Processdelay           = 3000
 ' Eventsource                    = Timer
 ' Control_long_Delays_for_Stop   = No
 ' Priority                       = High
@@ -11,15 +11,22 @@
 ' Info_Last_Save                 = TUD277299  TUD277299\localadmin
 '<Header End>
 #INCLUDE ADwinPro_All.inc
-#INCLUDE .\configuration.inc
-DIM channel, set AS LONG
+#INCLUDE .\..\configuration.inc
+DIM channel, set, i AS LONG
+DIM DATA_10[8] AS LONG
 
 INIT:
   P2_Digprog(DIO_MODULE,11) 'configure DIO 16:23 as input, all other ports as output
-  channel=PAR_61    'Number of DIO to set 
-  set=PAR_62        'can be 1 or 0
+  FOR i = 1 TO 8
+    DATA_10[i]=0
+  NEXT i
+  Par_60=P2_DIGIN_LONG(DIO_MODULE)
 EVENT:
-
-  P2_DIGOUT(DIO_Module,channel, set)   'This sets the digital output with channelnr to the value given by set
-   
+  set=0
+  FOR i = 0 TO 15
+    P2_DIGOUT(DIO_MODULE,i, set)   'This sets the digital output with channelnr to the value given by set
+  NEXT i
+    P2_DIGOUT(DIO_MODULE,0, 1)
+  
+  
   END   
