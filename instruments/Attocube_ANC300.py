@@ -25,7 +25,37 @@ class Attocube_ANC300(Instrument):
 
         self.Echo('off')
         self._visa.read()
-    
+
+        # To make the methods accesible remotely
+        self.add_function('Read')
+        self.add_function('Close')
+        self.add_function('Echo')
+        self.add_function('Help')
+        self.add_function('GetSerial')
+        self.add_function('SetMode')
+        self.add_function('GetMode')
+
+        self.add_function('GetFrequency')
+        self.add_function('SetFrequency')
+        self.add_function('GetAmplitude')
+        self.add_function('SetAmplitude')
+        self.add_function('GetOffset')
+        self.add_function('SetOffset')
+        
+        self.add_function('Get_AC_IN_Status')
+        self.add_function('Get_DC_IN_Status')
+        self.add_function('Turn_on_AC_IN')
+        self.add_function('Turn_off_AC_IN')
+        self.add_function('Turn_on_DC_IN')
+        self.add_function('Turn_off_DC_IN')
+        self.add_function('SetFilter')
+        self.add_function('GetFilter')
+
+        self.add_function('StepUp')
+        self.add_function('StepDown')
+        self.add_function('Stop')
+        self.add_function('WaitForStepping')
+
     ### Auxilairy functions  
 
     def Read(self):
@@ -80,6 +110,7 @@ class Attocube_ANC300(Instrument):
                 mode before.
         '''
         self._visa.write('setm ' + str(axis) + ' ' + mode)
+        self._visa.read()
         print 'axis %d mode = %s' %(axis, mode)
 
     def GetMode(self,axis):
@@ -106,14 +137,17 @@ class Attocube_ANC300(Instrument):
 
     def SetFrequency(self,axis,frequency):
         self._visa.write('setf '+ str(axis) + ' ' + str(frequency))
+        self._visa.read()
         print 'frequency of axis %d set to %d Hz' %(axis, frequency)
     
     def SetAmplitude(self,axis,amplitude):
         self._visa.write('setv '+ str(axis) + ' ' + str(amplitude))
+        self._visa.read()
         print 'amplitude on axis %d set to %d V' %(axis, amplitude)
 
     def SetOffset(self,axis,offset):
         self._visa.write('seta '+ str(axis) + ' ' + str(offset))
+        self._visa.read()
         print 'offset on axis %d set to %d V' %(axis, offset)
 
     ### Methods that set/get the AC/DC inputs ON/OFF. 
@@ -130,20 +164,24 @@ class Attocube_ANC300(Instrument):
         self._visa.read()
         return a
 
-    def Turn_on_AC_IN(self,axis): ### NOT YET FUNCTIONAL, STILL FIX SYNTAX, CAREFULLY TEST ON 
-        self._visa.write('setaci '+ str(axis) + ' [on]')
+    def Turn_on_AC_IN(self,axis): 
+        self._visa.write('setaci '+ str(axis) + ' on')
+        self._visa.read()
         print 'axis %d AC_IN: ON' %(axis)
 
     def Turn_off_AC_IN(self,axis):
-        self._visa.write('setaci '+ str(axis) + ' [off]')
+        self._visa.write('setaci '+ str(axis) + ' off')
+        self._visa.read()
         print 'axis %d AC_IN: OFF' %(axis)
 
     def Turn_on_DC_IN(self,axis):
-        self._visa.write('setdci '+ str(axis) + ' [on]')
+        self._visa.write('setdci '+ str(axis) + ' on')
+        self._visa.read()
         print 'axis %d DC_IN: ON' %(axis)
 
     def Turn_off_DC_IN(self,axis):
-        self._visa.write('setdci '+ str(axis) + ' [off]')
+        self._visa.write('setdci '+ str(axis) + ' off')
+        self._visa.read()
         print 'axis %d DC_IN: OFF' %(axis)
 
     ### Methods that set/get the filter settings.
@@ -162,7 +200,6 @@ class Attocube_ANC300(Instrument):
         return a
 
 
-    ### THE FOLLOWING METHODS HAVE NOT YET BEEN TESTED AS THEY NEED THE NEW ELECTRONICS
     ### Methods for realizing stepping    
 
     def StepUp(self, axis, steps):
@@ -170,43 +207,46 @@ class Attocube_ANC300(Instrument):
         axis    integer, valid values 1-6
         steps   string, valid values '1','2','3','4','5'... or 'c' for continious
         '''
-        Mode = self.GetMode()
+        Mode = self.GetMode(axis)
         if Mode[7:10] == 'stp':
-             self._visa.write('stepu '+ str(axis) + ' ' + steps)
+            self._visa.write('stepu '+ str(axis) + ' ' + str(steps))
+            self._visa.read()
         else:
-            return 'error: ' + mode
+            return 'error: ' + Mode
 
     def StepDown(self, axis, steps):
         ''' Performs a single, multiple or continious steps along negative axis
         axis    integer, valid values 1-6
         steps   string, valid values '1','2','3','4','5'... or 'c' for continious
         '''
-        Mode = self.GetMode()
+        Mode = self.GetMode(axis)
         if Mode[7:10] == 'stp':
-             self._visa.write('stepd '+ str(axis) + ' ' + steps)
+            self._visa.write('stepd '+ str(axis) + ' ' + str(steps))
+            self._visa.read()
         else:
-            return 'error: ' + mode
+            return 'error: ' + Mode
 
     def Stop(self, axis):
         ''' Stop any motion on axis'''
         self._visa.write('stop '+ str(axis))
+        self._visa.read()
         print 'axis %d stopped' %(axis)
 
-    def WaitForStepping(self, axis):
+    def WaitForStepping(self, axis): ## NOT TESTED.
         ''' Tell to wait for stepping to finish,
         function unknown'''
         self._visa.write('stepw '+ str(axis))
 
     ### Methods to get/set input triggers, NOT fucntional.
-    def GetUpTrigger(self,axis):
-        a = self._visa.ask('gettu '+str(axis))
+    #def GetUpTrigger(self,axis):
+        #a = self._visa.ask('gettu '+str(axis))
         #self._visa.read()
-        return a
+        #return a
 
-    def GetDownTrigger(self,axis):
-        a = self._visa.ask('gettd '+str(axis))
+    #def GetDownTrigger(self,axis):
+        #a = self._visa.ask('gettd '+str(axis))
         #self._visa.read()
-        return a
+        #return a
 
 
     
