@@ -293,7 +293,7 @@ def red_laser_scan(name):
 
     # MW setup
     m.use_mw = False
-    m.mw_frq =  qt.cfgman['samples']['sil9']['ms-1_cntr_frq']
+    m.mw_frq =  qt.cfgman['samples']['Hans_sil1']['ms-1_cntr_frq']
     m.mw_power = -12
     
     # repump setup
@@ -330,8 +330,8 @@ def red_laser_scan(name):
 
 if __name__=='__main__':
     
-    stools.turn_off_lasers()
-    red_laser_scan('red_scan_coarse')
+    stools.turn_off_all_lt2_lasers()
+    red_laser_scan('Hans_sil1_laser_scan_no_MW')
     #yellow_laser_scan('yellow_1nW')
 
         

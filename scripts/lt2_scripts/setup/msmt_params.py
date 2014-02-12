@@ -9,8 +9,8 @@ cfg.add_cfg('protocols')
 cfg.add_cfg('samples')
 cfg.add_cfg('setup')
 
-cfg['samples']['current'] = 'sil10'
-cfg['protocols']['current'] = 'sil10-default'
+cfg['samples']['current'] = 'Hans_sil1'
+cfg['protocols']['current'] = 'Hans_sil1-default'
 
 print 'updating msmt params lt2 for {}'.format(cfg['samples']['current'])
 
@@ -144,6 +144,49 @@ cfg.set(branch+        'MW_pulse_mod_risetime',                    10e-9)
 cfg.set(branch+        'AWG_to_adwin_ttl_trigger_duration',        2e-6)
 cfg.set(branch+        'repump_after_MBI_duration',                100)
 cfg.set(branch+        'repump_after_MBI_amp',                     15e-9)
+
+#################
+### Hans sil1 ###
+#################
+
+branch='samples/Hans_sil1/'
+
+f_msm1_cntr = 1.51321e9 
+f_msp1_cntr = 2.925884e9    #not calibrated
+N_frq = 7.13429e6           #not calibrated
+N_HF_frq = 2.16042e6 
+
+cfg.set(branch+'ms-1_cntr_frq', f_msm1_cntr)
+cfg.set(branch+'ms+1_cntr_frq', f_msp1_cntr)
+cfg.set(branch+'N_0-1_splitting_ms-1', N_frq)
+cfg.set(branch+'N_HF_frq', N_HF_frq)
+
+branch='protocols/Hans_sil1-default/AdwinSSRO/'
+
+cfg.set(branch+'A_CR_amplitude', 40e-9)
+cfg.set(branch+'A_RO_amplitude' , 0)
+cfg.set(branch+'A_SP_amplitude', 40e-9)
+cfg.set(branch+'CR_duration' , 50)
+cfg.set(branch+'CR_preselect', 15)
+cfg.set(branch+'CR_probe', 2)
+cfg.set(branch+'CR_repump', 1000)
+cfg.set(branch+'Ex_CR_amplitude', 6e-9)
+cfg.set(branch+'Ex_RO_amplitude', 8e-9)
+cfg.set(branch+'Ex_SP_amplitude', 0e-9)
+cfg.set(branch+'SP_duration', 250)
+cfg.set(branch+'SP_filter_duration', 0)
+cfg.set(branch+'SSRO_duration', 50)
+cfg.set(branch+'SSRO_repetitions', 5000)
+cfg.set(branch+'SSRO_stop_after_first_photon', 0)
+cfg.set(branch+'mw_frq',2.8e9) #-100e6)  #Probably Redundant, better to read out from AWG 
+cfg.set(branch+'mw_power',20)
+cfg.set(branch+'MW_pulse_mod_risetime',10e-9)
+
+branch='protocols/Hans_sil1-default/AdwinSSRO-integrated/'
+cfg.set(branch+'SSRO_duration', 40)
+
+
+
 
 ##############
 ### sil 10 ###

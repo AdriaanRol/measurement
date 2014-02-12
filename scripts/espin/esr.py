@@ -1,15 +1,17 @@
 import qt
 import msvcrt
 
-
-steps   = 101
-mw_power = -8         #in dBm
-green_power = 10e-6
-int_time = 30         # in ms
-reps = 20
+name='ESR_SIL1_Hans_LT2'
+steps   = 151  #101
+mw_power = -5    #in dBm
+green_power = 50e-6  #10e-6
+int_time = 50 #30        # in ms
+reps = 3
+center_f =  1.4715# in GHz 
+range_f  =  0.100 # in GHz
 
 #generate list of frequencies
-f_list = linspace(start_f*1e9, stop_f*1e9, steps)
+f_list = linspace((center_f-range_f)*1e9, (center_f+range_f)*1e9, steps)
 
 ins_smb = qt.instruments['SMB100']
 ins_adwin = qt.instruments['adwin']
@@ -65,3 +67,4 @@ p_c.save_png(filename+'.png')
 qt.mend()
 
 ins_counters.set_is_running(1)
+GreenAOM.set_power(30e-6)

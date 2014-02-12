@@ -531,11 +531,11 @@ def gate_scan_with_c_optimize():
 
 if __name__ == '__main__':
     qt.get_setup_instrument('GreenAOM').set_power(0.e-6)
-    #single_red_scan()
+    single_red_scan()
     #green_yellow_during_scan()
     #yellow_ionization_scan(13,20)
     # repeated_red_scans()
     # repeated_red_scans(spectral_diffusion=True)
-    repeated_red_scans(gate_scan=True, gate_range=(0,-1100),pts=12)
+    #repeated_red_scans(gate_scan=True, gate_range=(0,-1100),pts=12)
     #gate_scan_with_c_optimize()
 
