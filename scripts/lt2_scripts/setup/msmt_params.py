@@ -9,8 +9,8 @@ cfg.add_cfg('protocols')
 cfg.add_cfg('samples')
 cfg.add_cfg('setup')
 
-cfg['samples']['current'] = 'Hans_sil1'
-cfg['protocols']['current'] = 'Hans_sil1-default'
+cfg['samples']['current'] = 'Hans_sil4'
+cfg['protocols']['current'] = 'Hans_sil4-default'
 
 print 'updating msmt params lt2 for {}'.format(cfg['samples']['current'])
 
@@ -96,8 +96,8 @@ cfg.set(branch+        'AWG_start_DO_channel',         1)
 cfg.set(branch+        'counter_channel',              1)
 cfg.set(branch+        'cycle_duration',               300)
 cfg.set(branch+        'green_off_amplitude',          0.0)
-cfg.set(branch+        'green_repump_amplitude',       200e-6)
-cfg.set(branch+        'green_repump_duration',        10)
+cfg.set(branch+        'green_repump_amplitude',       150e-6)
+cfg.set(branch+        'green_repump_duration',        15)
 cfg.set(branch+        'send_AWG_start',               0)
 cfg.set(branch+        'sequence_wait_time',           1)
 cfg.set(branch+        'wait_after_RO_pulse_duration', 3)
@@ -151,7 +151,7 @@ cfg.set(branch+        'repump_after_MBI_amp',                     15e-9)
 
 branch='samples/Hans_sil1/'
 
-f_msm1_cntr = 1.51321e9 
+f_msm1_cntr = 1.51026e9 
 f_msp1_cntr = 2.925884e9    #not calibrated
 N_frq = 7.13429e6           #not calibrated
 N_HF_frq = 2.16042e6 
@@ -185,7 +185,79 @@ cfg.set(branch+'MW_pulse_mod_risetime',10e-9)
 branch='protocols/Hans_sil1-default/AdwinSSRO-integrated/'
 cfg.set(branch+'SSRO_duration', 40)
 
+    #Pulses, not yet calibrated.
+branch='protocols/Hans_sil1-default/pulses/'
 
+f0 = cfg['samples']['Hans_sil1']['ms-1_cntr_frq'] - cfg['protocols']['Hans_sil1-default']['AdwinSSRO']['mw_frq']
+cfg.set(branch+'MW_modulation_frequency', f0)
+cfg.set(branch+'Pi_pulse_duration', 50e-9)
+cfg.set(branch+'Pi_pulse_amp',  0.49)
+cfg.set(branch+'CORPSE_pi2_amp',0.4)
+CORPSE_frq = 8.15e6
+cfg.set(branch+'CORPSE_pi_60_duration', 1./CORPSE_frq/6.)
+cfg.set(branch+'CORPSE_pi_m300_duration', 5./CORPSE_frq/6.)
+cfg.set(branch+'CORPSE_pi_420_duration',  7./CORPSE_frq/6.)
+
+cfg.set(branch+'CORPSE_pi2_24p3_duration', 24.3/CORPSE_frq/360.)
+cfg.set(branch+'CORPSE_pi2_m318p6_duration', 318.6/CORPSE_frq/360.)
+cfg.set(branch+'CORPSE_pi2_384p3_duration',  384.3/CORPSE_frq/360.)
+
+#################
+### Hans sil1 ###
+#################
+
+branch='samples/Hans_sil4/'
+
+f_msm1_cntr = 2.29178e9 
+f_msp1_cntr = 2.925884e9    #not calibrated
+N_frq = 7.13429e6           #not calibrated
+N_HF_frq = 2.16042e6 
+
+cfg.set(branch+'ms-1_cntr_frq', f_msm1_cntr)
+cfg.set(branch+'ms+1_cntr_frq', f_msp1_cntr)
+cfg.set(branch+'N_0-1_splitting_ms-1', N_frq)
+cfg.set(branch+'N_HF_frq', N_HF_frq)
+
+branch='protocols/Hans_sil4-default/AdwinSSRO/'
+
+cfg.set(branch+'A_CR_amplitude', 40e-9)
+cfg.set(branch+'A_RO_amplitude' , 0)
+cfg.set(branch+'A_SP_amplitude', 40e-9)
+cfg.set(branch+'CR_duration' , 50)
+cfg.set(branch+'CR_preselect', 0)
+cfg.set(branch+'CR_probe', 0)
+cfg.set(branch+'CR_repump', 1000)
+cfg.set(branch+'Ex_CR_amplitude', 6e-9)
+cfg.set(branch+'Ex_RO_amplitude', 8e-9)
+cfg.set(branch+'Ex_SP_amplitude', 0e-9)
+cfg.set(branch+'SP_duration', 20)
+cfg.set(branch+'SP_filter_duration', 0)
+cfg.set(branch+'SSRO_duration', 50)
+cfg.set(branch+'SSRO_repetitions', 5000)
+cfg.set(branch+'SSRO_stop_after_first_photon', 0)
+cfg.set(branch+'mw_frq',2.2e9) #Probably Redundant, better to read out from AWG 
+cfg.set(branch+'mw_power',20)
+cfg.set(branch+'MW_pulse_mod_risetime',10e-9)
+
+branch='protocols/Hans_sil4-default/AdwinSSRO-integrated/'
+cfg.set(branch+'SSRO_duration', 40)
+
+    #Pulses, not yet calibrated.
+branch='protocols/Hans_sil4-default/pulses/'
+
+f0 = cfg['samples']['Hans_sil4']['ms-1_cntr_frq'] - cfg['protocols']['Hans_sil4-default']['AdwinSSRO']['mw_frq']
+cfg.set(branch+'MW_modulation_frequency', f0)
+cfg.set(branch+'Pi_pulse_duration', 50e-9)
+cfg.set(branch+'Pi_pulse_amp',  0.49)
+cfg.set(branch+'CORPSE_pi2_amp',0.4)
+CORPSE_frq = 8.15e6
+cfg.set(branch+'CORPSE_pi_60_duration', 1./CORPSE_frq/6.)
+cfg.set(branch+'CORPSE_pi_m300_duration', 5./CORPSE_frq/6.)
+cfg.set(branch+'CORPSE_pi_420_duration',  7./CORPSE_frq/6.)
+
+cfg.set(branch+'CORPSE_pi2_24p3_duration', 24.3/CORPSE_frq/360.)
+cfg.set(branch+'CORPSE_pi2_m318p6_duration', 318.6/CORPSE_frq/360.)
+cfg.set(branch+'CORPSE_pi2_384p3_duration',  384.3/CORPSE_frq/360.)
 
 
 ##############

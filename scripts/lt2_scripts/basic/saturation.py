@@ -6,9 +6,9 @@ from numpy import *
 import msvcrt
 
 #measurement parameters
-name = 'Sil_1_Hans_PSB'
+name = 'Sil_4_Hans_PSB'
 steps=31
-max_power=200e-6       #[w]
+max_power=150e-6       #[w]
 counter=1         #number of counter
 PH_count=False    #counting with the HH, assumes apd on channel 0
 bg_x=1.5          #delta x position of background [um]
@@ -96,4 +96,4 @@ dat.close_file()
 
 current_mos.set_x(current_x)
 current_mos.set_y(current_y)
-
+time.sleep(1)

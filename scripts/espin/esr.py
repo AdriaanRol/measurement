@@ -1,14 +1,14 @@
 import qt
 import msvcrt
 
-name='ESR_SIL1_Hans_LT2'
+name='ESR_SIL4_Hans_LT2'
 steps   = 151  #101
 mw_power = -5    #in dBm
 green_power = 50e-6  #10e-6
 int_time = 50 #30        # in ms
 reps = 3
-center_f =  1.4715# in GHz 
-range_f  =  0.100 # in GHz
+center_f =  2.26# in GHz 
+range_f  =  0.200 # in GHz
 
 #generate list of frequencies
 f_list = linspace((center_f-range_f)*1e9, (center_f+range_f)*1e9, steps)
