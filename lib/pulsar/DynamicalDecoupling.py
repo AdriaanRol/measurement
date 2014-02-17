@@ -1,7 +1,7 @@
 '''
 This is modified version of the ElectronT1 class from PULSAR.PY
 eventually this class should be placed in that file again
-File made by Adriaan
+File made by Adriaan Rol
 '''
 
 import msvcrt
@@ -13,6 +13,7 @@ import logging
 import measurement.lib.measurement2.measurement as m2
 from measurement.lib.measurement2.adwin_ssro import ssro
 from measurement.lib.pulsar import pulse, pulselib, element, pulsar
+from measurement.lib.measurement2.adwin_ssro.pulsar import PulsarMeasurement
 
 
 class DecouplingGateSequence(PulsarMeasurement):
@@ -27,62 +28,26 @@ class DecouplingGateSequence(PulsarMeasurement):
         self.params['wait_for_AWG_done'] = 1
         PulsarMeasurement.autoconfig(self)
 
-
-    # upload the waveforms to the AWG
-    def generate_sequence(self,upload=False):
-        '''
-        The function that is executed when a measurement script is executed
-        It calls the different functions in this class
-        For now it is simplified and can only do one type of decoupling sequence
-        '''
-        #load_input_gate_sequence()
-        #For now we use a placeholder sequence
-        tau, N = retrieve_resonant_carbon_conditions('StdDecoupling')
-        list_of_decoupling_elements, list_of_decoupling_reps, decoupling_meta_data = generate_decoupling_sequence_elements(tau,N)
-        #duration, Gate_type = Determine_length_and_type_of_Glue_elements(Gate_sequence,total_sequencetimes,times_removed)
-
-        duration = 1.5e-6
-        Gate_type = 'pi/2'
-        initial_pi_2 = generate_glue_element(duration, Gate_type)
-        final_pi_2 = initial_pi_2
-
-        #very sequence specific
-        list_of_elements = []
-        list_of_elements.extend(initial_pi_2)
-        list_of_elements.extend(list_of_decoupling_elements)
-        list_of_elements.extend(final_pi_2)
-
-        list_of_repetitions = [1,list_of_decoupling_reps[0],1]
-        seq = combine_to_sequence(list_of_elements,list_of_repetitions)
-
-        if upload:
-            qt.pulsar.upload(*list_of_elements)
-            # program the AWG
-            qt.pulsar.program_sequence(seq)
-        else:
-            print 'upload = false, no sequence uploaded to AWG'
-
-
-
-
-
-    def retrieve_resonant_carbon_conditions(GateName):
+    def retrieve_resonant_carbon_conditions(self,GateName):
         '''
         This function retrieves the corresponding tau and N values from the cfg_man
         aswell as the order of the resonance k that is required to calculate phase differences
 
         Currently This function just returns some fixed values. Ideally it should get them from the cfg_man where they are set in the experiment
         '''
-        if GateName = 'StdDecoupling':
-            tua = 1.5e-6
-            N = 32
+        if GateName == 'StdDecoupling':
+            tau = self.params['tau']
+            N = self.params['Number_of_pulses']
             print 'Using arbitrary interpulse delay and number of pulses of tau =  1.5e-6 and N = 32'
+        elif GateName == 'Carbon1' :
+            tau = self.params['tau_C1']
+
         else:
             print 'Gate not in database'
             return
         return tau, N
 
-    def generate_decoupling_sequence_elements(tau,N):
+    def generate_decoupling_sequence_elements(self,tau,N):
         '''
         This function takes the wait time and the number of pulse-blocks(repetitions) as input
         It returns the start middle and end elements aswell as the total time and time cut of at the edges
@@ -94,7 +59,7 @@ class DecouplingGateSequence(PulsarMeasurement):
         #Also checks if planned wait times lead to impossible sequences
         # Wait-times
         pulse_tau = tau - self.params['Pi_pulse_duration']/2.0 #To correct for pulse duration
-        pulse_tau_shortened = tau - self.params['Pi_pulse_duration']/2.0 - #something to make it
+        pulse_tau_shortened = tau - self.params['Pi_pulse_duration']/2.0 # - something to make it
 
         #Checks to prevent impossible pulse sequences from being created
         if tau <0.5e-6:
@@ -106,7 +71,7 @@ class DecouplingGateSequence(PulsarMeasurement):
             return
         else:
 
-        ## Puplses
+        ## Pulses
         # pi-pulse, needs different pulses for ms=-1 and ms=+1 transitions in the future. Might also need Y pulse
             X = pulselib.MW_IQmod_pulse('electron Pi-pulse',
                 I_channel='MW_Imod', Q_channel='MW_Qmod',
@@ -162,27 +127,32 @@ class DecouplingGateSequence(PulsarMeasurement):
             #Build in checks to prevent impossible sequences from being uploaded
             ### create the elements/waveforms from the basic pulses ###
             #Check for multiple of 4 ns : np.ceil(element/4e-9)*4e-9
+            total_sequence_time=0
+            time_removed_from_edges=0
 
-            list_of_repetitions = 1, N-2, 1
+            list_of_repetitions = [1, N/2-1, 1]
+
             return [list_of_elements, list_of_repetitions, [total_sequence_time, time_removed_from_edges]]
 
-    def Determine_length_and_type_of_Glue_elements(GateSequence,TotalsequenceTimes,TimeRemoved) :
-    '''
-    Empty function, needs to be able to determine the length and type of glue gates in the future
-    '''
-
-
-    def generate_glue_element(length, Gate_type):
+    def Determine_length_and_type_of_Connection_elements(self,GateSequence,TotalsequenceTimes,TimeRemoved) :
         '''
-        Generates the elements between the decoupling sequences
+        Empty function, needs to be able to determine the length and type of glue gates in the future
         '''
-        if type == 'pi/2':
+        pass
+
+    def generate_connection_element(self,length, Gate_type):
+        '''
+        Generates an element that connects to decoupling elements
+        It can be at the start, the end or between sequence elements
+
+        '''
+        if Gate_type == 'pi/2':
             X = pulselib.MW_IQmod_pulse('electron Pi/2-pulse',
                 I_channel='MW_Imod', Q_channel='MW_Qmod',
                 PM_channel='MW_pulsemod',
                 frequency = self.params['MW_modulation_frequency'],
                 PM_risetime = self.params['MW_pulse_mod_risetime'],
-                length = self.params['Pi_pulse_duration/2.0'], #Divided by 2.0 to get a pi/2 pulse (not RIGHT)
+                length = self.params['Pi_pulse_duration']/2.0, #Divided by 2.0 to get a pi/2 pulse (not RIGHT)
                 amplitude = self.params['Pi_pulse_amp'])
             T_before_p = pulse.SquarePulse(channel='MW_Imod', name='delay',
                 length = 100e-9, amplitude = 0.) #the unit waittime is 10e-6 s
@@ -203,16 +173,31 @@ class DecouplingGateSequence(PulsarMeasurement):
             return
 
 
-    def combine_to_sequence(list_of_elements,list_of_repetitions):
+    def combine_to_sequence(self,list_of_elements,list_of_repetitions):
         '''
         Combines all the generated elements to a sequence for the AWG
         '''
         #Ideally this would work for an arbitrary number of elements lists and repetition lists
         seq = pulsar.Sequence('Decoupling Sequence')
-        for ind, e in enumerate list_of_elements:
-            if ind = 0:
+        print list_of_elements
+        print list_of_repetitions
+        print len(list_of_elements)
+        print len(list_of_repetitions)
+
+        for ind, e in enumerate(list_of_elements):
+            if ind == 0:
                 seq.append(name=e.name, wfname=e.name,
                     trigger_wait=True,repetitions = list_of_repetitions[ind])
+            elif ind == len(list_of_elements):
+                seq.append(name=e.name, wfname=e.name,
+                   trigger_wait=False,repetitions = list_of_repetitions[ind]) 
+                
+                Trig = pulse.SquarePulse(channel = 'adwin_sync',
+                    length = 5e-6, amplitude = 2)
+                Trig_element = element.Element('ADwin_trigger', pulsar=qt.pulsar,
+                    global_time = True)
+                Trig_element.append(Trig)                 
+                seq.append(Trig_element) 
             else:
                 seq.append(name=e.name, wfname=e.name,
                     trigger_wait=False,repetitions = list_of_repetitions[ind])
@@ -225,13 +210,47 @@ class ThreeQubitMB_QEC(DecouplingGateSequence):
     !NB: It is currently EMPTY
     '''
 
-class SimpleDecouplingSequence(DecouplingGateSequence):
+class SimpleDecoupling(DecouplingGateSequence):
     '''
     The most simple version of a decoupling sequence
     Only contains a simple decoupling sequence no carbon addressing and stuff
     '''
-    def __init__(N,tau):
-        self.N = N
-        self.tau = tau
+
+    def generate_sequence(self,upload=False):
+        '''
+        The function that is executed when a measurement script is executed
+        It calls the different functions in this class
+        For now it is simplified and can only do one type of decoupling sequence
+        '''
+        #load_input_gate_sequence()
+        #For now we use a placeholder sequence
+        #tau, N = DecouplingGateSequence.retrieve_resonant_carbon_conditions('StdDecoupling')
+        tau = self.params['tau']
+        N = self.params['Number_of_pulses']
+        list_of_decoupling_elements, list_of_decoupling_reps, decoupling_meta_data = DecouplingGateSequence.generate_decoupling_sequence_elements(self,tau,N)
+        #duration, Gate_type = Determine_length_and_type_of_Connection_elements(Gate_sequence,total_sequencetimes,times_removed)
+
+        duration = self.params['Init_Pulse_Duration']
+        Gate_type = self.params['Initial_Pulse']
+        initial_pi_2 = DecouplingGateSequence.generate_connection_element(self,duration, Gate_type)
+        final_pi_2 = initial_pi_2
+
+        #very sequence specific
+        initial_pi_2
+        list_of_elements = []
+        list_of_elements.extend(initial_pi_2)
+        list_of_elements.extend(list_of_decoupling_elements)
+        list_of_elements.extend(final_pi_2)
+
+        list_of_repetitions = [1]+ list_of_decoupling_reps+[1]
+        print list_of_repetitions
+        seq = DecouplingGateSequence.combine_to_sequence(self,list_of_elements,list_of_repetitions)
+
+        if upload:
+            qt.pulsar.upload(*list_of_elements)
+            # program the AWG
+            qt.pulsar.program_sequence(seq)
+        else:
+            print 'upload = false, no sequence uploaded to AWG'
 
 
