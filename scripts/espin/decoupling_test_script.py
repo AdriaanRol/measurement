@@ -19,7 +19,7 @@ SAMPLE_CFG = qt.cfgman['protocols']['current']
 
 def SimpleDecoupling(name):
 
-    m = pulsar_msmt.ElectronT1(name)
+    m = pulsar_msmt.DecouplingGateSequence(name)
 
     m.params.from_dict(qt.cfgman.get('samples/'+SAMPLE))
     m.params.from_dict(qt.cfgman['protocols']['AdwinSSRO'])
@@ -32,8 +32,6 @@ def SimpleDecoupling(name):
         #T1 experiment
     m.params['T1_initial_state'] = 'ms=-1' #currently 'ms=0' or 'ms=-1'
     m.params['T1_readout_state'] = 'ms=-1' #currently 'ms=0' or 'ms=-1'
-    m.params['wait_times'] =  np.linspace(0,1e6,11) #in us
-    m.params['repetitions'] = 200
 
         #Spin pumping and readout
     m.params['SP_duration'] = 250
