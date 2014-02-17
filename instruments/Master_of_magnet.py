@@ -13,7 +13,7 @@ import re
 import math
 import qt
 import numpy as np
-
+import time
 
 class Master_of_magnet(Instrument):
 
@@ -136,8 +136,11 @@ class Master_of_magnet(Instrument):
             self._anc_ins.StepDown(axis_number, 'c')    
         elif int(steps) > 0: 
             self._anc_ins.StepUp(axis_number, steps)
+            freq = self.get_frequency(axis)
+            #time.sleep(int(steps)/freq + 0.5)
         elif int(steps) < 0: 
             self._anc_ins.StepDown(axis_number, abs(int(steps)))
+            #time.sleep(abs(int(steps))/freq + 0.5)
         else:
             print 'Error: invalid input'
     
@@ -149,10 +152,10 @@ class Master_of_magnet(Instrument):
 
     ## Methods to do magnetic field calculations
     def B_to_f(self, B_field):
-        freq = 2.88e9 - B_field*2.8e6
+        freq = 2.878e9 - B_field*2.80e6
         return freq
 
     def f_to_B(self, freq): 
-        B_field = (2.88e9 - freq)/2.8e6
+        B_field = (2.878e9 - freq)/2.80e6
         return B_field
 

@@ -24,22 +24,30 @@ def erabi(name):
 
     m.params['pts'] = 21
     pts = m.params['pts']
+    m.params['repetitions'] = 1000
+
     m.params['wait_after_pulse_duration']=0
     m.params['wait_after_RO_pulse_duration']=0
-    m.params['MW_pulse_durations'] =  np.linspace(0, 200, pts) * 1e-9 
-    m.params['repetitions'] = 1000
     
-    m.params['MW_pulse_amplitudes'] = np.ones(pts) *0.55
-    m.params['mw_frq'] = 2.8e9 
+    m.params['mw_frq'] = 2.2e9 
     m.params['MW_pulse_frequency'] = m.params['ms-1_cntr_frq'] - m.params['mw_frq']  
     print m.params['ms-1_cntr_frq']
+
+    #m.params['MW_pulse_durations'] =  np.linspace(0, 200, pts) * 1e-9 
+    m.params['MW_pulse_durations'] =  np.ones(pts)*40*1e-9 #np.linspace(0, 200, pts) * 1e-9 
+
+    #m.params['MW_pulse_amplitudes'] = np.ones(pts) *0.55
+    m.params['MW_pulse_amplitudes'] = np.linspace(0,0.7,pts)
     
     # for autoanalysis
     #m.params['sweep_name'] = 'Pulse duration (ns)' #'Pulse amps (V)'
     #m.params['sweep_pts'] = m.params['MW_pulse_durations']*1e9
 
-    m.params['sweep_name'] = 'Pulse durations (ns)'
-    m.params['sweep_pts'] = m.params['MW_pulse_durations']*1e9
+    #m.params['sweep_name'] = 'Pulse durations (ns)'
+    m.params['sweep_name'] = 'MW_pulse_amplitudes (V)'
+    
+    #m.params['sweep_pts'] = m.params['MW_pulse_durations']*1e9
+    m.params['sweep_pts'] = m.params['MW_pulse_amplitudes']
 
     m.params['sequence_wait_time'] = \
             int(np.ceil(np.max(m.params['MW_pulse_durations'])*1e6)+10) #Redundant because defined in m.autoconfig? Tim

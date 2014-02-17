@@ -22,15 +22,15 @@ def darkesr(name):
     m.params.from_dict(qt.cfgman['protocols'][SAMPLE_CFG]['AdwinSSRO-integrated'])
     m.params.from_dict(qt.cfgman['protocols']['AdwinSSRO+espin'])   
 
-    m.params['mw_frq'] = 2.2e9
+    m.params['mw_frq'] = 2.0e9
     m.params['mw_power'] = 20
-    m.params['repetitions'] = 500
+    m.params['repetitions'] = 3000
 
-    m.params['ssbmod_frq_start'] = 91.8e6 - 7e6
-    m.params['ssbmod_frq_stop'] = 91.8e6 + 7e6
-    m.params['pts'] = 161
-    m.params['pulse_length'] = 3e-6
-    m.params['ssbmod_amplitude'] = 0.01
+    m.params['ssbmod_frq_start'] = 90.2e6 - 4.5e6
+    m.params['ssbmod_frq_stop'] = 90.2e6 + 4.5e6
+    m.params['pts'] = 41
+    m.params['pulse_length'] = 2e-6
+    m.params['ssbmod_amplitude'] = 0.03
    
     m.autoconfig()
     m.generate_sequence(upload=True)
