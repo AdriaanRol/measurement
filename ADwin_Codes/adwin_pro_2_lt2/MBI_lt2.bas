@@ -8,7 +8,7 @@
 ' ADbasic_Version                = 5.0.8
 ' Optimize                       = Yes
 ' Optimize_Level                 = 1
-' Info_Last_Save                 = TUD277246  TUD277246\localadmin
+' Info_Last_Save                 = TUD276629  TUD276629\localadmin
 '<Header End>
 ' MBI with the adwin, with dynamic CR-preparation, dynamic MBI-success/fail
 ' recognition, and SSRO at the end. 
@@ -49,7 +49,7 @@ DIM DATA_25[max_repetitions] AS LONG ' number of cycles before success
 DIM DATA_27[max_repetitions] AS LONG ' SSRO counts
 DIM DATA_28[max_repetitions] AS LONG ' time needed until mbi success (in process cycles)
 
-DIM AWG_start_DO_channel, AWG_done_DI_channel, AWG_event_jump_DO_channel AS LONG
+DIM AWG_start_DO_channel, AWG_done_DI_channel, AWG_event_jump_DO_channel, AWG_done_DI_pattern AS LONG
 DIM send_AWG_start, wait_for_AWG_done AS LONG
 DIM A_SP_duration, SP_E_duration, SP_filter_duration, MBI_duration AS LONG
 DIM sequence_wait_time, wait_after_pulse_duration AS LONG
@@ -129,6 +129,8 @@ INIT:
   next_MBI_stop = -2
   current_MBI_attempt = 1
   next_MBI_laser_stop = -2
+  
+  AWG_done_DI_pattern = 2 ^ AWG_done_DI_channel
       
   P2_DAC(DAC_MODULE,repump_laser_DAC_channel, 3277*repump_off_voltage+32768) ' turn off green
   P2_DAC(DAC_MODULE,E_laser_DAC_channel,3277*E_off_voltage+32768) ' turn off Ex laser
@@ -163,7 +165,7 @@ INIT:
 EVENT:
  
   awg_in_was_hi = awg_in_is_hi
-  awg_in_is_hi = (P2_DIGIN_LONG(DIO_MODULE) AND AWG_done_DI_channel)
+  awg_in_is_hi = (P2_DIGIN_LONG(DIO_MODULE) AND AWG_done_DI_pattern)
   
   if ((awg_in_was_hi = 0) and (awg_in_is_hi > 0)) then
     awg_in_switched_to_hi = 1

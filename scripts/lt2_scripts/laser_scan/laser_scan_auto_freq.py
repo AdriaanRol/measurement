@@ -323,7 +323,7 @@ def red_laser_scan(name):
     m.counter_channel = 0
 
     # MW setup
-    m.use_mw = False
+    m.use_mw = True
     m.mw_frq =  qt.cfgman['samples']['Hans_sil4']['ms-1_cntr_frq']
     print 'MW freq:' +str(m.mw_frq)
     m.mw_power = -6
@@ -334,20 +334,20 @@ def red_laser_scan(name):
     m.red_repump_power = 0e-9
     m.yellow_repump_duration = 4 #seconds
 
-    m.repump_power = 100e-6
-    m.use_repump_during = True
+    m.repump_power = 200e-6
+    m.use_repump_during = False
     m.repump_duration = 0.5 # seconds
     m.repump_power_during = 0.1e-6 #0.05e-6
     
     #Scan setup
-    m.laser_power = 15e-9
-    m.integration_time = 50 # ms
+    m.laser_power = 10e-9
+    m.integration_time = 1000 # ms
     m.min_v = -9
     m.max_v = 9
-    m.v_step=0.005
+    m.v_step=0.001
     
-    m.start_frequency =66  #GHz
-    m.stop_frequency = 72 #GHz
+    m.start_frequency = 68  #GHz
+    m.stop_frequency  = 68.5  #GHz
     
     
     #Gate scan setup
@@ -371,7 +371,7 @@ if __name__=='__main__':
     
     #for ii in range(10):
     stools.turn_off_all_lt2_lasers()
-    red_laser_scan('Hans_sil4_line_scan_MW_25nWred')
+    red_laser_scan('Hans_sil4_line_scan_MW_nogreen')
         #yellow_laser_scan('yellow_1nW')
 
         

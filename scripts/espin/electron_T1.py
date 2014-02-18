@@ -33,10 +33,10 @@ def T1(name):
     m.params['repetitions'] = 200
         
         #Spin pumping and readout
-    m.params['SP_duration'] = 250
-    m.params['Ex_RO_amplitude'] = 8e-9 #10e-9
-    m.params['A_SP_amplitude'] = 40e-9
-    m.params['Ex_SP_amplitude'] = 0.
+    #m.params['SP_duration'] = 250
+    #m.params['Ex_RO_amplitude'] = 8e-9 #10e-9
+    #m.params['A_SP_amplitude'] = 40e-9
+    #m.params['Ex_SP_amplitude'] = 0.
         
         #Plot parameters
     m.params['sweep_name'] = 'Times (ms)'
