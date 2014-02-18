@@ -324,7 +324,8 @@ def red_laser_scan(name):
 
     # MW setup
     m.use_mw = True
-    m.mw_frq =  qt.cfgman['samples']['Hans_sil4']['ms-1_cntr_frq']
+    m.mw_frq =  qt.cfgman['samples']['Hans_sil4']['ms+1_cntr_frq']
+    #m.mw_frq =  qt.cfgman['samples']['Hans_sil4']['ms-1_cntr_frq']
     print 'MW freq:' +str(m.mw_frq)
     m.mw_power = -6
     
@@ -340,14 +341,13 @@ def red_laser_scan(name):
     m.repump_power_during = 0.1e-6 #0.05e-6
     
     #Scan setup
-    m.laser_power = 10e-9
-    m.integration_time = 1000 # ms
+    m.laser_power = 20e-9
+    m.integration_time = 200 # ms
     m.min_v = -9
     m.max_v = 9
-    m.v_step=0.001
-    
-    m.start_frequency = 68  #GHz
-    m.stop_frequency  = 68.5  #GHz
+    m.v_step=0.0025    
+    m.start_frequency =72  #GHz
+    m.stop_frequency  = 76  #GHz
     
     
     #Gate scan setup

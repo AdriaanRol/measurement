@@ -208,8 +208,8 @@ cfg.set(branch+'CORPSE_pi2_384p3_duration',  384.3/CORPSE_frq/360.)
 
 branch='samples/Hans_sil4/'
 
-f_msm1_cntr = 2.090952e9 
-f_msp1_cntr = 2.925884e9    #not calibrated
+f_msm1_cntr = 2.274e9 
+f_msp1_cntr = 3.500e9    #not calibrated
 N_frq = 7.13429e6           #not calibrated
 N_HF_frq = 2.16042e6 
 

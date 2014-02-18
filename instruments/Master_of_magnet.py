@@ -152,7 +152,7 @@ class Master_of_magnet(Instrument):
 
     ## Methods to do magnetic field calculations
     def B_to_f(self, B_field):
-        freq = 2.878e9 - B_field*2.80e6
+        freq = 78e9 - B_field*2.80e6
         return freq
 
     def f_to_B(self, freq): 

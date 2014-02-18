@@ -19,19 +19,19 @@ def ssrocalibration(name):
 
     # parameters
     m.params['SSRO_repetitions'] = 5000
-    cfg.set(branch+'CR_duration' , 2000)
+    cfg.set(branch+'CR_duration' , 200)
 
 
     m.params['A_CR_amplitude'] = 70e-9 #5e-9
     m.params['Ex_CR_amplitude'] = 20e-9 #5e-9
 
-    m.params['SSRO_duration'] = 120
+    m.params['SSRO_duration'] = 200
 
     # ms = 0 calibration
-    m.params['SP_duration'] = 200
+    m.params['SP_duration'] = 100
     m.params['A_SP_amplitude'] = 70e-9
     m.params['Ex_SP_amplitude'] = 0.
-    m.params['Ex_RO_amplitude'] = 80e-9 #10e-9
+    m.params['Ex_RO_amplitude'] = 20e-9 #10e-9
     
     m.autoconfig()
     m.setup()
@@ -40,9 +40,9 @@ def ssrocalibration(name):
     m.save('ms0')
 
     # ms = 1 calibration
-    m.params['SP_duration'] = 700
+    m.params['SP_duration'] = 300
     m.params['A_SP_amplitude'] = 0.
-    m.params['Ex_SP_amplitude'] = 10e-9 #10e-9
+    m.params['Ex_SP_amplitude'] = 40e-9 #10e-9
 
 
     m.run()
