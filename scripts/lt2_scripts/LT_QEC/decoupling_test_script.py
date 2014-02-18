@@ -13,7 +13,7 @@ import measurement.lib.measurement2.measurement as m2
 # import the msmt class
 from measurement.lib.measurement2.adwin_ssro import ssro
 from measurement.lib.measurement2.adwin_ssro import pulsar as pulsar_msmt
-import measurement.lib.pulsar.DynamicalDecoupling as DD 
+import measurement.lib.pulsar.DynamicalDecoupling as DD
 
 reload(DD)
 
@@ -38,7 +38,7 @@ def SimpleDecoupling(name):
     m.params['A_SP_amplitude'] = 40e-9
     m.params['Ex_SP_amplitude'] = 0.
     m.params['repetitions'] = 200
-        
+
 
         #Plot parameters
     m.params['sweep_name'] = 'Times (ms)'
@@ -50,11 +50,13 @@ def SimpleDecoupling(name):
 
     m.autoconfig()
 
-    #Decoupling specific parameters 
+    #Decoupling specific parameters
     m.params['Number_of_pulses'] = 14 #linspace()
     m.params['tau'] = 1.5e-6 #2*tau
     m.params['Initial_Pulse'] ='pi/2'
     m.params['Init_Pulse_Duration'] = 1.5e-6
+    m.params['Final_Pulse'] ='pi/2'
+    m.params['Final_Pulse_Duration'] = 1.5e-6
 
     '''generate sequence'''
     m.generate_sequence(upload=True)

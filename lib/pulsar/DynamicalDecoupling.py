@@ -16,7 +16,7 @@ from measurement.lib.pulsar import pulse, pulselib, element, pulsar
 from measurement.lib.measurement2.adwin_ssro.pulsar import PulsarMeasurement
 
 
-class DecouplingGateSequence(PulsarMeasurement):
+class DynamicalDecoupling(PulsarMeasurement):
 
     '''
     This is a general class for decoupling gate sequences used in addressing Carbon -13 atoms
@@ -38,16 +38,17 @@ class DecouplingGateSequence(PulsarMeasurement):
         if GateName == 'StdDecoupling':
             tau = self.params['tau']
             N = self.params['Number_of_pulses']
-            print 'Using arbitrary interpulse delay and number of pulses of tau =  1.5e-6 and N = 32'
         elif GateName == 'Carbon1' :
-            tau = self.params['tau_C1']
+            tau = self.params['tau_C1'] #From the measurement script would be better if it comes from config file
+            N = self.params['N_C1']
 
         else:
             print 'Gate not in database'
+            print GateName
             return
         return tau, N
 
-    def generate_decoupling_sequence_elements(self,tau,N):
+    def generate_decoupling_sequence_elements(self,tau,N,prefix):
         '''
         This function takes the wait time and the number of pulse-blocks(repetitions) as input
         It returns the start middle and end elements aswell as the total time and time cut of at the edges
@@ -73,7 +74,7 @@ class DecouplingGateSequence(PulsarMeasurement):
 
         ## Pulses
         # pi-pulse, needs different pulses for ms=-1 and ms=+1 transitions in the future. Might also need Y pulse
-            X = pulselib.MW_IQmod_pulse('electron Pi-pulse',
+            X = pulselib.MW_IQmod_pulse('electron X-Pi-pulse',
                 I_channel='MW_Imod', Q_channel='MW_Qmod',
                 PM_channel='MW_pulsemod',
                 frequency = self.params['MW_modulation_frequency'],
@@ -82,7 +83,7 @@ class DecouplingGateSequence(PulsarMeasurement):
                 amplitude = self.params['Pi_pulse_amp'])
             #Y pulse is needed for XY decoupling schemse
             # !NB currently identical to X pulse
-            Y = pulselib.MW_IQmod_pulse('electron Pi-pulse',
+            Y = pulselib.MW_IQmod_pulse('electron Y-Pi-pulse',
                 I_channel='MW_Imod', Q_channel='MW_Qmod',
                 PM_channel='MW_pulsemod',
                 frequency = self.params['MW_modulation_frequency'],
@@ -100,24 +101,25 @@ class DecouplingGateSequence(PulsarMeasurement):
             # add sequence elements to a list
             list_of_elements = []
             #Decoupling element/waveform Start
-            e_start = element.Element('Decoupling Element',  pulsar=qt.pulsar,
+            e_start = element.Element('Initial %s Decoupling Element' %prefix,  pulsar=qt.pulsar,
                     global_time = True)# Not sure if the name here is correct.
             e_start.append(T_before_p)
             e_start.append(pulse.cp(X))
             e_start.append(T)
             list_of_elements.append(e_start)
 
-            e_middle = element.Element('Decoupling Element',  pulsar=qt.pulsar,
+            #Currently middle is XY2 with an if statement based on the value of N this can be optimised
+            e_middle = element.Element('Repeating %s Decoupling Element' %prefix,  pulsar=qt.pulsar,
                     global_time = True)# Not sure if the name here is correct.
             e_middle.append(T)
             e_middle.append(pulse.cp(X))
             e_middle.append(T)
             e_middle.append(T)
-            e_middle.append(pulse.cp(X))
+            e_middle.append(pulse.cp(Y))
             e_middle.append(T)
             list_of_elements.append(e_middle)
 
-            e_end = element.Element('Decoupling Element',  pulsar=qt.pulsar,
+            e_end = element.Element('Final %s Decoupling Element' %prefix,  pulsar=qt.pulsar,
                     global_time = True)# Not sure if the name here is correct.
             e_end.append(T)
             e_end.append(pulse.cp(X))
@@ -140,7 +142,7 @@ class DecouplingGateSequence(PulsarMeasurement):
         '''
         pass
 
-    def generate_connection_element(self,length, Gate_type):
+    def generate_connection_element(self,length, Gate_type,prefix):
         '''
         Generates an element that connects to decoupling elements
         It can be at the start, the end or between sequence elements
@@ -161,7 +163,7 @@ class DecouplingGateSequence(PulsarMeasurement):
 
 
                         #Pi-pulse element/waveform
-            e = element.Element('Pi_2_pulse',  pulsar=qt.pulsar,
+            e = element.Element('%s Pi_2_pulse' %prefix,  pulsar=qt.pulsar,
                     global_time = True)
             e.append(T_before_p)
             e.append(pulse.cp(X))
@@ -189,33 +191,27 @@ class DecouplingGateSequence(PulsarMeasurement):
                 seq.append(name=e.name, wfname=e.name,
                     trigger_wait=True,repetitions = list_of_repetitions[ind])
             elif ind == len(list_of_elements):
+                # adds a trigger element to the final element of the sequence
                 seq.append(name=e.name, wfname=e.name,
-                   trigger_wait=False,repetitions = list_of_repetitions[ind]) 
-                
+                   trigger_wait=False,repetitions = list_of_repetitions[ind])
+
                 Trig = pulse.SquarePulse(channel = 'adwin_sync',
                     length = 5e-6, amplitude = 2)
                 Trig_element = element.Element('ADwin_trigger', pulsar=qt.pulsar,
                     global_time = True)
-                Trig_element.append(Trig)                 
-                seq.append(Trig_element) 
+                Trig_element.append(Trig)
+                seq.append(Trig_element)
             else:
                 seq.append(name=e.name, wfname=e.name,
                     trigger_wait=False,repetitions = list_of_repetitions[ind])
         return seq
 
-class ThreeQubitMB_QEC(DecouplingGateSequence):
+class AdvancedDecouplingSequence(DynamicalDecoupling):
     '''
-    The thre qubit MB QEC is a child class of the more general decoupling gate sequence class
+    The advanced decoupling sequence is a child class of the more general decoupling gate sequence class
     It contains a specific gate sequence with feedback loops and other stuff
     !NB: It is currently EMPTY
     '''
-
-class SimpleDecoupling(DecouplingGateSequence):
-    '''
-    The most simple version of a decoupling sequence
-    Only contains a simple decoupling sequence no carbon addressing and stuff
-    '''
-
     def generate_sequence(self,upload=False):
         '''
         The function that is executed when a measurement script is executed
@@ -224,15 +220,15 @@ class SimpleDecoupling(DecouplingGateSequence):
         '''
         #load_input_gate_sequence()
         #For now we use a placeholder sequence
-        #tau, N = DecouplingGateSequence.retrieve_resonant_carbon_conditions('StdDecoupling')
+        #tau, N = DynamicalDecoupling.retrieve_resonant_carbon_conditions('StdDecoupling')
         tau = self.params['tau']
         N = self.params['Number_of_pulses']
-        list_of_decoupling_elements, list_of_decoupling_reps, decoupling_meta_data = DecouplingGateSequence.generate_decoupling_sequence_elements(self,tau,N)
+        list_of_decoupling_elements, list_of_decoupling_reps, decoupling_meta_data = DynamicalDecoupling.generate_decoupling_sequence_elements(self,tau,N)
         #duration, Gate_type = Determine_length_and_type_of_Connection_elements(Gate_sequence,total_sequencetimes,times_removed)
 
         duration = self.params['Init_Pulse_Duration']
         Gate_type = self.params['Initial_Pulse']
-        initial_pi_2 = DecouplingGateSequence.generate_connection_element(self,duration, Gate_type)
+        initial_pi_2 = DynamicalDecoupling.generate_connection_element(self,duration, Gate_type)
         final_pi_2 = initial_pi_2
 
         #very sequence specific
@@ -244,7 +240,53 @@ class SimpleDecoupling(DecouplingGateSequence):
 
         list_of_repetitions = [1]+ list_of_decoupling_reps+[1]
         print list_of_repetitions
-        seq = DecouplingGateSequence.combine_to_sequence(self,list_of_elements,list_of_repetitions)
+        seq = DynamicalDecoupling.combine_to_sequence(self,list_of_elements,list_of_repetitions)
+
+        if upload:
+            qt.pulsar.upload(*list_of_elements)
+            # program the AWG
+            qt.pulsar.program_sequence(seq)
+        else:
+            print 'upload = false, no sequence uploaded to AWG'
+
+class SimpleDecoupling(DynamicalDecoupling):
+    '''
+    The most simple version of a decoupling sequence
+    Contains initial pulse, decoupling sequence and final pulse.
+    '''
+
+    def generate_sequence(self,upload=False):
+        '''
+        The function that is executed when a measurement script is executed
+        It calls the different functions in this class
+        For now it is simplified and can only do one type of decoupling sequence
+        '''
+        tau = self.params['tau']
+        N = self.params['Number_of_pulses']
+        prefix = 'electron'
+        list_of_decoupling_elements, list_of_decoupling_reps, decoupling_meta_data = DynamicalDecoupling.generate_decoupling_sequence_elements(self,tau,N,prefix)
+
+
+        Gate_type = self.params['Initial_Pulse']
+        duration = self.params['Initial_Pulse_Duration']
+        prefix = 'initial'
+        initial_pi_2 = DynamicalDecoupling.generate_connection_element(self,duration, Gate_type,prefix)
+
+        duration = self.params['Final_Pulse_Duration']
+        Gate_type = self.params['Final_Pulse']
+        prefix = 'final'
+        final_pi_2 = DynamicalDecoupling.generate_connection_element(self,duration, Gate_type,prefix)
+
+        #very sequence specific
+        initial_pi_2
+        list_of_elements = []
+        list_of_elements.extend(initial_pi_2)
+        list_of_elements.extend(list_of_decoupling_elements)
+        list_of_elements.extend(final_pi_2)
+
+        list_of_repetitions = [1]+ list_of_decoupling_reps+[1]
+        print list_of_repetitions
+        seq = DynamicalDecoupling.combine_to_sequence(self,list_of_elements,list_of_repetitions)
 
         if upload:
             qt.pulsar.upload(*list_of_elements)
