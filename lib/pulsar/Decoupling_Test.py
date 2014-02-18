@@ -218,7 +218,7 @@ class DecouplingGateSequence(PulsarMeasurement):
                     trigger_wait=False,repetitions = list_of_repetitions[ind])
         return seq
 
-class ThreeQubitMB_QEC(DecouplingGateSequence):
+class AdvancedDecouplingSequence(DecouplingGateSequence):
     '''
     The thre qubit MB QEC is a child class of the more general decoupling gate sequence class
     It contains a specific gate sequence with feedback loops and other stuff
