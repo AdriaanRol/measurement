@@ -181,26 +181,22 @@ class DynamicalDecoupling(PulsarMeasurement):
         '''
         #Ideally this would work for an arbitrary number of elements lists and repetition lists
         seq = pulsar.Sequence('Decoupling Sequence')
-        print list_of_elements
-        print list_of_repetitions
-        print len(list_of_elements)
-        print len(list_of_repetitions)
 
         for ind, e in enumerate(list_of_elements):
             if ind == 0:
                 seq.append(name=e.name, wfname=e.name,
                     trigger_wait=True,repetitions = list_of_repetitions[ind])
-            elif ind == len(list_of_elements):
-                # adds a trigger element to the final element of the sequence
-                seq.append(name=e.name, wfname=e.name,
-                   trigger_wait=False,repetitions = list_of_repetitions[ind])
+            # elif ind == len(list_of_elements):
+            #     # adds a trigger element to the final element of the sequence
+            #     seq.append(name=e.name, wfname=e.name,
+            #        trigger_wait=False,repetitions = list_of_repetitions[ind])
 
-                Trig = pulse.SquarePulse(channel = 'adwin_sync',
-                    length = 5e-6, amplitude = 2)
-                Trig_element = element.Element('ADwin_trigger', pulsar=qt.pulsar,
-                    global_time = True)
-                Trig_element.append(Trig)
-                seq.append(Trig_element)
+            #     Trig = pulse.SquarePulse(channel = 'adwin_sync',
+            #         length = 5e-6, amplitude = 2)
+            #     Trig_element = element.Element('ADwin_trigger', pulsar=qt.pulsar,
+            #         global_time = True)
+            #     Trig_element.append(Trig)
+            #     seq.append(Trig_element)
             else:
                 seq.append(name=e.name, wfname=e.name,
                     trigger_wait=False,repetitions = list_of_repetitions[ind])
@@ -277,14 +273,21 @@ class SimpleDecoupling(DynamicalDecoupling):
         prefix = 'final'
         final_pi_2 = DynamicalDecoupling.generate_connection_element(self,duration, Gate_type,prefix)
 
+        Trig = pulse.SquarePulse(channel = 'adwin_sync',
+            length = 5e-6, amplitude = 2)
+        Trig_element = element.Element('ADwin_trigger', pulsar=qt.pulsar,
+            global_time = True)
+        Trig_element.append(Trig)
+
         #very sequence specific
-        initial_pi_2
         list_of_elements = []
         list_of_elements.extend(initial_pi_2)
         list_of_elements.extend(list_of_decoupling_elements)
         list_of_elements.extend(final_pi_2)
+        list_of_elements.extend([Trig_element])
 
-        list_of_repetitions = [1]+ list_of_decoupling_reps+[1]
+
+        list_of_repetitions = [1]+ list_of_decoupling_reps+[1,1]
         print list_of_repetitions
         seq = DynamicalDecoupling.combine_to_sequence(self,list_of_elements,list_of_repetitions)
 
