@@ -54,9 +54,7 @@ def SimpleDecoupling(name):
     m.params['Number_of_pulses'] = 18 #linspace()
     m.params['tau'] = 1.5e-6 #2*tau
     m.params['Initial_Pulse'] ='pi/2'
-    m.params['Initial_Pulse_Duration'] = 1.5e-6
     m.params['Final_Pulse'] ='pi/2'
-    m.params['Final_Pulse_Duration'] = 1.5e-6
 
     '''generate sequence'''
     m.generate_sequence(upload=True)
