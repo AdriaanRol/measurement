@@ -1,6 +1,6 @@
 '''
 This is modified version of the ElectronT1 class from PULSAR.PY
-eventually this class should be placed in that file again
+Work in progress 
 File made by Adriaan Rol
 '''
 
@@ -85,67 +85,71 @@ class DynamicalDecoupling(PulsarMeasurement):
 
             ## Pulses
             # pi-pulse, needs different pulses for ms=-1 and ms=+1 transitions in the future.
-                X = pulselib.MW_IQmod_pulse('electron X-Pi-pulse',
-                    I_channel='MW_Imod', Q_channel='MW_Qmod',
-                    PM_channel='MW_pulsemod',
-                    frequency = self.params['MW_modulation_frequency'],
-                    PM_risetime = self.params['MW_pulse_mod_risetime'],
-                    length = self.params['Pi_pulse_duration'],
-                    amplitude = self.params['Pi_pulse_amp'],
-                    phase = 90])
-                    #phase = self.params['X-phase'])
+            X = pulselib.MW_IQmod_pulse('electron X-Pi-pulse',
+                I_channel='MW_Imod', Q_channel='MW_Qmod',
+                PM_channel='MW_pulsemod',
+                frequency = self.params['MW_modulation_frequency'],
+                PM_risetime = self.params['MW_pulse_mod_risetime'],
+                length = self.params['Pi_pulse_duration'],
+                amplitude = self.params['Pi_pulse_amp'],
+                phase = self.params['X_phase'])
 
-                Y = pulselib.MW_IQmod_pulse('electron Y-Pi-pulse',
-                    I_channel='MW_Imod', Q_channel='MW_Qmod',
-                    PM_channel='MW_pulsemod',
-                    frequency = self.params['MW_modulation_frequency'],
-                    PM_risetime = self.params['MW_pulse_mod_risetime'],
-                    length = self.params['Pi_pulse_duration'],
-                    amplitude = self.params['Pi_pulse_amp'],
-                    phase = 0])
-                    #phase = self.params['Y-phase'])  #This would be cleaner but has to be specified in msmt_params
 
-                T = pulse.SquarePulse(channel='MW_Imod', name='Wait: tau',
-                    length = pulse_tau, amplitude = 0.)
-                T_before_p = pulse.SquarePulse(channel='MW_Imod', name='delay',
-                    length = tau_shortened, amplitude = 0.) #the unit waittime is 10e-6 s
-                T_after_p = pulse.SquarePulse(channel='MW_Imod', name='delay',
-                    length = tau_shortened, amplitude = 0.) #the length of this time should depends on the pi-pulse length/.
+            Y = pulselib.MW_IQmod_pulse('electron Y-Pi-pulse',
+                I_channel='MW_Imod', Q_channel='MW_Qmod',
+                PM_channel='MW_pulsemod',
+                frequency = self.params['MW_modulation_frequency'],
+                PM_risetime = self.params['MW_pulse_mod_risetime'],
+                length = self.params['Pi_pulse_duration'],
+                amplitude = self.params['Pi_pulse_amp'],
+                phase = self.params['Y_phase'])
 
-                # add sequence elements to a list
-                list_of_elements = []
-                #Decoupling element/waveform Start
-                e_start = element.Element('Initial %s Decoupling Element' %prefix,  pulsar=qt.pulsar,
-                        global_time = True)# Not sure if the name here is correct.
-                e_start.append(T_before_p)
-                e_start.append(pulse.cp(X))
-                e_start.append(T)
-                list_of_elements.append(e_start)
+            T = pulse.SquarePulse(channel='MW_Imod', name='Wait: tau',
+                length = pulse_tau, amplitude = 0.)
+            T_before_p = pulse.SquarePulse(channel='MW_Imod', name='delay',
+                length = tau_shortened, amplitude = 0.) #the unit waittime is 10e-6 s
+            T_after_p = pulse.SquarePulse(channel='MW_Imod', name='delay',
+                length = tau_shortened, amplitude = 0.) #the length of this time should depends on the pi-pulse length/.
 
-                #Currently middle is XY2 with an if statement based on the value of N this can be optimised
-                e_middle = element.Element('Repeating %s Decoupling Element' %prefix,  pulsar=qt.pulsar,
-                        global_time = True)# Not sure if the name here is correct.
-                e_middle.append(T)
-                e_middle.append(pulse.cp(X))
-                e_middle.append(T)
-                e_middle.append(T)
-                e_middle.append(pulse.cp(Y))
-                e_middle.append(T)
-                list_of_elements.append(e_middle)
+            # add sequence elements to a list
+            list_of_elements = []
+            #Decoupling element/waveform Start
+            e_start = element.Element('Initial %s Decoupling Element' %prefix,  pulsar=qt.pulsar,
+                    global_time = True)# Not sure if the name here is correct.
+            e_start.append(T_before_p)
+            e_start.append(pulse.cp(X))
+            e_start.append(T)
+            list_of_elements.append(e_start)
 
-                e_end = element.Element('Final %s Decoupling Element' %prefix,  pulsar=qt.pulsar,
-                        global_time = True)# Not sure if the name here is correct.
-                e_end.append(T)
-                e_end.append(pulse.cp(X))
-                e_end.append(T_after_p)
-                list_of_elements.append(e_end)
+            #Currently middle is XY2 with an if statement based on the value of N this can be optimised
+            e_middle = element.Element('Repeating %s Decoupling Element' %prefix,  pulsar=qt.pulsar,
+                    global_time = True)# Not sure if the name here is correct.
+            e_middle.append(T)
+            e_middle.append(pulse.cp(X))
+            e_middle.append(T)
+            e_middle.append(T)
+            e_middle.append(pulse.cp(Y))
+            e_middle.append(T)
+            list_of_elements.append(e_middle)
 
-                ### create the elements/waveforms from the basic pulses ###
-                total_sequence_time=2*tau*N - 2* tau_cut
+            e_end = element.Element('Final %s Decoupling Element' %prefix,  pulsar=qt.pulsar,
+                    global_time = True)# Not sure if the name here is correct.
+            e_end.append(T)
+            e_end.append(pulse.cp(X))
+            e_end.append(T_after_p)
+            list_of_elements.append(e_end)
 
-                list_of_repetitions = [1, N/2-1, 1]
+            ### create the elements/waveforms from the basic pulses ###
+            total_sequence_time=2*tau*N - 2* tau_cut
 
-                return [list_of_elements, list_of_repetitions, tau_cut, total_sequence_time]
+            list_of_repetitions = [1, N/2-1, 1]
+            print 'tau_shortened'
+            print tau_shortened
+            print 'tau_cut'
+            print tau_cut
+            print 'tau' 
+            print tau 
+            return [list_of_elements, list_of_repetitions, tau_cut, total_sequence_time]
 
     def Determine_length_and_type_of_Connection_elements(self,GateSequence,TotalsequenceTimes,tau_cut) :
         '''
@@ -194,24 +198,12 @@ class DynamicalDecoupling(PulsarMeasurement):
         '''
         Combines all the generated elements to a sequence for the AWG
         '''
-        #Ideally this would work for an arbitrary number of elements lists and repetition lists
         seq = pulsar.Sequence('Decoupling Sequence')
 
         for ind, e in enumerate(list_of_elements):
             if ind == 0:
                 seq.append(name=e.name, wfname=e.name,
                     trigger_wait=True,repetitions = list_of_repetitions[ind])
-            # elif ind == len(list_of_elements):
-            #     # adds a trigger element to the final element of the sequence
-            #     seq.append(name=e.name, wfname=e.name,
-            #        trigger_wait=False,repetitions = list_of_repetitions[ind])
-
-            #     Trig = pulse.SquarePulse(channel = 'adwin_sync',
-            #         length = 5e-6, amplitude = 2)
-            #     Trig_element = element.Element('ADwin_trigger', pulsar=qt.pulsar,
-            #         global_time = True)
-            #     Trig_element.append(Trig)
-            #     seq.append(Trig_element)
             else:
                 seq.append(name=e.name, wfname=e.name,
                     trigger_wait=False,repetitions = list_of_repetitions[ind])
@@ -279,15 +271,15 @@ class SimpleDecoupling(DynamicalDecoupling):
 
 
         Gate_type = self.params['Initial_Pulse']
-        time_before_initial_pulse = tau - tau_cut  #function corrects for pulse not having zero duration
-        time_after_initial_pulse = 1e-6 - time_before_initial pulse
+        time_before_initial_pulse = 1e-6 - tau_cut + 20e-9  #function corrects for pulse not having zero duration
+        time_after_initial_pulse = tau_cut
 
         prefix = 'initial'
         initial_pi_2 = DynamicalDecoupling.generate_connection_element(self,time_before_initial_pulse,time_after_initial_pulse, Gate_type,prefix)
 
         Gate_type = self.params['Final_Pulse']
-        time_before_final_pulse = 1e-6 - time_before_initial pulse #function corrects for pulse not having zero duration
-        time_after_final_pulse = tau - tau_cut
+        time_before_final_pulse = tau_cut #function corrects for pulse not having zero duration
+        time_after_final_pulse = 1e-6 - tau_cut + 20e-9
 
         prefix = 'final'
         final_pi_2 = DynamicalDecoupling.generate_connection_element(self,time_before_final_pulse,time_after_final_pulse, Gate_type,prefix)

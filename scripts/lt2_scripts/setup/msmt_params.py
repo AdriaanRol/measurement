@@ -249,6 +249,10 @@ cfg.set(branch+'MW_modulation_frequency', f0)
 cfg.set(branch+'Pi_pulse_duration', 40e-9)
 cfg.set(branch+'Pi_pulse_amp',  0.6296)
 
+#Lines added to implement different phase pulses in decoupling sequence 
+cfg.set(branch+'X_phase',  90)
+cfg.set(branch+'Y_phase',  0)
+
 #cfg.set(branch+'CORPSE_pi2_amp',0.4)
 #CORPSE_frq = 8.15e6
 #cfg.set(branch+'CORPSE_pi_60_duration', 1./CORPSE_frq/6.)

@@ -52,7 +52,7 @@ def SimpleDecoupling(name):
 
     #Decoupling specific parameters
     m.params['Number_of_pulses'] = 18 #linspace()
-    m.params['tau'] = 1.5e-6 #2*tau
+    m.params['tau'] = 0.78e-6 #2*tau
     m.params['Initial_Pulse'] ='pi/2'
     m.params['Final_Pulse'] ='pi/2'
 
