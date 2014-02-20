@@ -1,6 +1,6 @@
 '''
 This is modified version of the ElectronT1 class from PULSAR.PY
-Work in progress 
+Work in progress
 File made by Adriaan Rol
 '''
 
@@ -59,21 +59,90 @@ class DynamicalDecoupling(PulsarMeasurement):
 
         2*tau = tau_cut +tau_shortened+ Pi_pulse_duration + tau_pulse
         '''
+        # pi-pulse, needs different pulses for ms=-1 and ms=+1 transitions in the future.
+        X = pulselib.MW_IQmod_pulse('electron X-Pi-pulse',
+            I_channel='MW_Imod', Q_channel='MW_Qmod',
+            PM_channel='MW_pulsemod',
+            frequency = self.params['MW_modulation_frequency'],
+            PM_risetime = self.params['MW_pulse_mod_risetime'],
+            length = self.params['Pi_pulse_duration'],
+            amplitude = self.params['Pi_pulse_amp'],
+            phase = self.params['X_phase'])
+
+
+        Y = pulselib.MW_IQmod_pulse('electron Y-Pi-pulse',
+            I_channel='MW_Imod', Q_channel='MW_Qmod',
+            PM_channel='MW_pulsemod',
+            frequency = self.params['MW_modulation_frequency'],
+            PM_risetime = self.params['MW_pulse_mod_risetime'],
+            length = self.params['Pi_pulse_duration'],
+            amplitude = self.params['Pi_pulse_amp'],
+            phase = self.params['Y_phase'])
         minimum_AWG_elementsize = 1e-6 #AWG elements/waveforms have to be 1 mu s
         # would be cleaner to also have AWG quantization =4e-9 as a variable but not done for readability
         Pi_pulse_duration = self.params['Pi_pulse_duration']
         pulse_tau = tau - Pi_pulse_duration/2.0 #To correct for pulse duration
 
         # initial checks to see if sequence is possible
-        if tau <0.5e-6:
+        if N%2!=0:
+            print 'Error: odd number of pulses, impossible to do decoupling control sequence'
+        if pulse_tau<0:
+            print 'Error: tau is smaller than pi-pulse duration. Cannot generate decoupling element'
+            return
+        elif tau <0.5e-6:
             print '''Error: total element duration smaller than 1 mu s.
             Requires more coding to implement
             '''
             return
-        elif pulse_tau<0:
-            print 'Error: tau is smaller than pi-pulse duration. Cannot generate decoupling element'
-            return
+        #Next part of the if statements checks what type of
+        elif N%8 == 0:
+            e_XY_start = element.Element('Initial %s XY8-Decoupling Element' %prefix,  pulsar=qt.pulsar,
+                    global_time = True)# Not sure if thgenerate_decoupling_sequence_elementse name here is correct.
+            e_XY_start.append(T_before_p)
+            e_XY_start.append(pulse.cp(X))
+            e_XY_start.append(T)
+            e_XY_start.append(T)
+            e_XY_start.append(pulse.cp(Y))
+            e_XY_start.append(T)
+            list_of_elements.append(e_XY_start)
+
+            #Currently middle is XY2 with an if statement based on the value of N this can be optimised
+            e_YX = element.Element('Repeating YX %s XY8-Decoupling Element' %prefix,  pulsar=qt.pulsar,
+                    global_time = True)# Not sure if the name here is correct.
+            e_YX.append(T)
+            e_YX.append(pulse.cp(Y))
+            e_YX.append(T)
+            e_YX.append(T)
+            e_YX.append(pulse.cp(X))
+            e_YX.append(T)
+            list_of_elements.append(e_YX)
+
+            #Currently middle is XY2 with an if statement based on the value of N this can be optimised
+            e_XY = element.Element('Repeating XY %s XY8-Decoupling Element' %prefix,  pulsar=qt.pulsar,
+                    global_time = True)# Not sure if the name here is correct.
+            e_XY.append(T)
+            e_XY.append(pulse.cp(X))
+            e_XY.append(T)
+            e_XY.append(T)
+            e_XY.append(pulse.cp(Y))
+            e_XY.append(T)
+            list_of_elements.append(e_XY)
+
+
+
+            e_YX_end = element.Element('Final %s XY-8 Decoupling Element' %prefix,  pulsar=qt.pulsar,
+                    global_time = True)# Not sure if the name here is correct.
+            e_YX_end.append(T)
+            e_YX_end.append(pulse.cp(Y))
+            e_YX_end.append(T)
+            e_YX_end.append(T)
+            e_YX_end.append(pulse.cp(X))
+            e_YX_end.append(T_after_p)
+            list_of_elements.append(e_YX_end)
+
         else:
+            #Make an XY4 (+XY) decoupling sequence
+
             # Calculate the time to be cut
             element_duration_without_edge = tau + Pi_pulse_duration/2.0
             if element_duration_without_edge  > (minimum_AWG_elementsize+20e-9): #+20 ns is to make sure that elements always have a minimal size
@@ -82,28 +151,7 @@ class DynamicalDecoupling(PulsarMeasurement):
                 tau_shortened = minimum_AWG_elementsize - element_duration_without_edge
                 tau_shortened = np.ceil(tau_shortened/(4e-9))*(4e-9)
             tau_cut = tau - tau_shortened - Pi_pulse_duration/2.0
-
             ## Pulses
-            # pi-pulse, needs different pulses for ms=-1 and ms=+1 transitions in the future.
-            X = pulselib.MW_IQmod_pulse('electron X-Pi-pulse',
-                I_channel='MW_Imod', Q_channel='MW_Qmod',
-                PM_channel='MW_pulsemod',
-                frequency = self.params['MW_modulation_frequency'],
-                PM_risetime = self.params['MW_pulse_mod_risetime'],
-                length = self.params['Pi_pulse_duration'],
-                amplitude = self.params['Pi_pulse_amp'],
-                phase = self.params['X_phase'])
-
-
-            Y = pulselib.MW_IQmod_pulse('electron Y-Pi-pulse',
-                I_channel='MW_Imod', Q_channel='MW_Qmod',
-                PM_channel='MW_pulsemod',
-                frequency = self.params['MW_modulation_frequency'],
-                PM_risetime = self.params['MW_pulse_mod_risetime'],
-                length = self.params['Pi_pulse_duration'],
-                amplitude = self.params['Pi_pulse_amp'],
-                phase = self.params['Y_phase'])
-
             T = pulse.SquarePulse(channel='MW_Imod', name='Wait: tau',
                 length = pulse_tau, amplitude = 0.)
             T_before_p = pulse.SquarePulse(channel='MW_Imod', name='delay',
@@ -125,31 +173,25 @@ class DynamicalDecoupling(PulsarMeasurement):
             e_middle = element.Element('Repeating %s Decoupling Element' %prefix,  pulsar=qt.pulsar,
                     global_time = True)# Not sure if the name here is correct.
             e_middle.append(T)
-            e_middle.append(pulse.cp(X))
-            e_middle.append(T)
-            e_middle.append(T)
             e_middle.append(pulse.cp(Y))
+            e_middle.append(T)
+            e_middle.append(T)
+            e_middle.append(pulse.cp(X))
             e_middle.append(T)
             list_of_elements.append(e_middle)
 
             e_end = element.Element('Final %s Decoupling Element' %prefix,  pulsar=qt.pulsar,
                     global_time = True)# Not sure if the name here is correct.
             e_end.append(T)
-            e_end.append(pulse.cp(X))
+            e_end.append(pulse.cp(Y))
             e_end.append(T_after_p)
             list_of_elements.append(e_end)
 
             ### create the elements/waveforms from the basic pulses ###
             total_sequence_time=2*tau*N - 2* tau_cut
+            Number_of_pulses  = N
 
-            list_of_repetitions = [1, N/2-1, 1]
-            print 'tau_shortened'
-            print tau_shortened
-            print 'tau_cut'
-            print tau_cut
-            print 'tau' 
-            print tau 
-            return [list_of_elements, list_of_repetitions, tau_cut, total_sequence_time]
+            return [list_of_elements, Number_of_pulses, tau_cut, total_sequence_time]
 
     def Determine_length_and_type_of_Connection_elements(self,GateSequence,TotalsequenceTimes,tau_cut) :
         '''
@@ -197,6 +239,8 @@ class DynamicalDecoupling(PulsarMeasurement):
     def combine_to_sequence(self,list_of_elements,list_of_repetitions):
         '''
         Combines all the generated elements to a sequence for the AWG
+        Needs to be changed to handle the dynamical decoupling elements
+
         '''
         seq = pulsar.Sequence('Decoupling Sequence')
 
