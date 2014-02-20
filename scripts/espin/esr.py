@@ -2,13 +2,13 @@ import qt
 import msvcrt
 
 name='ESR_SIL4_Hans_LT2'
-steps   = 101  #101
-mw_power = -5    #in dBm
+steps   = 151  #101
+mw_power = -6    #in dBm
 green_power = 50e-6  #10e-6
 int_time = 50 #30        # in ms
 reps = 3
-#center_f =  2.274# in GHz #Ms = -1
-center_f =  3.500# in GHz #Ms = +1
+center_f =  2.282# in GHz #Ms = -1
+#center_f =  3.500# in GHz #Ms = +1
 range_f  =  0.05 # in GHz
 
 #generate list of frequencies
