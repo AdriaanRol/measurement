@@ -109,7 +109,7 @@ class DynamicalDecoupling(PulsarMeasurement):
                 tau_shortened = minimum_AWG_elementsize - element_duration_without_edge
                 tau_shortened = np.ceil(tau_shortened/(4e-9))*(4e-9)
             tau_cut = tau - tau_shortened - Pi_pulse_duration/2.0
-            
+
             print 'tau =' +str(tau)
             print 'tau_pulse = ' +str(pulse_tau)
             print 'tau shortened= ' + str(tau_shortened)
@@ -367,46 +367,53 @@ class SimpleDecoupling(DynamicalDecoupling):
         It calls the different functions in this class
         For now it is simplified and can only do one type of decoupling sequence
         '''
-        tau = self.params['tau']
+        tau_list = self.params['tau_list']
         N = self.params['Number_of_pulses']
-        prefix = 'electron'
-        list_of_decoupling_elements, list_of_decoupling_reps, tau_cut, total_decoupling_time = DynamicalDecoupling.generate_decoupling_sequence_elements(self,tau,N,prefix)
-
-
-        Gate_type = self.params['Initial_Pulse']
-        time_before_initial_pulse = max(1e-6 - tau_cut + 36e-9,44e-9)  #function corrects for pulse not having zero duration
-        time_after_initial_pulse = tau_cut
-
-        prefix = 'initial'
-        initial_pi_2 = DynamicalDecoupling.generate_connection_element(self,time_before_initial_pulse,time_after_initial_pulse, Gate_type,prefix,tau)
-
-        Gate_type = self.params['Final_Pulse']
-        time_before_final_pulse = tau_cut #function corrects for pulse not having zero duration
-        time_after_final_pulse = time_before_initial_pulse
-
-        prefix = 'final'
-        final_pi_2 = DynamicalDecoupling.generate_connection_element(self,time_before_final_pulse,time_after_final_pulse, Gate_type,prefix,tau)
-
         Trig = pulse.SquarePulse(channel = 'adwin_sync',
             length = 5e-6, amplitude = 2)
         Trig_element = element.Element('ADwin_trigger', pulsar=qt.pulsar,
             global_time = True)
         Trig_element.append(Trig)
+        combined_list_of_elements =[]
+        combined_seq = []
+        for tau in tau_list:
+            prefix = 'electron'
+            list_of_decoupling_elements, list_of_decoupling_reps, tau_cut, total_decoupling_time = DynamicalDecoupling.generate_decoupling_sequence_elements(self,tau,N,prefix)
 
-        #very sequence specific
-        list_of_list_of_elements = []
-        list_of_list_of_elements.append(initial_pi_2)
-        list_of_list_of_elements.append(list_of_decoupling_elements)
-        list_of_list_of_elements.append(final_pi_2)
-        list_of_list_of_elements.append([Trig_element])
-        list_of_repetitions = [1]+ [list_of_decoupling_reps]+[1,1]
+            Gate_type = self.params['Initial_Pulse']
+            time_before_initial_pulse = max(1e-6 - tau_cut + 36e-9,44e-9)  #function corrects for pulse not having zero duration
+            time_after_initial_pulse = tau_cut
 
-        list_of_elements, seq = DynamicalDecoupling.combine_to_sequence(self,list_of_list_of_elements,list_of_repetitions)
+            prefix = 'initial'
+            initial_pi_2 = DynamicalDecoupling.generate_connection_element(self,time_before_initial_pulse,time_after_initial_pulse, Gate_type,prefix,tau)
+
+            Gate_type = self.params['Final_Pulse']
+            time_before_final_pulse = tau_cut #function corrects for pulse not having zero duration
+            time_after_final_pulse = time_before_initial_pulse
+
+            prefix = 'final'
+            final_pi_2 = DynamicalDecoupling.generate_connection_element(self,time_before_final_pulse,time_after_final_pulse, Gate_type,prefix,tau)
+
+
+
+            #very sequence specific
+            list_of_list_of_elements = []
+            list_of_list_of_elements.append(initial_pi_2)
+            list_of_list_of_elements.append(list_of_decoupling_elements)
+            list_of_list_of_elements.append(final_pi_2)
+            list_of_list_of_elements.append([Trig_element])
+            list_of_repetitions = [1]+ [list_of_decoupling_reps]+[1,1]
+
+            list_of_elements, seq = DynamicalDecoupling.combine_to_sequence(self,list_of_list_of_elements,list_of_repetitions)
+
+            combined_list_of_elements.extend(list_of_elements)
+            combined_seq.extend(seq)
+
 
         if upload:
-            qt.pulsar.upload(*list_of_elements)
+            qt.pulsar.upload(*combined_list_of_elements)
             # program the AWG
-            qt.pulsar.program_sequence(seq)
+            qt.pulsar.program_sequence(combined_seq)
         else:
             print 'upload = false, no sequence uploaded to AWG'
 

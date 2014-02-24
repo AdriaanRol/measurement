@@ -52,7 +52,7 @@ def SimpleDecoupling(name):
 
     #Decoupling specific parameters
     m.params['Number_of_pulses'] = 8 #linspace()
-    m.params['tau'] = .75e-6 #2*tau
+    m.params['tau_list'] = np.linspace(.7e-6,1e-6,2)
     m.params['Initial_Pulse'] ='pi/2'
     m.params['Final_Pulse'] ='pi/2'
 
