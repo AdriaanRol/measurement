@@ -129,18 +129,9 @@ class DynamicalDecoupling(PulsarMeasurement):
             e_XY_start.append(pulse.cp(Y))
             e_XY_start.append(T)
             list_of_elements.append(e_XY_start)
+
             #Currently middle is XY2 with an if statement based on the value of N this can be optimised
-            e_YX = element.Element('Repeating YX %s XY8-Decoupling Element, tau = %s' %(prefix,tau),  pulsar=qt.pulsar,
-                    global_time = True)# Not sure if the name here is correct.
-            e_YX.append(T)
-            e_YX.append(pulse.cp(Y))
-            e_YX.append(T)
-            e_YX.append(T)
-            e_YX.append(pulse.cp(X))
-            e_YX.append(T)
-            list_of_elements.append(e_YX)
-            #Currently middle is XY2 with an if statement based on the value of N this can be optimised
-            e_XY = element.Element('Repeating XY %s XY8-Decoupling Element' %(prefix,tau)  pulsar=qt.pulsar,
+            e_XY = element.Element('Repeating XY %s XY8-Decoupling Element, tau= %s' %(prefix,tau),  pulsar=qt.pulsar,
                     global_time = True)# Not sure if the name here is correct.
             e_XY.append(T)
             e_XY.append(pulse.cp(X))
@@ -152,6 +143,18 @@ class DynamicalDecoupling(PulsarMeasurement):
             e_YX_end = element.Element('Final %s XY-8 Decoupling Element, tau = %s' %(prefix,tau),  pulsar=qt.pulsar,
                     global_time = True)# Not sure if the name here is correct.
             e_YX_end.append(T)
+
+            #Currently middle is XY2 with an if statement based on the value of N this can be optimised
+            e_YX = element.Element('Repeating YX %s XY8-Decoupling Element, tau = %s' %(prefix,tau),  pulsar=qt.pulsar,
+                    global_time = True)# Not sure if the name here is correct.
+            e_YX.append(T)
+            e_YX.append(pulse.cp(Y))
+            e_YX.append(T)
+            e_YX.append(T)
+            e_YX.append(pulse.cp(X))
+            e_YX.append(T)
+            list_of_elements.append(e_YX)
+
             e_YX_end.append(pulse.cp(Y))
             e_YX_end.append(T)
             e_YX_end.append(T)
@@ -214,7 +217,7 @@ class DynamicalDecoupling(PulsarMeasurement):
         '''
         pass
 
-    def generate_connection_element(self,time_before_pulse,time_after_pulse, Gate_type,prefix):
+    def generate_connection_element(self,time_before_pulse,time_after_pulse, Gate_type,prefix,tau):
         '''
         Generates an element that connects to decoupling elements
         It can be at the start, the end or between sequence elements
@@ -260,8 +263,8 @@ class DynamicalDecoupling(PulsarMeasurement):
         seq = pulsar.Sequence('Decoupling Sequence')
         list_of_elements=[]
         for ind, loe in enumerate(list_of_list_of_elements):
-            list_of_elements.extend[e] #this converts the list_of_list to an ordinary list when looping
-            if size(loe) ==1:
+            list_of_elements.extend(loe) #this converts the list_of_list to an ordinary list when looping
+            if np.size(loe) ==1:
                 e =loe[0]
                 if ind == 0:
                     seq.append(name=e.name, wfname=e.name,
@@ -269,14 +272,14 @@ class DynamicalDecoupling(PulsarMeasurement):
                 else:
                     seq.append(name=e.name, wfname=e.name,
                         trigger_wait=False,repetitions = list_of_repetitions[ind])
-            elif size(loe) = 3: #XY4 decoupling elements
+            elif np.size(loe) == 3: #XY4 decoupling elements
                 seq.append(name=loe[0].name, wfname=loe[0].name,
                     trigger_wait=False,repetitions = 1)
                 seq.append(name=loe[1].name, wfname=loe[1].name,
-                    trigger_wait=False,repetitions = list_of_repetitions[ind]/2.0-1)
+                    trigger_wait=False,repetitions = list_of_repetitions[ind]/2-1)
                 seq.append(name=loe[2].name, wfname=loe[2].name,
                     trigger_wait=False,repetitions = 1)
-            elif size(loe) = 4: #XY8 Decoupling -a-b-(c^2-b^2)^(N/4-1)-c-d-
+            elif np.size(loe) == 4: #XY8 Decoupling -a-b-(c^2-b^2)^(N/4-1)-c-d-
                 a = loe[0]
                 b= loe[1]
                 c = loe[2]
@@ -285,16 +288,18 @@ class DynamicalDecoupling(PulsarMeasurement):
                     trigger_wait=False,repetitions = 1)
                 seq.append(name=b.name, wfname=b.name,
                     trigger_wait=False,repetitions = 1)
-                for i in range(N/4-1):
-                    seq.append(name=b.name, wfname=b.name,
+                for i in range(list_of_repetitions[ind]/4-1):
+                    seq.append(name=(c.name+str(i)), wfname=c.name,
                         trigger_wait=False,repetitions = 2)
-                    seq.append(name=b.name, wfname=b.name,
+                    seq.append(name=(b.name+str(i)), wfname=b.name,
                         trigger_wait=False,repetitions = 2)
                 seq.append(name=c.name, wfname=c.name,
                     trigger_wait=False,repetitions = 1)
-                seq.append(name=c.name, wfname=c.name,
+                seq.append(name=d.name, wfname=d.name,
                     trigger_wait=False,repetitions = 1)
             else:
+                print 'Size of element not understood Error!'
+                return
         return list_of_elements, seq
 
 class AdvancedDecouplingSequence(DynamicalDecoupling):
@@ -363,14 +368,14 @@ class SimpleDecoupling(DynamicalDecoupling):
         time_after_initial_pulse = tau_cut
 
         prefix = 'initial'
-        initial_pi_2 = DynamicalDecoupling.generate_connection_element(self,time_before_initial_pulse,time_after_initial_pulse, Gate_type,prefix)
+        initial_pi_2 = DynamicalDecoupling.generate_connection_element(self,time_before_initial_pulse,time_after_initial_pulse, Gate_type,prefix,tau)
 
         Gate_type = self.params['Final_Pulse']
         time_before_final_pulse = tau_cut #function corrects for pulse not having zero duration
         time_after_final_pulse = 1e-6 - tau_cut + 20e-9
 
         prefix = 'final'
-        final_pi_2 = DynamicalDecoupling.generate_connection_element(self,time_before_final_pulse,time_after_final_pulse, Gate_type,prefix)
+        final_pi_2 = DynamicalDecoupling.generate_connection_element(self,time_before_final_pulse,time_after_final_pulse, Gate_type,prefix,tau)
 
         Trig = pulse.SquarePulse(channel = 'adwin_sync',
             length = 5e-6, amplitude = 2)
@@ -384,9 +389,9 @@ class SimpleDecoupling(DynamicalDecoupling):
         list_of_list_of_elements.append(list_of_decoupling_elements)
         list_of_list_of_elements.append(final_pi_2)
         list_of_list_of_elements.append([Trig_element])
-        list_of_repetitions = [1]+ list_of_decoupling_reps+[1,1]
+        list_of_repetitions = [1]+ [list_of_decoupling_reps]+[1,1]
 
-        list_of_element, seq = DynamicalDecoupling.combine_to_sequence(self,list_of_elements,list_of_repetitions)
+        list_of_elements, seq = DynamicalDecoupling.combine_to_sequence(self,list_of_list_of_elements,list_of_repetitions)
 
         if upload:
             qt.pulsar.upload(*list_of_elements)
