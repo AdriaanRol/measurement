@@ -1,23 +1,31 @@
 import qt
 import msvcrt
 
+##############
+### Inputs ###
+##############
+
 name='ESR_SIL4_Hans_LT2'
-steps   = 151  #101
-mw_power = -6    #in dBm
+steps   = 251  #101
+mw_power = -3    #in dBm
 green_power = 50e-6  #10e-6
 int_time = 50 #30        # in ms
-reps = 3
-center_f =  2.282# in GHz #Ms = -1
-#center_f =  3.500# in GHz #Ms = +1
-range_f  =  0.05 # in GHz
+reps = 10
+#center_f =  2.088 # in GHz #Ms = -1
+center_f =  3.65# in GHz #Ms = +1
+range_f  =  0.150 # in GHz
 
 #generate list of frequencies
 f_list = linspace((center_f-range_f)*1e9, (center_f+range_f)*1e9, steps)
 
-ins_smb = qt.instruments['SMB100']
+ins_smb = qt.instruments['SMB100']  
 ins_adwin = qt.instruments['adwin']
 ins_counters = qt.instruments['counters']
 ins_aom = qt.instruments['GreenAOM']
+
+###############
+### Run ESR ###
+###############
 
 counter = 1
 MW_power = mw_power

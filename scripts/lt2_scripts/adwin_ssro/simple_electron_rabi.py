@@ -36,7 +36,7 @@ def erabi(name, msp1=False):
         m.params['mw_frq'] = 2.80e9
         m.params['ms_cntr_frq'] =  m.params['ms-1_cntr_frq']
 
-    m.params['mw_power'] = 20
+    m.params['mw_power'] = 20 
     
     m.params['repetitions'] = 1000
     m.params['MW_pulse_amplitudes'] = np.ones(pts) * 0.9
