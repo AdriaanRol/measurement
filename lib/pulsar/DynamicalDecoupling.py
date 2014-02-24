@@ -103,13 +103,18 @@ class DynamicalDecoupling(PulsarMeasurement):
             #Calculate time to be cut
             #DOUBLE CHECK, NOW JUST MODIFIED OLD CODE TEST THIS!!!!
             element_duration_without_edge = 3*tau + Pi_pulse_duration/2.0
-            if element_duration_without_edge  > (minimum_AWG_elementsize+20e-9): #+20 ns is to make sure that elements always have a minimal size
-                tau_shortened = np.ceil((element_duration_without_edge+ 20e-9)/4e-9)*4e-9 -element_duration_without_edge
+            if element_duration_without_edge  > (minimum_AWG_elementsize+36e-9): #+20 ns is to make sure that elements always have a minimal size
+                tau_shortened = np.ceil((element_duration_without_edge+ 36e-9)/4e-9)*4e-9 -element_duration_without_edge
             else:
                 tau_shortened = minimum_AWG_elementsize - element_duration_without_edge
                 tau_shortened = np.ceil(tau_shortened/(4e-9))*(4e-9)
             tau_cut = tau - tau_shortened - Pi_pulse_duration/2.0
-
+            
+            print 'tau =' +str(tau)
+            print 'tau_pulse = ' +str(pulse_tau)
+            print 'tau shortened= ' + str(tau_shortened)
+            print 'Pi_pulse_duration = '+ str(Pi_pulse_duration)
+            print ' tau_cut='+ str(tau_cut)
             # Make the delay pulses
             T = pulse.SquarePulse(channel='MW_Imod', name='Wait: tau',
                 length = pulse_tau, amplitude = 0.)
@@ -131,7 +136,7 @@ class DynamicalDecoupling(PulsarMeasurement):
             list_of_elements.append(e_XY_start)
 
             #Currently middle is XY2 with an if statement based on the value of N this can be optimised
-            e_XY = element.Element('Repeating XY %s XY8-Decoupling Element, tau= %s' %(prefix,tau),  pulsar=qt.pulsar,
+            e_XY = element.Element('Repeating %s XY8-Decoupling Element, tau= %s' %(prefix,tau),  pulsar=qt.pulsar,
                     global_time = True)# Not sure if the name here is correct.
             e_XY.append(T)
             e_XY.append(pulse.cp(X))
@@ -140,12 +145,9 @@ class DynamicalDecoupling(PulsarMeasurement):
             e_XY.append(pulse.cp(Y))
             e_XY.append(T)
             list_of_elements.append(e_XY)
-            e_YX_end = element.Element('Final %s XY-8 Decoupling Element, tau = %s' %(prefix,tau),  pulsar=qt.pulsar,
-                    global_time = True)# Not sure if the name here is correct.
-            e_YX_end.append(T)
 
             #Currently middle is XY2 with an if statement based on the value of N this can be optimised
-            e_YX = element.Element('Repeating YX %s XY8-Decoupling Element, tau = %s' %(prefix,tau),  pulsar=qt.pulsar,
+            e_YX = element.Element('Repeating %s XY8-Decoupling Element, tau = %s' %(prefix,tau),  pulsar=qt.pulsar,
                     global_time = True)# Not sure if the name here is correct.
             e_YX.append(T)
             e_YX.append(pulse.cp(Y))
@@ -155,6 +157,9 @@ class DynamicalDecoupling(PulsarMeasurement):
             e_YX.append(T)
             list_of_elements.append(e_YX)
 
+            e_YX_end = element.Element('Final %s XY-8 Decoupling Element, tau = %s' %(prefix,tau),  pulsar=qt.pulsar,
+                    global_time = True)# Not sure if the name here is correct.
+            e_YX_end.append(T)
             e_YX_end.append(pulse.cp(Y))
             e_YX_end.append(T)
             e_YX_end.append(T)
@@ -167,12 +172,17 @@ class DynamicalDecoupling(PulsarMeasurement):
 
             # Calculate the time to be cut
             element_duration_without_edge = tau + Pi_pulse_duration/2.0
-            if element_duration_without_edge  > (minimum_AWG_elementsize+20e-9): #+20 ns is to make sure that elements always have a minimal size
-                tau_shortened = np.ceil((element_duration_without_edge+ 20e-9)/4e-9)*4e-9 -element_duration_without_edge
+            if element_duration_without_edge  > (minimum_AWG_elementsize+36e-9): #+20 ns is to make sure that elements always have a minimal size
+                tau_shortened = np.ceil((element_duration_without_edge+ 36e-9)/4e-9)*4e-9 -element_duration_without_edge
             else:
                 tau_shortened = minimum_AWG_elementsize - element_duration_without_edge
                 tau_shortened = np.ceil(tau_shortened/(4e-9))*(4e-9)
             tau_cut = tau - tau_shortened - Pi_pulse_duration/2.0
+
+            print 'tau =' +str(tau)
+            print 'tau_pulse = ' +str(pulse_tau)
+            print 'tau shortened= ' + str(tau_shortened)
+            print 'Pi_pulse_duration = '+ str(Pi_pulse_duration)
             # Make the delay pulses
             T = pulse.SquarePulse(channel='MW_Imod', name='Wait: tau',
                 length = pulse_tau, amplitude = 0.)
@@ -364,7 +374,7 @@ class SimpleDecoupling(DynamicalDecoupling):
 
 
         Gate_type = self.params['Initial_Pulse']
-        time_before_initial_pulse = 1e-6 - tau_cut + 20e-9  #function corrects for pulse not having zero duration
+        time_before_initial_pulse = max(1e-6 - tau_cut + 36e-9,44e-9)  #function corrects for pulse not having zero duration
         time_after_initial_pulse = tau_cut
 
         prefix = 'initial'
@@ -372,7 +382,7 @@ class SimpleDecoupling(DynamicalDecoupling):
 
         Gate_type = self.params['Final_Pulse']
         time_before_final_pulse = tau_cut #function corrects for pulse not having zero duration
-        time_after_final_pulse = 1e-6 - tau_cut + 20e-9
+        time_after_final_pulse = time_before_initial_pulse
 
         prefix = 'final'
         final_pi_2 = DynamicalDecoupling.generate_connection_element(self,time_before_final_pulse,time_after_final_pulse, Gate_type,prefix,tau)
