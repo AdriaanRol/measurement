@@ -15,7 +15,6 @@ from measurement.lib.measurement2.adwin_ssro import ssro
 from measurement.lib.pulsar import pulse, pulselib, element, pulsar
 from measurement.lib.measurement2.adwin_ssro.pulsar import PulsarMeasurement
 
-
 class DynamicalDecoupling(PulsarMeasurement):
 
     '''
@@ -110,11 +109,11 @@ class DynamicalDecoupling(PulsarMeasurement):
                 tau_shortened = np.ceil(tau_shortened/(4e-9))*(4e-9)
             tau_cut = tau - tau_shortened - Pi_pulse_duration/2.0
 
-            print 'tau =' +str(tau)
-            print 'tau_pulse = ' +str(pulse_tau)
-            print 'tau shortened= ' + str(tau_shortened)
-            print 'Pi_pulse_duration = '+ str(Pi_pulse_duration)
-            print ' tau_cut='+ str(tau_cut)
+            # print 'tau =' +str(tau)
+            # print 'tau_pulse = ' +str(pulse_tau)
+            # print 'tau shortened= ' + str(tau_shortened)
+            # print 'Pi_pulse_duration = '+ str(Pi_pulse_duration)
+            # print ' tau_cut='+ str(tau_cut)
             # Make the delay pulses
             T = pulse.SquarePulse(channel='MW_Imod', name='Wait: tau',
                 length = pulse_tau, amplitude = 0.)
@@ -179,10 +178,10 @@ class DynamicalDecoupling(PulsarMeasurement):
                 tau_shortened = np.ceil(tau_shortened/(4e-9))*(4e-9)
             tau_cut = tau - tau_shortened - Pi_pulse_duration/2.0
 
-            print 'tau =' +str(tau)
-            print 'tau_pulse = ' +str(pulse_tau)
-            print 'tau shortened= ' + str(tau_shortened)
-            print 'Pi_pulse_duration = '+ str(Pi_pulse_duration)
+            # print 'tau =' +str(tau)
+            # print 'tau_pulse = ' +str(pulse_tau)
+            # print 'tau shortened= ' + str(tau_shortened)
+            # print 'Pi_pulse_duration = '+ str(Pi_pulse_duration)
             # Make the delay pulses
             T = pulse.SquarePulse(channel='MW_Imod', name='Wait: tau',
                 length = pulse_tau, amplitude = 0.)
@@ -279,6 +278,9 @@ class DynamicalDecoupling(PulsarMeasurement):
                 if ind == 0:
                     seq.append(name=e.name, wfname=e.name,
                         trigger_wait=True,repetitions = list_of_repetitions[ind])
+                elif e.name == 'ADwin_trigger':
+                    seq.append(name=str(e.name+list_of_list_of_elements[ind-1][0].name), wfname=e.name,
+                        trigger_wait=False,repetitions = list_of_repetitions[ind])
                 else:
                     seq.append(name=e.name, wfname=e.name,
                         trigger_wait=False,repetitions = list_of_repetitions[ind])
@@ -345,7 +347,7 @@ class AdvancedDecouplingSequence(DynamicalDecoupling):
         list_of_elements.extend(final_pi_2)
 
         list_of_repetitions = [1]+ list_of_decoupling_reps+[1]
-        print list_of_repetitions
+        # print list_of_repetitions
         seq = DynamicalDecoupling.combine_to_sequence(self,list_of_elements,list_of_repetitions)
 
         if upload:
@@ -375,7 +377,8 @@ class SimpleDecoupling(DynamicalDecoupling):
             global_time = True)
         Trig_element.append(Trig)
         combined_list_of_elements =[]
-        combined_seq = []
+        combined_seq = pulsar.Sequence('Simple Decoupling Sequence')
+        i = 0 
         for tau in tau_list:
             prefix = 'electron'
             list_of_decoupling_elements, list_of_decoupling_reps, tau_cut, total_decoupling_time = DynamicalDecoupling.generate_decoupling_sequence_elements(self,tau,N,prefix)
@@ -394,8 +397,6 @@ class SimpleDecoupling(DynamicalDecoupling):
             prefix = 'final'
             final_pi_2 = DynamicalDecoupling.generate_connection_element(self,time_before_final_pulse,time_after_final_pulse, Gate_type,prefix,tau)
 
-
-
             #very sequence specific
             list_of_list_of_elements = []
             list_of_list_of_elements.append(initial_pi_2)
@@ -405,14 +406,19 @@ class SimpleDecoupling(DynamicalDecoupling):
             list_of_repetitions = [1]+ [list_of_decoupling_reps]+[1,1]
 
             list_of_elements, seq = DynamicalDecoupling.combine_to_sequence(self,list_of_list_of_elements,list_of_repetitions)
-
-            combined_list_of_elements.extend(list_of_elements)
-            combined_seq.extend(seq)
-
+            if i ==0: 
+                i=1
+                combined_list_of_elements.extend(list_of_elements)
+            else:
+                combined_list_of_elements.extend(list_of_elements[:-1]) 
+            for seq_el in seq.elements:
+                combined_seq.append_element(seq_el)
 
         if upload:
+            print 'uploading list of elements'
             qt.pulsar.upload(*combined_list_of_elements)
             # program the AWG
+            print ' uploading sequence'
             qt.pulsar.program_sequence(combined_seq)
         else:
             print 'upload = false, no sequence uploaded to AWG'
