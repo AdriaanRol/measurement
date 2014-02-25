@@ -6,14 +6,14 @@ import msvcrt
 ##############
 
 name='ESR_SIL4_Hans_LT2'
-steps   = 251  #101
+steps   = 151  #101
 mw_power = -3    #in dBm
 green_power = 50e-6  #10e-6
 int_time = 50 #30        # in ms
 reps = 10
 #center_f =  2.088 # in GHz #Ms = -1
-center_f =  3.65# in GHz #Ms = +1
-range_f  =  0.150 # in GHz
+center_f =  2.06# in GHz #Ms = +1
+range_f  =  0.100 # in GHz
 
 #generate list of frequencies
 f_list = linspace((center_f-range_f)*1e9, (center_f+range_f)*1e9, steps)
