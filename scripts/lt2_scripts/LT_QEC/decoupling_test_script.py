@@ -1,8 +1,6 @@
 """
 Script for a simple Decoupling sequence
-
-Right now it is a copy of the electron T1 Measurment script
-This will be edited to do a simple decoupling sequence
+Based on Electron T1 script
 Made by Adriaan Rol
 """
 import numpy as np
