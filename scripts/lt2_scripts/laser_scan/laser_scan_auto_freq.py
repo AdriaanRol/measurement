@@ -363,7 +363,7 @@ def red_laser_scan(name):
     m.max_v = 9
     m.v_step=0.01    
     m.start_frequency = 59.5 #GHz
-    m.stop_frequency  = 80  #GHz
+    m.stop_frequency  = 74  #GHz
     
     
     #Gate scan setup
@@ -387,7 +387,7 @@ if __name__=='__main__':
     
     #for ii in range(10):
     stools.turn_off_all_lt2_lasers()
-    red_laser_scan('Hans_sil4_line_scan_noMW_green')
+    red_laser_scan('Hans_sil4_line_scan_2MW_green')
         #yellow_laser_scan('yellow_1nW')
 
         

@@ -208,8 +208,8 @@ cfg.set(branch+'CORPSE_pi2_384p3_duration',  384.3/CORPSE_frq/360.)
 
 branch='samples/Hans_sil4/'
 
-f_msm1_cntr = 1.642e9 
-f_msp1_cntr = 4.218e9    #calibrated
+f_msm1_cntr = 2.000052e9#1.642e9 
+f_msp1_cntr = 3.7541e9#4.218e9    #calibrated
 N_frq = 7.13429e6           #not calibrated
 N_HF_frq = 2.16042e6 
 
@@ -222,17 +222,17 @@ branch='protocols/Hans_sil4-default/AdwinSSRO/'
 
 cfg.set(branch+'A_CR_amplitude', 40e-9)
 cfg.set(branch+'A_RO_amplitude' , 0)
-cfg.set(branch+'A_SP_amplitude', 70e-9)
+cfg.set(branch+'A_SP_amplitude', 63e-9)#70e-9)
 cfg.set(branch+'CR_duration' , 100)
 cfg.set(branch+'CR_preselect', 100)
 cfg.set(branch+'CR_probe', 100)
 cfg.set(branch+'CR_repump', 1000)
-cfg.set(branch+'Ex_CR_amplitude', 10e-9)
-cfg.set(branch+'Ex_RO_amplitude', 10e-9)
+cfg.set(branch+'Ex_CR_amplitude', 20e-9) #10e-9
+cfg.set(branch+'Ex_RO_amplitude', 20e-9) #10e-9
 cfg.set(branch+'Ex_SP_amplitude', 0e-9)
-cfg.set(branch+'SP_duration', 300)
+cfg.set(branch+'SP_duration', 150) #300
 cfg.set(branch+'SP_filter_duration', 0)
-cfg.set(branch+'SSRO_duration', 93)
+cfg.set(branch+'SSRO_duration', 168) #93
 cfg.set(branch+'SSRO_repetitions', 5000)
 cfg.set(branch+'SSRO_stop_after_first_photon', 0)
 cfg.set(branch+'mw_frq',2.2e9) #Probably Redundant, better to read out from AWG 
@@ -246,8 +246,8 @@ cfg.set(branch+'SSRO_duration', 117)
 branch='protocols/Hans_sil4-default/pulses/'
 f0 = cfg['samples']['Hans_sil4']['ms-1_cntr_frq'] - cfg['protocols']['Hans_sil4-default']['AdwinSSRO']['mw_frq']
 cfg.set(branch+'MW_modulation_frequency', f0)
-cfg.set(branch+'Pi_pulse_duration', 40e-9)
-cfg.set(branch+'Pi_pulse_amp',  0.6296)
+cfg.set(branch+'Pi_pulse_duration', 80e-9)#40e-9)
+cfg.set(branch+'Pi_pulse_amp',  0.530)#0.6296)
 
 #Lines added to implement different phase pulses in decoupling sequence 
 cfg.set(branch+'X_phase',  90)

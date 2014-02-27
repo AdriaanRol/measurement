@@ -111,7 +111,7 @@ class LaserFrequencyScan:
                     name='Laserscan_Counts' + ('_{}'.format(suffix) if suffix != None else ''), 
                     clear=True, coorddim=1, valdim=2, maxtraces=1)
 
-                plt_frq = qt.Plot2D(data, ('bO' if suffix=='yellow' else 'rO'),
+                plt_frq = qt.Plot2D(data, ('b-' if suffix=='yellow' else 'r-'),
                     name='Laserscan_Frequency' + ('_{}'.format(suffix) if suffix != None else ''), 
                     clear=True, coorddim=0, valdim=1, maxtraces=1)
             else:

@@ -31,19 +31,21 @@ def SimpleDecoupling(name):
     m.params.from_dict(qt.cfgman['protocols']['AdwinSSRO+espin'])
     m.params.from_dict(qt.cfgman['protocols'][SAMPLE_CFG]['pulses'])
 
+
+    #Plot parameters
+    m.params['sweep_name'] = 'tau (us)'
+    m.params['sweep_pts'] = np.linspace(1,10,10)#m.params['tau_list']*1e6
+    m.params['pts'] = len(m.params['sweep_pts']) #Check if we need this line, Tim
+
+
+
     '''set experimental parameters'''
         #Spin pumping and readout
     m.params['SP_duration'] = 250
     m.params['Ex_RO_amplitude'] = 8e-9 #10e-9
     m.params['A_SP_amplitude'] = 40e-9
     m.params['Ex_SP_amplitude'] = 0.
-    m.params['repetitions'] = 200
-
-
-        #Plot parameters
-    m.params['sweep_name'] = 'Times (ms)'
-    m.params['sweep_pts'] = [1, 10] # m.params['wait_times']/1e3
-    m.params['pts'] = len(m.params['sweep_pts']) #Check if we need this line, Tim
+    m.params['repetitions'] = 2000
 
         #Set sequence wait time for AWG triggering (After AWG trigger? Tim)
     m.params['sequence_wait_time'] = 0
@@ -51,18 +53,20 @@ def SimpleDecoupling(name):
     m.autoconfig()
 
     #Decoupling specific parameters
-    m.params['Number_of_pulses'] = 16 #linspace()
-    m.params['tau_list'] = np.linspace(.7e-6,1e-6,3)
+    m.params['Number_of_pulses'] = 8
+    m.params['tau_list'] = np.linspace(2.975e-6,10.0*2.975e-6,10) #Larmor period for B =314G
     m.params['Initial_Pulse'] ='pi/2'
     m.params['Final_Pulse'] ='pi/2'
+
+
 
     '''generate sequence'''
     m.generate_sequence(upload=True)
 
 
-    #m.run()
-    #m.save('ms0')
-    #m.finish()
+    m.run()
+    m.save('ms0')
+    m.finish()
 
 if __name__ == '__main__':
     SimpleDecoupling(SAMPLE+'_'+'')
