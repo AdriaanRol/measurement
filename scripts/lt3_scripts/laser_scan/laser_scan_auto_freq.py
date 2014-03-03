@@ -72,8 +72,7 @@ class LaserFrequencyScan:
         
         if not success:
             print 'WARNING: could not reach target frequency', f
-        else:
-            print 'current frequency:', cur_f
+        print 'current frequency:', cur_f
 
         set_power(0)
         
@@ -161,37 +160,37 @@ class LaserFrequencyScan:
             plt_frq.save_png()
 
 
-class ScanLT1(LaserFrequencyScan):
+class Scan(LaserFrequencyScan):
 
-    def __init__(self, name='LT1'):
+    def __init__(self, name='LT1', red_labjack_dac_nr=2, yellow_labjack_dac_nr = 4, red_wm_channel = 1, yellow_wm_channel = 2):
         LaserFrequencyScan.__init__(self, name)
         
         self.adwin = qt.get_setup_instrument('adwin')
         self.physical_adwin=qt.get_setup_instrument('physical_adwin_lt2')
         self.mw = qt.get_setup_instrument('SMB100')
         self.labjack= qt.get_setup_instrument('labjack')
+        self.wavemeter=qt.instruments['wavemeter']
 
-        red_labjack_dac_nr = 6
         self.set_red_laser_voltage = lambda x: self.labjack.__dict__['set_bipolar_dac'+str(red_labjack_dac_nr)](x)
         self.get_red_laser_voltage = lambda : self.labjack.__dict__['get_bipolar_dac'+str(red_labjack_dac_nr)]()
         self.set_red_power = qt.get_setup_instrument('NewfocusAOM').set_power
 
-        yellow_labjack_dac_nr = 0
+
         self.set_yellow_laser_voltage = lambda x: self.labjack.__dict__['set_bipolar_dac'+str(yellow_labjack_dac_nr)](x)
         self.get_yellow_laser_voltage = lambda : self.labjack.__dict__['get_bipolar_dac'+str(yellow_labjack_dac_nr)]()
         self.set_yellow_power = qt.get_setup_instrument('YellowAOM').set_power
 
         self.set_repump_power = qt.get_setup_instrument('GreenAOM').set_power
 
-        self.get_frequency = lambda x : self.physical_adwin.Get_FPar(x+40)
+        self.get_frequency = lambda x : (self.wavemeter.Get_Frequency(x)-470.4)*1000.
         self.get_counts = self.adwin.measure_counts
         self.counter_channel = 0
-        
+        self.red_wm_channel = red_wm_channel
         self.red_voltage_frequency_relation_sign = -1
-        self.red_wm_channel = 6
+
 
         self.yellow_voltage_frequency_relation_sign = 1
-        self.yellow_wm_channel = 2
+        self.yellow_wm_channel = yellow_wm_channel
 
         self.max_v = 9.
         self.min_v = -9.
@@ -391,7 +390,7 @@ class ScanLT1(LaserFrequencyScan):
 
 
 def green_yellow_during_scan():
-    m = ScanLT1()
+    m = Scan()
 
     m.mw.set_power(-9)
     m.mw.set_frequency(2.8265e9)
@@ -404,7 +403,7 @@ def green_yellow_during_scan():
     m.mw.set_status('off')
 
 def repeated_red_scans(**kw):
-    m = ScanLT1()
+    m = Scan()
 
     spectral_diffusion = kw.pop('spectral_diffusion', False)
     gate_scan = kw.pop('gate_scan', False)
@@ -516,22 +515,23 @@ def gate_scan_with_c_optimize():
         repeated_red_scans(gate_scan=True, gate_range=(0,-1200),pts=19)
 
 def single_scan():
-    m = ScanLT1()
+    m = Scan()
 
-    m.mw.set_power(-7)
-    m.mw.set_frequency(2.8265e9)
-    m.mw.set_iq('off')
-    m.mw.set_pulm('off')
-    m.mw.set_status('on')
-    #m.red_scan(74, 90, voltage_step=0.01, integration_time_ms=20, power = 3e-9)
+    #m.mw.set_power(-7)
+    #m.mw.set_frequency(2.8265e9)
+    #m.mw.set_iq('off')
+    #m.mw.set_pulm('off')
+    #m.mw.set_status('on')
+
+    m.red_scan(70, 82, voltage_step=0.01, integration_time_ms=20, power = 15e-9)
     #m.yellow_red(62, 80, 0.02, 0.5e-9, 74, 92, 0.02, 20, 3e-9)
-    m.yellow_scan(62, 77, power = 0.5e-9, voltage_step=0.02, voltage_step_scan=0.03)
+    #m.yellow_scan(62, 77, power = 0.5e-9, voltage_step=0.02, voltage_step_scan=0.03)
     # m.oldschool_red_scan(55, 75, 0.01, 20, 0.5e-9)
 
-    m.mw.set_status('off')
+    #m.mw.set_status('off')
 
 if __name__ == '__main__':
-    qt.get_setup_instrument('GreenAOM').set_power(0.e-6)
+    qt.get_setup_instrument('GreenAOM').set_power(0.5e-6)
     single_scan()
     #green_yellow_during_scan()
     #yellow_ionization_scan(13,20)

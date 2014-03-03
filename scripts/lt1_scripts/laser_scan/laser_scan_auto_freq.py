@@ -1,9 +1,9 @@
 import msvcrt
+import time
 import qt
 import os
 import numpy as np
 import measurement.lib.config.adwins as adwins_cfg
-
 
 class LaserFrequencyScan:
 
@@ -20,353 +20,522 @@ class LaserFrequencyScan:
                                         # returning an array (one val per
                                         # channel)
         self.get_laser_voltage = None
-        self.get_gate_voltage = None
-        self.set_gate_voltage = None
 
-    def repump_pulse(self):
-        qt.msleep(1)
+    def repump_pulse(self, stabilizing_time=0.01):
+        qt.msleep(stabilizing_time)
         self.set_repump_power(self.repump_power)
         qt.msleep(self.repump_duration)
         self.set_repump_power(0)
-        qt.msleep(1)
+        qt.msleep(stabilizing_time)
     
-    def scan_to_voltage(self, voltage, pts=51, dwell_time=0.05):
-        #print 'scan to voltage ...',
-        #print 'current voltage: ' + str(self.get_laser_voltage())
-        for v in np.linspace(self.get_laser_voltage(), voltage, pts):
-            self.set_laser_voltage(v)
+    def scan_to_voltage(self, target_voltage, get_voltage_method, set_voltage_method, 
+            voltage_step=0.01, dwell_time=0.01):
+        steps = np.append(np.arange(get_voltage_method(), target_voltage, voltage_step), target_voltage)
+        for s in steps:
+            set_voltage_method(s)
             qt.msleep(dwell_time)
-        #print 'done.'
-        
-    def gate_scan_to_voltage(self,voltage, stepsize=0.01, dwell_time=0.05):
-        cur_v=qt.instruments['adwin'].get_dac_voltage('gate')
-        print 'scan gate to voltage ...',voltage
-        print 'current gate voltage: ', cur_v 
-        steps=int(abs(cur_v-voltage)/stepsize)
-        for v in np.linspace(cur_v, voltage, steps):
-            qt.instruments['adwin'].set_dac_voltage(('gate',v))
-            qt.msleep(dwell_time)
-
-        print 'done.'
     
     def prepare_scan(self):
         pass
 
     def finish_scan(self):
-        pass    
-    
-    def run_scan(self, **kw):
-        stabilizing_time = kw.pop('stabilizing_time', 0.01)
+        pass
 
-        d = qt.Data(name=self.mprefix+'_'+self.name)
-        d.add_coordinate('Voltage (V)')
-        d.add_coordinate('Frequency (GHz)')
-        d.add_coordinate('Counts [Hz]')
-        d.add_coordinate('Gate Voltage(V)')
+    def scan_to_frequency(self, f, voltage_step_scan=0.05, dwell_time=0.01, tolerance=0.3, power = 0, **kw):
 
-        p = qt.Plot2D(d, 'ro', title='Frq (left) vs Voltage (bottom)', plottitle=self.mprefix,
-                name='Laser Scan', clear=True, coorddim=0, valdim=1, maxtraces=1)
-        p.add(d, 'bo', title='Counts (right) vs Frq (top)', coorddim=1, valdim=2,
-                right=True, top=True)
-        p.set_x2tics(True)
-        p.set_y2tics(True)
-        p.set_x2label('Frequency (GHz)')
-        p.set_y2label('Counts [Hz]')
+        set_voltage = kw.pop('set_voltage', self.set_red_laser_voltage)
+        get_voltage = kw.pop('get_voltage', self.get_red_laser_voltage)
+        wm_channel = kw.pop('wm_channel', self.red_wm_channel)
+        voltage_frequency_relation_sign = kw.pop('voltage_frequency_relation_sign', 
+            self.red_voltage_frequency_relation_sign)
+        set_power = kw.get('set_power', self.set_red_power)
         
-        if self.gate_pts>1:
-            p3=qt.Plot3D(d, name='Laser_Scan2D', 
-                plottitle=self.mprefix, coorddims=(1,3), valdim=2, clear=True)
-
-        qt.mstart()
-
-        for j,gv in enumerate(np.linspace(self.gate_start_voltage, self.gate_stop_voltage, self.gate_pts)):
-            if (msvcrt.kbhit() and (msvcrt.getch() == 'c')): break  
-            
-            prev_v = v = self.scan_to_frequency(self.start_frequency)
-            self.set_laser_power(self.laser_power)
-
-            
-            if not self.use_repump_during:
-                self.repump_pulse()
-            
-            if self.set_gate:
-                self.gate_scan_to_voltage(gv)                 
-            
-            i=0
-            while ((v < self.max_v) and (v> self.min_v)):
-                i=i+1
-                if msvcrt.kbhit():
-                    chr=msvcrt.getch()
-                    if chr=='q': 
-                        break
-                    elif chr =='r': 
-                        self.repump_pulse()
-                v=prev_v-self.v_step
-                prev_v=v
-                self.set_laser_voltage(v)
-                qt.msleep(stabilizing_time)
-
-                cts = float(self.get_counts(self.integration_time)[self.counter_channel])/(self.integration_time*1e-3)
-                frq = self.get_frequency(self.wm_channel)*self.frq_factor - self.frq_offset
-                if frq < 0:
-                    print 'WARNING: WM gives frq',frq
-                    continue
-                d.add_data_point(v, frq, cts, gv)
-                if np.mod(i,10)==0:
-                    p.update()
-                if frq>self.stop_frequency:
-                    break
-            
-            self.set_laser_power(0)
-            if self.set_gate_to_zero_before_repump:
-                self.gate_scan_to_voltage(0.)
-            
-            p.update()
-            if self.plot_strain_lines:
-                p.set_maxtraces(2)
-                try:
-                    from analysis.lib.nv import nvlevels
-                    Ey_line=float(raw_input('Ey line?')) #GHz
-                    Ex_line=float(raw_input('Ex line?')) #GHz
-                    lx,ly=nvlevels.get_ES_ExEy_plottable(Ex_line,Ey_line,max(d.get_data()[:,2]))
-                    tit=str('Frequency (GHz) lines: [%2.2f,%2.2f,%2.2f,%2.2f,%2.2f,%2.2f] ' % tuple(nvlevels.get_ES_ExEy(Ex_line,Ey_line)))
-                    p.add(lx,ly,right=True, top=True, title=tit)
-                except ValueError:
-                    print 'Could not understand input for lines'
-                    pass
-            
-            plotsavename=os.path.splitext(d.get_filepath())[0] + ('_gate_voltage_%2.3f' % gv) + '.png'
-            p.set_plottitle(str(os.path.splitext(d.get_filename())[0]))
-            p.save_png(filepath=plotsavename)
-            d.new_block()
-            if self.gate_pts>1: 
-                p3.update()
-            
-        qt.mend()
-        if self.gate_pts>1:
-            p3.reset()
-            qt.msleep(1)
-            p3.save_png()
-        np.savez(os.path.splitext(d.get_filepath())[0]+ '.npz', data=d.get_data())
-        d.close_file()
+        # print 'scan to frequency', f
         
+        v = get_voltage()
+        success = False
 
-class LabjackAdwinLaserScan(LaserFrequencyScan):
-    
-    def __init__(self, name,labjack_dac_nr):
-        LaserFrequencyScan.__init__(self, name)
-        
-        self.adwin = qt.instruments['adwin']
-        self.physical_adwin=qt.instruments['physical_adwin_lt2']
-        self.mw = qt.instruments['SMB100']
-        self.labjack= qt.instruments['labjack']
-        
-        self.name=self.name+'_gv_'+str(self.adwin.get_dac_voltage('gate'))
+        set_power(power)
 
-        self.set_laser_voltage = lambda x: self.labjack.__dict__['set_bipolar_dac'+str(labjack_dac_nr)](x)
-        self.get_laser_voltage = lambda : self.labjack.__dict__['get_bipolar_dac'+str(labjack_dac_nr)]()
-        
-        # matisse NOT TESTED
-        #self.set_laser_voltage = lambda x : qt.instruments['physical_adwin'].Get_FPar(38)
-        #self.get_laser_voltage = lambda : qt.instruments['physical_adwin'].Get_FPar(39)
-        
-        self.get_frequency = lambda x : \
-                self.physical_adwin.Get_FPar(x+40)
-        self.get_counts = self.adwin.measure_counts
-        self.set_gate_voltage = lambda x: self.adwin.set_dac_voltage(('gate',x))
-        self.get_gate_voltage = lambda: self.adwin.get_dac_voltage('gate')
-    
-    def scan_to_frequency(self,f,stepsize=0.05, dwell_time=0.01, tolerance=0.3):
-        print 'scan to frequency',f
-        v=self.get_laser_voltage()
-        succes=False
-        cur_f=self.get_frequency(self.wm_channel)
-        while ((v < self.max_v-0.3) and (v> self.min_v+0.3)):
+        while ((v < self.max_v - 0.3) and (v > self.min_v + 0.3)):
             if (msvcrt.kbhit() and msvcrt.getch()=='q'): 
                 break
-            cur_f=self.get_frequency(self.wm_channel)
-            self.set_laser_voltage(v)
-            v=v+stepsize*np.sign(cur_f-f)*np.sign(self.v_step)
-
+            
+            cur_f = self.get_frequency(wm_channel)
+            set_voltage(v)
+            v = v + voltage_step_scan * np.sign(f-cur_f) * voltage_frequency_relation_sign
             qt.msleep(dwell_time)
-            if abs(cur_f-f)<tolerance:
-                succes=True
+            
+            if abs(cur_f-f) < tolerance:
+                success = True
                 break
-        if not succes:
-            print cur_f, f, v
+        
+        if not success:
             print 'WARNING: could not reach target frequency', f
         else:
-            print 'current frequency:',cur_f
+            print 'current frequency:', cur_f
+
+        set_power(0)
+        
         return v
+    
+    def single_line_scan(self, start_f, stop_f, 
+        voltage_step, integration_time_ms, power, **kw):
 
-    def prepare_scan(self):
+        stabilizing_time = kw.pop('stabilizing_time', 0.01)
+        save = kw.pop('save', True)
+        data = kw.pop('data', None)
 
-        if self.use_repump_during:
-            self.set_repump_power(self.repump_power_during)
+        suffix = kw.pop('suffix', None)
+
+        set_voltage = kw.get('set_voltage', self.set_red_laser_voltage)
+        get_voltage = kw.get('get_voltage', self.get_red_laser_voltage)
+        wm_channel = kw.get('wm_channel', self.red_wm_channel)
+        voltage_frequency_relation_sign = kw.get('voltage_frequency_relation_sign', 
+            self.red_voltage_frequency_relation_sign)
+        set_power = kw.get('set_power', self.set_red_power)
+
+        data_args = kw.get('data_args', [])
+
+        data_obj_supplied = False
+        if save:
+            if data == None:
+                data_obj_supplied = False
+
+                data = qt.Data(name = self.mprefix + '_' + self.name + ('_{}'.format(suffix) if suffix != None else ''))
+                data.add_coordinate('Voltage (V)')
+                data.add_coordinate('Frequency (GHz)')
+                data.add_coordinate('Counts [Hz]')
+
+                plt_cts = qt.Plot2D(data, ('b-' if suffix=='yellow' else 'r-'),
+                    name='Laserscan_Counts' + ('_{}'.format(suffix) if suffix != None else ''), 
+                    clear=True, coorddim=1, valdim=2, maxtraces=1)
+
+                plt_frq = qt.Plot2D(data, ('bO' if suffix=='yellow' else 'rO'),
+                    name='Laserscan_Frequency' + ('_{}'.format(suffix) if suffix != None else ''), 
+                    clear=True, coorddim=0, valdim=1, maxtraces=1)
+            else:
+                data_obj_supplied = True
+
+        self.scan_to_frequency(start_f, **kw)
         
-        if self.use_mw:
-            self.mw.set_frequency(self.mw_frq)
-            self.mw.set_power(self.mw_power)
-            self.mw.set_pulm('off')
-            self.mw.set_iq('off')
-            self.mw.set_status('on')
+        v = get_voltage()
 
-    def finish_scan(self):
+        set_power(power)
+        while ((v < self.max_v - 0.3) and (v > self.min_v + 0.3)):
+            if (msvcrt.kbhit() and msvcrt.getch()=='q'): 
+                break
 
-        if self.use_mw:
-            self.mw.set_status('off')
+            set_voltage(v)
+            qt.msleep(stabilizing_time)
 
-        if self.use_repump_during:
-            self.set_repump_power(0)
+            cur_f = self.get_frequency(wm_channel)
+            if cur_f < -100:
+                continue
 
-            
-class YellowLaserScan(LabjackAdwinLaserScan):
-    def __init__(self, name, labjack_dac_nr):
-        LabjackAdwinLaserScan.__init__(self, name, labjack_dac_nr)
-        self.set_laser_power = qt.instruments['YellowAOM'].set_power
-        self.set_repump_power = qt.instruments['Velocity1AOM'].set_power
-        self.set_nf_repump_power = qt.instruments['Velocity2AOM'].set_power
+            if (stop_f > start_f) and (cur_f > stop_f):
+                break
+            elif (stop_f <= start_f) and (cur_f < stop_f):
+                break  
+
+            cts = float(self.get_counts(integration_time_ms)[self.counter_channel]) / \
+                (integration_time_ms*1e-3)
+
+            v = v + voltage_step * np.sign(stop_f - cur_f) * voltage_frequency_relation_sign
+
+            if save:
+                if not data_obj_supplied:
+                    data.add_data_point(v, cur_f, cts)
+                else:
+                    data.add_data_point(v, cur_f, cts, *data_args)
+
+                if not data_obj_supplied:
+                    plt_cts.update()
+                    plt_frq.update()
+
+
+        set_power(0)
+
+        if save and not data_obj_supplied:
+            plt_cts.save_png()
+            plt_frq.save_png()
+
+
+class Scan(LaserFrequencyScan):
+
+    def __init__(self, name='LT1', red_labjack_dac_nr=6, yellow_labjack_dac_nr = 0, red_wm_channel = 6, yellow_wm_channel = 2):
+        LaserFrequencyScan.__init__(self, name)
         
-    def repump_pulse(self):
-        qt.msleep(1) 
-        self.set_laser_power(0)
-        self.set_repump_power(self.repump_power)
-        self.set_nf_repump_power(self.nf_repump_power)
-        qt.msleep(self.repump_duration)
-        self.set_repump_power(0)
-        self.set_nf_repump_power(0)
-        self.set_laser_power(self.laser_power)
+        self.adwin = qt.get_setup_instrument('adwin')
+        self.physical_adwin=qt.get_setup_instrument('physical_adwin_lt2')
+        self.mw = qt.get_setup_instrument('SMB100')
+        self.labjack= qt.get_setup_instrument('labjack')
+
+        self.set_red_laser_voltage = lambda x: self.labjack.__dict__['set_bipolar_dac'+str(red_labjack_dac_nr)](x)
+        self.get_red_laser_voltage = lambda : self.labjack.__dict__['get_bipolar_dac'+str(red_labjack_dac_nr)]()
+        self.set_red_power = qt.get_setup_instrument('NewfocusAOM').set_power
+
+
+        self.set_yellow_laser_voltage = lambda x: self.labjack.__dict__['set_bipolar_dac'+str(yellow_labjack_dac_nr)](x)
+        self.get_yellow_laser_voltage = lambda : self.labjack.__dict__['get_bipolar_dac'+str(yellow_labjack_dac_nr)]()
+        self.set_yellow_power = qt.get_setup_instrument('YellowAOM').set_power
+
+        self.set_repump_power = qt.get_setup_instrument('GreenAOM').set_power
+
+        self.get_frequency = lambda x : self.physical_adwin.Get_FPar(x+40)
+        self.get_counts = self.adwin.measure_counts
+        self.counter_channel = 0
+        self.red_wm_channel = red_wm_channel
+        self.red_voltage_frequency_relation_sign = -1
+
+
+        self.yellow_voltage_frequency_relation_sign = 1
+        self.yellow_wm_channel = yellow_wm_channel
+
+        self.max_v = 9.
+        self.min_v = -9.
+
+        self.set_gate_voltage = lambda x: qt.get_setup_instrument('ivvi').set_dac2(x)
+
+    def yellow_scan(self, start_f, stop_f, power=0.5e-9, **kw):
+        voltage_step = kw.pop('voltage_step', 0.01)
+
+        self.single_line_scan(start_f, stop_f,
+            voltage_step = voltage_step, 
+            integration_time_ms=50, 
+            power=power,
+            suffix = 'yellow', 
+            set_voltage = self.set_yellow_laser_voltage,
+            get_voltage = self.get_yellow_laser_voltage,
+            wm_channel = self.yellow_wm_channel,
+            voltage_frequency_relation_sign = self.yellow_voltage_frequency_relation_sign,
+            set_power = self.set_yellow_power,
+            **kw)
+
+    def yellow_ionization_scan(self, start_f, stop_f, power=70e-9, **kw):
+        self.single_line_scan(start_f, stop_f,
+            voltage_step=0.03, integration_time_ms=5, power=power,
+            suffix = 'yellow', 
+            set_voltage = self.set_yellow_laser_voltage,
+            get_voltage = self.get_yellow_laser_voltage,
+            wm_channel = self.yellow_wm_channel,
+            voltage_frequency_relation_sign = self.yellow_voltage_frequency_relation_sign,
+            set_power = self.set_yellow_power,
+            save = False)
+
+    def red_scan(self, start_f, stop_f, power=0.5e-9, **kw):
+        voltage_step = kw.pop('voltage_step', 0.005)
+        integration_time_ms = kw.pop('integration_time_ms', 50)
+        
+        self.single_line_scan(start_f, stop_f, voltage_step, integration_time_ms, power, **kw)\
+
+    def red_ionization_scan(self, start_f, stop_f, power=14e-9, **kw):
+        voltage_step = kw.pop('voltage_step', 0.04)
+        integration_time_ms = kw.pop('integration_time_ms', 20)
+        _save=kw.pop('save', False)        
+        MatisseAOM.turn_on()
+        self.single_line_scan(start_f, stop_f, voltage_step, integration_time_ms, power, 
+            save=False, **kw)    
+        MatisseAOM.turn_off()
+    def yellow_red(self, y_start, y_stop, y_step ,y_power, r_start, r_stop, r_step, r_int, r_power, **kw):
+        red_data = kw.pop('red_data', None)
+        yellow_data = kw.pop('yellow_data', None)
+
+        print 'ionization scan yellow...'
+        self.yellow_ionization_scan(y_stop, y_start)
+
+        print 'red scan...'
+        self.red_scan(r_start, r_stop, 
+            voltage_step=r_step, 
+            integration_time_ms=r_int, 
+            power=r_power, 
+            data = red_data,
+            **kw)
+        
+        print 'ionization scan red...'
+        self.red_ionization_scan(r_stop, r_start)
+        
+        print 'yellow scan...'
+        self.yellow_scan(y_start, y_stop, y_power, voltage_step=y_step,
+            data = yellow_data,
+            **kw)
+
+    def spectral_diffusion(self, y_start, y_stop, y_power, r_start, r_stop, r_step, r_int, r_power, **kw):
+        red_data = kw.pop('red_data', None)
+        yellow_data = kw.pop('yellow_data', None)
+
+        print 'green repump pulse'
         qt.msleep(1)
+        self.set_repump_power(10e-6)
+        qt.msleep(0.5)
+        self.set_repump_power(0)
+        qt.msleep(1)
+
+        print 'red scan...'
+        self.red_scan(r_start, r_stop, 
+            voltage_step=r_step, 
+            integration_time_ms=r_int, 
+            power=r_power, 
+            data = red_data,
+            **kw)
         
-            
-class RedLaserScan(LabjackAdwinLaserScan):
-    def __init__(self, name, labjack_dac_nr):
-        LabjackAdwinLaserScan.__init__(self, name,labjack_dac_nr)
-        self.set_laser_power = qt.instruments['Velocity1AOM'].set_power
-        self.set_yellow_repump_power = qt.instruments['YellowAOM'].set_power
-        self.set_red_repump_power = qt.instruments['Velocity1AOM'].set_power
-        self.set_repump_power = qt.instruments['GreenAOM'].set_power
-            
-    def repump_pulse(self):
-        if self.yellow_repump:
-            self.set_laser_power(0)
-            self.set_red_repump_power(self.red_repump_power)
-            self.set_yellow_repump_power(self.yellow_repump_power)
-            qt.msleep(self.yellow_repump_duration)
-            self.set_red_repump_power(0)
-            self.set_yellow_repump_power(self.yellow_repump_power)
-            qt.msleep(self.yellow_repump_duration)
-            self.set_yellow_repump_power(0)
-            self.set_laser_power(self.laser_power)
-        else:    
-            qt.msleep(1)
-            self.set_repump_power(self.repump_power)
-            qt.msleep(self.repump_duration)
-            self.set_repump_power(0)
-            qt.msleep(1)
-          
-def yellow_laser_scan(name):
-    labjack_dac_nr=0 # 0 is coarse and 1 is fine for yellow
-    m = YellowLaserScan(name, labjack_dac_nr)
+        print 'ionization scan red...'
+        self.red_ionization_scan(r_stop, r_start)
+        
+        print 'yellow scan...'
+        self.yellow_scan(y_start, y_stop, y_power,
+            data = yellow_data,
+            **kw)        
 
-    # Hardware setup
-    m.wm_channel = 2
-    m.frq_offset = 0
-    m.frq_factor = 1
-    m.counter_channel = 0    
-   
-    # MW setup
-    m.use_mw = True
-    m.mw_frq =  qt.cfgman['samples']['sil2']['ms-1_cntr_frq']
-    m.mw_power = -10
-
-    # repump setup
-    m.repump_power=0e-9 # sets the power of the Matisse
-    m.nf_repump_power=100e-9 # sets the power of the NF
-    m.repump_duration=4.0 #seconds
-    m.use_repump_during = False
-    m.repump_power_during = 0.5e-6
-      
-    #Scan setup
-    m.laser_power = 1.5e-9
-    m.integration_time = 10 # ms
-    m.min_v = -9
-    m.max_v = 9
-    m.v_step=-0.01
-    
-    m.start_frequency = 18 #GHz
-    m.stop_frequency = 40 #GHz
-    
-    #Gate scan setup
-    m.set_gate_to_zero_before_repump=False
-    m.set_gate=False
-    m.gate_start_voltage=0
-    m.gate_stop_voltage=0
-    m.gate_pts=1
-    
-    #strain lines
-    m.plot_strain_lines=True
-    
-    try:
-        m.prepare_scan()
-        m.run_scan()
-    finally:
-        m.finish_scan()
-    
-def red_laser_scan(name):
-    labjack_dac_channel=6 #6 is coarse, 7 is fine for NF1 LT1
-                          #4 is coarse, 5 is fine fpr NF2 LT1
-    m = RedLaserScan(name,labjack_dac_channel)
-    
-    # Hardware setup
-    m.wm_channel = 6 # 6 for nf 1, 7 for nf2
-    m.frq_offset = 0
-    m.frq_factor = 1
-    m.counter_channel = 0
-
-    # MW setup
-    m.use_mw = False
-    m.mw_frq =  qt.cfgman['samples']['hans-sil1']['ms-1_cntr_frq']
-    m.mw_power = -12
-    
-    # repump setup
-    m.yellow_repump=False
-    m.yellow_repump_power=50e-9
-    m.red_repump_power=0e-9
-    m.yellow_repump_duration=4 #seconds
-    m.repump_power = 0e-6 #GREEN!!
-    m.use_repump_during = True
-    m.repump_duration = 0.5 # seconds
-    m.repump_power_during = 0.01e-6
-    
-    #Scan setup
-    m.laser_power = 2e-9
-    m.integration_time = 50 # ms
-    m.min_v = -9.5
-    m.max_v = 9.5
-    m.v_step=0.015
-    
-    m.start_frequency = 38 #GHz
-    m.stop_frequency = 60 #GHz    
-    
-    #Gate scan setup
-    m.set_gate_to_zero_before_repump=False
-    m.set_gate=False
-    m.gate_start_voltage=0
-    m.gate_stop_voltage=0
-    m.gate_pts=1
-    
-    #strain lines
-    m.plot_strain_lines=True
-    
-    try:
-        m.prepare_scan()
-        m.run_scan()
-    finally:
-        m.finish_scan()
+    def green_yellow_during(self, y_start, y_stop, y_power, r_start, r_stop, r_step, r_int, r_power, g_p_during, y_p_during, **kw):
+        red_data = kw.pop('red_data', None)
+        yellow_data = kw.pop('yellow_data', None)
+        red_data_w_green = kw.pop('red_data', None)
+        yellow_data_green = kw.pop('yellow_data', None)
+        red_data_w_yellow = kw.pop('red_data', None)
+        yellow_data_yellow = kw.pop('yellow_data', None)
 
 
-if __name__=='__main__':
-    stools.turn_off_all_lasers()
-    red_laser_scan('red_scan_coarse_Hans_SIL1_Green')
-    #yellow_laser_scan('yellow_33V')
+        print 'green repump pulse'
+        qt.msleep(1)
+        self.set_repump_power(10e-6)
+        qt.msleep(0.5)
+        self.set_repump_power(0)
+        qt.msleep(1)
+
+        print 'red scan...'
+        self.red_scan(r_start, r_stop, 
+            voltage_step=r_step, 
+            integration_time_ms=r_int, 
+            power=r_power, 
+            data = red_data,
+            **kw)
+       
+        print 'ionization scan red...'
+        self.red_ionization_scan(r_stop, r_start)
+        
+        print 'yellow scan...'
+        self.yellow_scan(y_start, y_stop, y_power,
+            data = yellow_data,
+            **kw)
+
+        print 'green repump pulse'
+        qt.msleep(1)
+        self.set_repump_power(10e-6)
+        qt.msleep(0.5)
+        self.set_repump_power(0)
+        qt.msleep(1)
+
+        print 'red scan with green...'
+        self.set_repump_power(g_p_during)
+
+        self.red_scan(r_start, r_stop, 
+            voltage_step=r_step, 
+            integration_time_ms=r_int, 
+            power=r_power, 
+            data = red_data_w_green,
+            **kw)
+
+        self.set_repump_power(0.)
+        
+        print 'ionization scan red...'
+        self.red_ionization_scan(r_stop, r_start)
+        
+        print 'yellow scan...'
+        self.yellow_scan(y_start, y_stop, y_power,
+            data = yellow_data_green,
+            **kw)
+
+        print 'ionization scan yellow...'
+        self.yellow_ionization_scan(y_stop, y_start)
+
+        print 'red scan with yellow...'
+        self.set_yellow_power(y_p_during)
+
+        self.red_scan(r_start, r_stop, 
+            voltage_step=r_step, 
+            integration_time_ms=r_int, 
+            power=r_power, 
+            data = red_data_w_yellow,
+            **kw)
+    
+        self.set_yellow_power(0.)
+
+        print 'ionization scan red...'
+        self.red_ionization_scan(r_stop, r_start)
+        
+        print 'yellow scan...'
+        self.yellow_scan(y_start, y_stop, y_power,
+            data = yellow_data_yellow,
+            **kw)
+
+    def oldschool_red_scan(self, r_start, r_stop, r_step, r_int, r_power, **kw):
+        red_data = kw.pop('red_data', None)
+
+        print 'green repump pulse'
+        qt.msleep(1)
+        self.set_repump_power(0e-6)
+        qt.msleep(1)
+        self.set_repump_power(0)
+        qt.msleep(1)
+
+        print 'red scan...'
+        self.red_scan(r_start, r_stop, 
+            voltage_step=r_step, 
+            integration_time_ms=r_int, 
+            power = r_power, 
+            data = red_data,
+            **kw)
+        
+
+
+def green_yellow_during_scan():
+    m = Scan()
+
+    m.mw.set_power(-9)
+    m.mw.set_frequency(2.8265e9)
+    m.mw.set_iq('off')
+    m.mw.set_pulm('off')
+    m.mw.set_status('on')
+
+    m.green_yellow_during(20, 23, 0.2e-9, 55, 75, 0.01, 20, 1e-9, 0.2e-6, 30e-9)
+
+    m.mw.set_status('off')
+
+def repeated_red_scans(**kw):
+    m = Scan()
+
+    spectral_diffusion = kw.pop('spectral_diffusion', False)
+    gate_scan = kw.pop('gate_scan', False)
+    gate_range=kw.pop('gate_range', None)
+    pts = kw.pop('pts', 100)
+
+    m.mw.set_power(-9)
+    m.mw.set_frequency(2.8265e9)
+    m.mw.set_iq('off')
+    m.mw.set_pulm('off')
+    m.mw.set_status('on')
+
+    red_data = qt.Data(name = 'LaserScansYellowRepump_LT1_Red')
+    red_data.add_coordinate('Voltage (V)')
+    red_data.add_coordinate('Frequency (GHz)')
+    red_data.add_coordinate('Counts (Hz)')
+    if gate_scan:
+        red_data.add_coordinate('Gate voltage (V)')
+    else:
+        red_data.add_coordinate('index')
+    red_data.add_coordinate('start time')
+    red_data.create_file()
+
+    yellow_data = qt.Data(name = 'LaserScansYellowRepump_LT1_Yellow')
+    yellow_data.add_coordinate('Voltage (V)')
+    yellow_data.add_coordinate('Frequency (GHz)')
+    yellow_data.add_coordinate('Counts (Hz)')
+    if gate_scan:
+        yellow_data.add_coordinate('Gate voltage (V)')
+    else:
+        yellow_data.add_coordinate('index')
+    yellow_data.add_coordinate('start time')
+    yellow_data.create_file()
+
+    plt_red_cts = qt.Plot2D(red_data, 'r-',
+        name='Laserscan_Counts', 
+        clear=True, coorddim=1, valdim=2, maxtraces=5, traceofs=5000)
+
+    plt_red_frq = qt.Plot2D(red_data, 'rO',
+        name='Laserscan_Frequency', 
+        clear=True, coorddim=0, valdim=1, maxtraces=1)
+
+    plot3d_red = qt.Plot3D(red_data, name='Laserscan_Counts_Reps', 
+        clear=True, coorddims=(1,3), valdim=2)
+
+    plt_yellow_cts = qt.Plot2D(yellow_data, 'b-',
+        name='Laserscan_Counts_Y', 
+        clear=True, coorddim=1, valdim=2, maxtraces=5, traceofs=5000)
+
+    plt_yellow_frq = qt.Plot2D(yellow_data, 'bO',
+        name='Laserscan_Frequency_Y', 
+        clear=True, coorddim=0, valdim=1, maxtraces=1)
+
+    plot3d_yellow = qt.Plot3D(yellow_data, name='Laserscan_Counts_Reps_Y', 
+        clear=True, coorddims=(1,3), valdim=2)
+
+    if gate_scan:
+        gate_x=np.linspace(gate_range[0],gate_range[1],pts)
+    ret=True
+    t0 = time.time()
+    for i in range(pts):
+        if (msvcrt.kbhit() and msvcrt.getch()=='x'): 
+            ret=False
+            break
+
+        # tpulse = 10
+        # print "{} seconds of red power...".format(tpulse)
+        # stools.apply_awg_voltage('AWG', 'ch4_marker1', 0.52)
+        # qt.msleep(tpulse)
+        # stools.apply_awg_voltage('AWG', 'ch4_marker1', 0.02)
+
+        if spectral_diffusion:
+            m.spectral_diffusion(20, 25, 0.2e-9, 58, 65, 0.01, 20, 1e-9, 
+                red_data = red_data, 
+                yellow_data = yellow_data,
+                data_args=[i, time.time()-t0])
+
+        else:
+            ix=i
+            if gate_scan: 
+                m.set_gate_voltage(gate_x[i])
+                ix=gate_x[i]*45./1000
+            m.yellow_red(60, 75, 0.03, 2e-9, 72, 94, 0.02, 20, 3e-9, 
+                red_data = red_data, 
+                yellow_data = yellow_data,
+                data_args=[ix, time.time()-t0])
+        
+        red_data.new_block()
+        yellow_data.new_block()
+        plot3d_red.update()
+        plot3d_yellow.update()
+
+    if gate_scan:
+        m.set_gate_voltage(0)
+    m.mw.set_status('off')
+    red_data.close_file()
+    yellow_data.close_file()
+    plot3d_red.save_png()
+    plot3d_yellow.save_png()
+    return ret
+
+def gate_scan_with_c_optimize():
+    if repeated_red_scans(gate_scan=True, gate_range=(0,1200),pts=19):
+        qt.get_setup_instrument('GreenAOM').set_power(20e-6)
+        qt.get_setup_instrument('c_optimiz0r').optimize(xyz_range=[.2,.2,.5], cnt=1, int_time=50, max_cycles=20)
+        qt.get_setup_instrument('c_optimiz0r').optimize(xyz_range=[.05,.1,.2], cnt=1, int_time=50, max_cycles=20)
+        qt.get_setup_instrument('optimiz0r').optimize(cnt=1, dims=['x','y'], cycles=3, int_time=50)
+        qt.get_setup_instrument('GreenAOM').set_power(0e-6)
+        repeated_red_scans(gate_scan=True, gate_range=(0,-1200),pts=19)
+
+def single_scan():
+    m = Scan()
+
+    m.mw.set_power(-7)
+    m.mw.set_frequency(2.8265e9)
+    m.mw.set_iq('off')
+    m.mw.set_pulm('off')
+    m.mw.set_status('on')
+    #m.red_scan(74, 90, voltage_step=0.01, integration_time_ms=20, power = 3e-9)
+    #m.yellow_red(62, 80, 0.02, 0.5e-9, 74, 92, 0.02, 20, 3e-9)
+    m.yellow_scan(62, 77, power = 0.5e-9, voltage_step=0.02, voltage_step_scan=0.03)
+    # m.oldschool_red_scan(55, 75, 0.01, 20, 0.5e-9)
+
+    m.mw.set_status('off')
+
+if __name__ == '__main__':
+    qt.get_setup_instrument('GreenAOM').set_power(0.e-6)
+    single_scan()
+    #green_yellow_during_scan()
+    #yellow_ionization_scan(13,20)
+    # repeated_red_scans()
+    # repeated_red_scans(spectral_diffusion=True)
+    #repeated_red_scans(gate_scan=True, gate_range=(0,-1100),pts=12)
+    #gate_scan_with_c_optimize()
+

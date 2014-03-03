@@ -6,17 +6,17 @@ from numpy import *
 import msvcrt
 
 #measurement parameters
-name = '111no2_Sil2_PSB'
+name = '111no2_Sil2_ZPL_SM_lt3'
 steps=31
-max_power=500e-6       #[w]
-counter=1    #number of counter
-PH_count=False    # counting with the HH, assumes apd on channel 0
-bg_x=1.5          #delta x position of background [um]
-bg_y=0             #delta y position of background [um]
+max_power=270e-6       #[w]
+counter=2    #number of counter
+TH_count=False    # counting with the HH, assumes apd on channel 0
+bg_x=3.0          #delta x position of background [um]
+bg_y=3.0             #delta y position of background [um]
 
 #instruments
-if PH_count:
-    current_HH_400=qt.instruments['PH_300']
+if TH_count:
+    current_HH_400=qt.instruments['TH_260N']
 
 current_aom = qt.instruments['GreenAOM']
 current_mos = qt.instruments['master_of_space']
@@ -36,7 +36,7 @@ for i,pwr in enumerate(x):
     if (msvcrt.kbhit() and (msvcrt.getch() == 'q')): break
     current_aom.set_power(pwr)
     time.sleep(1)
-    if not PH_count:
+    if not TH_count:
         y_NV[i] = current_adwin.get_countrates()[counter-1]
     else:
         y_NV[i] = current_HH_400.get_CountRate0()
@@ -51,7 +51,7 @@ for i,pwr in enumerate(x):
     if (msvcrt.kbhit() and (msvcrt.getch() == 'q')): break
     current_aom.set_power(pwr)
     time.sleep(1)
-    if not PH_count:
+    if not TH_count:
         y_BG[i] = current_adwin.get_countrates()[counter-1]
     else:
         y_BG[i] = current_HH_400.get_CountRate0()

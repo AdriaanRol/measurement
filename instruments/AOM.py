@@ -146,7 +146,7 @@ class AOM(Instrument):
         self._wavelength = 637e-9
         self._pri_controller =  "ADWIN"
         self._cur_controller =  "ADWIN"
-        self._pri_channel =     "newfocus_aom"
+        self._pri_channel =     "not_set"
         self._pri_cal_a =       0.823
         self._pri_cal_xc =      0.588
         self._pri_cal_k =       6.855
@@ -156,7 +156,7 @@ class AOM(Instrument):
         self._switchable =      False
         self._switch_DO =       16
         self._sec_controller =  "AWG"
-        self._sec_channel =     "ch1"
+        self._sec_channel =     "not_set"
         self._sec_cal_a =       0.823
         self._sec_cal_xc =      0.588
         self._sec_cal_k =       6.855
