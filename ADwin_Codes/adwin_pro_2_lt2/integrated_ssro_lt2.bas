@@ -8,7 +8,7 @@
 ' ADbasic_Version                = 5.0.8
 ' Optimize                       = Yes
 ' Optimize_Level                 = 1
-' Info_Last_Save                 = TUD277246  TUD277246\localadmin
+' Info_Last_Save                 = TUD276629  TUD276629\localadmin
 '<Header End>
 ' this program implements single-shot readout fully controlled by ADwin Gold II
 '
@@ -69,7 +69,7 @@ INIT:
   SSRO_duration                = DATA_20[10]
   SSRO_stop_after_first_photon = DATA_20[11]
   cycle_duration               = DATA_20[12] '(in processor clock cycles, 3.333ns)
-  sweep_length                 = DATA_20[14]
+  sweep_length                 = DATA_20[13]
   
   E_SP_voltage                 = DATA_21[1]
   A_SP_voltage                 = DATA_21[2]
@@ -166,7 +166,8 @@ EVENT:
          
         IF (wait_for_AWG_done > 0) THEN 
           IF (AWG_done = 0) THEN
-            IF ((P2_DIGIN_LONG(DIO_MODULE) AND AWG_done_DI_channel) > 0) THEN
+            par_60 = (P2_DIGIN_LONG(DIO_MODULE) AND AWG_done_DI_pattern)
+            IF ((P2_DIGIN_LONG(DIO_MODULE) AND AWG_done_DI_pattern) > 0) THEN
               AWG_done = 1
               IF (sequence_wait_time > 0) THEN
                 aux_timer = timer

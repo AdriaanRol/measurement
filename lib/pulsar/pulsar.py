@@ -372,6 +372,9 @@ class Sequence:
         return True
 
     def append(self, name, wfname, **kw):
+        '''
+        Takes name wfname and other arguments as input. Does not take an element as input 
+        '''
         self.insert_element(name, wfname, pos=len(self.elements), **kw)
 
     def element_count(self):
@@ -394,5 +397,19 @@ class Sequence:
         #name should be the name of the element and pattern the bit address
         self.djump_table[pattern] = name
         return True
+
+    def append_element(self, element, pos = None):
+        '''
+        Differs from normal append that it takes an element as input and not the arguments to make an element  
+        '''
+        for elt in self.elements:
+            if elt['name'] == element['name']:
+                print 'Sequence names must be unique. Not added.'
+                return False
+        if pos == None:
+            pos = len(self.elements)
+        self.elements.insert(pos, element)
+        return True
+
 
 

@@ -19,8 +19,8 @@ INIT:
   channel =7        'Number of DIO to set 
   set     =1        'can be 1 or 0
   
-  wait_steps        = 100      'number of iterations to wait between pulses, 1 iteration corresponds to 10 ms 
-  shutter_open_time = 5000000  'time that the shutter is open in 10 ns (first number is ms)
+  wait_steps        = 10      'number of iterations to wait between pulses, 1 iteration corresponds to 10 ms 
+  shutter_open_time = 50 00000  'time that the shutter is open in 10 ns (first number is ms)
   
   timer = 0 
   mode  = 0

@@ -22,7 +22,7 @@ class optimiz0r(Instrument):
 #                    'pixel_time' : 50,
                     },
                 'z' : {
-                    'scan_length' : 8.,
+                    'scan_length' : 4.,
                     'nr_of_points' : 31,
 #                    'pixel_time' : 50,
                     },
@@ -83,7 +83,7 @@ class optimiz0r(Instrument):
 
         self.mos = mos_ins
        
-    def optimize(self, cycles=1, cnt=1, int_time=50, dims=[], order='zyx'):
+    def optimize(self, cycles=1, cnt=1, int_time=50, dims=[], order='xyz'):
         ret=True
         for c in range(cycles):
            

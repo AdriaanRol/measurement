@@ -155,6 +155,7 @@ class LabjackAdwinLaserScan(LaserFrequencyScan):
         self.adwin = qt.instruments['adwin']
         self.physical_adwin=qt.instruments['physical_adwin']
         self.mw = qt.instruments['SMB100']
+        self.mw_2 = qt.instruments['noIQ_SMB100']
         self.labjack= qt.instruments['labjack']
         
         self.name=self.name+'_gv_'+str(self.adwin.get_dac_voltage('gate'))
@@ -205,6 +206,12 @@ class LabjackAdwinLaserScan(LaserFrequencyScan):
             self.mw.set_pulm('off')
             self.mw.set_iq('off')
             self.mw.set_status('on')
+
+        if self.use_mw_2:
+            self.mw_2.set_frequency(self.mw_2_frq)
+            self.mw_2.set_power(self.mw_2_power)
+            self.mw_2.set_pulm('off')
+            self.mw_2.set_status('on')
             
 
 
@@ -212,6 +219,9 @@ class LabjackAdwinLaserScan(LaserFrequencyScan):
 
         if self.use_mw:
             self.mw.set_status('off')
+
+        if self.use_mw_2:
+            self.mw_2.set_status('off')
 
         if self.use_repump_during:
             self.set_repump_power(0)
@@ -323,9 +333,17 @@ def red_laser_scan(name):
     m.counter_channel = 0
 
     # MW setup
+        #MW source 1
     m.use_mw = True
-    m.mw_frq =  qt.cfgman['samples']['sil10']['ms-1_cntr_frq']
+    m.mw_frq =  qt.cfgman['samples']['Hans_sil4']['ms-1_cntr_frq']
     m.mw_power = -6
+    print 'MW freq:' +str(m.mw_frq)
+    
+        #MW source 2
+    m.use_mw_2 = True
+    m.mw_2_frq =  qt.cfgman['samples']['Hans_sil4']['ms+1_cntr_frq']
+    m.mw_2_power = -4
+    print 'MW_2` freq:' +str(m.mw_2_frq)
     
     # repump setup
     m.yellow_repump = False
@@ -333,20 +351,19 @@ def red_laser_scan(name):
     m.red_repump_power = 0e-9
     m.yellow_repump_duration = 4 #seconds
 
-    m.repump_power = 100e-6
     m.use_repump_during = False
+    m.repump_power = 200e-6
     m.repump_duration = 0.5 # seconds
-    m.repump_power_during = 0.1e-6
+    m.repump_power_during = 0.05e-6 #0.05e-6
     
     #Scan setup
-    m.laser_power = 15e-9
-    m.integration_time = 10 # ms
+    m.laser_power = 30e-9
+    m.integration_time = 500 # ms
     m.min_v = -9
     m.max_v = 9
-    m.v_step=0.01
-    
-    m.start_frequency = 43 #GHz
-    m.stop_frequency = 65 #GHz
+    m.v_step=0.01    
+    m.start_frequency = 59.5 #GHz
+    m.stop_frequency  = 74  #GHz
     
     
     #Gate scan setup
@@ -368,8 +385,9 @@ def red_laser_scan(name):
 
 if __name__=='__main__':
     
+    #for ii in range(10):
     stools.turn_off_all_lt2_lasers()
-    red_laser_scan('red_scan_coarse_lt2_sil10_MWs')
-    #yellow_laser_scan('yellow_1nW')
+    red_laser_scan('Hans_sil4_line_scan_2MW_green')
+        #yellow_laser_scan('yellow_1nW')
 
         

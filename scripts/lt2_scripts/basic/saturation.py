@@ -6,13 +6,13 @@ from numpy import *
 import msvcrt
 
 #measurement parameters
-name = 'Sil5_ZPL'
+name = 'Sil_4_Hans_PSB'
 steps=31
-max_power=500e-6       #[w]
-counter=2    #number of counter
-PH_count=False    # counting with the HH, assumes apd on channel 0
+max_power=449e-6       #[w]
+counter=1         #number of counter
+PH_count=False    #counting with the HH, assumes apd on channel 0
 bg_x=1.5          #delta x position of background [um]
-bg_y=0             #delta y position of background [um]
+bg_y=-1.0             #delta y position of background [um]
 
 #instruments
 if PH_count:
@@ -96,4 +96,4 @@ dat.close_file()
 
 current_mos.set_x(current_x)
 current_mos.set_y(current_y)
-
+time.sleep(1)

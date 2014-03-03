@@ -1,23 +1,31 @@
 import qt
 import msvcrt
 
+##############
+### Inputs ###
+##############
 
-name='ESR_SIL13_Hans_LT1'
-start_f = 2.8#2.92 #2.88 - 0.06 # #   2.853 #2.85 #  #in GHz
-stop_f  = 2.95#2.94 # 2.88 + 0.06# #   2.864 #2.905 #   #in GHz
-steps   = 101
-mw_power = -8         #in dBm
-green_power = 10e-6
-int_time = 30         # in ms
-reps = 20
+name='ESR_SIL4_Hans_LT2'
+steps   = 151  #101
+mw_power = -3    #in dBm
+green_power = 50e-6  #10e-6
+int_time = 50 #30        # in ms
+reps = 10
+#center_f =  2.088 # in GHz #Ms = -1
+center_f =  2.06# in GHz #Ms = +1
+range_f  =  0.100 # in GHz
 
 #generate list of frequencies
-f_list = linspace(start_f*1e9, stop_f*1e9, steps)
+f_list = linspace((center_f-range_f)*1e9, (center_f+range_f)*1e9, steps)
 
-ins_smb = qt.instruments['SMB100']
+ins_smb = qt.instruments['SMB100']  
 ins_adwin = qt.instruments['adwin']
 ins_counters = qt.instruments['counters']
 ins_aom = qt.instruments['GreenAOM']
+
+###############
+### Run ESR ###
+###############
 
 counter = 1
 MW_power = mw_power
@@ -68,3 +76,4 @@ p_c.save_png(filename+'.png')
 qt.mend()
 
 ins_counters.set_is_running(1)
+GreenAOM.set_power(30e-6)

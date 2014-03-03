@@ -241,7 +241,6 @@ class ElectronRamsey(PulsarMeasurement):
 class ElectronT1(PulsarMeasurement):
     
     mprefix = 'ElectronT1'
-    
 
     def autoconfig(self):
         self.params['wait_for_AWG_done'] = 1
@@ -264,7 +263,7 @@ class ElectronT1(PulsarMeasurement):
             amplitude = self.params['Pi_pulse_amp'])
         # Wait-times
         T = pulse.SquarePulse(channel='MW_Imod', name='delay', 
-            length = 100e-6, amplitude = 0.)
+            length = self.params['wait_time_repeat_element']*1e-6, amplitude = 0.)
         T_before_p = pulse.SquarePulse(channel='MW_Imod', name='delay', 
             length = 100e-9, amplitude = 0.) #the unit waittime is 10e-6 s
         T_after_p = pulse.SquarePulse(channel='MW_Imod', name='delay', 
@@ -301,17 +300,17 @@ class ElectronT1(PulsarMeasurement):
             
         for i in range(len(self.params['wait_times'])):
             
-            if self.params['wait_times'][i]/100 !=0: 
+            if self.params['wait_times'][i]/self.params['wait_time_repeat_element'] !=0: 
                 if self.params['T1_initial_state'] == 'ms=-1':
                     seq.append(name='Init_Pi_pulse_%d'%i,wfname='Pi_pulse',trigger_wait=True)
-                    seq.append(name='ElectronT1_wait_time_%d'%i, wfname='T1_wait_time', trigger_wait=False,repetitions=self.params['wait_times'][i]/100)
+                    seq.append(name='ElectronT1_wait_time_%d'%i, wfname='T1_wait_time', trigger_wait=False,repetitions=self.params['wait_times'][i]/self.params['wait_time_repeat_element'])
                     if self.params['T1_readout_state'] == 'ms=-1':
                         seq.append(name='Readout_Pi_pulse_%d'%i,wfname='Pi_pulse',trigger_wait=False)
                     seq.append(name='ElectronT1_ADwin_trigger_%d'%i, wfname='ADwin_trigger', trigger_wait=False)
                 #elif self.params['T1_initial_state'] == 'ms=+1': 
 
                 else: 
-                    seq.append(name='ElectronT1_wait_time_%d'%i, wfname='T1_wait_time', trigger_wait=True,repetitions=self.params['wait_times'][i]/100)
+                    seq.append(name='ElectronT1_wait_time_%d'%i, wfname='T1_wait_time', trigger_wait=True,repetitions=self.params['wait_times'][i]/self.params['wait_time_repeat_element'])
                     if self.params['T1_readout_state'] == 'ms=-1':
                         seq.append(name='Readout_Pi_pulse_%d'%i,wfname='Pi_pulse',trigger_wait=False)
                     seq.append(name='ElectronT1_ADwin_trigger_%d'%i, wfname='ADwin_trigger', trigger_wait=False)     

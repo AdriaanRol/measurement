@@ -55,7 +55,7 @@ class RS_SMB100(Instrument):
         Instrument.__init__(self, name, tags=['physical'])
 
         self._address = address
-        self._visainstrument = visa.instrument(self._address, timeout=300)
+        self._visainstrument = visa.instrument(self._address, timeout=300) #does this need to be so high (a 5 minuite wait after a wrong command?)
         print ' SMB timeout set to: %s s'%self._visainstrument.timeout
 
         self.add_parameter('frequency', type=types.FloatType,

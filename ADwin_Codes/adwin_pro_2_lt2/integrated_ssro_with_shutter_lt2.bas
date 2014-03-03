@@ -11,7 +11,6 @@
 ' Info_Last_Save                 = TUD276629  TUD276629\localadmin
 '<Header End>
 ' this program implements single-shot readout fully controlled by ADwin Gold II
-' 140109 Adding functionality for shutter (Tim Taminiau).
 '
 ' protocol:
 ' mode  0:  CR check
@@ -27,7 +26,6 @@
 #INCLUDE .\cr.inc
 
 #DEFINE max_SP_bins        500
-#DEFINE max_RO_dim     200000
 #DEFINE max_stat            10
 
 'init
@@ -35,11 +33,8 @@ DIM DATA_20[100] AS LONG
 DIM DATA_21[100] AS FLOAT
 
 'return
-'used in cr.inc
-DIM DATA_22[max_RO_dim] AS LONG  ' CR counts before sequence
-DIM DATA_23[max_RO_dim] AS LONG ' CR counts after sequence
 DIM DATA_24[max_SP_bins] AS LONG AT EM_LOCAL      ' SP counts ' not used anymore? Machiel 23-12-'13
-DIM DATA_25[max_RO_dim] AS LONG  ' SSRO counts spin readout
+DIM DATA_25[max_repetitions] AS LONG  ' SSRO counts spin readout
 
 DIM AWG_start_DO_channel, AWG_done_DI_channel, APD_gate_DO_channel AS LONG
 DIM send_AWG_start, wait_for_AWG_done AS LONG
@@ -81,10 +76,6 @@ INIT:
   E_RO_voltage                 = DATA_21[3]
   A_RO_voltage                 = DATA_21[4]
   par_80 = SSRO_stop_after_first_photon
-  FOR i = 1 TO SSRO_repetitions
-    DATA_22[i] = 0
-    DATA_23[i] = 0
-  NEXT i
   
   FOR i = 1 TO max_SP_bins
     DATA_24[i] = 0
@@ -140,12 +131,12 @@ EVENT:
           P2_DAC(DAC_MODULE,A_laser_DAC_channel, 3277*A_SP_voltage+32768)   ' turn on A laser
           P2_CNT_CLEAR(CTR_MODULE, counter_pattern)    'clear counter
           P2_CNT_ENABLE(CTR_MODULE,counter_pattern)    'turn on counter
-        ELSE
+        else
           counts = P2_CNT_READ(CTR_MODULE,counter_channel)
           P2_CNT_CLEAR(CTR_MODULE, counter_pattern)    'clear counter
           P2_CNT_ENABLE(CTR_MODULE,counter_pattern)    'turn on counter
           DATA_24[timer] = DATA_24[timer] + counts
-        ENDIF
+        Endif
 
         IF (timer = SP_duration) THEN
           P2_CNT_ENABLE(CTR_MODULE,0)
