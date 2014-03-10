@@ -51,7 +51,7 @@ def SimpleDecoupling(name):
     m.autoconfig()
 
     #Decoupling specific parameters
-    m.params['Number_of_pulses'] = 16
+    m.params['Number_of_pulses'] = 24
     m.params['tau_list'] = np.linspace(2.975e-6,10.0*2.975e-6,10) #Larmor period for B =314G
     m.params['Initial_Pulse'] ='pi/2'
     m.params['Final_Pulse'] ='pi/2'
