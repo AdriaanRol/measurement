@@ -49,6 +49,27 @@ class optimiz0r(Instrument):
                 'zyx' : ['z','y','x'],
                 'xyonly':['y','x'],
                 },
+
+            'lt3' : {
+                'x' : {
+                    'scan_length' : 1.,
+                    'nr_of_points' : 31,#99,
+#                    'pixel_time' : 50,
+                    },
+                'y' : {
+                    'scan_length' : 1.,
+                    'nr_of_points' : 31,#99,
+#                    'pixel_time' : 50,
+                    },
+                'z' : {
+                    'scan_length' : 4.,
+                    'nr_of_points' : 51,#99,
+#                    'pixel_time' : 50,
+                    },
+                'zyx' : ['z','y','x'],
+                'xyonly':['y','x'],
+                },
+
             }
    
     def __init__(self, name, opt1d_ins=qt.instruments['opt1d_counts'], 
