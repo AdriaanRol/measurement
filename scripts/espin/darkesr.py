@@ -14,6 +14,8 @@ SAMPLE= qt.cfgman['samples']['current']
 SAMPLE_CFG = qt.cfgman['protocols']['current']
 
 def darkesr(name):
+    '''dark ESR on the 0 <-> -1 transition
+    '''
     
     m = pulsar_msmt.DarkESR(name)
     m.params.from_dict(qt.cfgman.get('samples/'+SAMPLE))
@@ -22,7 +24,7 @@ def darkesr(name):
     m.params.from_dict(qt.cfgman['protocols'][SAMPLE_CFG]['AdwinSSRO-integrated'])
     m.params.from_dict(qt.cfgman['protocols']['AdwinSSRO+espin'])   
 
-    m.params['mw_frq'] = 1.993e9-43e6 #MW source frequency 
+    m.params['mw_frq'] = 2.009150e9-43e6 #MW source frequency 
     m.params['mw_power'] = 20  
     m.params['repetitions'] = 3000
 
@@ -39,6 +41,8 @@ def darkesr(name):
     m.finish()
 
 def darkesrp1(name):
+    '''dark ESR on the 0 <-> +1 transition
+    '''
     
     m = pulsar_msmt.DarkESR(name)
     m.params.from_dict(qt.cfgman.get('samples/'+SAMPLE))
@@ -47,7 +51,7 @@ def darkesrp1(name):
     m.params.from_dict(qt.cfgman['protocols'][SAMPLE_CFG]['AdwinSSRO-integrated'])
     m.params.from_dict(qt.cfgman['protocols']['AdwinSSRO+espin'])   
 
-    m.params['mw_frq'] = 3.760e9-43e6 #MW source frequency 
+    m.params['mw_frq'] = 3.7466e9-43e6 #MW source frequency 
     m.params['mw_power'] = 20  
     m.params['repetitions'] = 3000
 
@@ -66,4 +70,4 @@ def darkesrp1(name):
 if __name__ == '__main__':
     darkesr(SAMPLE_CFG)
     #raw_input ('Do the fitting...')
-    darkesrp1(SAMPLE_CFG)
+    #darkesrp1(SAMPLE_CFG)

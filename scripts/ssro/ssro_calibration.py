@@ -14,25 +14,30 @@ SAMPLE_CFG = qt.cfgman['protocols']['current']
 def ssrocalibration(name):
     m = ssro.AdwinSSRO('SSROCalibration_'+name)   
     m.params.from_dict(qt.cfgman['protocols']['AdwinSSRO'])
-
     m.params.from_dict(qt.cfgman['protocols'][SAMPLE_CFG]['AdwinSSRO'])    
 
     # parameters
     m.params['SSRO_repetitions'] = 5000
-    cfg.set(branch+'CR_duration' , 100)
-
-
-    m.params['A_CR_amplitude'] = 40e-9 #5e-9
-    m.params['Ex_CR_amplitude'] = 20e-9 #5e-9
-
-    m.params['SSRO_duration'] = 200
-
-    # ms = 0 calibration
-    m.params['SP_duration'] = 150
-    m.params['A_SP_amplitude'] = 63e-9
-    m.params['Ex_SP_amplitude'] = 0.
-    m.params['Ex_RO_amplitude'] = 20e-9 #10e-9
+    m.params['SSRO_duration']       = 100
+    m.params['SSRO_stop_after_first_photon']= 0
     
+    m.params['A_CR_amplitude']  = 10e-9
+    m.params['A_RO_amplitude']  = 0
+    m.params['A_SP_amplitude']  = 10e-9
+    
+    m.params['CR_duration']     = 25
+    m.params['CR_preselect']    = 1000
+    m.params['CR_repump']       = 1000
+    m.params['CR_probe']        = 1000
+
+    m.params['Ex_CR_amplitude'] =  5e-9
+    m.params['Ex_RO_amplitude'] =  8e-9
+    m.params['Ex_SP_amplitude'] =  0e-9
+    
+    m.params['SP_duration']     =  100
+    m.params['SP_filter_duration']  = 0
+    
+    # ms = 0 calibration
     m.autoconfig()
     m.setup()
 
@@ -40,10 +45,9 @@ def ssrocalibration(name):
     m.save('ms0')
 
     # ms = 1 calibration
-    m.params['SP_duration'] = 400
+    m.params['SP_duration'] = 300
     m.params['A_SP_amplitude'] = 0.
-    m.params['Ex_SP_amplitude'] = 35e-9 #10e-9
-
+    m.params['Ex_SP_amplitude'] = 10e-9 
 
     m.run()
     m.save('ms1')
