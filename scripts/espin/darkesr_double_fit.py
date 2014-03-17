@@ -10,13 +10,10 @@ import measurement.lib.measurement2.measurement as m2
 from measurement.lib.measurement2.adwin_ssro import ssro
 from measurement.lib.measurement2.adwin_ssro import pulsar as pulsar_msmt
 
-#execfile("setup/msmt_params.py")
 SAMPLE= qt.cfgman['samples']['current']
 SAMPLE_CFG = qt.cfgman['protocols']['current']
 
 def darkesr(name):
-    '''dark ESR on the 0 <-> -1 transition
-    '''
 
     m = pulsar_msmt.DarkESR(name)
     m.params.from_dict(qt.cfgman.get('samples/'+SAMPLE))
@@ -25,18 +22,15 @@ def darkesr(name):
     m.params.from_dict(qt.cfgman['protocols'][SAMPLE_CFG]['AdwinSSRO-integrated'])
     m.params.from_dict(qt.cfgman['protocols']['AdwinSSRO+espin'])
 
-    m.params['ssmod_detuning'] = 43e6
-    m.params['mw_frq']       = 2.009150e9 - m.params['ssmod_detuning'] # MW source frequency, detuned from the target
-    m.params['mw_power']     = 20
-    m.params['repetitions']  = 3000
-    m.params['range']        = 6.5e6
+    m.params['mw_frq'] = 2.0e9-43e6 #MW source frequency
+    m.params['mw_power'] = 20
+    m.params['repetitions'] = 3000
+
+    m.params['ssbmod_frq_start'] = 43e6 - 6.5e6
+    m.params['ssbmod_frq_stop'] = 43e6 + 6.5e6
     m.params['pts'] = 41
     m.params['pulse_length'] = 2e-6
     m.params['ssbmod_amplitude'] = 0.03
-
-
-    m.params['ssbmod_frq_start'] = m.params['ssmod_detuning'] - m.params['range']
-    m.params['ssbmod_frq_stop']  = m.params['ssmod_detuning'] + m.params['range']
 
     m.autoconfig()
     m.generate_sequence(upload=True)
@@ -45,8 +39,6 @@ def darkesr(name):
     m.finish()
 
 def darkesrp1(name):
-    '''dark ESR on the 0 <-> +1 transition
-    '''
 
     m = pulsar_msmt.DarkESR(name)
     m.params.from_dict(qt.cfgman.get('samples/'+SAMPLE))
@@ -55,17 +47,15 @@ def darkesrp1(name):
     m.params.from_dict(qt.cfgman['protocols'][SAMPLE_CFG]['AdwinSSRO-integrated'])
     m.params.from_dict(qt.cfgman['protocols']['AdwinSSRO+espin'])
 
-    m.params['ssmod_detuning'] = 43e6
-    m.params['mw_frq']         = 3.7466e9 - m.params['ssmod_detuning'] # MW source frequency, detuned from the target
+    m.params['mw_frq'] = 3.754e9-43e6 #MW source frequency
     m.params['mw_power'] = 20
     m.params['repetitions'] = 3000
-    m.params['range']        = 6.5e6
+
+    m.params['ssbmod_frq_start'] = 43e6 - 6.5e6
+    m.params['ssbmod_frq_stop'] = 43e6 + 6.5e6
     m.params['pts'] = 41
     m.params['pulse_length'] = 2e-6
     m.params['ssbmod_amplitude'] = 0.05
-
-    m.params['ssbmod_frq_start'] = m.params['ssmod_detuning'] - m.params['range']
-    m.params['ssbmod_frq_stop']  = m.params['ssmod_detuning'] + m.params['range']
 
     m.autoconfig()
     m.generate_sequence(upload=True)

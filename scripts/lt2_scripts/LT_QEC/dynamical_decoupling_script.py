@@ -5,12 +5,12 @@ Made by Adriaan Rol
 """
 import numpy as np
 import qt
-import measurement.lib.config.adwins as adwins_cfg
-import measurement.lib.measurement2.measurement as m2
+#import measurement.lib.config.adwins as adwins_cfg
+#import measurement.lib.measurement2.measurement as m2 #Commented out because linter says it is unused
 
 # import the msmt class
-from measurement.lib.measurement2.adwin_ssro import ssro
-from measurement.lib.measurement2.adwin_ssro import pulsar as pulsar_msmt
+#from measurement.lib.measurement2.adwin_ssro import ssro
+#from measurement.lib.measurement2.adwin_ssro import pulsar as pulsar_msmt
 import measurement.lib.pulsar.DynamicalDecoupling as DD
 
 reload(DD)
@@ -28,13 +28,6 @@ def SimpleDecoupling(name):
     m.params.from_dict(qt.cfgman['protocols'][SAMPLE_CFG]['AdwinSSRO-integrated'])
     m.params.from_dict(qt.cfgman['protocols']['AdwinSSRO+espin'])
     m.params.from_dict(qt.cfgman['protocols'][SAMPLE_CFG]['pulses'])
-
-
-    #Plot parameters
-    m.params['sweep_name'] = 'tau (us)'
-    m.params['sweep_pts'] = np.linspace(1,10,10)#m.params['tau_list']*1e6
-    m.params['pts'] = len(m.params['sweep_pts']) #Check if we need this line, Tim
-
 
 
     '''set experimental parameters'''
@@ -56,7 +49,10 @@ def SimpleDecoupling(name):
     m.params['Initial_Pulse'] ='pi/2'
     m.params['Final_Pulse'] ='pi/2'
 
-
+    #Plot parameters
+    m.params['sweep_name'] = 'tau (us)'
+    m.params['sweep_pts'] = m.params['tau_list']*1e6  #np.linspace(1,10,10)#
+    m.params['pts'] = len(m.params['sweep_pts']) #Check if we need this line, Tim
 
     '''generate sequence'''
     m.generate_sequence(upload=True)

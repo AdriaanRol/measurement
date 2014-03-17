@@ -66,9 +66,9 @@ class LaserFrequencyScan:
         d.add_coordinate('Counts [Hz]')
         d.add_coordinate('Gate Voltage(V)')
 
-        p = qt.Plot2D(d, 'r-', title='Frq (left) vs Voltage (bottom)', plottitle=self.mprefix,
+        p = qt.Plot2D(d, 'ro', title='Frq (left) vs Voltage (bottom)', plottitle=self.mprefix,
                 name='Laser Scan', clear=True, coorddim=0, valdim=1, maxtraces=1)
-        p.add(d, 'b-', title='Counts (right) vs Frq (top)', coorddim=1, valdim=2,
+        p.add(d, 'bo', title='Counts (right) vs Frq (top)', coorddim=1, valdim=2,
                 right=True, top=True)
         p.set_x2tics(True)
         p.set_y2tics(True)
@@ -334,16 +334,16 @@ def red_laser_scan(name):
 
     # MW setup
         #MW source 1
-    m.use_mw = False
-    m.mw_frq =  qt.cfgman['samples']['Hans_sil1']['ms-1_cntr_frq']
+    m.use_mw = True
+    m.mw_frq =  qt.cfgman['samples']['Hans_sil4']['ms-1_cntr_frq']
     m.mw_power = -6
     print 'MW freq:' +str(m.mw_frq)
     
         #MW source 2
-    m.use_mw_2 = False
-    m.mw_2_frq =  qt.cfgman['samples']['Hans_sil1']['ms+1_cntr_frq']
-    m.mw_2_power = -6
-    print 'MW_2 freq:' +str(m.mw_2_frq)
+    m.use_mw_2 = True
+    m.mw_2_frq =  qt.cfgman['samples']['Hans_sil4']['ms+1_cntr_frq']
+    m.mw_2_power = -4
+    print 'MW_2` freq:' +str(m.mw_2_frq)
     
     # repump setup
     m.yellow_repump = False
@@ -352,19 +352,18 @@ def red_laser_scan(name):
     m.yellow_repump_duration = 4 #seconds
 
     m.use_repump_during = False
-    m.repump_power_during = 0.05e-6 #0.05e-6
-
-    m.repump_power = 200e-6  # I don't understand why this is? Julia 140312
+    m.repump_power = 200e-6
     m.repump_duration = 0.5 # seconds
-        
+    m.repump_power_during = 0.05e-6 #0.05e-6
+    
     #Scan setup
-    m.laser_power = 2e-9 # 30e-9 SIL4 Hans
-    m.integration_time = 100 # ms
+    m.laser_power = 30e-9
+    m.integration_time = 500 # ms
     m.min_v = -9
     m.max_v = 9
     m.v_step=0.01    
-    m.start_frequency = 41.5#GHz
-    m.stop_frequency  = 65  #GHz
+    m.start_frequency = 59.5 #GHz
+    m.stop_frequency  = 74  #GHz
     
     
     #Gate scan setup
@@ -386,9 +385,11 @@ def red_laser_scan(name):
 
 if __name__=='__main__':
     
-    #for ii in range(10):
+    for ii in range(10):
     stools.turn_off_all_lt2_lasers()
-    red_laser_scan('Hans_sil1_line_scan_2MW_green')
-        #yellow_laser_scan('yellow_1nW')
+    red_laser_scan('Hans_sil4_line_scan_2MW_green')
+
+    master_of_magnet.step('Z_axis', + 5000)
+    
 
         

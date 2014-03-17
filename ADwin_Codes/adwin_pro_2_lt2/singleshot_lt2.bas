@@ -126,7 +126,7 @@ EVENT:
         IF ( CR_check(first,repetition_counter) > 0 ) THEN
           mode = 2
           timer = -1
-          first = 0
+          first=0
         ENDIF
         
       CASE 2    ' Ex or A laser spin pumping
