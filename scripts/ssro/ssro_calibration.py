@@ -8,9 +8,6 @@ import measurement.lib.measurement2.measurement as m2
 
 # import the msmt class
 from measurement.lib.measurement2.adwin_ssro import ssro
-
-# import the measurement parameters
-execfile("setup/msmt_params.py")
 SAMPLE_CFG = qt.cfgman['protocols']['current']
 
 def ssrocalibration(name):
