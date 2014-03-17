@@ -5,14 +5,26 @@ cfg = qt.cfgman
 cfg.remove_cfg('protocols')
 cfg.remove_cfg('samples')
 cfg.remove_cfg('setup')
+cfg.remove_cfg('magnet')
 cfg.add_cfg('protocols')
 cfg.add_cfg('samples')
 cfg.add_cfg('setup')
+cfg.add_cfg('magnet')
 
 cfg['samples']['current'] = 'Hans_sil1'
 cfg['protocols']['current'] = 'Hans_sil1-default'
 
 print 'updating msmt params lt2 for {}'.format(cfg['samples']['current'])
+
+###################################
+### General settings for magnet ###
+###################################
+#Asummes a cylindrical magnet
+branch='magnet/'
+cfg.set(branch+     'nm_per_step',           1.)     #Z-movement     
+cfg.set(branch+     'radius',                5.)     #millimeters
+cfg.set(branch+     'thickness',             4.)     #millimeters
+cfg.set(branch+     'strength_constant',     1.3)    #Tesla
 
 ##############################################################################
 ##############################################################################
@@ -58,8 +70,6 @@ if yellow:
 else:
     cfg.set(branch + 'repump_duration',             cfg.get(branch+ 'green_repump_duration'))
     cfg.set(branch + 'repump_amplitude',            cfg.get(branch+ 'green_repump_amplitude'))
-    print branch
-    print cfg.get(branch + 'repump_amplitude')
     cfg.set(branch + 'CR_repump',                   cfg.get(branch+ 'green_CR_repump'))
 
     ############################################
@@ -85,6 +95,9 @@ cfg.set(branch+        'AWG_to_adwin_ttl_trigger_duration',        2e-6)
 cfg.set(branch+        'repump_after_MBI_duration',                100)
 cfg.set(branch+        'repump_after_MBI_amp',                     15e-9)
 
+
+
+
 #################
 ### Hans sil1 ###
 #################
@@ -97,7 +110,6 @@ branch='samples/Hans_sil1/'
 
 f_msm1_cntr = 2.009150e9 #Electron spin ms=-1 frquency
 f_msp1_cntr = 3.746625e9 #Electron spin ms=+1 frequency
-
 zero_field_splitting = 2.87747e9 # As measured by Julia on 20140227 2.87747(5)e9
 
 N_frq = 7.13429e6           #not calibrated
@@ -106,6 +118,7 @@ N_HF_frq = 2.16042e6        #not calibrated
 cfg.set(branch+'ms-1_cntr_frq', f_msm1_cntr)
 cfg.set(branch+'ms+1_cntr_frq', f_msp1_cntr)
 cfg.set(branch+'zero_field_splitting', zero_field_splitting)
+cfg.set(branch+'g_factor', 2.8e6) #2.8 MHz/Gauss
 
 cfg.set(branch+'N_0-1_splitting_ms-1', N_frq)
 cfg.set(branch+'N_HF_frq', N_HF_frq)
@@ -147,9 +160,9 @@ cfg.set(branch+'MW_pulse_mod_risetime',10e-9)
 branch='protocols/Hans_sil1-default/AdwinSSRO-integrated/'
 cfg.set(branch+'SSRO_duration', 40)
 
-    ##################################
+    ########################
     ### Pulse parameters ###
-    ##################################
+    ########################
 
 branch='protocols/Hans_sil1-default/pulses/'
 
@@ -168,6 +181,73 @@ cfg.set(branch+'CORPSE_pi_420_duration',  7./CORPSE_frq/6.)
 cfg.set(branch+'CORPSE_pi2_24p3_duration', 24.3/CORPSE_frq/360.)
 cfg.set(branch+'CORPSE_pi2_m318p6_duration', 318.6/CORPSE_frq/360.)
 cfg.set(branch+'CORPSE_pi2_384p3_duration',  384.3/CORPSE_frq/360.)
+
+
+
+
+############################
+### END: save everything ###
+############################
+cfg.save_all()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #################
 ### Hans sil4 ###
@@ -483,8 +563,7 @@ cfg.set(branch+'CORPSE_pi2_384p3_duration',  384.3/CORPSE_frq/360.)
 #
 
 
-### save everything
-cfg.save_all()
+
 
 ### Specific protocol settings ###
 

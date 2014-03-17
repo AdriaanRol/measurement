@@ -148,14 +148,3 @@ class Master_of_magnet(Instrument):
     def stop(self, axis):
         axis_number = self.Axis_config[axis]          
         self._anc_ins.Stop(axis_number)
-
-
-    ## Methods to do magnetic field calculations
-    def B_to_f(self, B_field):
-        freq = 78e9 - B_field*2.80e6
-        return freq
-
-    def f_to_B(self, freq): 
-        B_field = (2.878e9 - freq)/2.80e6
-        return B_field
-

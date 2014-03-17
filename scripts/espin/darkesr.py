@@ -10,7 +10,6 @@ import measurement.lib.measurement2.measurement as m2
 from measurement.lib.measurement2.adwin_ssro import ssro
 from measurement.lib.measurement2.adwin_ssro import pulsar as pulsar_msmt
 
-#execfile("setup/msmt_params.py")
 SAMPLE= qt.cfgman['samples']['current']
 SAMPLE_CFG = qt.cfgman['protocols']['current']
 
