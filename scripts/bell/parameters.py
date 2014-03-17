@@ -93,11 +93,11 @@ params_lt1['N_RO_repetitions'] = 2 # THIS IS COMPILED INTO THE ADWIN CODE!
 
 params_lt3['SSRO_lt3_duration'] = 23
 
-params_lt3['Ey_CR_amplitude'] = 6e-9#6e-9             
-params_lt3['A_CR_amplitude'] = 15e-9#16e-9              
+params_lt3['Ey_CR_amplitude'] = 5e-9#10e-9#6e-9             
+params_lt3['A_CR_amplitude'] =5e-9#10e-9#16e-9              
 params_lt3['Ey_SP_amplitude'] = 0e-9              
-params_lt3['A_SP_amplitude'] = 23e-9             
-params_lt3['Ey_RO_amplitude'] = 7e-9
+params_lt3['A_SP_amplitude'] = 10e-9             
+params_lt3['Ey_RO_amplitude'] = 10e-9
 params_lt3['A_RO_amplitude'] = 0
 params_lt3['repump_amplitude'] = 200e-6 
 
@@ -105,9 +105,9 @@ params_lt3['repump_duration'] = 10 # 10 for green, 500 for yellow
 params_lt3['repump_freq_offset'] = 0 # 5.
 params_lt3['repump_freq_amplitude'] = 0 # 4.
 
-params_lt3['CR_duration'] = 50
+params_lt3['CR_duration'] = 100
 params_lt3['CR_preselect'] = 2500
-params_lt3['CR_probe'] = 2
+params_lt3['CR_probe'] = 20
 params_lt3['CR_repump'] = 1000 # 1 for yellow, 1000 for green
 params_lt3['CR_probe_max_time'] = 500000 # in us # TODO is that still valid?
 
@@ -203,7 +203,7 @@ params_lt1['AWG_yellow_power']        = 50e-9 #yellow power during SP in LDE on 
 params_lt1['MW_wait_after_SP']        = 200e-9 # wait time between end of SP_lt1 and start of first MW
 params_lt1['MW_separation']           = 600e-9 # separation between the two MW pulses on LT1
 
-params_lt1['initial_delay']           = 10e-9 + 240e-9
+params_lt1['initial_delay']           = 10e-9 + 240e-9+500e-9
 params_lt3['initial_delay']           = 10e-9
 
 params['single_sync']                 = 1 #if ==1 then there will only be 1 sync otherwise 1 for each puls
@@ -227,7 +227,7 @@ params_lt3['teleportation_repetitions'] = -1
 ########
 ## parameters (for now) only used in calibration scripts
 ########
-CALIBRATION = False
+CALIBRATION = True
 
 if CALIBRATION == True:
     print 'calibration settings loaded'

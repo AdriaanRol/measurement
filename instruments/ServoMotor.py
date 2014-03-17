@@ -28,12 +28,12 @@ class ServoMotor(Instrument):
         self.add_parameter('in_position', 
                            type = types.IntType, 
                            flags = Instrument.FLAG_GETSET,
-                           minval=500, maxval=2500)
+                           minval=min_pos, maxval=max_pos)
         
         self.add_parameter('out_position', 
                            type = types.IntType, 
                            flags = Instrument.FLAG_GETSET,
-                           minval=500, maxval=2500)
+                           minval=min_pos, maxval=max_pos)
 
         self.add_function('move_in')
         self.add_function('move_out')

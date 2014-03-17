@@ -18,10 +18,13 @@ class laser_reject0r(Instrument):
         self.add_function('first_time_run')
         self.add_function('routine') 
         
-        self.rotator = positioner
-        self.red = red_laser
-        self.adwin = adwin
-
+        self.rotator = qt.instruments[positioner]
+        if red_laser != None:
+            self.red = qt.instruments[red_laser]
+        else:
+            self.red = None
+        self.adwin = qt.instruments[adwin]
+        
         ins_pars  = {'half_channel'           : {'type':types.IntType,'flags':Instrument.FLAG_GETSET, 'val':2},
                     'half_stepsize'           : {'type':types.IntType,'flags':Instrument.FLAG_GETSET, 'val':400},
                     'half_noof_points'        : {'type':types.IntType,'flags':Instrument.FLAG_GETSET, 'val':11},
@@ -35,7 +38,10 @@ class laser_reject0r(Instrument):
                     'opt_threshold'           : {'type':types.FloatType,'flags':Instrument.FLAG_GETSET, 'val':5E5},
                     'zpl_counter'             : {'type':types.IntType,'flags':Instrument.FLAG_GETSET, 'val':2},
                     'plot_degrees'            : {'type':types.BooleanType,'flags':Instrument.FLAG_GETSET, 'val':True},
+                    'pos_degrees_per_step_cal': {'type':types.FloatType,'flags':Instrument.FLAG_GETSET, 'val':1e-3},
+                    'neg_degrees_per_step_cal': {'type':types.FloatType,'flags':Instrument.FLAG_GETSET, 'val':1e-3},
                     }
+
         instrument_helper.create_get_set(self,ins_pars)
 
         self.check_noof_steps = 10000    #ask before changing this number of steps
@@ -97,7 +103,7 @@ class laser_reject0r(Instrument):
     ############################################################
     
     def do_get_conversion_factor(self, w = 'half'):
-        return self.rotator.get_step_deg_cfg()[getattr(self,'_'+w+'_channel')]
+        return self.get_pos_degrees_per_step_cal() #self.rotator.get_step_deg_cfg()[getattr(self,'_'+w+'_channel')]
 
     def do_get_opt_red_power(self):
         return self.opt_red_power
@@ -291,7 +297,7 @@ class laser_reject0r(Instrument):
         y = np.zeros(len(x))
         for idx, X in enumerate(self.map_abs_to_rel(x)):
             #set position
-            self.rotator.quick_scan(X, getattr(self,'_'+w+'_channel'))
+            self.rotator.set('relative_position%d'%self.get(w+'_channel'),X)
 
             #turn on red
             #self.red.set_power(red_power)
@@ -314,7 +320,7 @@ class laser_reject0r(Instrument):
             if y[idx] > self._opt_threshold and idx == 0:
                 print '\tWARNING! Counts for the first point in routine exceed\
                         threshold. Returning to initial position...'
-                self.rotator.quick_scan(-X, getattr(self,'_'+w+'_channel'))
+                self.rotator.set('relative_position%d'%self.get(w+'_channel'),-X)
                 premature_quit = True
 
                 x = x[0:idx+1]
@@ -326,7 +332,7 @@ class laser_reject0r(Instrument):
                 if y[idx-1] < self._opt_threshold: #must be the case
                     print '\tWARNING! Counts for point %d exceed the threshold.\
                             Returning to previous point in sequence.'%(idx+1)
-                    self.rotator.quick_scan(-X, getattr(self,'_'+w+'_channel'))
+                    self.rotator.set('relative_position%d'%self.get(w+'_channel'),-X)
                 else:
                     print '\tSomething is terribly wrong here...'
                 premature_quit = True
@@ -474,7 +480,3 @@ class laser_reject0r(Instrument):
             for idx,waveplate in enumerate(w):
                 print '* Randomizing %s waveplate (step %d) ...'%(waveplate, k)
                 self.rotator.quick_scan(np.random.uniform(low = -20000, high = 20000) ,getattr(self,'_'+waveplate+'_channel'))
-
-
-
-        

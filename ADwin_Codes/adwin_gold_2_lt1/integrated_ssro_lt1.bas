@@ -8,7 +8,7 @@
 ' ADbasic_Version                = 5.0.8
 ' Optimize                       = Yes
 ' Optimize_Level                 = 1
-' Info_Last_Save                 = TUD277246  TUD277246\localadmin
+' Info_Last_Save                 = TUD277299  TUD277299\localadmin
 '<Header End>
 ' this program implements single-shot readout fully controlled by ADwin Gold II
 '
@@ -61,14 +61,13 @@ INIT:
   send_AWG_start               = DATA_20[3]
   wait_for_AWG_done            = DATA_20[4]
   SP_duration                  = DATA_20[5]
-  SP_filter_duration           = DATA_20[6]
-  sequence_wait_time           = DATA_20[7]
-  wait_after_pulse_duration    = DATA_20[8]
-  SSRO_repetitions             = DATA_20[9]
-  SSRO_duration                = DATA_20[10]
-  SSRO_stop_after_first_photon = DATA_20[11]
-  cycle_duration               = DATA_20[12] '(in processor clock cycles, 3.333ns)
-  sweep_length                 = DATA_20[13]
+  sequence_wait_time           = DATA_20[6]
+  wait_after_pulse_duration    = DATA_20[7]
+  SSRO_repetitions             = DATA_20[8]
+  SSRO_duration                = DATA_20[9]
+  SSRO_stop_after_first_photon = DATA_20[10]
+  cycle_duration               = DATA_20[11] '(in processor clock cycles, 3.333ns)
+  sweep_length                 = DATA_20[12]
   
   E_SP_voltage                 = DATA_21[1]
   A_SP_voltage                 = DATA_21[2]

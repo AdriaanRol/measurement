@@ -1,7 +1,7 @@
 import qt
 import numpy as np
 import msvcrt
-
+from measurement.lib.pulsar import pulse, pulselib, element, pulsar
 
 def set_simple_counting(adwins=['adwin', 'adwin_lt1']):
     for adwin in adwins:
@@ -13,7 +13,7 @@ def turn_off_lasers(names):
 
 def turn_off_all_lt3_lasers():
     set_simple_counting(['adwin'])
-    turn_off_lasers(['MatisseAOM', 'NewfocusAOM','GreenAOM','YellowAOM'])
+    turn_off_lasers(['MatisseAOM', 'NewfocusAOM','GreenAOM','YellowAOM', 'PulseAOM'])
 
 def turn_off_all_lasers():
     turn_off_all_lt3_lasers()
@@ -146,4 +146,26 @@ def set_lt1_optimization_powers():
 
 
 
+def turn_on_lt3_pulse_path():
+    qt.instruments['PMServo'].move_in()
+    p=pulse.SinePulse(channel='EOM_Matisse', name='pp', length=100e-6, frequency=1/(100e-6), amplitude = 1.8)
+    qt.pulsar.set_channel_opt('EOM_AOM_Matisse', 'low', 1.0)
+    e=element.Element('Sinde', pulsar=qt.pulsar)
+    e.append(p)
+    e.print_overview()
+    s= pulsar.Sequence('Sinde')
+    s.append(name = 'Sine',
+                    wfname = e.name,
+                    trigger_wait = 0)
+    qt.pulsar.upload(e)
+    qt.pulsar.program_sequence(s)
+    qt.instruments['AWG'].set_runmode('SEQ')
+    qt.instruments['AWG'].start()
+
+    while 1:
+        if (msvcrt.kbhit() and (msvcrt.getch() == 'q')): break
+        qt.msleep(0.1)
+    qt.instruments['AWG'].stop()
+    qt.instruments['AWG'].set_runmode('CONT')
+    qt.pulsar.set_channel_opt('EOM_AOM_Matisse', 'low', 0.0)
 

@@ -124,6 +124,7 @@ class Tektronix_AWG5014_09(Instrument):
         self.add_function('set_trigger_mode_off')
         self.add_function('set_trigger_impedance_1e3')
         self.add_function('set_trigger_impedance_50')
+        self.add_function('clear_visa')
 
         if reset:
             self.reset()
@@ -131,6 +132,16 @@ class Tektronix_AWG5014_09(Instrument):
             self.get_all()
 
     # Functions
+
+    def clear_visa(self):
+        self._visainstrument.clear()
+        for i in range(5):
+            try:
+                self._visainstrument.read()
+            except(visa.VisaIOError):
+                print 'reset complete'
+                break
+
     def reset(self):
         '''
         Resets the instrument to default values

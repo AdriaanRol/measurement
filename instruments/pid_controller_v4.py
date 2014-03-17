@@ -65,7 +65,8 @@ class pid_controller_v4(Instrument):
                     'step_size'                 :   {'type':types.FloatType,  'val':0.01, 'flags':Instrument.FLAG_GETSET},
                     'floating_avg_pts'          :   {'type':types.IntType,    'val':1.,   'maxval':100,'minval':1, 'flags':Instrument.FLAG_GETSET},
                     'max_control_deviation'     :   {'type':types.FloatType,  'val':1.0,  'flags':Instrument.FLAG_GETSET},
-                    'control_coarse_step':{'type':types.FloatType, 'val':0.05,'flags':Instrument.FLAG_GETSET},
+                    'control_coarse_step'       :   {'type':types.FloatType, 'val':0.05,'flags':Instrument.FLAG_GETSET},
+                    'do_plot'                  :   {'type':types.BooleanType,'val':True,'flags':Instrument.FLAG_GETSET},
                     }
         instrument_helper.create_get_set(self,ins_pars)
         self.add_function('start')
@@ -88,7 +89,7 @@ class pid_controller_v4(Instrument):
         self._parlist = ['P', 'I', 'D',
                 'setpoint', 'value_factor', 'value_offset','max_value',
                 'min_value', 'max_control_deviation','use_stabilizor', 'step_size',
-                'control_coarse_step']
+                'control_coarse_step', 'do_plot']
         self.ins_cfg = config.Config(cfg_fn)
         self.load_cfg()
         self.save_cfg()
@@ -173,11 +174,11 @@ class pid_controller_v4(Instrument):
         self._dat.add_value('setpoint')
         self._dat.add_value('control parameter')
         self._dat.create_file()
-
-        self._plt = qt.Plot2D(self._dat, 'r-', name=self._name, coorddim=0, 
-                valdim=1, maxpoints=100, clear=True)
-        self._plt.add(self._dat, 'b-', coorddim=0, valdim=2, maxpoints=100)
-        self._plt.add(self._dat, 'k-', coorddim=0, valdim=3, maxpoints=100)
+        if self.get_do_plot():
+            self._plt = qt.Plot2D(self._dat, 'r-', name=self._name, coorddim=0, 
+                    valdim=1, maxpoints=100, clear=True)
+            self._plt.add(self._dat, 'b-', coorddim=0, valdim=2, maxpoints=100)
+            self._plt.add(self._dat, 'k-', coorddim=0, valdim=3, maxpoints=100)
         if not(self._get_stabilizor == None): self._stabilizor_value = self._get_stabilizor()
         self.get_control_parameter()
         self.get_control_parameter_coarse()             

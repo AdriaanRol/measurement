@@ -7,8 +7,7 @@ import measurement.lib.config.adwins as adwins_cfg
 import measurement.lib.measurement2.measurement as m2
 from measurement.lib.measurement2.adwin_ssro import ssro
 import msvcrt
-# XX from measurement.lib.measurement2.adwin_ssro import pulsar_pq
-from measurement.lib.measurement2.adwin_ssro import pulsar as pulsar_msmnt
+from measurement.lib.measurement2.adwin_ssro import pulsar_pq
 from measurement.lib.pulsar import pulse, pulselib, element, pulsar
 
 import sequence as bseq
@@ -16,8 +15,8 @@ reload(bseq)
 import parameters as bparams
 reload(bparams)
 
-#XX pulsar_pq.PQPulsarMeasurement
-class LT3Tail(pulsar_msmnt.PulsarMeasurement):
+
+class LT3Tail(pulsar_pq.PQPulsarMeasurement):
 
     def generate_sequence(self):
         print 'generating'
@@ -25,8 +24,8 @@ class LT3Tail(pulsar_msmnt.PulsarMeasurement):
 
     
     def autoconfig(self, **kw):
-        #XX pulsar_pq.PQPulsarMeasurement.autoconfig(self, **kw)
-        pulsar_msmnt.PulsarMeasurement.autoconfig(self, **kw)
+        pulsar_pq.PQPulsarMeasurement.autoconfig(self, **kw)
+
         # add values from AWG calibrations
         self.params_lt3['SP_voltage_AWG'] = \
                 self.A_aom_lt3.power_to_voltage(
@@ -51,11 +50,9 @@ class LT3Tail(pulsar_msmnt.PulsarMeasurement):
 
         for i in range(self.params['pts']):
             eom_p = self.create_eom_pulse(i)
-
             e = bseq._lt3_LDE_element(self, 
                 name = 'LT3 Tail sweep element {}'.format(i),
-                eom_pulse =  eom_p)
-            #print e.print_overview()    
+               eom_pulse =  eom_p)    
             elements.append(e)
             self.lt3_seq.append(name = 'LT3 Tail sweep {}'.format(i),
                 wfname = e.name,
@@ -91,11 +88,10 @@ class LT3Tail(pulsar_msmnt.PulsarMeasurement):
                     eom_overshoot1          = self.params['eom_overshoot1'],
                     eom_overshoot_duration2 = self.params['eom_overshoot_duration2'],
                     eom_overshoot2          = self.params['eom_overshoot2'],
-                    eom_comp_pulse_amplitude= self.params['eom_comp_pulse_amplitude'] , 
-                    eom_comp_pulse_duration = self.params['eom_comp_pulse_duration'],
+                    eom_comp_pulse_amplitude= self.params['eom_comp_pulse_amplitude'][i] , 
+                    eom_comp_pulse_duration = self.params['eom_comp_pulse_duration'][i],
                     aom_risetime            = self.params['aom_risetime'])
     
-     
 
 
 LT3Tail.adwin_dict = adwins_cfg.config
@@ -105,7 +101,6 @@ LT3Tail.A_aom_lt3 = qt.instruments['NewfocusAOM']
 LT3Tail.mwsrc_lt3 = qt.instruments['SMB100']
 LT3Tail.awg_lt3 = qt.instruments['AWG']
 LT3Tail.repump_aom_lt3 = qt.instruments['GreenAOM']
-
 
 def tail_lt3(name):
 
@@ -123,54 +118,54 @@ def tail_lt3(name):
     m.params['Ex_SP_amplitude']= m.params['Ey_SP_amplitude']
     m.params['Ex_RO_amplitude']=m.params['Ey_RO_amplitude']
 
-    pts=1
+    pts=11
     m.params['pts']=pts
     
     #EOM pulse ----------------------------------
     m.params['use_short_eom_pulse']=False
-    qt.pulsar.set_channel_opt('EOM_trigger', 'delay', 175e-9)
+    #qt.pulsar.set_channel_opt('EOM_trigger', 'delay', 147e-9)
     #qt.pulsar.set_channel_opt('EOM_trigger', 'high', 2.)#2.0
+    qt.pulsar.set_channel_opt('EOM_Matisse', 'high', 2.5)
+    qt.pulsar.set_channel_opt('EOM_Matisse', 'low', -1.0)
 
     m.params['eom_pulse_duration']        = np.ones(pts)* 2e-9
     m.params['EOM_trigger_length']        = 20e-9
-    m.params['eom_off_amplitude']         = np.ones(pts)* -0.05# calibration from 6-03-2014
-    m.params['eom_pulse_amplitude']       = np.ones(pts)* 1.5# np.linspace(1.4, 2.0, pts) # calibration to be done!
+    m.params['eom_off_amplitude']         = np.linspace(-0.1,0.1,pts) # calibration from 6-03-2014
+    m.params['eom_pulse_amplitude']       = np.ones(pts)*2.15# np.linspace(1.4, 2.0, pts) # calibration to be done!
     m.params['eom_off_duration']          = 200e-9
     m.params['eom_overshoot_duration1']   = 10e-9
     m.params['eom_overshoot1']            = 0#-0.03   *2
     m.params['eom_overshoot_duration2']   = 4e-9
     m.params['eom_overshoot2']            = 0#-0.03   *2
     m.params['eom_comp_pulse_amplitude']  = m.params['eom_pulse_amplitude']
-    m.params['eom_comp_pulse_duration']   = m.params['eom_pulse_duration']#m.params['EOM_trigger_length']
-    m.params['aom_risetime']              = 30e-9#42e-9 # calibration to be done!
+    m.params['eom_comp_pulse_duration']   = m.params['eom_pulse_duration']
+    m.params['aom_risetime']              = 40e-9#42e-9 # calibration to be done!
     m.params['eom_aom_on']                = True
 
-    
-
-    m.params['sweep_name'] = 'eom_pulse_amplitude'
-    m.params['sweep_pts'] = m.params_lt3['eom_pulse_amplitude']  
+    m.params['sweep_name'] = 'eom_off_amplitude'
+    m.params['sweep_pts'] = m.params_lt3['eom_off_amplitude']  
 
     bseq.pulse_defs_lt3(m)
 
     m.params['send_AWG_start'] = 1
     m.params['wait_for_AWG_done'] = 0
-    m.params['repetitions'] = 20000
+    m.params['repetitions'] = 30000
     m.params['sequence_wait_time'] = m.params['LDE_attempts_before_CR']*m.params['LDE_element_length']*1e6 + 20
     m.params['SP_duration'] = 250
 
     m.params['opt_pi_pulses'] = 1
     m.params_lt3['MW_during_LDE'] = 0
     m.params['trigger_wait'] = 1
-    qt.instruments['AWG'].set_runmode('CONT')
-    qt.instruments['AWG'].get_runmode()
-    qt.instruments['AWG'].get_runmode()
-    qt.instruments['AWG'].get_runmode()
+
     m.autoconfig()
     m.generate_sequence()
-    m.setup(mw=m.params_lt3['MW_during_LDE'])#XX, pq_calibrate=False)
+    m.setup(mw=m.params_lt3['MW_during_LDE'], pq_calibrate=False)
     m.run(autoconfig=False, setup=False)    
     m.save()
     m.finish()
+
+    qt.pulsar.set_channel_opt('EOM_Matisse', 'high', 2.0)
+    qt.pulsar.set_channel_opt('EOM_Matisse', 'low', -2.0)
 
 if __name__ == '__main__':
     tail_lt3('lt3_tailS')

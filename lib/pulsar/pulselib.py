@@ -349,6 +349,8 @@ class EOMAOMPulse(pulse.Pulse):
         self.eom_overshoot1            = kw.pop('eom_overshoot1'          ,-0.03)
         self.eom_overshoot_duration2   = kw.pop('eom_overshoot_duration2' ,4e-9)
         self.eom_overshoot2            = kw.pop('eom_overshoot2'          ,-0.03)
+        self.eom_comp_pulse_amplitude  = kw.pop('eom_comp_pulse_amplitude',self.eom_pulse_amplitude)
+        self.eom_comp_pulse_duration   = kw.pop('eom_comp_pulse_duration' ,self.eom_pulse_duration)
         self.aom_risetime              = kw.pop('aom_risetime'            ,23e-9)
         self.aom_on                    = kw.pop('aom_on'                  ,True)
 
@@ -365,6 +367,8 @@ class EOMAOMPulse(pulse.Pulse):
         self.eom_overshoot1            = kw.pop('eom_overshoot1'          ,self.eom_overshoot1)
         self.eom_overshoot_duration2   = kw.pop('eom_overshoot_duration2' ,self.eom_overshoot_duration2)
         self.eom_overshoot2            = kw.pop('eom_overshoot2'          ,self.eom_overshoot2)
+        self.eom_comp_pulse_amplitude  = kw.pop('eom_comp_pulse_amplitude',self.eom_pulse_amplitude)
+        self.eom_comp_pulse_duration   = kw.pop('eom_comp_pulse_duration' ,self.eom_pulse_duration)
         self.aom_risetime              = kw.pop('aom_risetime'            ,self.aom_risetime)
         self.aom_on                    = kw.pop('aom_on'                  ,True)
         
@@ -412,7 +416,18 @@ class EOMAOMPulse(pulse.Pulse):
             wf[opt_pulse_stop:off_time2_stop]  += self.eom_off_amplitude
 
             #compensation_pulse
-            wf = np.append(wf,-wf)
+             #compensation_pulse
+            comp_wf = np.zeros(len(tvals)/2)
+
+            comp_amp = (2*self.eom_off_duration * self.eom_off_amplitude + \
+                            self.eom_comp_pulse_duration * self.eom_comp_pulse_amplitude + \
+                            self.eom_overshoot_duration1 * self.eom_overshoot1 + \
+                            self.eom_overshoot_duration2 * self.eom_overshoot2) / (2 * self.eom_off_duration)
+
+            comp_wf -= comp_amp
+
+            wf = np.append(wf,comp_wf)
+
 
 
         if channel == self.aom_channel:
