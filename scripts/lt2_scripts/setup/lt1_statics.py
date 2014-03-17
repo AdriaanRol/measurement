@@ -12,16 +12,6 @@ if qt.cfgman.get('protocols/AdwinSSRO/yellow'):
 else:
     ssro.AdwinSSRO.repump_aom = ssro.AdwinSSRO.green_aom
  
-#below is not yet LT1; we are not set up to do AWG things remotely
-sequence.SequenceSSRO.awg = qt.instruments['AWG_lt1']
-sequence.SequenceSSRO.mwsrc = qt.instruments['SMB100_lt1']
-sequence.SequenceSSRO.chan_mwI = 'MW_Imod'
-sequence.SequenceSSRO.chan_mwQ = 'MW_Qmod'
-sequence.SequenceSSRO.chan_mw_pm = 'MW_pulsemod'
-sequence.SequenceSSRO.chan_nf_aom = 'AOM_Newfocus'
-sequence.SequenceSSRO.awgcfg_module = awgcfg
-sequence.SequenceSSRO.awgcfg_args = ['spin','optical_rabi']
-
 mbi.MBIMeasurement.chan_RF  = 'RF' 
 mbi.MBIMeasurement.chan_adwin_sync = 'adwin_sync'
 mbi.MBIMeasurement.physical_adwin = qt.instruments['physical_adwin_lt1']

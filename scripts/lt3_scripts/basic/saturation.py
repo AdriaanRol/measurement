@@ -6,10 +6,10 @@ from numpy import *
 import msvcrt
 
 #measurement parameters
-name = '111no2_Sil2_ZPL_SM_lt3'
+name = '111no2_Sil2_PSB_SM'
 steps=31
 max_power=270e-6       #[w]
-counter=2    #number of counter
+counter=1    #number of counter
 TH_count=False    # counting with the HH, assumes apd on channel 0
 bg_x=3.0          #delta x position of background [um]
 bg_y=3.0             #delta y position of background [um]
@@ -31,9 +31,11 @@ current_y = current_mos.get_y()
 
 current_aom.set_power(0)
 time.sleep(1)
-
+br=False
 for i,pwr in enumerate(x):
-    if (msvcrt.kbhit() and (msvcrt.getch() == 'q')): break
+    if (msvcrt.kbhit() and (msvcrt.getch() == 'q')): 
+        br = True
+        break
     current_aom.set_power(pwr)
     time.sleep(1)
     if not TH_count:
@@ -46,16 +48,16 @@ current_mos.set_x(current_x + bg_x)
 current_mos.set_y(current_y + bg_y)
 current_aom.set_power(0)
 time.sleep(1)
-
-for i,pwr in enumerate(x):
-    if (msvcrt.kbhit() and (msvcrt.getch() == 'q')): break
-    current_aom.set_power(pwr)
-    time.sleep(1)
-    if not TH_count:
-        y_BG[i] = current_adwin.get_countrates()[counter-1]
-    else:
-        y_BG[i] = current_HH_400.get_CountRate0()
-    print 'step %s, counts %s'%(i,y_BG[i])
+if not br:
+    for i,pwr in enumerate(x):
+        if (msvcrt.kbhit() and (msvcrt.getch() == 'q')): break
+        current_aom.set_power(pwr)
+        time.sleep(1)
+        if not TH_count:
+            y_BG[i] = current_adwin.get_countrates()[counter-1]
+        else:
+            y_BG[i] = current_HH_400.get_CountRate0()
+        print 'step %s, counts %s'%(i,y_BG[i])
        
  
 x_axis = x*1e6

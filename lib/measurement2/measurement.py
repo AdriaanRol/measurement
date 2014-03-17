@@ -24,8 +24,6 @@ import qt
 import hdf5_data as h5
 from lib.misc import dict_to_ordered_tuples
 
-from .. import AWG_HW_sequencer_v2
-Sequence = AWG_HW_sequencer_v2.Sequence
 
 # FIXME type checking of max/min vals?
 # FIXME how to check after updating type,max/minval?
@@ -498,15 +496,7 @@ class MultipleAdwinsMeasurement(Measurement):
                     str(v))
         return None
 
-class SequencerMeasurement(Measurement):
-    
-    mprefix = 'SequencerMeasurement'
 
-    def __init__(self, name, awg):
-        Measurement.__init__(self, name)
-
-        self.awg = awg
-        self.seq = Sequence(name)
 
 
 

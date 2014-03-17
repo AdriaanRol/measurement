@@ -22,9 +22,9 @@ print 'updating msmt params lt3 for {}'.format(cfg['samples']['current'])
 
 ### General settings for AdwinSSRO
 branch='protocols/AdwinSSRO/'
-cfg.set(branch+        'AWG_done_DI_channel',          16)
-cfg.set(branch+        'AWG_event_jump_DO_channel',    6)
-cfg.set(branch+        'AWG_start_DO_channel',         1)
+cfg.set(branch+        'AWG_done_DI_channel',          17)
+cfg.set(branch+        'AWG_event_jump_DO_channel',    8)
+cfg.set(branch+        'AWG_start_DO_channel',         9)
 cfg.set(branch+        'counter_channel',              1)
 cfg.set(branch+        'cycle_duration',               300)
 cfg.set(branch+        'green_off_amplitude',          0.0)
@@ -34,7 +34,7 @@ cfg.set(branch+        'send_AWG_start',               0)
 cfg.set(branch+        'sequence_wait_time',           1)
 cfg.set(branch+        'wait_after_RO_pulse_duration', 3)
 cfg.set(branch+        'wait_after_pulse_duration',    3)
-cfg.set(branch+        'cr_wait_after_pulse_duration', 2)
+cfg.set(branch+        'cr_wait_after_pulse_duration', 50)
 cfg.set(branch+        'wait_for_AWG_done',            0)
 cfg.set(branch+        'green_off_voltage',            0)
 cfg.set(branch+        'Ex_off_voltage',               0.)
@@ -76,6 +76,13 @@ cfg.set(branch+        'MW_pulse_mod_risetime',                    10e-9)
 cfg.set(branch+        'AWG_to_adwin_ttl_trigger_duration',        2e-6)
 cfg.set(branch+        'repump_after_MBI_duration',                100)
 cfg.set(branch+        'repump_after_MBI_amp',                     15e-9)
+
+branch='protocols/AdwinSSRO+PQ/'
+cfg.set(branch+        'MAX_DATA_LEN',                     		int(100e6))
+cfg.set(branch+        'BINSIZE',                     		    1) #2**BINSIZE*BASERESOLUTION
+cfg.set(branch+        'MIN_SYNC_BIN',                     		0)
+cfg.set(branch+        'MAX_SYNC_BIN',                     		1000)
+cfg.set(branch+        'measurement_time',                 		1200)#sec
 
 ##############
 ### sil 16 ###

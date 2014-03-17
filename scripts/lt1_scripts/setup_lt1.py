@@ -30,17 +30,9 @@ else:
     ssro.AdwinSSRO.repump_aom = ssro.AdwinSSRO.green_aom
 
 
-sequence.SequenceSSRO.awg = qt.instruments['AWG']
-sequence.SequenceSSRO.mwsrc = qt.instruments['SMB100']
-sequence.SequenceSSRO.chan_mwI = 'MW_Imod'
-sequence.SequenceSSRO.chan_mwQ = 'MW_Qmod'
-sequence.SequenceSSRO.chan_mw_pm = 'MW_pulsemod'
-sequence.SequenceSSRO.awgcfg_module = awgcfg
-sequence.SequenceSSRO.awgcfg_args = ['mw', 'rf', 'adwin']
-
 pulsar_msmt.PulsarMeasurement.awg = qt.instruments['AWG']
 pulsar_msmt.PulsarMeasurement.mwsrc = qt.instruments['SMB100']
-pulsar_msmt.MBI.physical_adwin = qt.instruments['physical_adwin']
+
 
 #teleportation.Teleportation.adwin_processes_key = 'adwin_lt1_processes'
 #teleportation.Teleportation.E_aom = qt.instruments['Velocity1AOM']

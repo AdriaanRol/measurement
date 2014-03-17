@@ -5,22 +5,22 @@ qt.get_setup_instrument = lambda x: qt.instruments[x] \
     else qt.instruments[x+'_'+qt.current_setup]
 
 print 'loading setup tools...'
-from tools import stools
+from measurement.scripts.lt3_scripts.tools import stools
 reload(stools)
 
 print 'reload all modules...'
-execfile("setup/reload_all.py")
+execfile(r"D:/measuring/measurement/scripts/lt3_scripts/setup/reload_all.py")
 
 ####
 print 'reload all measurement parameters and calibrations...'
-execfile("setup/msmt_params.py")
+execfile(r"D:/measuring/measurement/scripts/lt3_scripts/setup/msmt_params.py")
 
 ####
 print 'configure the setup-specific hardware...'
 # set all the static variables for lt2
-execfile('setup/sequence.py')
+execfile(r'D:/measuring/measurement/scripts/lt3_scripts/setup/sequence.py')
 
 # set all the static variables for lt2
-execfile('setup/lt3_statics.py')
+execfile(r'D:/measuring/measurement/scripts/lt3_scripts/setup/lt3_statics.py')
 
 
