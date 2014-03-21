@@ -22,7 +22,7 @@
 '   4 : A-pumping
 '   5 : wait for AWG
 '   6 : spin-readout
-'
+'   7 : nuclear spin randomize
 
 #INCLUDE ADwinPro_All.inc
 #INCLUDE .\configuration.inc
@@ -173,7 +173,7 @@ EVENT:
     awg_in_switched_to_hi = 0
   endif
     
-  PAR_77 = mode
+  PAR_77 = mode        
   
   if(trying_mbi > 0) then
     inc(mbi_timer)
@@ -195,7 +195,7 @@ EVENT:
       
       CASE 2    ' E spin pumping
         
-        ' turn on both lasers and start counting
+        ' turn on one laser and start counting
         IF (timer = 0) THEN
           P2_DAC(DAC_MODULE,E_laser_DAC_channel, 3277*E_SP_voltage+32768) ' turn on Ex laser
           P2_CNT_CLEAR(CTR_MODULE,counter_pattern)    'clear counter
@@ -236,7 +236,7 @@ EVENT:
        
           ' make sure we don't accidentally think we're done before getting the trigger
           next_MBI_stop = -2
-        
+          
         else
           ' we expect a trigger from the AWG once it has done the MW pulse
           ' as soon as we assume the AWG has done the MW pulse, we turn on the E-laser,
