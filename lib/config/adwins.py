@@ -860,6 +860,7 @@ config['adwin_lt2_processes'] = {
                     """,
                 'index' : 9,
                 'file' : 'MBI_lt2.TB9',
+                'include_cr_process' : 'cr_check', #This process includes the CR check lib
                 'params_long' : [           # keep order!!!!!!!!!!!!!
                     ['AWG_start_DO_channel'        ,   0],
                     ['AWG_done_DI_channel'         ,   9],

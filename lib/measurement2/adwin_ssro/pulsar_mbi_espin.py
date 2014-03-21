@@ -14,7 +14,7 @@ class ElectronRabi(pulsar_msmt.MBI):
 
         # electron manipulation pulses
         T = pulse.SquarePulse(channel='MW_pulsemod',
-            length = 10e-9, amplitude = 0)
+            length = 100e-9, amplitude = 0)
 
         X = pulselib.MW_IQmod_pulse('MW pulse',
             I_channel = 'MW_Imod', 

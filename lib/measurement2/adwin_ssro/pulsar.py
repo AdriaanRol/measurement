@@ -130,9 +130,8 @@ class ElectronRabi(PulsarMeasurement):
         self.params['sequence_wait_time'] = \
             int(np.ceil(np.max(self.params['MW_pulse_durations'])*1e6)+10)
 
+                
         PulsarMeasurement.autoconfig(self)
-
-
 
     def generate_sequence(self, upload=True):
         print 'test'
@@ -368,6 +367,18 @@ class MBI(PulsarMeasurement):
         self.params['Ex_MBI_voltage'] = \
             self.E_aom.power_to_voltage(
                     self.params['Ex_MBI_amplitude'])
+
+        self.params['Ex_N_randomize_voltage'] = \
+            self.E_aom.power_to_voltage(
+                    self.params['Ex_N_randomize_amplitude'])
+
+        self.params['A_N_randomize_voltage'] = \
+            self.A_aom.power_to_voltage(
+                    self.params['A_N_randomize_amplitude'])
+
+        self.params['repump_N_randomize_voltage'] = \
+            self.repump_aom.power_to_voltage(
+                    self.params['repump_N_randomize_amplitude'])
         # Calling autoconfig from sequence.SequenceSSRO and thus
         # from ssro.IntegratedSSRO after defining self.params['repetitions'],
         # since the autoconfig of IntegratedSSRO uses this parameter.
