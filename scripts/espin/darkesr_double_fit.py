@@ -22,7 +22,7 @@ def darkesr(name):
     m.params.from_dict(qt.cfgman['protocols'][SAMPLE_CFG]['AdwinSSRO-integrated'])
     m.params.from_dict(qt.cfgman['protocols']['AdwinSSRO+espin'])
 
-    m.params['mw_frq'] = 2.0e9-43e6 #MW source frequency
+    m.params['mw_frq'] = 2.042e9-43e6 #MW source frequency
     m.params['mw_power'] = 20
     m.params['repetitions'] = 3000
 
@@ -65,5 +65,5 @@ def darkesrp1(name):
 
 if __name__ == '__main__':
     darkesr(SAMPLE_CFG)
-    raw_input ('Do the fitting...')
-    darkesrp1(SAMPLE_CFG)
+    #raw_input ('Do the fitting...')
+    #darkesrp1(SAMPLE_CFG)

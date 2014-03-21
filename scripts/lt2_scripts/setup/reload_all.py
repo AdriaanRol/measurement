@@ -28,3 +28,6 @@ reload(pulsar_msmt)
 
 from measurement.lib.measurement2.adwin_ssro import pulsar_mbi_espin
 reload(pulsar_mbi_espin)
+
+#from measurement.scripts.lt2_scripts.setup import msmt_params_temp as mcfg
+#reload(mcfg)

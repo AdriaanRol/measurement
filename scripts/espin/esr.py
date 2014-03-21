@@ -6,14 +6,14 @@ import msvcrt
 ##############
 
 name='ESR_SIL1_Hans_LT2'
-steps   = 151  #101
-mw_power = -3    #in dBm
+steps    = 501        #101
+mw_power = -3        #in dBm
 green_power = 10e-6  #10e-6
-int_time = 50 #30        # in ms
+int_time = 25        # in ms
 reps = 10
 #center_f =  2.088 # in GHz #Ms = -1
-center_f =  3.73# in GHz #Ms = +1
-range_f  =  0.030 # in GHz
+center_f =  1.25# in GHz #Ms = +1
+range_f  =  0.25 # in GHz
 
 #generate list of frequencies
 f_list = linspace((center_f-range_f)*1e9, (center_f+range_f)*1e9, steps)
@@ -38,7 +38,7 @@ ins_counters.set_is_running(0)
 # create data object
 qt.mstart()
 
-if IQ_modulation
+if IQ_modulation:
     ins_smb.set_iq('off')
 
 ins_smb.set_pulm('off')

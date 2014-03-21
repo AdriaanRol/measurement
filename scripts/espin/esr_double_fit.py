@@ -5,13 +5,13 @@ from analysis.lib.fitting import fit,esr
 from numpy import array
 
 name_gen='ESR_SIL1_Hans_LT2'
-steps   = 71  #101
-mw_power = -3    #in dBm
-green_power = 50e-6  #10e-6
-int_time = 50 #30        # in ms
-reps = 30
-center_f_list =  [3.727] # in GHz #Ms = -1 #Ms = +1
-range_f  =  0.050 # in GHz
+steps   = 71         #101
+mw_power = -6        #in dBm
+green_power = 10e-6  
+int_time = 50        # in ms
+reps = 10
+center_f_list =  [2.025,3.711]    # in GHz #Ms = -1 #Ms = +1
+range_f  =  0.050           # in GHz
 
 f0 = [0,0]
 u_f0 = [0,0]

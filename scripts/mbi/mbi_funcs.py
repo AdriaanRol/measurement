@@ -16,15 +16,15 @@ def prepare(m, sil_name=SAMPLE):
     m.params.from_dict(qt.cfgman.get('protocols/'+SAMPLE_CFG+'/pulses'))
 
 def finish(m, upload=True, debug=False):
+    print 'MBI threshold =' + str(m.params['MBI_threshold'])
     m.autoconfig()
-
+    print 'MBI threshold =' + str(m.params['MBI_threshold'])
     m.params['A_SP_durations'] = [m.params['repump_after_MBI_duration']]
     m.params['A_SP_amplitudes'] = [m.params['repump_after_MBI_amplitude']]
     m.params['E_RO_durations'] = [m.params['SSRO_duration']]
     m.params['E_RO_amplitudes'] = [m.params['Ex_RO_amplitude']]
     m.params['send_AWG_start'] = [1]
     m.params['sequence_wait_time'] = [0]
-    
     m.generate_sequence(upload=upload)
     
     if not debug:
@@ -32,3 +32,4 @@ def finish(m, upload=True, debug=False):
         m.run()
         m.save()
         m.finish()
+        

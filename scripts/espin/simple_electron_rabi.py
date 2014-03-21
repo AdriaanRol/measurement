@@ -23,9 +23,9 @@ def erabi(name):
     m.params.from_dict(qt.cfgman['protocols']['AdwinSSRO+espin'])
 
     m.params['mw_power'] = 23
-    m.params['SP_duration'] = 300
-    m.params['A_SP_amplitude'] = 0.
-    m.params['Ex_SP_amplitude'] = 10e-9 
+    #m.params['SP_duration'] = 300
+    #m.params['A_SP_amplitude'] = 0.
+    #m.params['Ex_SP_amplitude'] = 10e-9 
     
 
     m.params['pts'] = 21
@@ -78,9 +78,9 @@ def erabi_p1(name):
     m.params.from_dict(qt.cfgman['protocols']['AdwinSSRO+espin'])
     
     m.params['mw_power'] = 23
-    m.params['SP_duration'] = 300
-    m.params['A_SP_amplitude'] = 0.
-    m.params['Ex_SP_amplitude'] = 10e-9 
+    #m.params['SP_duration'] = 300
+    #m.params['A_SP_amplitude'] = 0.
+    #m.params['Ex_SP_amplitude'] = 10e-9 
     
     m.params['pts'] = 21
     pts = m.params['pts']
@@ -123,5 +123,5 @@ def erabi_p1(name):
 if __name__ == '__main__':
     # erabi(SAMPLE+'_'+'find_high_rabi_sil1')
     erabi(SAMPLE+'_'+'Rabi-1')
-    raw_input ('Do the fitting...')
-    erabi_p1(SAMPLE+'_'+'Rabi+1')
+    #raw_input ('Do the fitting...')
+    #erabi_p1(SAMPLE+'_'+'Rabi+1')

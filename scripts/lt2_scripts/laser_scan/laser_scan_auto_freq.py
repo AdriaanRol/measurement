@@ -250,6 +250,7 @@ class RedLaserScan(LabjackAdwinLaserScan):
     def __init__(self, name, labjack_dac_nr):
         LabjackAdwinLaserScan.__init__(self, name,labjack_dac_nr)
         self.set_laser_power = qt.instruments['NewfocusAOM'].set_power
+        #self.set_laser_power = qt.instruments['MatisseAOM'].set_power
         self.set_yellow_repump_power = qt.instruments['YellowAOM'].set_power
         self.set_red_repump_power = qt.instruments['MatisseAOM'].set_power
         self.set_repump_power = qt.instruments['GreenAOM'].set_power
@@ -334,14 +335,14 @@ def red_laser_scan(name):
 
     # MW setup
         #MW source 1
-    m.use_mw = False
-    m.mw_frq =  qt.cfgman['samples']['Hans_sil1']['ms-1_cntr_frq']
+    m.use_mw = True
+    m.mw_frq =  qt.cfgman['samples']['Hans_sil4']['ms-1_cntr_frq']
     m.mw_power = -6
     print 'MW freq:' +str(m.mw_frq)
     
         #MW source 2
-    m.use_mw_2 = False
-    m.mw_2_frq =  qt.cfgman['samples']['Hans_sil1']['ms+1_cntr_frq']
+    m.use_mw_2 = True
+    m.mw_2_frq =  qt.cfgman['samples']['Hans_sil4']['ms+1_cntr_frq']
     m.mw_2_power = -6
     print 'MW_2 freq:' +str(m.mw_2_frq)
     
@@ -354,17 +355,17 @@ def red_laser_scan(name):
     m.use_repump_during = False
     m.repump_power_during = 0.05e-6 #0.05e-6
 
-    m.repump_power = 200e-6  # I don't understand why this is? Julia 140312
+    m.repump_power = 200e-6  
     m.repump_duration = 0.5 # seconds
         
     #Scan setup
-    m.laser_power = 2e-9 # 30e-9 SIL4 Hans
-    m.integration_time = 100 # ms
+    m.laser_power = 10e-9 # 30e-9 SIL4 Hans
+    m.integration_time = 300 # ms
     m.min_v = -9
     m.max_v = 9
     m.v_step=0.01    
-    m.start_frequency = 41.5#GHz
-    m.stop_frequency  = 65  #GHz
+    m.start_frequency = 58  #GHz
+    m.stop_frequency  = 76  #GHz
     
     
     #Gate scan setup
@@ -388,7 +389,7 @@ if __name__=='__main__':
     
     #for ii in range(10):
     stools.turn_off_all_lt2_lasers()
-    red_laser_scan('Hans_sil1_line_scan_2MW_green')
+    red_laser_scan('Hans_sil4_line_scan_2MW_0green')
         #yellow_laser_scan('yellow_1nW')
 
         
