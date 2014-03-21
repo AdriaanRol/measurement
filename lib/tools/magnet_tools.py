@@ -5,7 +5,9 @@
 
 ### Import the config manager and NV parameters
 import qt
+import numpy as np
 cfg = qt.cfgman
+execfile("lt2_scripts/setup/msmt_params.py")
 current_NV  = cfg.get('samples/current')
 
 ### Import the NV and current esr parameters
@@ -37,6 +39,11 @@ def convert_f_to_Bz(freq=current_f_msm1):
     B_field = abs(ZFS-freq)/g_factor
     return B_field
 
+def calc_ZFS(msm1_freq=current_f_msm1, msp1_freq=current_f_msp1):
+    ''' calculate the average of the current ESR frequencies '''
+    calculated_ZFS = (msm1_freq+msp1_freq)/2
+    return calculated_ZFS
+
 ### Get the field vector values and magnet position
 def get_B_field(msm1_freq=current_f_msm1, msp1_freq=current_f_msp1):
     ''' Returns the (Bz_field, Bx_field) for given given 
@@ -61,10 +68,7 @@ def get_field_at_position(distance):
 
 def get_field_gradient(distance):
     ''' returns the field (G) at input distance (mm)'''    
-    B_field = 1e4* strength_constant/2. * ( (thickness+distance)/(radius**2 +(thickness+distance)**2)**0.5 \
-            - distance/(radius**2 + distance**2)**0.5)
     return B_field
-
 
 def get_all(freq_ms_m1, freq_ms_p1):
     '''function that returns all the magnetic field and magnet properties

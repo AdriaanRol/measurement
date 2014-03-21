@@ -274,7 +274,7 @@ class monitor_cryo(MonitorInstrument):
                       'This is below minimum values (LHe2 < %.3f'%(self.get_he2_lvl_min()) + ' cm'+ ', LHe1 < %.3f'%(self.get_he1_lvl_min()) +\
                       ', voltage < %.3f'%(self.get_temp_voltage_min()) + 'V ( = 6 K)). \n' + \
                       'Please help me!!!\n xxx LT2'
-            recipients  = ['B.J.Hensen@tudelft.nl', 'h.bernien@tudelft.nl', 'w.pfaff@tudelft.nl', 'M.S.Blok@tudelft.nl', 'julia.cramer@gmail.com','c.bonato@tudelft.nl','t.h.taminiau@tudelft.nl']
+            recipients  = ['B.J.Hensen@tudelft.nl', 'h.bernien@tudelft.nl', 'M.S.Blok@tudelft.nl', 'julia.cramer@gmail.com','c.bonato@tudelft.nl','t.h.taminiau@tudelft.nl']
             #recipients  = 'B.J.Hensen@tudelft.nl'
             print message
             if self.get_send_email():
