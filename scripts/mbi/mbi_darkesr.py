@@ -12,7 +12,7 @@ def run(name):
     
     pts = 36
     m.params['pts'] = pts
-    m.params['reps_per_ROsequence'] = 500
+    m.params['reps_per_ROsequence'] = 200
     m.params['MW_pulse_multiplicities'] = np.ones(pts).astype(int)
     m.params['MW_pulse_delays'] = np.ones(pts) * 2000e-9
 
@@ -25,7 +25,7 @@ def run(name):
     # for the autoanalysis
     m.params['sweep_name'] = 'MW pulse frequency (MHz)'
     m.params['sweep_pts']  = (m.params['MW_pulse_mod_frqs'] + m.params['mw_frq'])/1.e6
-    funcs.finish(m, debug=False)
+    funcs.finish(m, upload=True, debug=False)
 
     print m.params['AWG_MBI_MW_pulse_mod_frq']
 

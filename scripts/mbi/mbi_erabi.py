@@ -13,14 +13,14 @@ def run(name):
     print 'Ex_MBI_amplitude =' + str(m.params['Ex_MBI_amplitude'])
     print 'SSRO_duration =' + str(m.params['SSRO_duration'])
     
-    pts = 21
+    pts = 31
     m.params['pts'] = pts
-    m.params['reps_per_ROsequence'] = 1000
+    m.params['reps_per_ROsequence'] = 300
     m.params['MW_pulse_multiplicities'] = np.ones(pts).astype(int)
     m.params['MW_pulse_delays'] = np.ones(pts) * 2000e-9
 
     # MW pulses
-    m.params['MW_pulse_durations']  = np.linspace(0,200e-9,pts) + 10e-9 #why this +10 here?
+    m.params['MW_pulse_durations']  = np.linspace(0,400e-9,pts) + 10e-9 #why this +10 here?
     m.params['MW_pulse_amps']       = np.ones(pts) * 1
     m.params['MW_pulse_mod_frqs']   = np.ones(pts) * m.params['AWG_MBI_MW_pulse_mod_frq']
 
