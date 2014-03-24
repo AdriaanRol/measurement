@@ -54,8 +54,8 @@ def darkesrp1(name):
     m.params['mw_power'] = 20
     m.params['repetitions'] = 3000
 
-    m.params['ssbmod_frq_start'] = 43e6 - 6.5e6
-    m.params['ssbmod_frq_stop'] = 43e6 + 6.5e6
+    m.params['ssbmod_frq_start'] = 43e6 - 4.e6
+    m.params['ssbmod_frq_stop'] = 43e6 + 4.e6
     m.params['pts'] = 41
     m.params['pulse_length'] = 2e-6
     m.params['ssbmod_amplitude'] = 0.05
@@ -68,5 +68,6 @@ def darkesrp1(name):
 
 if __name__ == '__main__':
     darkesr(SAMPLE_CFG)
-    raw_input ('Do the fitting...')
-    darkesrp1(SAMPLE_CFG)
+    cont = raw_input ('Do the fitting for ms=-1... Continue with ms=+1 y/n?')
+    if cont =='y':
+        darkesrp1(SAMPLE_CFG)

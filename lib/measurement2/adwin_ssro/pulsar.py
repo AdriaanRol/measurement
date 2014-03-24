@@ -403,12 +403,15 @@ class MBI(PulsarMeasurement):
 
         length = self.params['nr_of_ROsequences']
         self.physical_adwin.Set_Data_Long(
-                np.array(self.params['A_SP_durations'], dtype=int), 33, 1, length)
+                np.array(self.params['repump_after_MBI_duration'], dtype=int), 33, 1, length)
         self.physical_adwin.Set_Data_Long(
                 np.array(self.params['E_RO_durations'], dtype=int), 34, 1, length)
 
-        v = [ self.A_aom.power_to_voltage(p) for p in self.params['A_SP_amplitudes'] ]
+        v = [ self.A_aom.power_to_voltage(p) for p in self.params['repump_after_MBI_A_amplitude'] ]
         self.physical_adwin.Set_Data_Float(np.array(v), 35, 1, length)
+
+        v = [ self.E_aom.power_to_voltage(p) for p in self.params['repump_after_MBI_E_amplitude'] ]
+        self.physical_adwin.Set_Data_Float(np.array(v), 39, 1, length)
 
         v = [ self.E_aom.power_to_voltage(p) for p in self.params['E_RO_amplitudes'] ]
         self.physical_adwin.Set_Data_Float(np.array(v), 36, 1, length)
