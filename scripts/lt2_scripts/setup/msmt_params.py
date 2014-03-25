@@ -115,8 +115,8 @@ cfg.set(branch+        'repump_N_randomize_amplitude',             20e-9)
 
 branch='samples/Hans_sil1/'
 
-f_msm1_cntr = 2.021115e9            #Electron spin ms=-1 frquency
-f_msp1_cntr = 3.734677e9            #Electron spin ms=+1 frequency
+f_msm1_cntr = 2.014001e9            #Electron spin ms=-1 frquency
+f_msp1_cntr = 3.741205e9            #Electron spin ms=+1 frequency
 
 mw_freq  = 3.65e9    #MW source frequency
 mw_power = 23        #MW power
@@ -166,7 +166,7 @@ cfg.set(branch+'SP_filter_duration', 0)
     ##################################
 
 branch='protocols/Hans_sil1-default/AdwinSSRO-integrated/'
-cfg.set(branch+'SSRO_duration', 15)
+cfg.set(branch+'SSRO_duration', 10)
 
     ########################
     ### Pulse parameters ###
@@ -179,9 +179,15 @@ N_hf_split  = cfg['samples']['Hans_sil1']['N_HF_frq']
 f_MBI = f_mod_0 - N_hf_split
 cfg.set(branch+'MW_modulation_frequency', f_mod_0)
 
-### Pi pulses, hard ###
-cfg.set(branch+'Pi_pulse_duration', 50e-9)
-cfg.set(branch+'Pi_pulse_amp',  0.49)
+    ### Pi pulses, hard ###
+cfg.set(branch+        'fast_pi_duration',         110e-9)
+cfg.set(branch+        'fast_pi_amp',              0.857767) #140324
+cfg.set(branch+        'fast_pi_mod_frq',          f_MBI)
+
+    ### Pi/2 pulses, hard ###
+cfg.set(branch+        'fast_pi2_duration',         60e-9)
+cfg.set(branch+        'fast_pi2_amp',              0.777847) #140324
+cfg.set(branch+        'fast_pi2_mod_frq',          f_MBI)
 
     ### MBI pulses ###
 cfg.set(branch+        'AWG_MBI_MW_pulse_mod_frq',  f_MBI)
@@ -189,16 +195,16 @@ cfg.set(branch+        'AWG_MBI_MW_pulse_ssbmod_frq', f_MBI)
 cfg.set(branch+        'AWG_MBI_MW_pulse_amp', 0.03)
 cfg.set(branch+        'AWG_MBI_MW_pulse_duration', 2500e-9)
    
-   ### Corpse pulses ###
-cfg.set(branch+'CORPSE_pi2_amp',0.4)
-CORPSE_frq = 8.15e6
-cfg.set(branch+'CORPSE_pi_60_duration', 1./CORPSE_frq/6.)
-cfg.set(branch+'CORPSE_pi_m300_duration', 5./CORPSE_frq/6.)
-cfg.set(branch+'CORPSE_pi_420_duration',  7./CORPSE_frq/6.)
+#    ### Corpse pulses ###
+# cfg.set(branch+'CORPSE_pi2_amp',0.4)
+# CORPSE_frq = 8.15e6
+# cfg.set(branch+'CORPSE_pi_60_duration', 1./CORPSE_frq/6.)
+# cfg.set(branch+'CORPSE_pi_m300_duration', 5./CORPSE_frq/6.)
+# cfg.set(branch+'CORPSE_pi_420_duration',  7./CORPSE_frq/6.)
 
-cfg.set(branch+'CORPSE_pi2_24p3_duration', 24.3/CORPSE_frq/360.)
-cfg.set(branch+'CORPSE_pi2_m318p6_duration', 318.6/CORPSE_frq/360.)
-cfg.set(branch+'CORPSE_pi2_384p3_duration',  384.3/CORPSE_frq/360.)
+# cfg.set(branch+'CORPSE_pi2_24p3_duration', 24.3/CORPSE_frq/360.)
+# cfg.set(branch+'CORPSE_pi2_m318p6_duration', 318.6/CORPSE_frq/360.)
+# cfg.set(branch+'CORPSE_pi2_384p3_duration',  384.3/CORPSE_frq/360.)
     
     ###########    
     ### MBI ###
@@ -216,8 +222,8 @@ cfg.set(branch+        'MBI_duration',                  4)
 
     #Repump after succesfull MBI
 cfg.set(branch+        'repump_after_MBI_duration',     300)
-cfg.set(branch+        'repump_after_MBI_A_amplitude',    [0e-9])
-cfg.set(branch+        'repump_after_MBI_E_amplitude',    [15e-9])
+cfg.set(branch+        'repump_after_MBI_A_amplitude',    [15e-9])
+cfg.set(branch+        'repump_after_MBI_E_amplitude',    [0e-9])
 
     #MBI paramters
 cfg.set(branch+        'max_MBI_attempts',              100)

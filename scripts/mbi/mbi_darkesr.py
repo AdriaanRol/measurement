@@ -25,7 +25,7 @@ def run(name):
     # for the autoanalysis
     m.params['sweep_name'] = 'MW pulse frequency (MHz)'
     m.params['sweep_pts']  = (m.params['MW_pulse_mod_frqs'] + m.params['mw_frq'])/1.e6
-    funcs.finish(m, upload=True, debug=False)
+    funcs.finish(m, upload=0, debug=False)
 
     print m.params['AWG_MBI_MW_pulse_mod_frq']
 

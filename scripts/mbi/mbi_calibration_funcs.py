@@ -7,7 +7,7 @@ import qt
 from measurement.lib.measurement2.adwin_ssro import pulsar_mbi_espin
 reload(pulsar_mbi_espin)
 
-import mbi_funcs as funcs
+import measurement.scripts.mbi.mbi_funcs as funcs
 reload(funcs)
 
 SAMPLE = qt.cfgman['samples']['current']
@@ -27,7 +27,7 @@ def cal_slow_pi(name):
   
     # slow pi pulses
     m.params['MW_pulse_durations'] = np.ones(pts) * 2500e-9
-    m.params['MW_pulse_amps'] = np.linspace(0,0.03,pts) 
+    m.params['MW_pulse_amps'] = np.linspace(0,0.05,pts) 
     m.params['MW_pulse_mod_frqs'] = np.ones(pts) * \
         m.params['AWG_MBI_MW_pulse_mod_frq']
 
@@ -64,8 +64,9 @@ def cal_fast_rabi(name):
 def cal_fast_pi(name, mult=1):
     m = pulsar_mbi_espin.ElectronRabiSplitMultElements(
         'cal_fast_pi_'+name+'_M=%d' % mult)
-    funcs.prepare(m, SIL_NAME)
-    
+    #funcs.prepare(m, SIL_NAME)
+    funcs.prepare(m)
+        
     # measurement settings
     pts = 11
     m.params['pts'] = pts
@@ -74,8 +75,8 @@ def cal_fast_pi(name, mult=1):
     m.params['MW_pulse_delays'] = np.ones(pts) * 15e-6
     
     # hard pi pulses
-    m.params['MW_pulse_durations'] = 1e-9* (np.ones(pts) + 61)
-    m.params['MW_pulse_amps'] = np.linspace(0.7,0.9,pts)
+    m.params['MW_pulse_durations'] = m.params['fast_pi_duration']*(np.ones(pts))
+    m.params['MW_pulse_amps'] = np.linspace(0.8,0.9,pts)
     m.params['MW_pulse_mod_frqs'] = np.ones(pts) * \
         m.params['AWG_MBI_MW_pulse_mod_frq']
         
@@ -88,18 +89,19 @@ def cal_fast_pi(name, mult=1):
 def cal_fast_pi2(name,  mult=1):
     m = pulsar_mbi_espin.ElectronRabi(
         'cal_fast_pi_over_2_'+name+'_M=%d' % mult)
-    funcs.prepare(m, SIL_NAME)    
+    #funcs.prepare(m, SIL_NAME)
+    funcs.prepare(m)     
     
     # measurement settings
     pts = 11
-    m.params['reps_per_ROsequence'] = 2000
+    m.params['reps_per_ROsequence'] = 1000
     m.params['pts'] = pts
-    m.params['MW_pulse_multiplicities'] = np.ones(pts).astype(int)
+    m.params['MW_pulse_multiplicities'] = np.ones(pts).astype(int) * mult
     m.params['MW_pulse_delays'] = np.ones(pts) * 100e-9
     
     # pulses
-    m.params['MW_pulse_durations'] = 1e-9 * (np.ones(pts) * 32)
-    m.params['MW_pulse_amps'] = np.linspace(0.7, 0.9, pts)
+    m.params['MW_pulse_durations'] = m.params['fast_pi2_duration']*(np.ones(pts))
+    m.params['MW_pulse_amps'] = np.linspace(0.74, 0.82, pts)
     m.params['MW_pulse_mod_frqs'] = np.ones(pts) * \
         m.params['AWG_MBI_MW_pulse_mod_frq']
 
@@ -123,7 +125,7 @@ def cal_pi2pi_pi(name, mult=1):
     
     # hard pi pulses
     m.params['MW_pulse_durations'] = np.ones(pts) * 395e-9
-    m.params['MW_pulse_amps'] = np.linspace(0.09, 0.12, pts)
+    m.params['MW_pulse_amps'] = np.linspace(0.06, 0.12, pts)
     m.params['MW_pulse_mod_frqs'] = np.ones(pts) * \
         m.params['AWG_MBI_MW_pulse_mod_frq']
         
@@ -174,5 +176,6 @@ def run_calibrations(stage):
 
 
 if __name__ == '__main__':    
-    # cal_slow_pi(SAMPLE_CFG)
-    cal_pi2pi_pi(SAMPLE_CFG, 5)
+    
+    cal_fast_pi2(SAMPLE_CFG,mult=10)
+    #cal_pi2pi_pi(SAMPLE_CFG, 5)

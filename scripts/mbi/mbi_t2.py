@@ -15,7 +15,7 @@ reload(funcs)
 from measurement.scripts.teleportation import sequence 
 reload(sequence)
 
-SIL_NAME = 'hans-sil4'
+SIL_NAME = 'hans-sil1'
 name = SIL_NAME
 
 
@@ -367,23 +367,22 @@ def t2(name):
         finish(m)
 
 def zerothrevival(name):
-    m = ZerothRevival('pi2-pi-pi2_revival_0_')
+    m = ZerothRevival('pi2-pi-pi2')
     prepare(m)
 
-    pts = 16
+    pts = 7
     m.params['pts'] = pts
     m.params['reps_per_ROsequence'] = 1000
     m.params['wait_for_AWG_done'] = 1
 
     # sweep params
-    m.params['free_evolution_times'] = np.linspace(10e-9,8e-6+10e-9, pts) 
-    m.params['pi2_phases'] = np.ones(pts) * 0 
-
+    m.params['free_evolution_times'] = np.linspace(20e-9,1200e-6, pts) 
+    m.params['pi2_phases'] = np.ones(pts) * 0
     # for the autoanalysis
     m.params['sweep_name'] = 'total free evolution time (us)'
     m.params['sweep_pts'] = 2*m.params['free_evolution_times'] /1e-6  
 
-    finish(m)
+    finish(m, upload=True, debug=False)
 
 
 if __name__ == '__main__':
@@ -408,7 +407,7 @@ if __name__ == '__main__':
     #dd_xy8_sweep_fet(name)
     
     #t1(name)
-    t2(name)
+    #t2(name)
     #t2_xy4(name)
 
-    #zerothrevival(name)
+    zerothrevival(name)
