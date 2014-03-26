@@ -3,21 +3,22 @@ LT1/2 script for adwin ssro.
 """
 import numpy as np
 import qt
+
+#reload all parameters and modules
+execfile(qt.reload_current_setup)
+
 import measurement.lib.config.adwins as adwins_cfg
 import measurement.lib.measurement2.measurement as m2
 
 # import the msmt class
 from measurement.lib.measurement2.adwin_ssro import ssro
 
-SAMPLE_CFG = qt.cfgman['protocols']['current']
+SAMPLE_CFG = qt.exp_params['protocols']['current']
 
 def ssrocalibration(name):
-    m = ssro.AdwinSSRO('SSROCalibration_'+name)   
-    m.params.from_dict(qt.cfgman['protocols']['AdwinSSRO'])
-
-    m.params.from_dict(qt.cfgman['protocols'][SAMPLE_CFG]['AdwinSSRO'])    
-
-
+    m = ssro.AdwinSSRO('SSROCalibration_'+name)
+    m.params.from_dict(qt.exp_params['protocols']['AdwinSSRO'])
+    m.params.from_dict(qt.exp_params['protocols'][SAMPLE_CFG]['AdwinSSRO'])
 
     m.params['repump_mod_DAC_channel'] = 4
     m.params['cr_mod_DAC_channel']     = ssro.AdwinSSRO.adwin.get_dac_channels()['gate']
@@ -32,7 +33,7 @@ def ssrocalibration(name):
     m.params['pos_mod_min_counts'] = 300.
 
     m.params['pos_mod_activate'] = 0
-    m.params['repump_mod_activate'] = 0 
+    m.params['repump_mod_activate'] = 0
     m.params['cr_mod_activate'] = 0
 
     # parameters
@@ -51,7 +52,7 @@ def ssrocalibration(name):
 
     # m.autoconfig()
     # m.setup()
-    
+
 
     m.run()
     m.save('ms0')

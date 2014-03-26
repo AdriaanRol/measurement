@@ -5,7 +5,7 @@ import inspect
 import time as dtime
 import msvcrt
 import math
-from measurement.lib.measurement import Measurement 
+from measurement.lib.measurement import Measurement
 from measurement.lib.AWG_HW_sequencer_v2 import Sequence
 from measurement.lib.config import awgchannels_lt2 as awgcfg
 from measurement.lib.sequence import common as commonseq
@@ -23,7 +23,7 @@ def sweep_meas_strength (lt1 = False, name = meas_name,nr_of_MW_pulses=1,nr_of_d
     datafolder= 'D:/measuring/data/'
     date = dtime.strftime('%Y') + dtime.strftime('%m') + dtime.strftime('%d')
     datapath = datafolder+date + '/'
-    
+
     m = MBI.MBI(name)
     m.setup (lt1)
 
@@ -41,7 +41,7 @@ def sweep_meas_strength (lt1 = False, name = meas_name,nr_of_MW_pulses=1,nr_of_d
     m.MW_sel_mod_freq = MBI.get_freq(m,RO_line)*np.ones(nr_of_datapoints)
     m.MW_nsel_mod_freq = (MBI.get_freq(m,RO_line)-exp.sil9['hf_splitting']/2)*np.ones(nr_of_datapoints)
 
-    m.MWdic={} 
+    m.MWdic={}
     m.MWdic['meas_theta']=strength*np.ones(nr_of_datapoints)
     m.MWdic['CORPSE_nsel_frabi']=exp.pulses['CORPSE_nsel_frabi']*np.ones(nr_of_datapoints)
     m.MWdic['CORPSE_nsel_amp']=exp.pulses['CORPSE_nsel_amp']*np.ones(nr_of_datapoints)
@@ -53,11 +53,11 @@ def sweep_meas_strength (lt1 = False, name = meas_name,nr_of_MW_pulses=1,nr_of_d
 
     print 'init on mI = ', init_line, m.MBI_mod_freq
     print 'pulses on mI = ', RO_line,  m.MWdic['RO_line']
-    
+
     m.par['sweep_par'] = strength/90.
     m.par['sweep_par_name'] = 'measurement strength A.U.'
     m.par['RO_repetitions'] = int(len(m.par['sweep_par'])*reps_per_datap)
-    
+
     m.load_MWseq_func = MBIseq.add_weak_meas
 #    m.start_measurement (m.generate_MW_sweep_sequence)
     m.start_measurement (MBIseq.MW_sweep)
@@ -73,7 +73,7 @@ def Weak_strong_meas(lt1 = False, name = 'SIL9_lt2_weak_value',
     datafolder= 'D:/measuring/data/'
     date = dtime.strftime('%Y') + dtime.strftime('%m') + dtime.strftime('%d')
     datapath = datafolder+date + '/'
-    
+
     m = MBI.MBI(name)
     m.setup (lt1)
 
@@ -81,18 +81,18 @@ def Weak_strong_meas(lt1 = False, name = 'SIL9_lt2_weak_value',
     m.nr_of_datapoints = nr_of_datapoints
     m.nr_of_RO_steps = RO_reps
     print m.nr_of_RO_steps
-    
+
     #min_tau = 1.
     #max_tau = 217.
     #tau=np.linspace(min_tau,max_tau,nr_of_datapoints)
-    
-    
+
+
     m.do_shelv_pulse = do_shel*np.ones(RO_reps)
     m.do_shelv_pulse[RO_reps-1]=1
     print m.do_shelv_pulse
     postselect_pulse=True
     m.do_incr_RO_steps = 0
-    
+
     m.MBI_mod_freq = MBI.get_freq(m,init_line)*np.ones(nr_of_datapoints)
     if RO_basis=='Z':
         do_rot=0
@@ -116,7 +116,7 @@ def Weak_strong_meas(lt1 = False, name = 'SIL9_lt2_weak_value',
     m.MWdic_last['weak']=True*np.ones(nr_of_datapoints)
     m.MWdic_last['phase']=90.*np.ones(nr_of_datapoints)
     m.MWdic_last['finalwait_dur']=2000.*np.ones(nr_of_datapoints) #MBIcfg['wait_time_before_MBI_pulse']
-    m.MWdic_last['MW_mod_freq'] = MBI.get_freq(m,MW_line)*np.ones(nr_of_datapoints)  
+    m.MWdic_last['MW_mod_freq'] = MBI.get_freq(m,MW_line)*np.ones(nr_of_datapoints)
 
     #RF
     m.MWdic_last['RF_pulse_amp'] = init_rot*m.pulsedic['RF_pi2_amp']*np.ones(nr_of_datapoints)
@@ -129,9 +129,9 @@ def Weak_strong_meas(lt1 = False, name = 'SIL9_lt2_weak_value',
     m.MWdic['RF_phase'] = 0*np.ones(nr_of_datapoints)
     #m.MWdic_last['final_shelving']=True*np.ones(nr_of_datapoints)
     #basisrot=m.pulsedic['RF_pi2_len']*np.ones(nr_of_datapoints)
-   
+
    #WM postselection
-    #min_theta=6                       
+    #min_theta=6
     #minTau = 10.
     # get from ramsey contrast at tau=0 ns
     #rot_angle = 2*0.5*np.arcsin (np.cos(np.pi*exp.sil9['hf_splitting']*1e-9*(tau+minTau)))#0.5
@@ -157,11 +157,11 @@ def Weak_strong_meas(lt1 = False, name = 'SIL9_lt2_weak_value',
     #m.MWdic_last['RF3_phase'] = RO_phase+10-tau*180*exp.sil9['hf_splitting']*1e-9#0*np.ones(nr_of_datapoints)
     #phase offset for non pi/2 pulse RF1
     m.MWdic_last['RF3_phase'] = np.fmod(30.-tauF*180*exp.sil9['hf_splitting']*1e-9-2*180*exp.sil9['hf_splitting']*(basisrot-m.pulsedic['RF_pi2_len'])*1e-9, 360)
-    
-    
-    
-    
-    
+
+
+
+
+
     # Second pi/2 pulse
     m.MWdic['nr_of_MW_pulses'] = 1*np.ones(nr_of_datapoints)
     m.MWdic['MW_pulse_amp'] = m.pulsedic['pi2_amp']*np.ones(nr_of_datapoints)
@@ -169,7 +169,7 @@ def Weak_strong_meas(lt1 = False, name = 'SIL9_lt2_weak_value',
     m.MWdic['tau'] = 217*np.ones(nr_of_datapoints)
     m.MWdic['phase']=90.*np.ones(nr_of_datapoints)
     m.MWdic['finalwait_dur']=2000.*np.ones(nr_of_datapoints) #MBIcfg['wait_time_before_MBI_pulse']
-    m.MWdic['MW_mod_freq'] = MBI.get_freq(m,MW_line)*np.ones(nr_of_datapoints)  
+    m.MWdic['MW_mod_freq'] = MBI.get_freq(m,MW_line)*np.ones(nr_of_datapoints)
     m.MBI_mod_freq = MBI.get_freq(m,init_line)*np.ones(nr_of_datapoints)
 
     # in case of CORPSE pulses
@@ -189,11 +189,11 @@ def Weak_strong_meas(lt1 = False, name = 'SIL9_lt2_weak_value',
 
     print 'init on mI = ', init_line, m.MBI_mod_freq
     print 'RO on mI = ', MW_line, m.MWdic['MW_mod_freq']
-    
+
     m.par['sweep_par'] = tau
     m.par['sweep_par_name'] = 'phase (degree)'
     m.par['RO_repetitions'] = int(len(m.par['sweep_par'])*reps_per_datap)
-    
+
     #STRONG READOUT!!!!
     # second RF (basis rot)
     m.MWdic['RF2_pulse_amp'] = 0*m.pulsedic['RF_pi2_amp']*np.ones(nr_of_datapoints)
@@ -213,7 +213,7 @@ def Weak_strong_meas(lt1 = False, name = 'SIL9_lt2_weak_value',
 
 #if postselect_pulse:
 #            m.load_MWseq_func_last=MBIseq.MBI_element
-    else:    
+    else:
         m.load_MWseq_func=MBIseq.ramsey
         m.load_MWseq_func_last=MBIseq.ramsey
     m.start_measurement (MBIseq.MW_sweep)
@@ -290,10 +290,10 @@ for i in np.arange(6):
     for j in np.arange(6):
         phase2=p2[j]
         n='p1_'+str(phase1)+'_p2_'+str(phase2)
-        Weak_strong_meas(lt1 = False, name = 'SIL9_lt2_ws_meas_basisroty'+n, min_tau = 1., max_tau = 214., 
+        Weak_strong_meas(lt1 = False, name = 'SIL9_lt2_ws_meas_basisroty'+n, min_tau = 1., max_tau = 214.,
         nr_of_pulses=1,nr_of_datapoints = 11, reps=750,RO_reps=2,do_shel=True,CORPSE=True,init_line='-1',
         MW_line='0-1',phase1=phase1,phase2=phase2)
 '''
-   
+
 
 

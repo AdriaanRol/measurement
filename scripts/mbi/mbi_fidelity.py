@@ -6,17 +6,20 @@ import qt
 import measurement.lib.config.adwins as adwins_cfg
 import measurement.lib.measurement2.measurement as m2
 
+#reload all parameters and modules
+execfile(qt.reload_current_setup)
+
 # import the msmt class
 from measurement.lib.measurement2.adwin_ssro import ssro
 from measurement.lib.measurement2.adwin_ssro import pulsar as pulsar_msmt
 
 from measurement.lib.measurement2.adwin_ssro import pulsar_mbi_espin
 
-import mbi_funcs 
+import mbi_funcs
 reload(mbi_funcs)
 
-SAMPLE = qt.cfgman['samples']['current']
-SAMPLE_CFG = qt.cfgman['protocols']['current']
+SAMPLE = qt.exp_params['samples']['current']
+SAMPLE_CFG = qt.exp_params['protocols']['current']
 
 class MBIFidelity(pulsar_mbi_espin.ElectronRabi):
     mprefix = 'MBIFidelity'
@@ -42,13 +45,13 @@ class MBIFidelity(pulsar_mbi_espin.ElectronRabi):
 
 def calibrate_MBI_fidelity_RO_pulses(name, params=None):
     m = pulsar_msmt.ElectronRabi(name+'_'+'MBI_fidelity_RO_pulses')
-    
-    m.params.from_dict(qt.cfgman.get('samples/'+SAMPLE))
-    m.params.from_dict(qt.cfgman['protocols']['AdwinSSRO'])
-    m.params.from_dict(qt.cfgman['protocols'][SAMPLE_CFG]['AdwinSSRO'])
-    m.params.from_dict(qt.cfgman['protocols'][SAMPLE_CFG]['AdwinSSRO-integrated'])
-    m.params.from_dict(qt.cfgman['protocols']['AdwinSSRO+espin'])
-    
+
+    m.params.from_dict(qt.exp_params['samples'][SAMPLE])
+    m.params.from_dict(qt.exp_params['protocols']['AdwinSSRO'])
+    m.params.from_dict(qt.exp_params['protocols'][SAMPLE_CFG]['AdwinSSRO'])
+    m.params.from_dict(qt.exp_params['protocols'][SAMPLE_CFG]['AdwinSSRO-integrated'])
+    m.params.from_dict(qt.exp_params['protocols']['AdwinSSRO+espin'])
+
     if params != None:
         m.params.from_dict(params.to_dict())
 
@@ -62,10 +65,10 @@ def calibrate_MBI_fidelity_RO_pulses(name, params=None):
     m.params['MBI_calibration_RO_pulse_mod_frqs'] = \
         m.params['ms-1_cntr_frq'] - m.params['mw_frq'] + \
         np.array([-1,0,+1]) * m.params['N_HF_frq']
-    
-    m.params['MW_pulse_durations'] =  np.ones(pts) * m.params['MBI_calibration_RO_pulse_duration']  
+
+    m.params['MW_pulse_durations'] =  np.ones(pts) * m.params['MBI_calibration_RO_pulse_duration']
     m.params['MW_pulse_amplitudes'] = m.params['MBI_calibration_RO_pulse_amplitude_sweep_vals']
- 
+
     m.params['sweep_name'] = 'Pulse amplitudes (V)'
     m.params['sweep_pts'] = m.params['MW_pulse_amplitudes']
 
@@ -80,7 +83,7 @@ def calibrate_MBI_fidelity_RO_pulses(name, params=None):
         m.save('line-{}'.format(i))
         m.stop_sequence()
         qt.msleep(1)
-    
+
     m.finish()
 
 def calibrate_MBI_fidelity(name, params=None):
@@ -93,7 +96,7 @@ def calibrate_MBI_fidelity(name, params=None):
     pts = 4
     m.params['pts'] = pts
     m.params['reps_per_ROsequence'] = 40000
-     
+
     # overwrite this: at the moment the regular MBI program does not support that yet
     # (5 nov 2013)
     m.params['max_MBI_attempts'] = 100
@@ -128,4 +131,4 @@ def calibrate_MBI_fidelity(name, params=None):
 
 if __name__ == '__main__':
     # calibrate_MBI_fidelity_RO_pulses(SAMPLE)
-    calibrate_MBI_fidelity(SAMPLE) 
+    calibrate_MBI_fidelity(SAMPLE)

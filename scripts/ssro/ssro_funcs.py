@@ -4,13 +4,15 @@ import numpy as np
 from measurement.lib.measurement2.adwin_ssro import ssro
 from measurement.lib.measurement2.adwin_ssro import pulsar as pulsar_msmt
 
+SAMPLE_CFG = qt.exp_params['protocols']['current']
+
 def prepare(m, yellow = False):
-    m.params.from_dict(qt.cfgman.get('protocols/AdwinSSRO'))
-    m.params.from_dict(qt.cfgman.get('protocols/hans-sil4-default/AdwinSSRO'))
-    m.params.from_dict(qt.cfgman.get('protocols/hans-sil4-default/AdwinSSRO-integrated'))
-    m.params.from_dict(qt.cfgman.get('samples/hans-sil4'))
-    m.params.from_dict(qt.cfgman.get('protocols/AdwinSSRO+espin/'))
-    m.params.from_dict(qt.cfgman.get('protocols/hans-sil4-default/AdwinSSRO+espin'))
+    m.params.from_dict(qt.exp_params['protocols']['AdwinSSRO'])
+    m.params.from_dict(qt.exp_params['protocols'][SAMPLE_CFG]['AdwinSSRO'])
+    m.params.from_dict(qt.exp_params['protocols'][SAMPLE_CFG]['AdwinSSRO-integrated'])
+    m.params.from_dict(qt.exp_params['samples']['hans-sil4'])
+    m.params.from_dict(qt.exp_params['protocols']['AdwinSSRO+espin'])
+    m.params.from_dict(qt.exp_params['protocols'][SAMPLE_CFG]['AdwinSSRO+espin'])
 
     if yellow:
         ssro.AdwinSSRO.repump_aom = qt.instruments['YellowAOM']

@@ -1,3 +1,7 @@
+import qt
+
+#reload all parameters and modules
+execfile(qt.reload_current_setup)
 
 from measurement.lib.pulsar import pulse, pulselib, element, pulsar
 
@@ -10,7 +14,7 @@ from measurement.lib.measurement2.adwin_ssro.pulsar import PulsarMeasurement
 
 class AWGSPCalibration(PulsarMeasurement):
     mprefix = 'AWGSPCalibration'
-           
+
     def autoconfig(self):
         PulsarMeasurement.autoconfig(self)
         self.params['sequence_wait_time'] = \
@@ -26,10 +30,10 @@ class AWGSPCalibration(PulsarMeasurement):
 
         # define the necessary pulse
 
-       
+
         TT = pulse.SquarePulse(channel='HH_sync', length = 1000e-9, amplitude = 0)
-        SP = pulse.SquarePulse(channel=self.params['sp_channel'], 
-                length = self.params['AWG_SP_duration'][0], 
+        SP = pulse.SquarePulse(channel=self.params['sp_channel'],
+                length = self.params['AWG_SP_duration'][0],
                 amplitude = self.params['AWG_SP_voltage'][0])
 
         #print self.params['AWG_SP_voltage']
@@ -64,9 +68,9 @@ def awgspcalibration(name):
     m=AWGSPCalibration(name)
 
 
-    m.params.from_dict(qt.cfgman['protocols']['AdwinSSRO'])
-    m.params.from_dict(qt.cfgman['protocols']['sil9-default']['AdwinSSRO'])    
-    
+    m.params.from_dict(qt.exp_params['protocols']['AdwinSSRO'])
+    m.params.from_dict(qt.exp_params['protocols']['sil9-default']['AdwinSSRO'])
+
     yellow=False
     if yellow:
         ssro.AdwinSSRO.repump_aom = qt.instruments['YellowAOM_lt1']
@@ -84,7 +88,7 @@ def awgspcalibration(name):
     m.params['measurement_time']=2000 #seconds, max time after the HH times out.
     m.params['pts']=10
     m.params['repetitions']=1000
-    
+
 
 
     m.params['AWG_SP_power'] = np.linspace(0,30e-9,m.params['pts'])
@@ -101,10 +105,10 @@ def awgspcalibration(name):
     m.params['SP_duration'] = 250
     m.params['A_SP_amplitude'] = 0e-9
     m.params['Ex_SP_amplitude'] = 5e-9
-    
-    
+
+
     # calibration ms0 only
-    
+
     m.params['Ex_RO_amplitude'] = 3e-9 #10e-9
     m.params['SSRO_duration']=50
 
@@ -119,5 +123,5 @@ if __name__ == '__main__':
     awgspcalibration('lt2_sil9')
     #qt.instruments['AWG_lt1'].set_ch2_offset(0.)
 
- 
-    
+
+

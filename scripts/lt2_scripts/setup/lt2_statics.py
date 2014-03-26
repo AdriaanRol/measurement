@@ -1,4 +1,4 @@
-qt.cfg=mcfg.cfg
+qt.exp_params=mcfg.cfg
 
 ssro.AdwinSSRO.adwin_processes_key = 'adwin_lt2_processes'
 ssro.AdwinSSRO.E_aom = qt.instruments['MatisseAOM']

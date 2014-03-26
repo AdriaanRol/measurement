@@ -6,8 +6,8 @@ from measurement.lib.pulsar import pulse, pulselib, element, pulsar
 import mbi_funcs as funcs
 reload(funcs)
 
-SAMPLE = qt.cfgman['samples']['current']
-SAMPLE_CFG = qt.cfgman['protocols']['current']
+SAMPLE = qt.exp_params['samples']['current']
+SAMPLE_CFG = qt.exp_params['protocols']['current']
 
 ### msmt class
 class NSpinflips(pulsar_msmt.MBI):
@@ -22,7 +22,7 @@ class NSpinflips(pulsar_msmt.MBI):
             length = 2e-6, amplitude = 0)
 
         CORPSE_pi = pulselib.IQ_CORPSE_pi_pulse('msm1 CORPSE pi-pulse',
-            I_channel = 'MW_Imod', 
+            I_channel = 'MW_Imod',
             Q_channel = 'MW_Qmod',
             PM_channel = 'MW_pulsemod',
             PM_risetime = self.params['MW_pulse_mod_risetime'],
@@ -62,10 +62,10 @@ class NSpinflips(pulsar_msmt.MBI):
         seq = pulsar.Sequence('N spin flips')
         for i,r in enumerate(self.params['AWG_sequence_repetitions']):
 
-            seq.append(name = 'MBI-%d' % i, 
-                wfname = mbi_elt.name, 
-                trigger_wait = True, 
-                goto_target = 'MBI-%d' % i, 
+            seq.append(name = 'MBI-%d' % i,
+                wfname = mbi_elt.name,
+                trigger_wait = True,
+                goto_target = 'MBI-%d' % i,
                 jump_target = 'SP-{}'.format(i))
 
             if r > 0:
@@ -92,7 +92,7 @@ class NSpinflips(pulsar_msmt.MBI):
 def nspinflips(name):
     m = NSpinflips(name)
     funcs.prepare(m)
-    
+
     SP_power = 20e-9
     m.params['AWG_SP_amplitude'] = qt.instruments['NewfocusAOM_lt1'].power_to_voltage(
         SP_power, controller='sec')
@@ -113,7 +113,7 @@ def nspinflips(name):
     # for the autoanalysis
     m.params['sweep_name'] = 'SP cycles'
     m.params['sweep_pts'] = m.params['AWG_sequence_repetitions']
-    
+
     funcs.finish(m, upload=True, debug=False)
 
 if __name__ == '__main__':

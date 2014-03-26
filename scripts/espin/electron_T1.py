@@ -3,6 +3,10 @@ Script for e-spin T1 using the pulsar sequencer.
 """
 import numpy as np
 import qt
+
+#reload all parameters and modules
+execfile(qt.reload_current_setup)
+
 import measurement.lib.config.adwins as adwins_cfg
 import measurement.lib.measurement2.measurement as m2
 
@@ -10,19 +14,19 @@ import measurement.lib.measurement2.measurement as m2
 from measurement.lib.measurement2.adwin_ssro import ssro
 from measurement.lib.measurement2.adwin_ssro import pulsar as pulsar_msmt
 
-SAMPLE = qt.cfgman['samples']['current']
-SAMPLE_CFG = qt.cfgman['protocols']['current']
+SAMPLE = qt.exp_params['samples']['current']
+SAMPLE_CFG = qt.exp_params['protocols']['current']
 
 def T1(name):
 
     m = pulsar_msmt.ElectronT1(name)
 
-    m.params.from_dict(qt.cfgman.get('samples/'+SAMPLE))
-    m.params.from_dict(qt.cfgman['protocols']['AdwinSSRO'])
-    m.params.from_dict(qt.cfgman['protocols'][SAMPLE_CFG]['AdwinSSRO'])
-    m.params.from_dict(qt.cfgman['protocols'][SAMPLE_CFG]['AdwinSSRO-integrated'])
-    m.params.from_dict(qt.cfgman['protocols']['AdwinSSRO+espin'])
-    m.params.from_dict(qt.cfgman['protocols'][SAMPLE_CFG]['pulses'])
+    m.params.from_dict(qt.exp_params['samples'][SAMPLE])
+    m.params.from_dict(qt.exp_params['protocols']['AdwinSSRO'])
+    m.params.from_dict(qt.exp_params['protocols'][SAMPLE_CFG]['AdwinSSRO'])
+    m.params.from_dict(qt.exp_params['protocols'][SAMPLE_CFG]['AdwinSSRO-integrated'])
+    m.params.from_dict(qt.exp_params['protocols']['AdwinSSRO+espin'])
+    m.params.from_dict(qt.exp_params['protocols'][SAMPLE_CFG]['pulses'])
 
     '''set experimental parameters'''
         #T1 experiment

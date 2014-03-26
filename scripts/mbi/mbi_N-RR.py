@@ -6,8 +6,8 @@ from measurement.lib.pulsar import pulse, pulselib, element, pulsar
 import mbi_funcs as funcs
 reload(funcs)
 
-SAMPLE = qt.cfgman['samples']['current']
-SAMPLE_CFG = qt.cfgman['protocols']['current']
+SAMPLE = qt.exp_params['samples']['current']
+SAMPLE_CFG = qt.exp_params['protocols']['current']
 
 class RR(pulsar_msmt.MBI):
     mprefix = 'NRepetitiveReadout'
@@ -19,13 +19,13 @@ class RR(pulsar_msmt.MBI):
     #     pulsar_msmt.MBI.autoconfig(self)
 
     #     self.params['AWG_RO_SP_voltage'] = self.A_aom.power_to_voltage(
-    #         self.params['AWG_RO_SP_amplitude'], 
+    #         self.params['AWG_RO_SP_amplitude'],
     #         controller='sec')
 
     # def setup(self):
     #     pulsar_msmt.MBI.setup(self)
 
-    #     qt.pulsar.set_channel_opt('Velocity1AOM', 'high', 
+    #     qt.pulsar.set_channel_opt('Velocity1AOM', 'high',
     #         self.params['AWG_RO_SP_voltage'])
 
 
@@ -47,7 +47,7 @@ class RR(pulsar_msmt.MBI):
             length = self.params['pi2pi_mIm1_duration'])
 
         CORPSE_pi = pulselib.IQ_CORPSE_pi_pulse('CORPSE pi-pulse',
-            I_channel = 'MW_Imod', 
+            I_channel = 'MW_Imod',
             Q_channel = 'MW_Qmod',
             PM_channel = 'MW_pulsemod',
             PM_risetime =  self.params['MW_pulse_mod_risetime'],
@@ -57,23 +57,23 @@ class RR(pulsar_msmt.MBI):
             length_m300 = self.params['CORPSE_pi_m300_duration'],
             length_420 = self.params['CORPSE_pi_420_duration'])
 
-        SP_pulse = pulse.SquarePulse(channel = 'Velocity1AOM', 
+        SP_pulse = pulse.SquarePulse(channel = 'Velocity1AOM',
             amplitude = 1.0)
 
         sync_elt = element.Element('adwin_sync', pulsar=qt.pulsar)
         adwin_sync = pulse.SquarePulse(channel='adwin_sync',
-            length = self.params['AWG_to_adwin_ttl_trigger_duration'], 
+            length = self.params['AWG_to_adwin_ttl_trigger_duration'],
             amplitude = 2)
         sync_elt.append(adwin_sync)
 
         N_ro_elt = element.Element('N_RO', pulsar=qt.pulsar,
             global_time = True)
-        
+
         # N_ro_elt.append(T_SP)
         # N_ro_elt.append(pulse.cp(SP_pulse,
         #                          length = self.params['RO_SP_duration']),
         #                 )
-        
+
         N_ro_elt.append(T_MW)
         N_ro_elt.append(CORPSE_pi)
         N_ro_elt.append(T_MW)
@@ -82,10 +82,10 @@ class RR(pulsar_msmt.MBI):
         # N_ro_elt.append(adwin_sync)
 
         seq = pulsar.Sequence('N-RR')
-        seq.append(name = 'MBI', 
-            wfname = mbi_elt.name, 
-            trigger_wait = True, 
-            goto_target = 'MBI', 
+        seq.append(name = 'MBI',
+            wfname = mbi_elt.name,
+            trigger_wait = True,
+            goto_target = 'MBI',
             jump_target = 'RO-1')
 
         for i in range(self.params['nr_of_ROsequences']):
@@ -109,7 +109,7 @@ def finish_RR(m, reps=1, upload=True, debug=False):
     m.params['E_RO_amplitudes'] = np.ones(reps) * m.params['Ex_RO_amplitude']
     m.params['send_AWG_start'] = np.ones(reps).astype(int)
     m.params['sequence_wait_time'] = np.zeros(reps).astype(int)
-    
+
     m.generate_sequence(upload=upload)
 
     if not debug:
