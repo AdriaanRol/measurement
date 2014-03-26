@@ -136,7 +136,7 @@ class DynamicalDecoupling(PulsarMeasurement):
             list_of_elements.append(e_XY_start)
 
             #Currently middle is XY2 with an if statement based on the value of N this can be optimised
-            e_XY = element.Element('XY Repeating %s XY8-Decoupling Element, tau= %s' %(prefix,tau),  pulsar=qt.pulsar,
+            e_XY = element.Element('XY Rep %s XY8-Decoupling Element, tau= %s' %(prefix,tau),  pulsar=qt.pulsar,
                     global_time = True)# Not sure if the name here is correct.
             e_XY.append(T)
             e_XY.append(pulse.cp(X))
@@ -147,7 +147,7 @@ class DynamicalDecoupling(PulsarMeasurement):
             list_of_elements.append(e_XY)
 
             #Currently middle is XY2 with an if statement based on the value of N this can be optimised
-            e_YX = element.Element('Repeating %s XY8-Decoupling Element, tau = %s' %(prefix,tau),  pulsar=qt.pulsar,
+            e_YX = element.Element('YX Rep %s XY8-Decoupling Element, tau= %s' %(prefix,tau),  pulsar=qt.pulsar,
                     global_time = True)# Not sure if the name here is correct.
             e_YX.append(T)
             e_YX.append(pulse.cp(Y))
@@ -193,14 +193,14 @@ class DynamicalDecoupling(PulsarMeasurement):
 
             #Combine pulses to elements/waveforms and add to list of elements
             list_of_elements = []
-            e_start = element.Element('Initial %s Decoupling Element, tau = %s' %(prefix,tau),  pulsar=qt.pulsar,
+            e_start = element.Element('X Initial %s Decoupling Element, tau = %s' %(prefix,tau),  pulsar=qt.pulsar,
                     global_time = True)# Not sure if the name here is correct.
             e_start.append(T_before_p)
             e_start.append(pulse.cp(X))
             e_start.append(T)
             list_of_elements.append(e_start)
             #Currently middle is XY2 with an if statement based on the value of N this can be optimised
-            e_middle = element.Element('Repeating %s Decoupling Element, tau = %s' %(prefix,tau),  pulsar=qt.pulsar,
+            e_middle = element.Element('YX Rep %s Decoupling Element, tau = %s' %(prefix,tau),  pulsar=qt.pulsar,
                     global_time = True)# Not sure if the name here is correct.
             e_middle.append(T)
             e_middle.append(pulse.cp(Y))
@@ -209,7 +209,7 @@ class DynamicalDecoupling(PulsarMeasurement):
             e_middle.append(pulse.cp(X))
             e_middle.append(T)
             list_of_elements.append(e_middle)
-            e_end = element.Element('Final %s Decoupling Element, tau = %s' %(prefix,tau),  pulsar=qt.pulsar,
+            e_end = element.Element('Y Final %s Decoupling Element, tau = %s' %(prefix,tau),  pulsar=qt.pulsar,
                     global_time = True)# Not sure if the name here is correct.
             e_end.append(T)
             e_end.append(pulse.cp(Y))
@@ -264,7 +264,7 @@ class DynamicalDecoupling(PulsarMeasurement):
             print 'this is not programmed yet '
             return
 
-    def combine_to_sequence(self,loe,list_of_repetitions):
+    def combine_to_sequence(self,Lst_lst_els,list_of_repetitions):
         '''
         Combines all the generated elements to a sequence for the AWG
         Needs to be changed to handle the dynamical decoupling elements
@@ -272,54 +272,53 @@ class DynamicalDecoupling(PulsarMeasurement):
         '''
         seq = pulsar.Sequence('Decoupling Sequence')
         list_of_elements=[]
-        # print list_of_list_of_elements[0]
-        # print list_of_list_of_elements
-        for ind, el in enumerate(loe):
-            list_of_elements.extend(el) #this converts the list_of_list to an ordinary list when looping
-
+        #Lst_lst_els means list of list of elements 
+        for ind, rep in enumerate(list_of_repetitions):
+        
+            list_of_elements.extend(Lst_lst_els[ind]) #this converts the list_of_list to an 
 
             ######################
-            ### XY2 not recoomended 
+            ### single elements (trigger, connecting elements or single pulses) 
             ######################
-            if np.size(loe) ==1:
-                print "loe == 1"
-                e =loe[0]
+            if np.size(Lst_lst_els[ind]) ==1:
+                # print "Lst_lst_els == 1"
+                e =Lst_lst_els[ind][0]
                 if ind == 0:
                     seq.append(name=e.name, wfname=e.name,
-                        trigger_wait=True,repetitions = list_of_repetitions[ind])
+                        trigger_wait=True,repetitions = rep)
                 elif e.name == 'ADwin_trigger':
-                    seq.append(name=str(e.name+list_of_list_of_elements[ind-1][0].name), wfname=e.name,
-                        trigger_wait=False,repetitions = list_of_repetitions[ind])
+                    seq.append(name=str(e.name+Lst_lst_els[ind-1][0].name), wfname=e.name,
+                        trigger_wait=False,repetitions = rep)
                 else:
                     seq.append(name=e.name, wfname=e.name,
-                        trigger_wait=False,repetitions = list_of_repetitions[ind])
+                        trigger_wait=False,repetitions = rep)
             
             ######################
-            ### XY4 
+            ### XY4 elements 
             ######################
-            elif np.size(loe) == 3: #XY4 decoupling elements
-                print "loe == 3"
-                seq.append(name=loe[0].name, wfname=loe[0].name,
+            elif np.size(Lst_lst_els[ind]) == 3: #XY4 decoupling elements
+                # print "lengt of list of list  == 3"
+                seq.append(name=Lst_lst_els[ind][0].name, wfname=Lst_lst_els[ind][0].name,
                     trigger_wait=False,repetitions = 1)
-                seq.append(name=loe[1].name, wfname=loe[1].name,
-                    trigger_wait=False,repetitions = list_of_repetitions[ind]/2-1)
-                seq.append(name=loe[2].name, wfname=loe[2].name,
+                seq.append(name=Lst_lst_els[ind][1].name, wfname=Lst_lst_els[ind][1].name,
+                    trigger_wait=False,repetitions = rep/2-1)
+                seq.append(name=Lst_lst_els[ind][2].name, wfname=Lst_lst_els[ind][2].name,
                     trigger_wait=False,repetitions = 1)
             
             ######################
-            ### XY8 
+            ### XY8 elements 
             ######################
-            elif np.size(loe) == 4: #XY8 Decoupling -a-b-(c^2-b^2)^(N/4-1)-c-d-
-                print "loe == 4"
-                a = loe[0][0]
-                b= loe[1][0]
-                c = loe[2][0]
-                d = loe[3][0]
+            elif np.size(Lst_lst_els[ind]) == 4: #XY8 Decoupling -a-b-(c^2-b^2)^(N/8-1)-c-d-
+                # print "Lst_lst_els == 4"
+                a = Lst_lst_els[ind][0]
+                b= Lst_lst_els[ind][1]
+                c = Lst_lst_els[ind][2]
+                d = Lst_lst_els[ind][3]
                 seq.append(name=a.name, wfname=a.name,
                     trigger_wait=False,repetitions = 1)
                 seq.append(name=b.name, wfname=b.name,
                     trigger_wait=False,repetitions = 1)
-                for i in range(list_of_repetitions[ind]/4-1):
+                for i in range(rep/8-1):
                     seq.append(name=(c.name+str(i)), wfname=c.name,
                         trigger_wait=False,repetitions = 2)
                     seq.append(name=(b.name+str(i)), wfname=b.name,
@@ -428,7 +427,12 @@ class SimpleDecoupling(DynamicalDecoupling):
             list_of_list_of_elements.append([Trig_element])
             list_of_repetitions = [1]+ [list_of_decoupling_reps]+[1,1]
 
+            #######
+            #The combine to sequence takes a list_of_list_of_elements as input and returns it as a normal list and a sequence (example [[pi/2],[a,b,c,d],[pi/2],[trig]] and [1,16,1,1] as inputs returns the normal list of elements and the sequence)
+            #######
             list_of_elements, seq = DynamicalDecoupling.combine_to_sequence(self,list_of_list_of_elements,list_of_repetitions)
+
+
             if i ==0: 
                 i=1
                 combined_list_of_elements.extend(list_of_elements)

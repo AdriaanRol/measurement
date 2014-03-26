@@ -42,7 +42,7 @@ def SimpleDecoupling(name):
     m.params['sequence_wait_time'] = 0
 
         #Plot parameters
-    pts = 2
+    pts = 10
     m.params['pts'] = pts#len(m.params['sweep_pts']) 
     m.params['sweep_name'] = 'tau (us)'
     m.params['sweep_pts'] =np.linspace(2.975e-6,10.0*2.975e-6,pts) # m.params['tau_list']*1e6  #np.linspace(1,10,10)#
@@ -50,7 +50,7 @@ def SimpleDecoupling(name):
     m.autoconfig()
 
     #Decoupling specific parameters
-    m.params['Number_of_pulses'] = 8
+    m.params['Number_of_pulses'] = 16
     m.params['tau_list'] = np.linspace(2.975e-6,10.0*2.975e-6,pts) #Larmor period for B =314G
     m.params['Initial_Pulse'] ='pi/2'
     m.params['Final_Pulse'] ='pi/2'
@@ -61,9 +61,9 @@ def SimpleDecoupling(name):
     m.generate_sequence(upload=True)
 
 
-    #m.run()
-    #m.save('ms0')
-    #m.finish()
+    m.run()
+    m.save('ms0')
+    m.finish()
 
 if __name__ == '__main__':
     SimpleDecoupling(SAMPLE+'_'+'')
