@@ -1,3 +1,5 @@
+import os 
+
 qt.current_setup = "lt2"
 qt.reload_current_setup = "lt2_scripts/setup_lt2.py"
 

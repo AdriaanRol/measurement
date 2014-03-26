@@ -16,6 +16,7 @@ from measurement.lib.measurement2.adwin_ssro import ssro
 from measurement.lib.pulsar import pulse, pulselib, element, pulsar
 from measurement.lib.measurement2.adwin_ssro.pulsar import PulsarMeasurement
 
+
 class DynamicalDecoupling(PulsarMeasurement):
 
     '''
@@ -57,7 +58,7 @@ class DynamicalDecoupling(PulsarMeasurement):
         tau-pi-tau-tau-pi-tau
         tau-pi-tau_end
 
-        2*tau = tau_cut +tau_shortened+ Pi_pulse_duration + tau_pulse
+        2*tau = tau_cut +tau_shortened+ fast_pi_duration + tau_pulse
         '''
         #Generate the basic pulses
         # pi-pulse, needs different pulses for ms=-1 and ms=+1 transitions in the future.
@@ -66,8 +67,8 @@ class DynamicalDecoupling(PulsarMeasurement):
             PM_channel='MW_pulsemod',
             frequency = self.params['MW_modulation_frequency'],
             PM_risetime = self.params['MW_pulse_mod_risetime'],
-            length = self.params['Pi_pulse_duration'],
-            amplitude = self.params['Pi_pulse_amp'],
+            length = self.params['fast_pi_duration'],
+            amplitude = self.params['fast_pi_amp'],
             phase = self.params['X_phase'])
 
 
@@ -76,14 +77,14 @@ class DynamicalDecoupling(PulsarMeasurement):
             PM_channel='MW_pulsemod',
             frequency = self.params['MW_modulation_frequency'],
             PM_risetime = self.params['MW_pulse_mod_risetime'],
-            length = self.params['Pi_pulse_duration'],
-            amplitude = self.params['Pi_pulse_amp'],
+            length = self.params['fast_pi_duration'],
+            amplitude = self.params['fast_pi_amp'],
             phase = self.params['Y_phase'])
 
         minimum_AWG_elementsize = 1e-6 #AWG elements/waveforms have to be 1 mu s
         # would be cleaner to also have AWG quantization =4e-9 as a variable but not done for readability
-        Pi_pulse_duration = self.params['Pi_pulse_duration']
-        pulse_tau = tau - Pi_pulse_duration/2.0 #To correct for pulse duration
+        fast_pi_duration = self.params['fast_pi_duration']
+        pulse_tau = tau - fast_pi_duration/2.0 #To correct for pulse duration
 
         # initial checks to see if sequence is possible
         if N%2!=0:
@@ -102,18 +103,18 @@ class DynamicalDecoupling(PulsarMeasurement):
 
             #Calculate time to be cut
             #DOUBLE CHECK, NOW JUST MODIFIED OLD CODE TEST THIS!!!!
-            element_duration_without_edge = 3*tau + Pi_pulse_duration/2.0
+            element_duration_without_edge = 3*tau + fast_pi_duration/2.0
             if element_duration_without_edge  > (minimum_AWG_elementsize+36e-9): #+20 ns is to make sure that elements always have a minimal size
                 tau_shortened = np.ceil((element_duration_without_edge+ 36e-9)/4e-9)*4e-9 -element_duration_without_edge
             else:
                 tau_shortened = minimum_AWG_elementsize - element_duration_without_edge
                 tau_shortened = np.ceil(tau_shortened/(4e-9))*(4e-9)
-            tau_cut = tau - tau_shortened - Pi_pulse_duration/2.0
+            tau_cut = tau - tau_shortened - fast_pi_duration/2.0
 
             # print 'tau =' +str(tau)
             # print 'tau_pulse = ' +str(pulse_tau)
             # print 'tau shortened= ' + str(tau_shortened)
-            # print 'Pi_pulse_duration = '+ str(Pi_pulse_duration)
+            # print 'fast_pi_duration = '+ str(fast_pi_duration)
             # print ' tau_cut='+ str(tau_cut)
             # Make the delay pulses
             T = pulse.SquarePulse(channel='MW_Imod', name='Wait: tau',
@@ -171,18 +172,18 @@ class DynamicalDecoupling(PulsarMeasurement):
             #Generate an XY4 (+XY) decoupling sequence
 
             # Calculate the time to be cut
-            element_duration_without_edge = tau + Pi_pulse_duration/2.0
+            element_duration_without_edge = tau + fast_pi_duration/2.0
             if element_duration_without_edge  > (minimum_AWG_elementsize+36e-9): #+20 ns is to make sure that elements always have a minimal size
                 tau_shortened = np.ceil((element_duration_without_edge+ 36e-9)/4e-9)*4e-9 -element_duration_without_edge
             else:
                 tau_shortened = minimum_AWG_elementsize - element_duration_without_edge
                 tau_shortened = np.ceil(tau_shortened/(4e-9))*(4e-9)
-            tau_cut = tau - tau_shortened - Pi_pulse_duration/2.0
+            tau_cut = tau - tau_shortened - fast_pi_duration/2.0
 
             # print 'tau =' +str(tau)
             # print 'tau_pulse = ' +str(pulse_tau)
             # print 'tau shortened= ' + str(tau_shortened)
-            # print 'Pi_pulse_duration = '+ str(Pi_pulse_duration)
+            # print 'fast_pi_duration = '+ str(fast_pi_duration)
             # Make the delay pulses
             T = pulse.SquarePulse(channel='MW_Imod', name='Wait: tau',
                 length = pulse_tau, amplitude = 0.)
@@ -236,16 +237,16 @@ class DynamicalDecoupling(PulsarMeasurement):
 
         if Gate_type == 'pi/2': # NB!!!!! Pi-pulse duration/2.0  needs to be replaced by pi2pulse duration which does not yet exist in msmt_params (loads of different ones)
 
-            time_before_pulse = time_before_pulse  -self.params['Pi_pulse_duration']/4.0
-            time_after_pulse = time_after_pulse  -self.params['Pi_pulse_duration']/4.0
+            time_before_pulse = time_before_pulse  -self.params['fast_pi2_duration']/2.0
+            time_after_pulse = time_after_pulse  -self.params['fast_pi2_duration']/2.0
 
             X = pulselib.MW_IQmod_pulse('electron Pi/2-pulse',
                 I_channel='MW_Imod', Q_channel='MW_Qmod',
                 PM_channel='MW_pulsemod',
                 frequency = self.params['MW_modulation_frequency'],
                 PM_risetime = self.params['MW_pulse_mod_risetime'],
-                length = self.params['Pi_pulse_duration']/2.0, #Divided by 2.0 to get a pi/2 pulse (not RIGHT)!!!!!
-                amplitude = self.params['Pi_pulse_amp'])
+                length = self.params['fast_pi2_duration'], 
+                amplitude = self.params['fast_pi2_amp'])
             T_before_p = pulse.SquarePulse(channel='MW_Imod', name='delay',
                 length = time_before_pulse, amplitude = 0.)
             T_after_p = pulse.SquarePulse(channel='MW_Imod', name='delay',
@@ -405,21 +406,23 @@ class SimpleDecoupling(DynamicalDecoupling):
             list_of_decoupling_elements, list_of_decoupling_reps, tau_cut, total_decoupling_time = DynamicalDecoupling.generate_decoupling_sequence_elements(self,tau,N,prefix)
             #Generate the start and end pulse 
             Gate_type = self.params['Initial_Pulse']
-            time_before_initial_pulse = max(1e-6 - tau_cut + 36e-9,44e-9)  #function corrects for pulse not having zero duration
+            time_before_initial_pulse = max(1e-6 - tau_cut + 36e-9,44e-9)  #statement makes sure that time before initial pulse is not negative 
             time_after_initial_pulse = tau_cut
 
             prefix = 'initial'
             initial_pi_2 = DynamicalDecoupling.generate_connection_element(self,time_before_initial_pulse,time_after_initial_pulse, Gate_type,prefix,tau)
 
             Gate_type = self.params['Final_Pulse']
-            time_before_final_pulse = tau_cut #function corrects for pulse not having zero duration
+            time_before_final_pulse = tau_cut 
             time_after_final_pulse = time_before_initial_pulse
 
             prefix = 'final'
             final_pi_2 = DynamicalDecoupling.generate_connection_element(self,time_before_final_pulse,time_after_final_pulse, Gate_type,prefix,tau)
 
+            ########################################
             #Combine all the elements to a sequence 
             #very sequence specific
+            ########################################
             list_of_list_of_elements = []
             list_of_list_of_elements.append(initial_pi_2)
             list_of_list_of_elements.append(list_of_decoupling_elements)
