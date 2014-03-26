@@ -14,10 +14,11 @@ import logging
 import measurement.lib.measurement2.measurement as m2
 from measurement.lib.measurement2.adwin_ssro import ssro
 from measurement.lib.pulsar import pulse, pulselib, element, pulsar
-from measurement.lib.measurement2.adwin_ssro.pulsar import PulsarMeasurement
+# from measurement.lib.measurement2.adwin_ssro.pulsar import PulsarMeasurement
+from measurement.lib.measurement2.adwin_ssro import pulsar as pulsar_msmt
 
 
-class DynamicalDecoupling(PulsarMeasurement):
+class DynamicalDecoupling(pulsar_msmt.MBI):
 
     '''
     This is a general class for decoupling gate sequences used in addressing Carbon -13 atoms
@@ -27,7 +28,7 @@ class DynamicalDecoupling(PulsarMeasurement):
 
     def autoconfig(self):
         self.params['wait_for_AWG_done'] = 1
-        PulsarMeasurement.autoconfig(self)
+        pulsar_msmt.MBI.autoconfig(self)
 
     def retrieve_resonant_carbon_conditions(self,GateName):
         '''
