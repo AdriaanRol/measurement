@@ -1,5 +1,4 @@
-
-#qt.experiment_cfg=mcfg.cfg
+qt.cfg=mcfg.cfg
 
 ssro.AdwinSSRO.adwin_processes_key = 'adwin_lt2_processes'
 ssro.AdwinSSRO.E_aom = qt.instruments['MatisseAOM']
