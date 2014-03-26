@@ -2,13 +2,12 @@
 LT2 script for adwin ssro.
 """
 import qt
-
+#reload all parameters and modules
+execfile(qt.current_setup)
 # import the msmt class
 from measurement.lib.measurement2.adwin_ssro import ssro
 
-# reload the msmt_params
-execfile("lt2_scripts/setup/msmt_params.py")
-SAMPLE_CFG = qt.cfgman['protocols']['current']
+SAMPLE_CFG = qt.cfg['protocols']['current']
 
 def ssrocalibration(name):
     m = ssro.AdwinSSRO('SSROCalibration_'+name)
